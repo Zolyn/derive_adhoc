@@ -1,5 +1,5 @@
 
-use derive_adhoc_macros::derive_adhoc_expand;
+use derive_adhoc_macros::{derive_adhoc, derive_adhoc_expand};
 
 macro_rules! derive_adhoc_apply_ChannelsParams {
  { $($template:tt)* } => {
@@ -21,6 +21,7 @@ pub struct ChannelsParams {
  }
 }
 
+/*
 derive_adhoc_apply_ChannelsParams!{
 
     #[derive_adhoc(ChannelsParams)]
@@ -36,6 +37,17 @@ derive_adhoc_apply_ChannelsParams!{
     }
 
 }
+*/
+
+#[derive_adhoc(ChannelsParams)]
+#[derive(Debug, Default, Clone, Eq, PartialEq)]
+pub struct ChannelsParamsUpdates {
+$(
+    /// New value, if it has changed.
+    pub(crate) $field: Option<$ty>,
+)*
+}
+
 
 
 #[test]
