@@ -1,0 +1,13 @@
+[package]
+name = "derive-adhoc"
+version = "0.0.1"
+edition = "2018"
+
+[workspace]
+members = ["macros"]
+
+[dependencies]
+derive-adhoc-macros = { path = "macros", version = "0.0.1" }
+
+[dev-dependencies]
+trybuild = "1"

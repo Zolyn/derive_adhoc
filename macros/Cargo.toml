@@ -1,0 +1,13 @@
+[package]
+name = "derive-adhoc-macros"
+version = "0.0.1"
+edition = "2018"
+
+[dependencies]
+proc-macro2 = "1"
+quote = "1"
+syn = "1"
+
+[lib]
+path = "macros.rs"
+proc-macro = true
