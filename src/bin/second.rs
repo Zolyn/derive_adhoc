@@ -1,17 +1,20 @@
 
+use derive_adhoc_macros::derive_adhoc_expand;
+
 macro_rules! derive_adhoc_apply_ChannelsParams {
  { $($template:tt)* } => {
    derive_adhoc_expand!{ 
      {
-         #[derive(Debug, Educe, Clone, Eq, PartialEq)]
-         #[educe(Default)]
-          pub struct ChannelsParams {
-            $(
-              $( #[doc $($doc_attr)*] )*
-              $( #[$other_attr] )*
-              pub(crate) $field: $ty,
-            )*
-          }
+
+#[derive(Debug, Educe, Clone, Eq, PartialEq)]
+#[educe(Default)]
+pub struct ChannelsParams {
+    #[field educe(Default(expression = "interim_enable_by_env_var()"))]
+    padding_enable: bool,
+
+    padding_parameters: padding::Parameters
+}
+
      }
      $($template)*
    }
@@ -19,6 +22,7 @@ macro_rules! derive_adhoc_apply_ChannelsParams {
 }
 
 derive_adhoc_apply_ChannelsParams!{
+
     #[derive_adhoc(ChannelsParams)]
     #[derive(Debug, Default, Clone, Eq, PartialEq)]
     pub struct ChannelsParamsUpdates {
@@ -26,7 +30,11 @@ derive_adhoc_apply_ChannelsParams!{
 	/// New value, if it has changed.
 	pub(crate) $field: Option<$ty>,
     )*
+
+            thing: &'lifetime T,
+            'char'
     }
+
 }
 
 
