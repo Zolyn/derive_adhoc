@@ -13,6 +13,8 @@
 use quote::quote;
 use proc_macro2::TokenStream as TokenStream;
 
+use proc_macro2::{TokenTree, Delimiter};
+
 // This should implement the actual template engine
 //
 // In my design, the input contains, firstly, literally the definition
@@ -32,10 +34,29 @@ use proc_macro2::TokenStream as TokenStream;
 #[proc_macro]
 pub fn derive_adhoc_expand(input: proc_macro::TokenStream)
                            -> proc_macro::TokenStream {
+    let input: proc_macro2::TokenStream = input.into();
+    let mut input = input.into_iter();
+
+    let derive_input = input.next().unwrap();
+    let derive_input = match derive_input {
+        TokenTree::Group(g) => g,
+        _ => panic!(),
+    };
+    match derive_input.delimiter() {
+        Delimiter::Brace => { },
+        _ => panic!(),
+    }
+    // Should parse it into a syn::DeriveInput, really
+    let ident = derive_input.stream().into_iter().find_map(|tt| match tt {
+        TokenTree::Ident(i) if i.to_string().starts_with('C')  => Some(i),
+        _ => None,
+    }).unwrap_or_else(|| panic!());
+    dbg!(ident);
+    
     // obviously nothing should print to stderr
     dbg!(&input);
     eprintln!("---------- derive_adhoc_expand got start ----------");
-    eprintln!("{}", &input);
+    eprintln!("{}", input.collect::<TokenStream>());
     eprintln!("---------- derive_adhoc_expand got end ----------");
     quote!{ }.into()
 }
