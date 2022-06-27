@@ -86,11 +86,19 @@ pub fn derive_adhoc(_attr: proc_macro::TokenStream,
                     input: proc_macro::TokenStream)
                     -> proc_macro::TokenStream {
     let input = TokenStream::from(input);
+    dbg!(&input);
+    eprintln!("---------- derive_adhoc got start ----------");
+    eprintln!("{}", &input);
+    eprintln!("---------- derive_adhoc got end ----------");
+    
+/*
     quote!{
         derive_adhoc_apply_ChannelsParams!{
             #input
         }
     }.into()
+     */
+    quote!{ }.into()
 }
 
 // This is the implementation of #[derive(Adhoc)]
