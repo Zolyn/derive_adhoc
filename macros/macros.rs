@@ -51,14 +51,30 @@ pub fn derive_adhoc_expand(input: proc_macro::TokenStream)
         TokenTree::Ident(i) if i.to_string().starts_with('C')  => Some(i),
         _ => None,
     }).unwrap_or_else(|| panic!());
-    dbg!(ident);
-    
+    dbg!(&ident);
+
+    // maybe we should be using syn::buffer::TokenBuffer ?
+    let mut output = TokenStream::new();
+    while let Some(token) = input.next() {
+        match token {
+            TokenTree::Punct(p) if p.as_char() == '$' => {
+                match input.next() {
+                    Some(TokenTree::Ident(i)) if i.to_string() == "Struct" => {
+                        output.extend([TokenTree::Ident(ident.clone())])
+                    }
+                    _ => panic!(),
+                }
+            }
+            other => output.extend([other]),
+        }
+    }
+
     // obviously nothing should print to stderr
-    dbg!(&input);
+    dbg!(&&output);
     eprintln!("---------- derive_adhoc_expand got start ----------");
-    eprintln!("{}", input.collect::<TokenStream>());
+    eprintln!("{}", &output);
     eprintln!("---------- derive_adhoc_expand got end ----------");
-    quote!{ }.into()
+    output.into()
 }
 
 // This is called by #[derive_adhoc]
