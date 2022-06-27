@@ -55,3 +55,22 @@ pub fn derive_adhoc(attr: proc_macro::TokenStream,
         }
     }.into()
 }
+
+// This is the implementation of #[derive(Adhoc)]
+//
+// It should parse the struct name out of its input.
+//
+// The expansion should be
+//   macro_rules! derive_adhoc_apply_ChannelsParams ...
+// as per NOTES.txt
+//
+// For the MVP it does not need to have any attributes, but
+// later it will want to be
+//   #[proc_macro_derive(Adhoc, attributes(adhoc))]
+// and then it will perhaps want to do *something* with the attributes?
+// Although maybe just ignoring them and letting them get to the expander
+// is right.
+#[proc_macro_derive(Adhoc)]
+pub fn derive_answer_fn(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    todo!()
+}
