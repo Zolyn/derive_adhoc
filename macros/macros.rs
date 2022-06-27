@@ -66,7 +66,7 @@ pub fn derive_adhoc_expand(input: proc_macro::TokenStream)
 // It should parse the struct name out of attr using darling
 // and insert it into the output.
 #[proc_macro_attribute]
-pub fn derive_adhoc(attr: proc_macro::TokenStream,
+pub fn derive_adhoc(_attr: proc_macro::TokenStream,
                     input: proc_macro::TokenStream)
                     -> proc_macro::TokenStream {
     let input = TokenStream::from(input);
@@ -92,6 +92,6 @@ pub fn derive_adhoc(attr: proc_macro::TokenStream,
 // Although maybe just ignoring them and letting them get to the expander
 // is right.
 #[proc_macro_derive(Adhoc)]
-pub fn derive_answer_fn(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
+pub fn derive_answer_fn(_item: proc_macro::TokenStream) -> proc_macro::TokenStream {
     todo!()
 }
