@@ -1,4 +1,8 @@
 
+// This is a file full of random crap for experimentation.
+//
+// Instead, there should be a POC/MVP test case?
+
 use derive_adhoc_macros::{derive_adhoc, derive_adhoc_expand};
 
 macro_rules! derive_adhoc_apply_ChannelsParams {
