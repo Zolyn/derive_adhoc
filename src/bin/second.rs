@@ -43,7 +43,33 @@ derive_adhoc_apply_ChannelsParams!{
 }
 */
 
-#[derive_adhoc(ChannelsParams)]
+
+struct ChannelsParams;
+
+
+/// Possible invocation ssyntaxes
+
+derive_adhoc!{
+    #[derive_adhoc(ChannelsParams)]
+    type Wombat1 = $ Struct;
+}
+
+derive_adhoc!{
+    ChannelsParams:
+    type Wombat2 = $ Struct;
+}
+
+#[derive_adhoc(ChannelsParams)] x!{
+    type Wombat3 = $ Struct;
+}
+
+derive_adhoc_apply_ChannelsParams!{
+    type Wombat4 = $ Struct;
+}
+
+type K = Wombat;
+
+/*
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct ChannelsParamsUpdates {
 $(
@@ -51,6 +77,7 @@ $(
     pub(crate) $field: Option<$ty>,
 )*
 }
+*/
 
 
 
