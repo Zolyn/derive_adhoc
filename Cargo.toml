@@ -2,6 +2,9 @@
 name = "derive-adhoc"
 version = "0.0.1"
 edition = "2018"
+license="MIT"
+authors=["Ian Jackson <ijackson@chiark.greenend.org.uk>",
+         "and the contributors to Rust derive-adhoc"]
 
 [workspace]
 members = ["macros"]
