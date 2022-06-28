@@ -25,10 +25,10 @@ struct Basic {
 struct Tuple(u8, u8);
 
 define_derive_adhoc!{
-    MyHash on any = { // [1]
+    MyHash on any =  // [1]
         impl Hash for $self
             where $($( ${when not(attr(hash::skip))}
-                     $ty : Hash + ))* // [2]
+                     $ty : Hash + )) // [2]
         {
             fn hash<H : Hasher>(&self, state: &mut H) {
                 match self {
@@ -44,7 +44,6 @@ define_derive_adhoc!{
                 }
             }
         }
-    }
 }
 
 // [1] Here "on any" means that we intend this to work on enums and

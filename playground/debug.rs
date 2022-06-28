@@ -14,7 +14,7 @@ struct DataType {
 }
 
 define_derive_adhoc!{
-    MyDebug  => {
+    MyDebug on struct =
         impl Debug for $self
             where $(${if attr(debug::skip) {
                     } elseif attr(debug::into {
@@ -38,9 +38,7 @@ define_derive_adhoc!{
                     .finish()
             }
             }
-    }
-    }
-    }
+        }
 }
 
 // [1] I'm leaving out the "*" from $()* here, but it seems pretty
