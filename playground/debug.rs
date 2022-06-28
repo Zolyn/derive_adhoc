@@ -22,8 +22,10 @@ define_derive_adhoc!{
                            ${attr::debug::into as ty} : std::fmt::Debug
                        } else { // [1]
                            $ty: std::fmt::Debug
-                       }}}
-                     )"+"+ //[2]
+                       }}
+                       ${sep +} //[2b]
+                      }
+                     )
         {
             fn debug(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> : std::hash::Hasher>(&self, state: &mut H) {
                 f.debug_struct(${string $typename}) // [3] [4]
@@ -35,7 +37,7 @@ define_derive_adhoc!{
                     } else {
                         .field(${string $field}, &self.$field)
                     }}
-                )*
+                )
                     .finish()
             }
         }
@@ -51,8 +53,11 @@ define_derive_adhoc!{
 //     case: it will put multiple +s in a row.  With this combined with the
 //     problem of making "where" optional, I'm thinking that the where clause
 //     on an impl needs to be magic.
+// [2b] Doing away with the sigil after ).  ${sep +} expands to + in all
+//     but the last iteration of the innermost enclosing loop, or empty
 // [3] I've introduced ${string expr} to represent the stringification of an
 //     input.
+//     Why not expect the user to use stringify! ?
 // [4] I've introduced $typename as the name of the type, not including
 //     generic parameters.
 
