@@ -46,5 +46,8 @@ Non-magical expansions:
     including parameters.
  $ty : the type of a field of the object.
 
- $field: The identifier of a field of the object.
+ $field: The identifier of a field of the object.  This is 0,1,.. if this
+     is a tuple struct.
+
+
 

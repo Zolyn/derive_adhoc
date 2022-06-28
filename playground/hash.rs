@@ -19,6 +19,10 @@ struct Pair<S,T:Debug>
     second: T,
 }
 
+#[derive(Adhoc)]
+#[derive_adhoc(MyHash)]
+struct IntPair( usize, usize );
+
 define_derive_adhoc!{
     MyHash = {
         impl Hash for $self
@@ -48,6 +52,15 @@ impl<S,T> Hash for Pair<S,T> where
     fn hash<H : Hasher>(&self, state: &mut H) {
         self.first.hash(state);
         self.second.hsah(state);
+    }
+}
+
+impl Hash for IntPair
+    where usize: Hash + usize: Hash
+{
+    fn hash<H : Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
+        self.1.hash(state);
     }
 }
 
