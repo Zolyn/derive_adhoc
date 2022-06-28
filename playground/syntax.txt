@@ -1,7 +1,7 @@
 Notes on the syntaxes I'm using.
 
  ${} is used for _all_ "magic" expansions inside the define_derive_adhoc.
- The metasyntax is ${ident $(tt)+}
+ The metasyntax is ${ident $(tt)*}
 
 Magical expansions:
 
