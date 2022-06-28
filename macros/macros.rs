@@ -55,6 +55,8 @@ pub fn derive_adhoc_expand(input: proc_macro::TokenStream)
     dbg!(&ident);
 
     // maybe we should be using syn::buffer::TokenBuffer ?
+    // or Vec<TokenTree>, which we parse into a tree of our own full
+    // of [TokenTree] ?
     let mut output = TokenStream::new();
     while let Some(token) = input.next() {
         match token {
