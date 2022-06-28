@@ -6,6 +6,7 @@ edition = "2018"
 [dependencies]
 proc-macro2 = "1"
 quote = "1"
+strum = { version = "0.24", features = ["derive"] }
 syn = "1"
 
 [lib]
