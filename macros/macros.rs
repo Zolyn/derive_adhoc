@@ -3,6 +3,8 @@
 mod prelude;
 use prelude::*;
 
+mod invocation;
+
 // All these functions' actual contents should be in a library module,
 // which talks only about proc_macro2::TokenStream.
 //
@@ -85,37 +87,9 @@ pub fn derive_adhoc_expand(input: proc_macro::TokenStream)
 pub fn derive_adhoc(input: proc_macro::TokenStream)
                     -> proc_macro::TokenStream {
     let input = TokenStream::from(input);
-
-    #[derive(Debug)]
-    struct TemplateInvocation {
-        struc: syn::Path,
-        template: TokenStream,
-    }
-
-    impl Parse for TemplateInvocation {
-        fn parse(input: ParseStream) -> syn::Result<Self> {
-            let struc = input.parse()?;
-            let _: Token![:] = input.parse()?;
-            let template = input.parse()?;
-            Ok(TemplateInvocation { struc, template })
-        }
-    }
-
-    let input = parse_macro_input!(input as TemplateInvocation);
-
-    dbg!(&input);
-    eprintln!("---------- derive_adhoc got start ----------");
-    eprintln!("{}", &input);
-    eprintln!("---------- derive_adhoc got end ----------");
-    
-/*
-    quote!{
-        derive_adhoc_apply_ChannelsParams!{
-            #input
-        }
-    }.into()
-     */
-    quote!{ }.into()
+    let output = invocation::derive_adhoc_func_macro(input)
+        .unwrap_or_else(|e| e.into_compile_error());
+    output.into()
 }
 
 // This is the implementation of #[derive(Adhoc)]
