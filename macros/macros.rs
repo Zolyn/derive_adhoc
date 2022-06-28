@@ -1,5 +1,8 @@
 //!
 
+mod prelude;
+use prelude::*;
+
 // All these functions' actual contents should be in a library module,
 // which talks only about proc_macro2::TokenStream.
 //
@@ -9,11 +12,6 @@
 //
 // That way that library module can be tested, separately, not
 // only in a proc macro context.
-
-use quote::quote;
-use proc_macro2::TokenStream as TokenStream;
-
-use proc_macro2::{TokenTree, Delimiter};
 
 // This should implement the actual template engine
 //

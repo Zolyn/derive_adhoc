@@ -47,7 +47,7 @@ derive_adhoc_apply_ChannelsParams!{
 struct ChannelsParams;
 
 
-/// Possible invocation ssyntaxes
+// Possible invocation ssyntaxes
 
 derive_adhoc!{
     #[derive_adhoc(ChannelsParams)]
@@ -59,13 +59,13 @@ derive_adhoc!{
     type Wombat2 = $ Struct;
 }
 
-#[derive_adhoc(ChannelsParams)] x!{
+/*#[derive_adhoc(ChannelsParams)] x!{
     type Wombat3 = $ Struct;
 }
 
 derive_adhoc_apply_ChannelsParams!{
     type Wombat4 = $ Struct;
-}
+}*/
 
 type K = Wombat;
 
