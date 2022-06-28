@@ -34,7 +34,14 @@ enum TemplateElement {
         #[allow(dead_code)]
         dollar: Punct,
         exp: Expansion,
-    }
+    },
+    Repeat(RepeatedTemplate),
+}
+
+struct RepeatedTemplate {
+    template: Template,
+    over: RepetitionOver,
+    when: Vec<TemplateExpression>,
 }
 
 use TemplateElement as TE;
@@ -44,6 +51,59 @@ enum Expansion {
 }
 
 use Expansion as Ex;
+
+#[derive(Debug, Copy, Eq, PartialEq)]
+enum RepetitionOver {
+}
+
+use RepetitionOver as RO;
+
+struct RepetitionOverInference {
+    over: RepetitionOver,
+    why: Span,
+}
+
+enum TemplateExpression {
+}
+
+use TemplateExpression as Texpr;
+
+struct ReptitionAnalysisVisitor {
+    over: Option<RepetitionOver>,
+    when: Option<Vec<TemplateExpression>>,
+    error: Vec<syn::Error>,
+}
+
+impl ReptitionAnalysisVisitor {
+    fn set_over(&mut self, over: RepetitionOverInference) {
+        match self.over {
+            None => self.over = over,
+            Some(already) if &already.over == &self.over => { },
+            Some(already) => self.errors([
+                syn::Error::new(over.span, format!(
+                    "inconsistent repetition depth: \
+                     firstly, {} inferred here",
+                    already.over,
+                )),
+                syn::Error::new(over.span, format!(
+                    "inconsistent repetition depth: \
+                     secondly, {} inferred here",
+                    over.over,
+                )),
+            ]),
+        }
+    }
+    fn add_when(&mut self, when: TemplateExpression) {
+        match self.when {
+            None => self.errors([
+                syn::Error::new(when.span, format!(
+                    "when clause not directly within repetition"
+                        already.over,
+                )),
+    }
+}
+
+struct TemplateElementIsWhenClause(pub bool);
 
 impl Parse for Template {
     fn parse(input: ParseStream) -> syn::Result<Self> {
@@ -81,11 +141,15 @@ impl Parse for TemplateElement {
                     let _brace = braced!(exp in input);
                     let exp = exp.parse()?;
                     TE::Expansion { dollar, exp }
+                } else if la.peek(token::Paren) {
+                    let template;
+                    let _paren = parenthesized!(template in input);
+                    let repeat = template.analyse_repetition();
+                    TE::Repeat(repeat)
                 } else if la.peek(syn::Ident::peek_any) {
-                    let exp: TokenTree = input.parse()?; // get the next TT
+                    let exp: TokenTree = input.parse()?; // get it as TT
                     let exp = syn::parse2(exp.to_token_stream())?;
                     TE::Expansion { dollar, exp }
-                // TODO parens ("automatic" repetition) come here
                 } else {
                     return Err(la.error())
                 }
@@ -118,6 +182,29 @@ impl Template {
             element.expand(ctx, out);
         }
     }
+
+    /// Analyses a template section to be repeated
+    ///
+    ///  1. Filters out any ${when } clauses
+    
+    fn analyse_repetition(&mut self, visitor: &mut ReptitionAnalysisVisitor) {
+        let when = vec![];
+        let over = None;
+        self.elements.retain_mut(|elem| {
+            match elem {
+                TE::Pass(_) => { }
+                TE::Repeat(_) => { }
+                TE::Group { template, .. } => {
+                    template.analyse_repetition(visitor);
+                },
+                TE::Expansion { exp, .. } => {
+                    let was_when_clause = exp.analyse_repetition(visitor);
+                    return !was_when_clause.0 // delete when clauses
+                },
+            }
+            true // keep everything else
+        });
+    }
 }
 
 impl TemplateElement {
@@ -137,6 +224,8 @@ impl TemplateElement {
             },
         }
     }
+
+    fn analyse_repetition(&self) -> (Option<RepetitionOver>, Option<
 }
 
 impl Expansion {
@@ -144,6 +233,16 @@ impl Expansion {
         match self {
             Ex::Struct => ctx.top.ident.to_tokens(out),
         }
+    }
+
+    fn analyse_repetition(&mut self, visitor: &mut ReptitionAnalysisVisitor)
+                          -> TemplateElementIsWhenClause {
+        let over = match self {
+            Struct => None,
+            // when clause will do special stuff return early
+        };
+        if let Some(over) { visitor.set_over(over) }
+        TemplateElementIsWhenClause(false)
     }
 }
 
