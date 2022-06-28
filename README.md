@@ -36,11 +36,14 @@ Indeed, this might be a fun opportunity to play with proc macros.
         padding: PaddingParameters,
     }
 
-    #[derive_adhoc(ChannelsParams)]
-    pub struct ChannelsParamsUpdates {
-        $(
-            pub(crate) $field: Option<$ty>,
-        )*
+    derive_adhoc!{
+        ChannelsParams:
+
+	pub struct ChannelsParamsUpdates {
+	    $(
+		pub(crate) $field: Option<$ty>,
+	    )*
+	}
     }
 ```
 
@@ -61,7 +64,7 @@ When applied to the `struct Config`, generates this:
     }
 ```
 
-#### 2. `#[derive_adhoc]` attribute macro for applying to a template
+#### 2. `derive_adhoc!` macro for applying to a template
 
 When applied in the example above, generates this:
 

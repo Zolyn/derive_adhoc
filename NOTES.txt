@@ -64,16 +64,18 @@ $(
 )*
 }
 
-#[derive_adhoc(ChannelsParams)]
-impl<'c> ChannelsParamsUpdatesBuilder<'c> {
-  $(
-    $( ${attr="doc"} )*
-    ///
-    /// (Adds this setting to the update, if it has changed.)
-    pub fn $field(mut self, new_value: $ty) -> Self {
-...
+derive_adhoc!{
+    ChannelsParams:
+    impl<'c> ChannelsParamsUpdatesBuilder<'c> {
+      $(
+	$( ${attr="doc"} )*
+	///
+	/// (Adds this setting to the update, if it has changed.)
+	pub fn $field(mut self, new_value: $ty) -> Self {
+    ...
+	}
+      )*
     }
-  )*
 }
 
 ========================================
