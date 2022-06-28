@@ -4,26 +4,15 @@
 // Instead, there should be a POC/MVP test case?, which maybe this is
 // becoming?
 
-use derive_adhoc_macros::{derive_adhoc, derive_adhoc_expand};
+use derive_adhoc_macros::{derive_adhoc, Adhoc, derive_adhoc_expand};
 
-macro_rules! derive_adhoc_apply_ChannelsParams {
- { $($template:tt)* } => {
-   derive_adhoc_expand!{ 
-     {
-
-#[derive(Debug, Educe, Clone, Eq, PartialEq)]
-#[educe(Default)]
+#[derive(Adhoc)]
+#[derive(Debug, Clone, Eq, Default, PartialEq)]
 pub struct ChannelsParams {
-    #[field educe(Default(expression = "interim_enable_by_env_var()"))]
+//    #[field educe(Default(expression = "interim_enable_by_env_var()"))]
     padding_enable: bool,
 
-    padding_parameters: padding::Parameters
-}
-
-     }
-     $($template)*
-   }
- }
+    padding_parameters: usize
 }
 
 /*
@@ -43,9 +32,6 @@ derive_adhoc_apply_ChannelsParams!{
 
 }
 */
-
-
-struct ChannelsParams;
 
 
 // Possible invocation ssyntaxes
@@ -82,5 +68,5 @@ $(
 */
 
 fn main(){
-    let _: K = ChannelsParams;
+    let _: K = ChannelsParams::default();
 }

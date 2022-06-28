@@ -3,6 +3,7 @@
 mod prelude;
 use prelude::*;
 
+mod capture;
 mod invocation;
 
 // All these functions' actual contents should be in a library module,
@@ -80,7 +81,7 @@ pub fn derive_adhoc_expand(input: proc_macro::TokenStream)
 // This is derive_adhoc!, the invocation macro
 #[proc_macro]
 pub fn derive_adhoc(input: proc_macro::TokenStream)
-                    -> proc_macro::TokenStream {
+                               -> proc_macro::TokenStream {
     let input = TokenStream::from(input);
     let output = invocation::derive_adhoc_func_macro(input)
         .unwrap_or_else(|e| e.into_compile_error());
@@ -102,6 +103,10 @@ pub fn derive_adhoc(input: proc_macro::TokenStream)
 // Although maybe just ignoring them and letting them get to the expander
 // is right.
 #[proc_macro_derive(Adhoc)]
-pub fn derive_answer_fn(_item: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    todo!()
+pub fn derive_adhoc_derive_macro(input: proc_macro::TokenStream)
+                                 -> proc_macro::TokenStream {
+    let input = TokenStream::from(input);
+    let output = capture::derive_adhoc_derive_macro(input)
+        .unwrap_or_else(|e| e.into_compile_error());
+    output.into()
 }
