@@ -15,65 +15,49 @@ struct DataType {
 
 define_derive_adhoc!{
     MyDebug  => {
-        impl std::fmt::Debug for $type
-            where $( ${if not(attr(debug::skip))
-                       ${if attr(debug::into) {
-                           &$ty : std::convert::Into<${attr::debug::into as ty}> + // [0]
-                           ${attr::debug::into as ty} : std::fmt::Debug
-                       } else { // [1]
-                           $ty: std::fmt::Debug
-                       }}
-                       ${sep +} //[2b]
-                      }
-                     )
-        {
-            fn debug(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> : std::hash::Hasher>(&self, state: &mut H) {
-                f.debug_struct(${string $typename}) // [3] [4]
-                $(
-                    ${if attr(debug::skip) {
-                    } elseif attr(debug::info) { // [1]
-                        .field(${string $field},
-                               <${attr::debug::into as ty} as From<&$ty>>::from(&self.field)
+        impl Debug for $self
+            where $(${if attr(debug::skip) {
+                    } elseif attr(debug::into {
+                       &$ty : Into<${attr::debug::into as ty}> +
+                       ${attr::debug::into as ty} : Debug +
                     } else {
-                        .field(${string $field}, &self.$field)
-                    }}
-                )
+                       $ty: Debug +
+                    }
+                  }) // [1]
+        {
+            fn debug(&self, f: &mut Formatter<'_>) -> Result<(), Error> : std::hash::Hasher>(&self, state: &mut H) {
+                f.debug_struct(stringify!($typename))
+                $(${if attr(debug::skip) {
+                    } elseif attr(debug::info) {
+                        .field(stringify!($field),
+                               <${attr::debug::into as ty}} as From<&$ty>>::from(&self.field)
+                    } else {
+                        .field(stringify($field), &self.$field)
+                    }
+                })   // [1]
                     .finish()
             }
-        }
+            }
+    }
     }
     }
 }
 
-// [0] I'm adding an "interpolate the value of this attribute" syntax as
-//     ${attr::PATHNAME (as SYNTAX)?}
-// [1] I'm expanding the syntax of ${if ...} here to:
-//     ${if expr { content } (elseif expr { content })* (else {content})?}
-// [2] The $( .. )"+"+ syntax here isn't going to work with the "debug(skip)"
-//     case: it will put multiple +s in a row.  With this combined with the
-//     problem of making "where" optional, I'm thinking that the where clause
-//     on an impl needs to be magic.
-// [2b] Doing away with the sigil after ).  ${sep +} expands to + in all
-//     but the last iteration of the innermost enclosing loop, or empty
-// [3] I've introduced ${string expr} to represent the stringification of an
-//     input.
-//     Why not expect the user to use stringify! ?
-// [4] I've introduced $typename as the name of the type, not including
-//     generic parameters.
+// [1] I'm leaving out the "*" from $()* here, but it seems pretty
+// magical to me.
 
 
 // Expands to...
 
-impl std::fmt::Debug for DataType
-    where u8: std::fmt::Debug +
-          &Vec<String>: std::convert::Into<PrettyVec>,
-          PrettyVec: std::fmt::Debug
+impl Debug for DataType
+    where u8: Debug +
+          &Vec<String>: Into<PrettyVec>,
+          PrettyVec: Debug
 {
-    fn debug(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+    fn debug(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         f.debug_struct("DataType")
             .field("foo", &self.foo)
             .field("bar", <PrettyVec as From<&Vec<String>>>::from(&self.bar))
             .finish()
     }
-
 }

@@ -1,0 +1,50 @@
+Notes on the syntaxes I'm using.
+
+ ${} is used for _all_ "magic" expansions inside the define_derive_adhoc.
+ The metasyntax is ${ident $(tt)+}
+
+Magical expansions:
+
+  ${when EXPR} -- Expands to no tokens when EXPR is true, and fails when EXPR
+   is false.  Use inside $()?.
+
+  ${if EXPR { .. } (elseif EXPR { ...})* (else { ... })?} Expands to the
+    first block of tokens after the first expr that is true.  Expands to the
+    else block if no exprs are true.  Expands to no tokens if no expr
+    is true and there is no else.
+
+  ${attr::PATH (as SYNTAX?)} expands to the string of tokens set in
+    the attribute PATH, interpreted with SYNTAX.  If SYNTAX is absent,
+    it defaults to "tt".
+
+
+
+Expressions:
+
+   EXPR ::=
+      |  not(expr)
+      |  all(expr)
+      |  any(expr)
+
+   EXPR ::= attr(path)
+
+      -- True if there is an attribute present on a given member of the
+         struct.  For example, attr(a::b) is true whenever #[adhoc(a(b))] is
+         present on the current field.
+
+  The value of an expression is "true", "false", or a sequence of tokens.
+  All values except "false" count as semantically true.  Trying to
+  interpolate "true" or "false" is an error.
+
+
+Non-magical expansions:
+
+ $self: The type of the object from which we're deriving, including
+    parameters.
+
+ $typename: The identifier for the object from which we're deriving, not
+    including parameters.
+ $ty : the type of a field of the object.
+
+ $field: The identifier of a field of the object.
+
