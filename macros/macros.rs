@@ -85,6 +85,24 @@ pub fn derive_adhoc_expand(input: proc_macro::TokenStream)
 pub fn derive_adhoc(input: proc_macro::TokenStream)
                     -> proc_macro::TokenStream {
     let input = TokenStream::from(input);
+
+    #[derive(Debug)]
+    struct TemplateInvocation {
+        struc: syn::Path,
+        template: TokenStream,
+    }
+
+    impl Parse for TemplateInvocation {
+        fn parse(input: ParseStream) -> syn::Result<Self> {
+            let struc = input.parse()?;
+            let _: Token![:] = input.parse()?;
+            let template = input.parse()?;
+            Ok(TemplateInvocation { struc, template })
+        }
+    }
+
+    let input = parse_macro_input!(input as TemplateInvocation);
+
     dbg!(&input);
     eprintln!("---------- derive_adhoc got start ----------");
     eprintln!("{}", &input);
