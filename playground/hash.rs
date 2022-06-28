@@ -25,13 +25,13 @@ struct IntPair( usize, usize );
 
 define_derive_adhoc!{
     MyHash for struct =  // [1]
-        impl Hash for $self
-            where $( ${when not(attr(hash::skip))}
-                     $ty : Hash + )*
+        impl Hash for $ttype
+            where $( ${when not(fattr(hash::skip))}
+                     $ftype : Hash + )*
         {
             fn hash<H : Hasher>(&self, state: &mut H) {
-                $( ${when not(attr(hash::skip))}
-                   self.$field.hash(state); )*
+                $( ${when not(fattr(hash::skip))}
+                   self.$fname.hash(state); )*
             }
         }
 }

@@ -26,18 +26,18 @@ struct Tuple(u8, u8);
 
 define_derive_adhoc!{
     MyHash on any =  // [1]
-        impl Hash for $self
-            where $($( ${when not(attr(hash::skip))}
-                     $ty : Hash + )) // [2]
+        impl Hash for $ttype
+            where $($( ${when not(fattr(hash::skip))}
+                     $ftype : Hash + )) // [2]
         {
             fn hash<H : Hasher>(&self, state: &mut H) {
                 match self {
                     $(
-                        $pat => { // [3]
+                        $vpat => { // [3]
                             $(${when enum} // [3a]
-                                stringify!($variant).hash(state); )// [4]
+                                stringify!($vname).hash(state); )// [4]
                             $(${when not(attr(hash::skip))}
-                              $patfield.hash(state); // [5]
+                              $pfname.hash(state); // [5]
                             )
                         }
                     )
@@ -51,12 +51,12 @@ define_derive_adhoc!{
 //    to single-variant enums.
 // [2] Note that with an enum, we have to nest two levels deep to see the
 //     types.
-// [3] $pat is a pattern that deconstructs the current variant.  If the
+// [3] $vpat is a pattern that deconstructs the current variant.  If the
 //    current type is a struct, it deconstruct the struct.
 // [3a] enum is an expression that is true iff the currrent type is an enum.
-// [4] $variant is the current variant name, without any fields.  If the
+// [4] $vname is the current variant name, without any fields.  If the
 //     current type is not an enum, it fails to expand.
-// [5] $patfield is a field within $pat.
+// [5] $pfname is the name of a field within $vpat.
 
 // This expands to:
 

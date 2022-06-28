@@ -15,24 +15,24 @@ struct DataType {
 
 define_derive_adhoc!{
     MyDebug on struct =
-        impl Debug for $self
-            where $(${if attr(debug::skip) {
-                    } elseif attr(debug::into {
-                       &$ty : Into<${attr::debug::into as ty}> +
+        impl Debug for $ttype
+            where $(${if fattr(debug::skip) {
+                    } elseif fattr(debug::into {
+                       &$ftype : Into<${attr::debug::into as ty}> +
                        ${attr::debug::into as ty} : Debug +
                     } else {
-                       $ty: Debug +
+                       $ftype: Debug +
                     }
                   }) // [1]
         {
             fn debug(&self, f: &mut Formatter<'_>) -> Result<(), Error> : std::hash::Hasher>(&self, state: &mut H) {
                 f.debug_struct(stringify!($typename))
-                $(${if attr(debug::skip) {
-                    } elseif attr(debug::info) {
-                        .field(stringify!($field),
-                               <${attr::debug::into as ty}} as From<&$ty>>::from(&self.field)
+                $(${if fattr(debug::skip) {
+                    } elseif fattr(debug::info) {
+                        .field(stringify!($fname),
+                               <${fattr::debug::into as ty}} as From<&$ftype>>::from(&self.field)
                     } else {
-                        .field(stringify($field), &self.$field)
+                        .field(stringify($fname), &self.$fname)
                     }
                 })   // [1]
                     .finish()

@@ -26,11 +26,21 @@ Expressions:
       |  all(expr)
       |  any(expr)
 
-   EXPR ::= attr(path)
+   EXPR ::= enum
 
-      -- True if there is an attribute present on a given member of the
-         struct.  For example, attr(a::b) is true whenever #[adhoc(a(b))] is
+      -- True iff the top-level type is an enum.
+
+   EXPR ::= fattr(path)
+
+      -- True iff there is an attribute present on a this field.
+         For example, attr(a::b) is true whenever #[adhoc(a(b))] is
          present on the current field.
+
+   EXPR ::= tattr(path)
+          | vattr(path)
+
+      -- Like fattr, but for toplevel attributes and variant attributes
+         respectively.
 
   The value of an expression is "true", "false", or a sequence of tokens.
   All values except "false" count as semantically true.  Trying to
@@ -39,15 +49,28 @@ Expressions:
 
 Non-magical expansions:
 
- $self: The type of the object from which we're deriving, including
+ // On the top-level type:
+
+ $ttype: The type of the object from which we're deriving, including
     parameters.
-
- $typename: The identifier for the object from which we're deriving, not
+ $tname: The identifier for the object from which we're deriving, not
     including parameters.
- $ty : the type of a field of the object.
 
- $field: The identifier of a field of the object.  This is 0,1,.. if this
+ // on variants
+
+ $vname : The name of the variant.  This fails to expand on a non-enum
+ struct.
+
+ $vpat : A pattern to match and deconstruct the variant.  On a non-enum
+ struct, this matches and deconstructs the struct.
+
+ // on fields
+ $ftype : the type of a field of the object.
+
+ $fname: The identifier of a field of the object.  This is 0,1,.. if this
      is a tuple struct.
 
+ $fpname: The identifier of a field within a pattern made by $vpat.  This is
+ _0, _1, if this is a tuple struct or tuple variant.
 
 
