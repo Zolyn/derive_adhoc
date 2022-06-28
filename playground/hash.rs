@@ -24,7 +24,7 @@ struct Pair<S,T:Debug>
 struct IntPair( usize, usize );
 
 define_derive_adhoc!{
-    MyHash = {
+    MyHash for struct = { // [1]
         impl Hash for $self
             where $( ${when not(attr(hash::skip))}
                      $ty : Hash + )*
@@ -36,6 +36,8 @@ define_derive_adhoc!{
         }
     }
 }
+
+// [1] The "for struct" syntax here means that only structs are supported.
 
 
 // This should expand to:
