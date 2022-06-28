@@ -77,12 +77,7 @@ pub fn derive_adhoc_expand(input: proc_macro::TokenStream)
     output.into()
 }
 
-// This is called by derive_adhoc!
-//
-// It should parse (zero or more) things of the form
-//    StructName:
-//    SOME_TOKENS
-// and expand it to derive_adhoc_apply_StructName invocations.
+// This is derive_adhoc!, the invocation macro
 #[proc_macro]
 pub fn derive_adhoc(input: proc_macro::TokenStream)
                     -> proc_macro::TokenStream {
