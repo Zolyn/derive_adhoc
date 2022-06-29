@@ -44,7 +44,7 @@ use TemplateElement as TE;
 
 struct Subst {
     kw: Ident,
-    ed: SubstDetails,
+    sd: SubstDetails,
 }
 
 #[allow(non_camel_case_types)] // clearer to use the exact ident
@@ -54,7 +54,7 @@ enum SubstDetails {
     fname,
 }
 
-use SubstDetails as ED;
+use SubstDetails as SD;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Display)]
 #[strum(serialize_all = "snake_case")]
@@ -187,19 +187,19 @@ impl Parse for Subst {
         let kw: Ident = input.parse()?;
 
         // todo: use a macro_rules macro?
-        let ed = if kw == "tname" {
-            ED::tname
+        let sd = if kw == "tname" {
+            SD::tname
         } else if kw == "vname" {
-            ED::vname
+            SD::vname
         } else if kw == "fname" {
-            ED::fname
+            SD::fname
         } else {
             return Err(syn::Error::new(
                 kw.span(),
                 "unknown expansion item"
             ))
         };
-        Ok(Subst { ed, kw: kw.clone() })
+        Ok(Subst { sd, kw: kw.clone() })
     }
 }
 
@@ -285,10 +285,10 @@ impl Subst {
     fn expand(&self, ctx: &Context, out: &mut TokenStream)
               -> syn::Result<()>
     {
-        match self.ed {
-            ED::tname => ctx.top.ident.to_tokens(out),
-            ED::vname => ctx.syn_variant(self)?.ident.to_tokens(out),
-            ED::fname => {
+        match self.sd {
+            SD::tname => ctx.top.ident.to_tokens(out),
+            SD::vname => ctx.syn_variant(self)?.ident.to_tokens(out),
+            SD::fname => {
                 let f = ctx.field(self)?;
                 if let Some(fname) = &f.field.ident {
                     // todo is this the right span to emit?
@@ -303,10 +303,10 @@ impl Subst {
     }
 
     fn analyse_repeat(&self, visitor: &mut RepeatAnalysisVisitor) {
-        let over = match self.ed {
-            ED::tname => None,
-            ED::vname => Some(RO::Variants),
-            ED::fname => Some(RO::Fields),
+        let over = match self.sd {
+            SD::tname => None,
+            SD::vname => Some(RO::Variants),
+            SD::fname => Some(RO::Fields),
         };
         if let Some(over) = over {
             let over = RepeatOverInference { over, span: self.kw.span() };
