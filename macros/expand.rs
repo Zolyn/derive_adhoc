@@ -46,8 +46,9 @@ struct RepeatedTemplate {
 
 use TemplateElement as TE;
 
+#[allow(non_camel_case_types)] // clearer to use the exact ident
 enum Expansion {
-    Struct,
+    tname,
 }
 
 use Expansion as Ex;
@@ -178,8 +179,8 @@ impl Parse for TemplateElement {
 impl Parse for Expansion {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let ident: Ident = input.parse()?;
-        Ok(if ident == "Struct" {
-            Ex::Struct
+        Ok(if ident == "tname" {
+            Ex::tname
         } else {
             return Err(syn::Error::new(
                 ident.span(),
@@ -249,13 +250,13 @@ impl TemplateElement {
 impl Expansion {
     fn expand(&self, ctx: &ExpansionContext, out: &mut TokenStream) {
         match self {
-            Ex::Struct => ctx.top.ident.to_tokens(out),
+            Ex::tname => ctx.top.ident.to_tokens(out),
         }
     }
 
     fn analyse_repeat(&self, visitor: &mut RepeatAnalysisVisitor) {
         let over = match self {
-            Ex::Struct => None,
+            Ex::tname => None,
         };
         if let Some(over) = over { visitor.set_over(over) }
     }

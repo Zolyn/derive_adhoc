@@ -44,7 +44,7 @@ derive_adhoc!{
 
 derive_adhoc!{
     ChannelsParams:
-    type Wombat = $ Struct;
+    type Wombat = $ tname;
 }
 
 /*#[derive_adhoc(ChannelsParams)] x!{
