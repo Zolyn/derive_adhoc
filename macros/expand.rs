@@ -2,19 +2,19 @@
 
 use crate::prelude::*;
 
-struct ExpansionInput {
+struct SubstInput {
     brace_token: token::Brace,
     driver: syn::DeriveInput,
     template: Template,
 }
 
-impl Parse for ExpansionInput {
+impl Parse for SubstInput {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let driver;
         let brace_token = braced!(driver in input);
         let driver = driver.parse()?;
         let template = input.parse()?;
-        Ok(ExpansionInput { brace_token, driver, template })
+        Ok(SubstInput { brace_token, driver, template })
     }
 }
 
@@ -30,7 +30,7 @@ enum TemplateElement {
         delimiter: Delimiter,
         template: Template,
     },
-    Expansion(Expansion),
+    Subst(Subst),
     Repeat(RepeatedTemplate),
     Errors(Vec<syn::Error>),
 }
@@ -42,19 +42,19 @@ struct RepeatedTemplate {
 
 use TemplateElement as TE;
 
-struct Expansion {
+struct Subst {
     kw: Ident,
-    ed: ExpansionDetails,
+    ed: SubstDetails,
 }
 
 #[allow(non_camel_case_types)] // clearer to use the exact ident
-enum ExpansionDetails {
+enum SubstDetails {
     tname,
     vname,
     fname,
 }
 
-use ExpansionDetails as ED;
+use SubstDetails as ED;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Display)]
 #[strum(serialize_all = "snake_case")]
@@ -156,7 +156,7 @@ impl Parse for TemplateElement {
                     let exp;
                     let _brace = braced!(exp in input);
                     let exp = exp.parse()?;
-                    TE::Expansion(exp)
+                    TE::Subst(exp)
                 } else if la.peek(token::Paren) {
                     let template;
                     let paren = parenthesized!(template in input);
@@ -173,7 +173,7 @@ impl Parse for TemplateElement {
                 } else if la.peek(syn::Ident::peek_any) {
                     let exp: TokenTree = input.parse()?; // get it as TT
                     let exp = syn::parse2(exp.to_token_stream())?;
-                    TE::Expansion(exp)
+                    TE::Subst(exp)
                 } else {
                     return Err(la.error())
                 }
@@ -182,7 +182,7 @@ impl Parse for TemplateElement {
     }
 }
 
-impl Parse for Expansion {
+impl Parse for Subst {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let kw: Ident = input.parse()?;
 
@@ -199,11 +199,11 @@ impl Parse for Expansion {
                 "unknown expansion item"
             ))
         };
-        Ok(Expansion { ed, kw: kw.clone() })
+        Ok(Subst { ed, kw: kw.clone() })
     }
 }
 
-struct ExpansionContext<'c> {
+struct SubstContext<'c> {
     top: &'c syn::DeriveInput,
     variant: Option<&'c WithinVariant<'c>>,
     field: Option<&'c WithinField<'c>>,
@@ -220,7 +220,7 @@ struct WithinField<'c> {
 }
 
 impl Template {
-    fn expand(&self, ctx: &ExpansionContext, out: &mut TokenStream) {
+    fn expand(&self, ctx: &SubstContext, out: &mut TokenStream) {
         for element in &self.elements {
             let () = element.expand(ctx, out)
                 .unwrap_or_else(|err| out.extend(err.into_compile_error()));
@@ -236,7 +236,7 @@ impl Template {
 }
 
 impl TemplateElement {
-    fn expand(&self, ctx: &ExpansionContext, out: &mut TokenStream)
+    fn expand(&self, ctx: &SubstContext, out: &mut TokenStream)
         -> syn::Result<()>
     {
         match self {
@@ -249,7 +249,7 @@ impl TemplateElement {
                 group.set_span(delim_span.clone());
                 out.extend([TT::Group(group)]);
             },
-            TE::Expansion(exp) => {
+            TE::Subst(exp) => {
                 exp.expand(ctx, out)?;
             },
             TE::Repeat(repeated_template) => {
@@ -269,20 +269,20 @@ impl TemplateElement {
             TE::Pass(_) => { }
             TE::Repeat(_) => { }
             TE::Group { template, .. } => template.analyse_repeat(visitor),
-            TE::Expansion(exp) => exp.analyse_repeat(visitor),
+            TE::Subst(exp) => exp.analyse_repeat(visitor),
             TE::Errors(el) => visitor.errors(el.clone()),
         }
     }
 }
 
-impl Spanned for Expansion {
+impl Spanned for Subst {
     fn span(&self) -> Span {
         self.kw.span()
     }
 }
 
-impl Expansion {
-    fn expand(&self, ctx: &ExpansionContext, out: &mut TokenStream)
+impl Subst {
+    fn expand(&self, ctx: &SubstContext, out: &mut TokenStream)
               -> syn::Result<()>
     {
         match self.ed {
@@ -315,15 +315,15 @@ impl Expansion {
     }
 }
 
-impl<'c> ExpansionContext<'c> {
+impl<'c> SubstContext<'c> {
     fn for_variants<F>(&self, mut call: F)
-    where F: FnMut(&ExpansionContext, &WithinVariant)
+    where F: FnMut(&SubstContext, &WithinVariant)
     {
         let ctx = self;
         let mut within_variant = |variant, fields| {
             let wv = WithinVariant { variant, fields };
             let wv = &wv;
-            let ctx = ExpansionContext { variant: Some(wv), ..*ctx };
+            let ctx = SubstContext { variant: Some(wv), ..*ctx };
             call(&ctx, wv);
         };
         match &ctx.top.data {
@@ -343,7 +343,7 @@ impl<'c> ExpansionContext<'c> {
     }
 
     fn for_with_variant<F>(&self, mut call: F)
-    where F: FnMut(&ExpansionContext, &WithinVariant)
+    where F: FnMut(&SubstContext, &WithinVariant)
     {
         let ctx = self;
         if let Some(wv) = &self.variant {
@@ -373,7 +373,7 @@ impl<'c> ExpansionContext<'c> {
 
 
     fn for_fields<F>(&self, mut call: F)
-    where F: FnMut(&ExpansionContext, &WithinField)
+    where F: FnMut(&SubstContext, &WithinField)
     {
         let ctx = self;
         ctx.for_with_variant(|ctx, variant| {
@@ -381,7 +381,7 @@ impl<'c> ExpansionContext<'c> {
                 let index = index.try_into().expect(">=2^32 fields!");
                 let wf = WithinField { field, index };
                 let wf = &wf;
-                let ctx = ExpansionContext { field: Some(wf), ..*ctx };
+                let ctx = SubstContext { field: Some(wf), ..*ctx };
                 call(&ctx, wf);
             }
         })
@@ -398,7 +398,7 @@ impl<'c> ExpansionContext<'c> {
 }
 
 impl RepeatedTemplate {
-    fn expand(&self, ctx: &ExpansionContext, out: &mut TokenStream) {
+    fn expand(&self, ctx: &SubstContext, out: &mut TokenStream) {
         match self.over {
             RO::Variants => ctx.for_variants(
                 |ctx, _variant| self.template.expand(ctx, out)
@@ -428,14 +428,14 @@ impl RepeatedTemplate {
 // with the original struct ident.
 pub fn derive_adhoc_expand_func_macro(input: TokenStream)
                                       -> syn::Result<TokenStream> {
-    let input: ExpansionInput = syn::parse2(input)?;
+    let input: SubstInput = syn::parse2(input)?;
     let ident = &input.driver.ident;
     dbg!(&ident);
 
     // maybe we should be using syn::buffer::TokenBuffer ?
     // or Vec<TokenTree>, which we parse into a tree of our own full
     // of [TokenTree] ?
-    let ctx = ExpansionContext {
+    let ctx = SubstContext {
         top: &input.driver,
         field: None,
         variant: None,
