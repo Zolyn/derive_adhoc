@@ -218,6 +218,16 @@ impl Parse for Expr {
     }
 }
 
+impl Expr {
+    fn eval_bool(&self, _ctx: &Context) -> syn::Result<bool> {
+        let r = match self.ed {
+            ED::False => false,
+            ED::True => false,
+        };
+        Ok(r)
+    }
+}
+
 struct Context<'c> {
     top: &'c syn::DeriveInput,
     variant: Option<&'c WithinVariant<'c>>,
@@ -471,12 +481,24 @@ impl RepeatedTemplate {
     fn expand(&self, ctx: &Context, out: &mut TokenStream) {
         match self.over {
             RO::Variants => ctx.for_variants(
-                |ctx, _variant| self.template.expand(ctx, out)
+                |ctx, _variant| self.expand_inner(ctx, out)
             ),
             RO::Fields => ctx.for_fields(
-                |ctx, _field| self.template.expand(ctx, out)
+                |ctx, _field| self.expand_inner(ctx, out)
             ),
         }
+    }
+
+    /// private, does the condition
+    fn expand_inner(&self, ctx: &Context, out: &mut TokenStream) {
+        for when in &self.whens {
+            match when.eval_bool(ctx) {
+                Ok(true) => continue,
+                Ok(false) => return,
+                Err(e) => { out.extend([e.into_compile_error()]); return; }
+            }
+        }
+        self.template.expand(ctx, out)
     }
 }
 
