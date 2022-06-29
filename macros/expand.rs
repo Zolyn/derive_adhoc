@@ -30,11 +30,7 @@ enum TemplateElement {
         delimiter: Delimiter,
         template: Template,
     },
-    Expansion {
-        #[allow(dead_code)]
-        dollar: Punct,
-        exp: Expansion,
-    },
+    Expansion(Expansion),
     Repeat(RepeatedTemplate),
     Errors(Vec<syn::Error>),
 }
@@ -46,18 +42,28 @@ struct RepeatedTemplate {
 
 use TemplateElement as TE;
 
-#[allow(non_camel_case_types)] // clearer to use the exact ident
-enum Expansion {
-    tname,
+struct Expansion {
+    kw: Ident,
+    ed: ExpansionDetails,
 }
 
-use Expansion as Ex;
+#[allow(non_camel_case_types)] // clearer to use the exact ident
+enum ExpansionDetails {
+    tname,
+    vname,
+    fname,
+}
+
+use ExpansionDetails as ED;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Display)]
+#[strum(serialize_all = "snake_case")]
 enum RepeatOver {
+    Variants,
+    Fields,
 }
 
-//use RepeatOver as RO;
+use RepeatOver as RO;
 
 struct RepeatOverInference {
     over: RepeatOver,
@@ -141,7 +147,7 @@ impl Parse for TemplateElement {
             TT::Punct(tok) if tok.as_char() != '$' => {
                 TE::Pass(TT::Punct(tok))
             },
-            TT::Punct(dollar) => {
+            TT::Punct(_dollar) => {
                 let la = input.lookahead1();
                 if la.peek(Token![$]) {
                     // $$
@@ -150,7 +156,7 @@ impl Parse for TemplateElement {
                     let exp;
                     let _brace = braced!(exp in input);
                     let exp = exp.parse()?;
-                    TE::Expansion { dollar, exp }
+                    TE::Expansion(exp)
                 } else if la.peek(token::Paren) {
                     let template;
                     let paren = parenthesized!(template in input);
@@ -167,7 +173,7 @@ impl Parse for TemplateElement {
                 } else if la.peek(syn::Ident::peek_any) {
                     let exp: TokenTree = input.parse()?; // get it as TT
                     let exp = syn::parse2(exp.to_token_stream())?;
-                    TE::Expansion { dollar, exp }
+                    TE::Expansion(exp)
                 } else {
                     return Err(la.error())
                 }
@@ -178,26 +184,46 @@ impl Parse for TemplateElement {
 
 impl Parse for Expansion {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let ident: Ident = input.parse()?;
-        Ok(if ident == "tname" {
-            Ex::tname
+        let kw: Ident = input.parse()?;
+
+        // todo: use a macro_rules macro?
+        let ed = if kw == "tname" {
+            ED::tname
+        } else if kw == "vname" {
+            ED::vname
+        } else if kw == "fname" {
+            ED::fname
         } else {
             return Err(syn::Error::new(
-                ident.span(),
+                kw.span(),
                 "unknown expansion item"
             ))
-        })
+        };
+        Ok(Expansion { ed, kw: kw.clone() })
     }
 }
 
 struct ExpansionContext<'c> {
     top: &'c syn::DeriveInput,
+    variant: Option<&'c WithinVariant<'c>>,
+    field: Option<&'c WithinField<'c>>,
+}
+
+struct WithinVariant<'c> {
+    variant: Option<&'c syn::Variant>,
+    fields: &'c syn::Fields,
+}
+
+struct WithinField<'c> {
+    field: &'c syn::Field,
+    index: u32,
 }
 
 impl Template {
     fn expand(&self, ctx: &ExpansionContext, out: &mut TokenStream) {
         for element in &self.elements {
-            element.expand(ctx, out);
+            let () = element.expand(ctx, out)
+                .unwrap_or_else(|err| out.extend(err.into_compile_error()));
         }
     }
 
@@ -210,7 +236,9 @@ impl Template {
 }
 
 impl TemplateElement {
-    fn expand(&self, ctx: &ExpansionContext, out: &mut TokenStream) {
+    fn expand(&self, ctx: &ExpansionContext, out: &mut TokenStream)
+        -> syn::Result<()>
+    {
         match self {
             TE::Pass(tt) => out.extend([tt.clone()]),
             TE::Group { delim_span, delimiter, template } => {
@@ -221,12 +249,11 @@ impl TemplateElement {
                 group.set_span(delim_span.clone());
                 out.extend([TT::Group(group)]);
             },
-            TE::Expansion { dollar:_, exp } => {
-                exp.expand(ctx, out);
+            TE::Expansion(exp) => {
+                exp.expand(ctx, out)?;
             },
-            TE::Repeat(RepeatedTemplate { template:_, over }) => {
-                match *over {
-                }
+            TE::Repeat(repeated_template) => {
+                repeated_template.expand(ctx, out);
             },
             TE::Errors(el) => {
                 for e in el {
@@ -234,6 +261,7 @@ impl TemplateElement {
                 }
             }
         }
+        Ok(())
     }
 
     fn analyse_repeat(&self, visitor: &mut RepeatAnalysisVisitor) {
@@ -241,24 +269,144 @@ impl TemplateElement {
             TE::Pass(_) => { }
             TE::Repeat(_) => { }
             TE::Group { template, .. } => template.analyse_repeat(visitor),
-            TE::Expansion { exp, .. } => exp.analyse_repeat(visitor),
+            TE::Expansion(exp) => exp.analyse_repeat(visitor),
             TE::Errors(el) => visitor.errors(el.clone()),
         }
     }
 }
 
+impl Spanned for Expansion {
+    fn span(&self) -> Span {
+        self.kw.span()
+    }
+}
+
 impl Expansion {
-    fn expand(&self, ctx: &ExpansionContext, out: &mut TokenStream) {
-        match self {
-            Ex::tname => ctx.top.ident.to_tokens(out),
-        }
+    fn expand(&self, ctx: &ExpansionContext, out: &mut TokenStream)
+              -> syn::Result<()>
+    {
+        match self.ed {
+            ED::tname => ctx.top.ident.to_tokens(out),
+            ED::vname => ctx.syn_variant(self)?.ident.to_tokens(out),
+            ED::fname => {
+                let f = ctx.field(self)?;
+                if let Some(fname) = &f.field.ident {
+                    // todo is this the right span to emit?
+                    fname.to_tokens(out);
+                } else {
+                    syn::Index { index: f.index, span: self.kw.span() }
+                        .to_tokens(out);
+                }
+            },
+        };
+        Ok(())
     }
 
     fn analyse_repeat(&self, visitor: &mut RepeatAnalysisVisitor) {
-        let over = match self {
-            Ex::tname => None,
+        let over = match self.ed {
+            ED::tname => None,
+            ED::vname => Some(RO::Variants),
+            ED::fname => Some(RO::Fields),
         };
-        if let Some(over) = over { visitor.set_over(over) }
+        if let Some(over) = over {
+            let over = RepeatOverInference { over, span: self.kw.span() };
+            visitor.set_over(over);
+        }
+    }
+}
+
+impl<'c> ExpansionContext<'c> {
+    fn for_variants<F>(&self, mut call: F)
+    where F: FnMut(&ExpansionContext, &WithinVariant)
+    {
+        let ctx = self;
+        let mut within_variant = |variant, fields| {
+            let wv = WithinVariant { variant, fields };
+            let wv = &wv;
+            let ctx = ExpansionContext { variant: Some(wv), ..*ctx };
+            call(&ctx, wv);
+        };
+        match &ctx.top.data {
+            syn::Data::Struct(syn::DataStruct { fields, .. }) => {
+                within_variant(None, fields);
+            },
+            syn::Data::Enum(syn::DataEnum { variants, .. }) => {
+                for variant in variants {
+                    within_variant(Some(variant), &variant.fields);
+                }
+            }
+            syn::Data::Union(syn::DataUnion { fields, .. }) => {
+                let fields = syn::Fields::Named(fields.clone());
+                within_variant(None, &fields);
+            }
+        }
+    }
+
+    fn for_with_variant<F>(&self, mut call: F)
+    where F: FnMut(&ExpansionContext, &WithinVariant)
+    {
+        let ctx = self;
+        if let Some(wv) = &self.variant {
+            call(ctx, wv);
+        } else {
+            ctx.for_variants(call);
+        }
+    }
+
+    fn variant(&self, why: &dyn Spanned) -> syn::Result<&WithinVariant> {
+        // TODO helper function, maybe ext trait on Spanned, for syn::Error
+        let r = self.variant.as_ref().ok_or_else(|| syn::Error::new(
+            why.span(),
+            "expansion must be within a variant (so, in a repeat group)"
+        ))?;
+        Ok(r)
+    }
+
+    fn syn_variant(&self, why: &dyn Spanned) -> syn::Result<&syn::Variant> {
+        let r = self.variant(why)?
+            .variant.as_ref().ok_or_else(|| syn::Error::new(
+                why.span(),
+                "expansion only valid in enums"
+            ))?;
+        Ok(r)
+    }
+
+
+    fn for_fields<F>(&self, mut call: F)
+    where F: FnMut(&ExpansionContext, &WithinField)
+    {
+        let ctx = self;
+        ctx.for_with_variant(|ctx, variant| {
+            for (index, field) in variant.fields.iter().enumerate() {
+                let index = index.try_into().expect(">=2^32 fields!");
+                let wf = WithinField { field, index };
+                let wf = &wf;
+                let ctx = ExpansionContext { field: Some(wf), ..*ctx };
+                call(&ctx, wf);
+            }
+        })
+    }
+
+    fn field(&self, why: &dyn Spanned) -> syn::Result<&WithinField> {
+        let r = self.field.as_ref().ok_or_else(|| syn::Error::new(
+            why.span(),
+            "expansion must be within a field (so, in a repeat group)"
+        ))?;
+        Ok(r)
+    }
+
+}
+
+impl RepeatedTemplate {
+    fn expand(&self, ctx: &ExpansionContext, out: &mut TokenStream) {
+        match self.over {
+            RO::Variants => ctx.for_variants(
+                |ctx, _variant| self.template.expand(ctx, out)
+            ),
+            RO::Fields => ctx.for_fields(
+                |ctx, _field| self.template.expand(ctx, out)
+            ),
+        }
     }
 }
 
@@ -289,6 +437,8 @@ pub fn derive_adhoc_expand_func_macro(input: TokenStream)
     // of [TokenTree] ?
     let ctx = ExpansionContext {
         top: &input.driver,
+        field: None,
+        variant: None,
     };
     let mut output = TokenStream::new();
     input.template.expand(&ctx, &mut output);

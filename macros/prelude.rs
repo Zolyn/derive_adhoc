@@ -1,5 +1,6 @@
 //! private prelude for proc macro stuff
 
+pub use std::convert::{TryFrom, TryInto};
 pub use std::default::Default;
 
 pub use proc_macro2::{Span, TokenStream, TokenTree};
@@ -10,6 +11,7 @@ pub use syn::Token;
 pub use syn::{braced, parenthesized};
 pub use syn::ext::IdentExt;
 pub use syn::parse::{Parse, ParseStream};
+pub use syn::spanned::Spanned;
 pub use syn::{parse_macro_input, token};
 
 pub use TokenTree as TT;
