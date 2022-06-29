@@ -203,7 +203,7 @@ impl Parse for Subst {
     }
 }
 
-struct SubstContext<'c> {
+struct Context<'c> {
     top: &'c syn::DeriveInput,
     variant: Option<&'c WithinVariant<'c>>,
     field: Option<&'c WithinField<'c>>,
@@ -220,7 +220,7 @@ struct WithinField<'c> {
 }
 
 impl Template {
-    fn expand(&self, ctx: &SubstContext, out: &mut TokenStream) {
+    fn expand(&self, ctx: &Context, out: &mut TokenStream) {
         for element in &self.elements {
             let () = element.expand(ctx, out)
                 .unwrap_or_else(|err| out.extend(err.into_compile_error()));
@@ -236,7 +236,7 @@ impl Template {
 }
 
 impl TemplateElement {
-    fn expand(&self, ctx: &SubstContext, out: &mut TokenStream)
+    fn expand(&self, ctx: &Context, out: &mut TokenStream)
         -> syn::Result<()>
     {
         match self {
@@ -282,7 +282,7 @@ impl Spanned for Subst {
 }
 
 impl Subst {
-    fn expand(&self, ctx: &SubstContext, out: &mut TokenStream)
+    fn expand(&self, ctx: &Context, out: &mut TokenStream)
               -> syn::Result<()>
     {
         match self.ed {
@@ -315,15 +315,15 @@ impl Subst {
     }
 }
 
-impl<'c> SubstContext<'c> {
+impl<'c> Context<'c> {
     fn for_variants<F>(&self, mut call: F)
-    where F: FnMut(&SubstContext, &WithinVariant)
+    where F: FnMut(&Context, &WithinVariant)
     {
         let ctx = self;
         let mut within_variant = |variant, fields| {
             let wv = WithinVariant { variant, fields };
             let wv = &wv;
-            let ctx = SubstContext { variant: Some(wv), ..*ctx };
+            let ctx = Context { variant: Some(wv), ..*ctx };
             call(&ctx, wv);
         };
         match &ctx.top.data {
@@ -343,7 +343,7 @@ impl<'c> SubstContext<'c> {
     }
 
     fn for_with_variant<F>(&self, mut call: F)
-    where F: FnMut(&SubstContext, &WithinVariant)
+    where F: FnMut(&Context, &WithinVariant)
     {
         let ctx = self;
         if let Some(wv) = &self.variant {
@@ -373,7 +373,7 @@ impl<'c> SubstContext<'c> {
 
 
     fn for_fields<F>(&self, mut call: F)
-    where F: FnMut(&SubstContext, &WithinField)
+    where F: FnMut(&Context, &WithinField)
     {
         let ctx = self;
         ctx.for_with_variant(|ctx, variant| {
@@ -381,7 +381,7 @@ impl<'c> SubstContext<'c> {
                 let index = index.try_into().expect(">=2^32 fields!");
                 let wf = WithinField { field, index };
                 let wf = &wf;
-                let ctx = SubstContext { field: Some(wf), ..*ctx };
+                let ctx = Context { field: Some(wf), ..*ctx };
                 call(&ctx, wf);
             }
         })
@@ -398,7 +398,7 @@ impl<'c> SubstContext<'c> {
 }
 
 impl RepeatedTemplate {
-    fn expand(&self, ctx: &SubstContext, out: &mut TokenStream) {
+    fn expand(&self, ctx: &Context, out: &mut TokenStream) {
         match self.over {
             RO::Variants => ctx.for_variants(
                 |ctx, _variant| self.template.expand(ctx, out)
@@ -435,7 +435,7 @@ pub fn derive_adhoc_expand_func_macro(input: TokenStream)
     // maybe we should be using syn::buffer::TokenBuffer ?
     // or Vec<TokenTree>, which we parse into a tree of our own full
     // of [TokenTree] ?
-    let ctx = SubstContext {
+    let ctx = Context {
         top: &input.driver,
         field: None,
         variant: None,
