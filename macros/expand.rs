@@ -77,10 +77,14 @@ struct Expr {
     ed: ExprDetails,
 }
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Display)]
+#[strum(serialize_all = "snake_case")]
 enum ExprDetails {
+    False,
+    True,
 }
 
-//use TemplateExpression as Texpr;
+use ExprDetails as ED;
 
 #[derive(Default)]
 struct RepeatAnalysisVisitor {
@@ -189,13 +193,28 @@ impl Parse for Subst {
             SD::vname
         } else if kw == "fname" {
             SD::fname
+        } else if kw == "when" {
+            SD::when(input.parse()?)
         } else {
-            return Err(syn::Error::new(
-                kw.span(),
-                "unknown expansion item"
-            ))
+            return Err(kw.error("unknown expansion item"));
         };
         Ok(Subst { sd, kw: kw.clone() })
+    }
+}
+
+impl Parse for Expr {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let kw: Ident = input.parse()?;
+
+        // todo: use a macro_rules macro?
+        let ed = if kw == "false" {
+            ED::False
+        } else if kw == "true" {
+            ED::True
+        } else {
+            return Err(kw.error("unknown expression keyword"));
+        };
+        Ok(Expr { ed, kw: kw.clone() })
     }
 }
 
