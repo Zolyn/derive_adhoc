@@ -165,20 +165,7 @@ impl Parse for TemplateElement {
                     let exp = exp.parse()?;
                     TE::Subst(exp)
                 } else if la.peek(token::Paren) {
-                    let template;
-                    let paren = parenthesized!(template in input);
-                    let template: Template = template.parse()?;
-                    let when = vec![]; // todo
-                    let mut visitor = RepeatAnalysisVisitor::default();
-                    template.analyse_repeat(&mut visitor);
-                    match visitor.finish(paren.span) {
-                        Err(el) => TE::Errors(el),
-                        Ok(over) => TE::Repeat(RepeatedTemplate {
-                            over,
-                            template,
-                            when,
-                        }),
-                    }
+                    RepeatedTemplate::parse(input)?
                 } else if la.peek(syn::Ident::peek_any) {
                     let exp: TokenTree = input.parse()?; // get it as TT
                     let exp = syn::parse2(exp.to_token_stream())?;
@@ -418,6 +405,23 @@ impl<'c> Context<'c> {
         Ok(r)
     }
 
+}
+
+impl RepeatedTemplate {
+    fn parse(input: ParseStream) -> syn::Result<TemplateElement> {
+        let template;
+        let paren = parenthesized!(template in input);
+        let template: Template = template.parse()?;
+        let when = vec![];
+        let mut visitor = RepeatAnalysisVisitor::default();
+        template.analyse_repeat(&mut visitor);
+        let over = visitor.finish(paren.span);
+
+        Ok(match over {
+            Ok(over) => TE::Repeat(RepeatedTemplate { over, template, when }),
+            Err(errs) => TE::Errors(errs),
+        })
+    }
 }
 
 impl RepeatedTemplate {
