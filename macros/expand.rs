@@ -37,7 +37,7 @@ enum TemplateElement {
 
 struct RepeatedTemplate {
     template: Template,
-    when: Vec<Expr>,
+    whens: Vec<Expr>,
     over: RepeatOver,
 }
 
@@ -411,14 +411,38 @@ impl RepeatedTemplate {
     fn parse(input: ParseStream) -> syn::Result<TemplateElement> {
         let template;
         let paren = parenthesized!(template in input);
-        let template: Template = template.parse()?;
-        let when = vec![];
+        let mut template: Template = template.parse()?;
+
+        // split `when` (and [todo] `for`) off
+        let mut whens = vec![]; 
+        let mut elements = Vec::with_capacity(template.elements.len());
+        let mut beginning = true;
+        for elem in template.elements.drain(..) {
+            let not_special = match elem {
+                _ if ! beginning    => elem,
+                TE::Pass(_)         => elem,
+
+                TE::Subst(subst) => match subst.sd {
+                    SD::when(when) => { whens.push(when); continue; }
+                    _              => TE::Subst(subst),
+                },
+
+                _                   => { beginning = false; elem }
+            };
+            elements.push(not_special);
+        }
+        template.elements = elements;
+
         let mut visitor = RepeatAnalysisVisitor::default();
         template.analyse_repeat(&mut visitor);
         let over = visitor.finish(paren.span);
 
         Ok(match over {
-            Ok(over) => TE::Repeat(RepeatedTemplate { over, template, when }),
+            Ok(over) => TE::Repeat(RepeatedTemplate {
+                over,
+                template,
+                whens,
+            }),
             Err(errs) => TE::Errors(errs),
         })
     }
