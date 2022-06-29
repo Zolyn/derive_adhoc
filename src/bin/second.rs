@@ -73,6 +73,7 @@ fn main(){
     derive_adhoc!{
         ChannelsParams:
         $(
+            ${when true}
             println!("field name {:?}", stringify!($fname));
         )
     }

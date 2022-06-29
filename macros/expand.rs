@@ -184,7 +184,7 @@ impl Parse for TemplateElement {
 
 impl Parse for Subst {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let kw: Ident = input.parse()?;
+        let kw = input.call(syn::Ident::parse_any)?;
 
         // todo: use a macro_rules macro?
         let sd = if kw == "tname" {
@@ -204,7 +204,7 @@ impl Parse for Subst {
 
 impl Parse for Expr {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let kw: Ident = input.parse()?;
+        let kw = input.call(syn::Ident::parse_any)?;
 
         // todo: use a macro_rules macro?
         let ed = if kw == "false" {
@@ -222,7 +222,7 @@ impl Expr {
     fn eval_bool(&self, _ctx: &Context) -> syn::Result<bool> {
         let r = match self.ed {
             ED::False => false,
-            ED::True => false,
+            ED::True => true,
         };
         Ok(r)
     }
