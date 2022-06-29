@@ -69,4 +69,11 @@ $(
 
 fn main(){
     let _: K = ChannelsParams::default();
+
+    derive_adhoc!{
+        ChannelsParams:
+        $(
+            println!("field name {:?}", stringify!($fname));
+        )
+    }
 }
