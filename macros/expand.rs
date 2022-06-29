@@ -37,6 +37,7 @@ enum TemplateElement {
 
 struct RepeatedTemplate {
     template: Template,
+    when: Vec<Expr>,
     over: RepeatOver,
 }
 
@@ -52,6 +53,7 @@ enum SubstDetails {
     tname,
     vname,
     fname,
+    when(Expr),
 }
 
 use SubstDetails as SD;
@@ -70,7 +72,12 @@ struct RepeatOverInference {
     span: Span,
 }
 
-enum TemplateExpression {
+struct Expr {
+    kw: Ident,
+    ed: ExprDetails,
+}
+
+enum ExprDetails {
 }
 
 //use TemplateExpression as Texpr;
@@ -161,6 +168,7 @@ impl Parse for TemplateElement {
                     let template;
                     let paren = parenthesized!(template in input);
                     let template: Template = template.parse()?;
+                    let when = vec![]; // todo
                     let mut visitor = RepeatAnalysisVisitor::default();
                     template.analyse_repeat(&mut visitor);
                     match visitor.finish(paren.span) {
@@ -168,6 +176,7 @@ impl Parse for TemplateElement {
                         Ok(over) => TE::Repeat(RepeatedTemplate {
                             over,
                             template,
+                            when,
                         }),
                     }
                 } else if la.peek(syn::Ident::peek_any) {
@@ -285,7 +294,7 @@ impl Subst {
     fn expand(&self, ctx: &Context, out: &mut TokenStream)
               -> syn::Result<()>
     {
-        match self.sd {
+        match &self.sd {
             SD::tname => ctx.top.ident.to_tokens(out),
             SD::vname => ctx.syn_variant(self)?.ident.to_tokens(out),
             SD::fname => {
@@ -298,6 +307,7 @@ impl Subst {
                         .to_tokens(out);
                 }
             },
+            SD::when(when) => when.unfiltered_when(out),
         };
         Ok(())
     }
@@ -307,11 +317,24 @@ impl Subst {
             SD::tname => None,
             SD::vname => Some(RO::Variants),
             SD::fname => Some(RO::Fields),
+            SD::when(_) => None, // out-of-place when, ignore it
         };
         if let Some(over) = over {
             let over = RepeatOverInference { over, span: self.kw.span() };
             visitor.set_over(over);
         }
+    }
+}
+
+impl Spanned for Expr {
+    fn span(&self) -> Span {
+        self.kw.span()
+    }
+}
+
+impl Expr {
+    fn unfiltered_when(&self, out: &mut TokenStream) {
+        out.write_error(self, "${when } only allowed in toplevel of $( )");
     }
 }
 

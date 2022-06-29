@@ -6,6 +6,7 @@ use prelude::*;
 mod capture;
 mod expand;
 mod invocation;
+mod utils;
 
 // This calls the actual template engine
 #[proc_macro]
