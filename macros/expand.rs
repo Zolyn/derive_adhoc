@@ -60,7 +60,14 @@ struct Subst {
 #[allow(non_camel_case_types)] // clearer to use the exact ident
 #[derive(Debug)]
 // TODO: it might be good to separate this into separate enums for
-// conditions and substitutions?
+// conditions and substitutions? -nickm
+// I don't think so.  I unified these because the following places
+// wanted to treat them very similarly:
+//   - parsing
+//   - iteration inspection
+//   - attribute recursive descent matching
+// Keeping them a single type avoids us making weird syntactic
+// wrinkles (and may help avoid semantic wrinkles).
 enum SubstDetails {
     // variables
     tname,
