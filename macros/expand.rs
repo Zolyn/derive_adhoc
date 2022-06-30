@@ -64,6 +64,7 @@ enum SubstDetails {
     tname,
     vname,
     fname,
+    ftype,
 
     // attributes
     tattr(SubstAttr),
@@ -276,6 +277,7 @@ impl Parse for Subst {
         keyword! { tname }
         keyword! { vname }
         keyword! { fname }
+        keyword! { ftype }
 
         keyword! { tattr(input.parse()?) }
         keyword! { vattr(input.parse()?) }
@@ -437,6 +439,10 @@ impl Subst {
                     }
                     .to_tokens(out);
                 }
+            }
+            SD::ftype => {
+                let f = ctx.field(self)?;
+                f.field.ty.to_tokens(out);
             }
             SD::tattr(wa) => wa.expand(ctx, out, &ctx.tattrs)?,
             SD::when(when) => when.unfiltered_when(out),
