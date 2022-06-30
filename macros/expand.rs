@@ -59,6 +59,8 @@ struct Subst {
 
 #[allow(non_camel_case_types)] // clearer to use the exact ident
 #[derive(Debug)]
+// TODO: it might be good to separate this into separate enums for
+// conditions and substitutions?
 enum SubstDetails {
     // variables
     tname,
@@ -452,7 +454,9 @@ impl Subst {
             }
             SD::tattr(wa) => wa.expand(ctx, out, &ctx.tattrs)?,
             SD::when(when) => when.unfiltered_when(out),
-            _ => self.not_expansion(out),
+            SD::fattr(_) => todo!(),
+            SD::vattr(_) => todo!(),
+            SD::False | SD::True | SD::not(_) => self.not_expansion(out),
         };
         Ok(())
     }
@@ -460,12 +464,15 @@ impl Subst {
     fn analyse_repeat(&self, visitor: &mut RepeatAnalysisVisitor) {
         let over = match self.sd {
             SD::tname => None,
+            SD::tattr(_) => None,
             SD::ttype => None,
             SD::vname => Some(RO::Variants),
+            SD::vattr(_) => Some(RO::Variants),
             SD::fname => Some(RO::Fields),
             SD::ftype => Some(RO::Fields),
+            SD::fattr(_) => Some(RO::Fields),
             SD::when(_) => None, // out-of-place when, ignore it
-            _ => None,           // out of place condition ignore it
+            SD::False | SD::True | SD::not(_) => None, // condition: ignore.
         };
         if let Some(over) = over {
             let over = RepeatOverInference {
