@@ -2,6 +2,7 @@
 
 use crate::prelude::*;
 
+#[derive(Debug)]
 struct SubstInput {
     brace_token: token::Brace,
     driver: syn::DeriveInput,
@@ -22,10 +23,12 @@ impl Parse for SubstInput {
     }
 }
 
+#[derive(Debug)]
 struct Template {
     elements: Vec<TemplateElement>,
 }
 
+#[derive(Debug)]
 enum TemplateElement {
     Pass(TokenTree),
     Group {
@@ -39,6 +42,7 @@ enum TemplateElement {
     Errors(Vec<syn::Error>),
 }
 
+#[derive(Debug)]
 struct RepeatedTemplate {
     template: Template,
     whens: Vec<Box<Subst>>,
@@ -47,12 +51,14 @@ struct RepeatedTemplate {
 
 use TemplateElement as TE;
 
+#[derive(Debug)]
 struct Subst {
     kw: Ident,
     sd: SubstDetails,
 }
 
 #[allow(non_camel_case_types)] // clearer to use the exact ident
+#[derive(Debug)]
 enum SubstDetails {
     // variables
     tname,
@@ -75,6 +81,7 @@ enum SubstDetails {
 
 use SubstDetails as SD;
 
+#[derive(Debug,Clone)]
 struct SubstAttr {
     path: syn::Path, // nonempty segments
     deeper: Option<Box<SubstAttr>>,
@@ -89,6 +96,7 @@ impl Spanned for SubstAttr {
 // Parses (foo,bar(baz),zonk="value")
 // Like NestedMeta but doesn't allow lit, since we forbid #[adhoc("some")]
 // And discards the paren and the `ahoc` introducer
+#[derive(Debug,Clone)]
 struct AdhocAttrList {
     meta: Punctuated<syn::Meta, token::Comma>,
 }
@@ -102,12 +110,13 @@ enum RepeatOver {
 
 use RepeatOver as RO;
 
+#[derive(Debug,Clone)]
 struct RepeatOverInference {
     over: RepeatOver,
     span: Span,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug,Clone)]
 struct RepeatAnalysisVisitor {
     over: Option<RepeatOverInference>,
     errors: Vec<syn::Error>,
@@ -307,6 +316,7 @@ impl Subst {
     }
 }
 
+#[derive(Debug,Clone)]
 struct Context<'c> {
     top: &'c syn::DeriveInput,
     tattrs: &'c PreprocessedAttrs,
@@ -315,12 +325,14 @@ struct Context<'c> {
     pvariants: &'c [PreprocessedVariant<'c>],
 }
 
+#[derive(Debug,Clone)]
 struct PreprocessedVariant<'f> {
     fields: &'f syn::Fields,
     pattrs: PreprocessedAttrs,
     pfields: Vec<PreprocessedField>,
 }
 
+#[derive(Debug,Clone)]
 struct PreprocessedField {
     pattrs: PreprocessedAttrs,
 }
@@ -328,6 +340,7 @@ struct PreprocessedField {
 type PreprocessedAttr = syn::Meta;
 type PreprocessedAttrs = Vec<PreprocessedAttr>;
 
+#[derive(Debug,Clone)]
 struct WithinVariant<'c> {
     variant: Option<&'c syn::Variant>,
     fields: &'c syn::Fields,
@@ -335,6 +348,7 @@ struct WithinVariant<'c> {
     pfields: &'c [PreprocessedField],
 }
 
+#[derive(Debug,Clone)]
 struct WithinField<'c> {
     field: &'c syn::Field,
     pfield: &'c PreprocessedField,

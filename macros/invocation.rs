@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+#[derive(Debug,Clone)]
 struct TemplateInvocation {
     driver: syn::Path,
     colon: Token![:],
