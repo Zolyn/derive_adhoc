@@ -2,12 +2,12 @@ $fname
 $vname
 $tname
 
-$tattr(...)
-$vattr(...)
-$fattr(...)
+${tattr(...)}
+${vattr(...)}
+${fattr(...)}
 # like this
-$tattr(name)
-$tattr(name(in(depth)))
+${tattr(name)}
+${tattr(name(in(depth)))}
 # ^ mirrors #[derive(adhoc(name(in(depth))))]
 
 $keyword
