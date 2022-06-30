@@ -259,7 +259,13 @@ impl Parse for Subst {
         if kw == "false" { return from_sd(SD::False) }
         if kw == "true"  { return from_sd(SD::True ) }
 
-        keyword!{ not(input.parse()?) }
+        keyword!{
+            not {
+                let inner;
+                let _paren = parenthesized!(inner in input);
+            }
+            (inner.parse()?)
+        }
 
         return Err(kw.error("unknown derive-adhoc keyword"));
     }
