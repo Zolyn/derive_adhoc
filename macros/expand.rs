@@ -119,13 +119,14 @@ impl RepeatAnalysisVisitor {
             None => self.over = Some(over),
             Some(already) => {
                 if &already.over != &over.over {
+                    let already_over = already.over.clone();
                     self.errors([
                         syn::Error::new(
                             over.span,
                             format!(
                                 "inconsistent repetition depth: \
                          firstly, {} inferred here",
-                                already.over,
+                                already_over,
                             ),
                         ),
                         syn::Error::new(
