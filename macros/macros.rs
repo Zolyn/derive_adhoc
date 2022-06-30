@@ -4,6 +4,7 @@ mod prelude;
 use prelude::*;
 
 mod capture;
+mod definition;
 mod expand;
 mod invocation;
 mod utils;
@@ -26,6 +27,17 @@ pub fn derive_adhoc(
 ) -> proc_macro::TokenStream {
     let input = TokenStream::from(input);
     let output = invocation::derive_adhoc_func_macro(input)
+        .unwrap_or_else(|e| e.into_compile_error());
+    output.into()
+}
+
+// This is define_derive_adhoc!, the invocation macro
+#[proc_macro]
+pub fn define_derive_adhoc(
+    input: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
+    let input = TokenStream::from(input);
+    let output = definition::define_derive_adhoc_func_macro(input)
         .unwrap_or_else(|e| e.into_compile_error());
     output.into()
 }
