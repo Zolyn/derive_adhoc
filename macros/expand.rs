@@ -81,9 +81,16 @@ enum SubstDetails {
     False,
     True,
     not(Box<Subst>),
-    // Implementated as a series of test/result pairs.  The test that
-    // gives "true" short-circuits the rest.
-    If(Vec<(Subst, TemplateElement)>),
+    If(SubstIf),
+}
+
+#[derive(Debug)]
+struct SubstIf {
+    // A series of test/result pairs.  The test that gives "true"
+    // short-circuits the rest.
+    tests: Vec<(Subst, TemplateElement)>,
+    // A final element to expand if all tests fail.
+    otherwise: Option<Box<TemplateElement>>,
 }
 
 use SubstDetails as SD;
@@ -299,39 +306,7 @@ impl Parse for Subst {
             return from_sd(SD::True);
         }
         if kw == "if" {
-            let mut tests = Vec::new();
-            while !input.is_empty() {
-                let condition = input.parse()?;
-                if !input.peek(token::Brace) {
-                    return Err(input.error("Expected a open-brace"));
-                }
-                let consequence = input.parse()?;
-                tests.push((condition, consequence));
-
-                if input.peek(Token![else]) {
-                    let _else: Token![else] = input.parse()?;
-                    let la = input.lookahead1();
-                    if la.peek(Token![if]) {
-                        let _if: Token![if] = input.parse()?;
-                        // got an else if: continue to the next iteration.
-                    } else if la.peek(token::Brace) {
-                        // This is the final else condition.
-                        let condition = from_sd(SD::True)?;
-                        let consequence = input.parse()?;
-                        tests.push((condition, consequence));
-                        break;
-                    } else {
-                        return Err(la.error());
-                    }
-                } else {
-                    // no more conditions if there is not an else.
-                    break;
-                }
-            }
-            // Q: What ensures that there are no unhandled
-            // tokens left for us?
-
-            return from_sd(SD::If(tests));
+            return from_sd(SD::If(input.parse()?));
         }
 
         keyword! {
@@ -343,6 +318,73 @@ impl Parse for Subst {
         }
 
         return Err(kw.error("unknown derive-adhoc keyword"));
+    }
+}
+
+impl Parse for SubstIf {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let mut tests = Vec::new();
+        let mut otherwise = None;
+        while !input.is_empty() {
+            let condition = input.parse()?;
+            if !input.peek(token::Brace) {
+                return Err(input.error("Expected a open-brace"));
+            }
+            let consequence = input.parse()?;
+            tests.push((condition, consequence));
+
+            if input.peek(Token![else]) {
+                let _else: Token![else] = input.parse()?;
+                let la = input.lookahead1();
+                if la.peek(Token![if]) {
+                    let _if: Token![if] = input.parse()?;
+                    // got an else if: continue to the next iteration.
+                } else if la.peek(token::Brace) {
+                    // This is the final else condition.
+                    let consequence = input.parse()?;
+                    otherwise = Some(consequence);
+                    break;
+                } else {
+                    return Err(la.error());
+                }
+            } else {
+                // no more conditions if there is not an else.
+                break;
+            }
+        }
+        // Q: What ensures that there are no unhandled
+        // tokens left for us?
+
+        return Ok(SubstIf { tests, otherwise });
+    }
+}
+
+impl SubstIf {
+    fn expand(&self, ctx: &Context, out: &mut TokenStream) -> syn::Result<()> {
+        for (condition, consequence) in &self.tests {
+            dbg!(&condition);
+            if condition.eval_bool(ctx)? {
+                dbg!(&consequence);
+                consequence.expand(ctx, out)?;
+                return Ok(());
+            }
+        }
+        if let Some(consequence) = &self.otherwise {
+            dbg!(&consequence);
+            consequence.expand(ctx, out)?;
+        }
+        Ok(())
+    }
+
+    fn analyse_repeat(&self, visitor: &mut RepeatAnalysisVisitor) {
+        for (cond, _) in &self.tests {
+            cond.analyse_repeat(visitor);
+            // TODO: diziet says not to recurse into the consequent
+            // bodies.  Not sure why; let's document.
+        }
+        if let Some(consequence) = &self.otherwise {
+            consequence.analyse_repeat(visitor);
+        }
     }
 }
 
@@ -515,16 +557,7 @@ impl Subst {
             }
 
             SD::when(when) => when.unfiltered_when(out),
-            SD::If(conds) => {
-                for (condition, consequence) in conds {
-                    dbg!(&condition);
-                    if condition.eval_bool(ctx)? {
-                        dbg!(&consequence);
-                        consequence.expand(ctx, out)?;
-                        break;
-                    }
-                }
-            }
+            SD::If(conds) => conds.expand(ctx, out)?,
             SD::False | SD::True | SD::not(_) => self.not_expansion(out),
         };
         Ok(())
@@ -546,11 +579,7 @@ impl Subst {
                 None
             }
             SD::If(conds) => {
-                for (cond, _) in conds {
-                    cond.analyse_repeat(visitor);
-                    // TODO: diziet says not to recurse into the consequent
-                    // bodies.  Not sure why; let's document.
-                }
+                conds.analyse_repeat(visitor);
                 None
             }
             SD::False | SD::True => None, // condition: ignore.
