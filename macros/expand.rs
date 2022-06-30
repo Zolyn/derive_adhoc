@@ -371,14 +371,8 @@ impl Parse for SubstIf {
             if input.is_empty() {
                 // no more conditions if there is not an "else"
                 break;
-            } else {
-                let lookahead = input.lookahead1();
-                if lookahead.peek(Token![else]) {
-                    let _else: Token![else] = input.parse()?;
-                } else {
-                    return Err(lookahead.error());
-                }
             }
+            let _else: Token![else] = input.parse()?;
 
             let lookahead = input.lookahead1();
             if lookahead.peek(Token![if]) {
