@@ -627,20 +627,20 @@ impl<'c> Context<'c> {
         Ok(())
     }
 
-    fn variant(&self, why: &dyn Spanned) -> syn::Result<&WithinVariant> {
+    fn variant(&self, why: &dyn JustSpanned) -> syn::Result<&WithinVariant> {
         // TODO helper function, maybe ext trait on Spanned, for syn::Error
         let r = self.variant.as_ref().ok_or_else(|| {
             syn::Error::new(
-                why.span(),
+                why.jspan(),
                 "expansion must be within a variant (so, in a repeat group)",
             )
         })?;
         Ok(r)
     }
 
-    fn syn_variant(&self, why: &dyn Spanned) -> syn::Result<&syn::Variant> {
+    fn syn_variant(&self, why: &dyn JustSpanned) -> syn::Result<&syn::Variant> {
         let r = self.variant(why)?.variant.as_ref().ok_or_else(|| {
-            syn::Error::new(why.span(), "expansion only valid in enums")
+            syn::Error::new(why.jspan(), "expansion only valid in enums")
         })?;
         Ok(r)
     }

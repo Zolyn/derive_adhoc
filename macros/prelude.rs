@@ -20,4 +20,5 @@ pub use void::{Void, ResultVoidErrExt as _, ResultVoidExt as _};
 
 pub use TokenTree as TT;
 
+pub use crate::utils::{JustSpanned};
 pub use crate::utils::{SpannedExt as _, TokenStreamExt as _};

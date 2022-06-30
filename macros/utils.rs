@@ -15,3 +15,14 @@ pub trait TokenStreamExt: Extend<TokenStream> {
 }
 
 impl<T: Extend<TokenStream>> TokenStreamExt for T {}
+
+/// Like Spanned but not ToTokens
+pub trait JustSpanned {
+    fn jspan(&self) -> Span;
+}
+
+impl<T: Spanned> JustSpanned for T {
+    fn jspan(&self) -> Span {
+        Spanned::span(self)
+    }
+}
