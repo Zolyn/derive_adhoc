@@ -14,41 +14,42 @@ struct DataType {
 }
 
 define_derive_adhoc!{
-    MyDebug on struct =
-        impl Debug for $ttype
-            where $(${if fattr(debug::skip) {
-                    } elseif fattr(debug::into {
-                       &$ftype : Into<${attr::debug::into as ty}> +
-                       ${attr::debug::into as ty} : Debug +
-                    } else {
-                       $ftype: Debug +
-                    }
-                  }) // [1]
+    MyDebug =
+
+    impl Debug for $ttype
+    where $(
+        ${if fattr(debug::skip) {
+        } else if fattr(debug(into)) {
+            & $ftype : Into<${attr(debug(into)) as ty}> +
+                ${attr::debug::into as ty} : Debug,
+        } else {
+            $ftype: Debug,
+        }}
+      ) // [1]
+    {
+        fn debug(&self, f: &mut Formatter<'_>)
+                 -> Result<(), Error>
         {
-            fn debug(&self, f: &mut Formatter<'_>) -> Result<(), Error> : std::hash::Hasher>(&self, state: &mut H) {
-                f.debug_struct(stringify!($typename))
-                $(${if fattr(debug::skip) {
-                    } elseif fattr(debug::info) {
-                        .field(stringify!($fname),
-                               <${fattr::debug::into as ty}} as From<&$ftype>>::from(&self.field)
+            f.debug_struct(stringify!($typename))
+                $(
+                    ${if fattr(debug(skip)) {
+                    } elseif fattr(debug(into)) {
+              .field(stringify!($fname),
+       < ${fattr(debug(into)) as ty} as From<&$ftype>>::from(&self.field))
                     } else {
-                        .field(stringify($fname), &self.$fname)
-                    }
-                })   // [1]
-                    .finish()
-            }
-            }
+              .field(stringify($fname), &self.$fname)
+                    }}
+                )
+                .finish()
         }
+    }
 }
-
-// [1] I'm leaving out the "*" from $()* here, but it seems pretty
-// magical to me.
-
 
 // Expands to...
 
+/*
 impl Debug for DataType
-    where u8: Debug +
+    where u8: Debug,
           &Vec<String>: Into<PrettyVec>,
           PrettyVec: Debug
 {
@@ -59,3 +60,4 @@ impl Debug for DataType
             .finish()
     }
 }
+*/
