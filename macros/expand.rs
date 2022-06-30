@@ -325,33 +325,37 @@ impl Parse for SubstIf {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let mut tests = Vec::new();
         let mut otherwise = None;
+
+        if input.is_empty() {
+            return Err(input.error("'if' must have at least one condition"));
+        }
+
         while !input.is_empty() {
             let condition = input.parse()?;
-            if !input.peek(token::Brace) {
-                return Err(input.error("Expected a open-brace"));
-            }
-            let consequence = input.parse()?;
+            let content;
+            let _br = braced![ content in input ];
+            let consequence = content.parse()?;
             tests.push((condition, consequence));
 
-            if input.peek(Token![else]) {
-                let _else: Token![else] = input.parse()?;
-                let la = input.lookahead1();
-                if la.peek(Token![if]) {
-                    let _if: Token![if] = input.parse()?;
-                    // got an else if: continue to the next iteration.
-                } else if la.peek(token::Brace) {
-                    // This is the final else condition.
-                    let consequence = input.parse()?;
-                    otherwise = Some(consequence);
-                    break;
-                } else {
-                    return Err(la.error());
-                }
-            } else {
-                // no more conditions if there is not an else.
+            let else_tok: Option<Token![else]> = input.parse()?;
+            if else_tok.is_none() {
+                // no more conditions if there is not an "else"
                 break;
             }
+            let if_tok: Option<Token![if]> = input.parse()?;
+            if if_tok.is_some() {
+                // got an "else if": continue to the next iteration.
+                continue;
+            }
+
+            // We have an else and only an else.  It's the final
+            // else condition, so we set `otherwise`.
+            let content;
+            let _br = braced![ content in input ];
+            otherwise = Some(content.parse()?);
+            break;
         }
+
         // Q: What ensures that there are no unhandled
         // tokens left for us?
 
