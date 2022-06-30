@@ -69,7 +69,14 @@ enum SubstDetails {
 use SubstDetails as SD;
 
 struct SubstAttr {
-    meta: syn::NestedMeta,
+    path: syn::Path, // nonempty segments
+    deeper: Option<Box<SubstAttr>>,
+}
+
+impl Spanned for SubstAttr {
+    fn span(&self) -> Span {
+        self.path.segments.first().expect("empty path!").span()
+    }
 }
 
 // Parses (foo,bar(baz),zonk="value")
@@ -199,11 +206,24 @@ impl Parse for AdhocAttrList {
 }
 
 impl Parse for SubstAttr {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let meta;
-        let _paren = parenthesized!(meta in input);
-        let meta = meta.parse()?;
-        Ok(SubstAttr { meta })
+    fn parse(outer: ParseStream) -> syn::Result<Self> {
+        let input;
+        let paren = parenthesized!(input in outer);
+        let path = input.call(syn::Path::parse_mod_style)?;
+        if path.segments.is_empty() {
+            return Err(paren.span.error(
+                "adhoc attribute must have nonempty path"
+            ));
+        }
+
+        let deeper = if input.is_empty() {
+            None
+        } else {
+            let deeper = input.parse()?;
+            Some(Box::new(deeper))
+        };
+
+        Ok(SubstAttr { path, deeper })
     }
 }
 
@@ -273,7 +293,8 @@ struct PreprocessedField {
     pattrs: PreprocessedAttrs,
 }
 
-type PreprocessedAttrs = Vec<syn::Meta>;
+type PreprocessedAttr = syn::Meta;
+type PreprocessedAttrs = Vec<PreprocessedAttr>;
 
 struct WithinVariant<'c> {
     variant: Option<&'c syn::Variant>,
@@ -367,7 +388,7 @@ impl Subst {
                         .to_tokens(out);
                 }
             },
-//            SD::tattr(wa) => wa.expand(&ctx.driver.attrs),
+            SD::tattr(wa) => wa.expand(ctx,out, &ctx.tattrs)?,
             SD::when(when) => when.unfiltered_when(out),
             _ => self.not_expansion(out),
         };
@@ -400,6 +421,101 @@ impl Subst {
         )
     }
 }
+
+enum Todo { }
+
+enum AttrValue<'l> {
+    Unit,
+    Deeper,
+    Lit(&'l syn::Lit),
+}
+
+use AttrValue as AV;
+
+impl SubstAttr {
+    fn expand(&self, _ctx: &Context, out: &mut TokenStream,
+              pattrs: &PreprocessedAttrs) -> syn::Result<()> {
+        let mut found = None;
+
+        self.search(pattrs, &mut |av: AttrValue| {
+            if found.is_some() {
+                return Err(self.error(
+ "tried to expand just attribute value, but it was specified multiple times"
+                ));
+            }
+            let mut buf = TokenStream::new();
+            av.expand(self.span(), &mut buf)?;
+            found = Some(buf);
+            Ok(())
+        })?;
+
+        let found = found.ok_or_else(|| self.error(
+ "attribute value expanded, but no value in data structure definition"
+        ))?;
+
+        out.extend(found);
+        Ok(())
+    }
+
+    fn search<'a,A,F,E>(&self, pattrs: A, f: &mut F) -> Result<(),E>
+    where F: FnMut(AttrValue<'a>) -> Result<(),E>,
+          A: IntoIterator<Item=&'a PreprocessedAttr>
+    {    
+        for pattr in pattrs {
+            self.search_1(pattr, &mut *f)?;
+        }
+        Ok(())
+    }
+
+    fn search_1<'a,E,F>(&self,
+                        pattr: &'a PreprocessedAttr,
+                        f: &mut F,
+                        ) -> Result<(),E>
+    where F: FnMut(AttrValue<'a>) -> Result<(),E>
+    {
+        #[allow(non_camel_case_types)]
+        use syn::Meta as sM;
+
+        if pattr.path() != &self.path { return Ok(()) }
+
+        match (&self.deeper, pattr) {
+            (None, sM::Path(_)) => f(AV::Unit)?,
+            (None, sM::List(_)) => f(AV::Deeper)?,
+            (None, sM::NameValue(nv)) => f(AV::Lit(&nv.lit))?,
+            (Some(_), sM::NameValue(_)) => { },
+            (Some(_), sM::Path(_)) => { }, // self is deeper than pattr
+            (Some(d), sM::List(l)) => {
+                for nm in &l.nested {
+                    let  m = match nm {
+                        syn::NestedMeta::Meta(m) => m,
+                        syn::NestedMeta::Lit(_) => continue,
+                    };
+                    d.search_1(m, &mut *f)?;
+                }
+            },
+        }
+        Ok(())
+    }
+}
+
+
+
+impl<'l> AttrValue<'l> {
+    fn expand(&self, span: Span, out: &mut TokenStream) -> syn::Result<()> {
+        let lit = match self {
+            AttrValue::Unit => return Err(span.error(
+ "tried to expand attribute which is just a unit, not a literal"
+            )),
+            AttrValue::Deeper => return Err(span.error(
+ "tried to expand attribute which is nested list, not a value",
+            )),
+            AttrValue::Lit(lit) => lit,
+        };
+        lit.to_tokens(out);
+        Ok(())
+    }
+}
+                
 
 impl<'c> Context<'c> {
     fn for_variants<F>(&self, mut call: F)
