@@ -55,6 +55,9 @@ enum SubstDetails {
     vname,
     fname,
 
+    // attributes
+    tattr(SubstAttr),
+
     // special
     when(Box<Subst>),
 
@@ -64,6 +67,10 @@ enum SubstDetails {
 }
 
 use SubstDetails as SD;
+
+struct SubstAttr {
+    meta: syn::Meta,
+}
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Display)]
 #[strum(serialize_all = "snake_case")]
@@ -175,6 +182,15 @@ impl Parse for TemplateElement {
     }
 }
 
+impl Parse for SubstAttr {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let meta;
+        let _paren = parenthesized!(meta in input);
+        let meta = meta.parse()?;
+        Ok(SubstAttr { meta })
+    }
+}
+
 impl Parse for Subst {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let kw = input.call(syn::Ident::parse_any)?;
@@ -198,6 +214,8 @@ impl Parse for Subst {
         keyword!{ tname }
         keyword!{ vname }
         keyword!{ fname }
+
+        keyword!{ tattr(input.parse()?) }
 
         keyword!{ when(input.parse()?) }
 
