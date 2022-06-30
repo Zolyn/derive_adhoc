@@ -16,9 +16,9 @@ pub use syn::spanned::Spanned;
 pub use syn::Token;
 pub use syn::{braced, parenthesized};
 pub use syn::{parse_macro_input, token};
-pub use void::{Void, ResultVoidErrExt as _, ResultVoidExt as _};
+pub use void::{ResultVoidErrExt as _, ResultVoidExt as _, Void};
 
 pub use TokenTree as TT;
 
-pub use crate::utils::{JustSpanned};
+pub use crate::utils::JustSpanned;
 pub use crate::utils::{JustSpannedExt as _, TokenStreamExt as _};

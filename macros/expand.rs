@@ -81,7 +81,7 @@ enum SubstDetails {
 
 use SubstDetails as SD;
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 struct SubstAttr {
     path: syn::Path, // nonempty segments
     deeper: Option<Box<SubstAttr>>,
@@ -96,7 +96,7 @@ impl Spanned for SubstAttr {
 // Parses (foo,bar(baz),zonk="value")
 // Like NestedMeta but doesn't allow lit, since we forbid #[adhoc("some")]
 // And discards the paren and the `ahoc` introducer
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 struct AdhocAttrList {
     meta: Punctuated<syn::Meta, token::Comma>,
 }
@@ -110,13 +110,13 @@ enum RepeatOver {
 
 use RepeatOver as RO;
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 struct RepeatOverInference {
     over: RepeatOver,
     span: Span,
 }
 
-#[derive(Default, Debug,Clone)]
+#[derive(Default, Debug, Clone)]
 struct RepeatAnalysisVisitor {
     over: Option<RepeatOverInference>,
     errors: Vec<syn::Error>,
@@ -316,7 +316,7 @@ impl Subst {
     }
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 struct Context<'c> {
     top: &'c syn::DeriveInput,
     tattrs: &'c PreprocessedAttrs,
@@ -325,14 +325,14 @@ struct Context<'c> {
     pvariants: &'c [PreprocessedVariant<'c>],
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 struct PreprocessedVariant<'f> {
     fields: &'f syn::Fields,
     pattrs: PreprocessedAttrs,
     pfields: Vec<PreprocessedField>,
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 struct PreprocessedField {
     pattrs: PreprocessedAttrs,
 }
@@ -340,7 +340,7 @@ struct PreprocessedField {
 type PreprocessedAttr = syn::Meta;
 type PreprocessedAttrs = Vec<PreprocessedAttr>;
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 struct WithinVariant<'c> {
     variant: Option<&'c syn::Variant>,
     fields: &'c syn::Fields,
@@ -348,7 +348,7 @@ struct WithinVariant<'c> {
     pfields: &'c [PreprocessedField],
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 struct WithinField<'c> {
     field: &'c syn::Field,
     pfield: &'c PreprocessedField,
@@ -579,9 +579,9 @@ impl<'l> AttrValue<'l> {
 }
 
 impl<'c> Context<'c> {
-    fn for_variants<F, E>(&self, mut call: F) -> Result<(),E>
+    fn for_variants<F, E>(&self, mut call: F) -> Result<(), E>
     where
-        F: FnMut(&Context, &WithinVariant) -> Result<(),E>,
+        F: FnMut(&Context, &WithinVariant) -> Result<(), E>,
     {
         let ctx = self;
         let mut within_variant = |variant, pvariant: &PreprocessedVariant| {
@@ -614,9 +614,9 @@ impl<'c> Context<'c> {
         Ok(())
     }
 
-    fn for_with_variant<F, E>(&self, mut call: F) -> Result<(),E>
+    fn for_with_variant<F, E>(&self, mut call: F) -> Result<(), E>
     where
-        F: FnMut(&Context, &WithinVariant) -> Result<(),E>,
+        F: FnMut(&Context, &WithinVariant) -> Result<(), E>,
     {
         let ctx = self;
         if let Some(wv) = &self.variant {
@@ -638,16 +638,19 @@ impl<'c> Context<'c> {
         Ok(r)
     }
 
-    fn syn_variant(&self, why: &dyn JustSpanned) -> syn::Result<&syn::Variant> {
+    fn syn_variant(
+        &self,
+        why: &dyn JustSpanned,
+    ) -> syn::Result<&syn::Variant> {
         let r = self.variant(why)?.variant.as_ref().ok_or_else(|| {
             syn::Error::new(why.jspan(), "expansion only valid in enums")
         })?;
         Ok(r)
     }
 
-    fn for_fields<F, E>(&self, mut call: F) -> Result<(),E>
+    fn for_fields<F, E>(&self, mut call: F) -> Result<(), E>
     where
-        F: FnMut(&Context, &WithinField) -> Result<(),E>,
+        F: FnMut(&Context, &WithinField) -> Result<(), E>,
     {
         let ctx = self;
         ctx.for_with_variant(|ctx, variant| {
@@ -732,17 +735,14 @@ impl RepeatedTemplate {
 impl RepeatedTemplate {
     fn expand(&self, ctx: &Context, out: &mut TokenStream) {
         match self.over {
-            RO::Variants => {
-                ctx.for_variants(|ctx, _variant| Ok::<_,Void>(
-                    self.expand_inner(ctx, out)
-                ))
-            }
-            RO::Fields => {
-                ctx.for_fields(|ctx, _field| Ok::<_,Void>(
-                    self.expand_inner(ctx, out)
-                ))
-            }
-        }.void_unwrap()
+            RO::Variants => ctx.for_variants(|ctx, _variant| {
+                Ok::<_, Void>(self.expand_inner(ctx, out))
+            }),
+            RO::Fields => ctx.for_fields(|ctx, _field| {
+                Ok::<_, Void>(self.expand_inner(ctx, out))
+            }),
+        }
+        .void_unwrap()
     }
 
     /// private, does the condition
