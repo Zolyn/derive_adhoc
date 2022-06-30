@@ -178,24 +178,33 @@ impl Parse for TemplateElement {
 impl Parse for Subst {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let kw = input.call(syn::Ident::parse_any)?;
+        let from_sd = |sd| Ok(Subst { sd, kw: kw.clone() });
 
-        // todo: use a macro_rules macro?
-        let sd = if kw == "tname" {
-            SD::tname
-        } else if kw == "vname" {
-            SD::vname
-        } else if kw == "fname" {
-            SD::fname
-        } else if kw == "when" {
-            SD::when(input.parse()?)
-        } else if kw == "false" {
-            SD::False
-        } else if kw == "true" {
-            SD::True
-        } else{
-            return Err(kw.error("unknown derive-adhoc keyword"));
-        };
-        Ok(Subst { sd, kw: kw.clone() })
+        // keyword!{ KEYWORD [ {BLOCK WITH BINDINGS} ] [ CONSTRUCTOR-ARGS ] }
+        // expands to   if ... { return ... }
+        macro_rules! keyword {
+            { $kw:ident $( $ca:tt )? } => { keyword!{ @ $kw { } $( $ca )? } };
+            { $kw:ident { $( $bindings:tt )* } $ca:tt } => {
+                keyword!{ @ $kw { $( $bindings )* } $ca }
+            };
+            { @ $kw:ident { $( $bindings:tt )* } $( $constr_args:tt )? } => {
+                if kw == stringify!($kw) {
+                    $( $bindings )*
+                    return from_sd(SD::$kw $( $constr_args )*);
+                }
+            };
+        }
+
+        keyword!{ tname }
+        keyword!{ vname }
+        keyword!{ fname }
+
+        keyword!{ when(input.parse()?) }
+
+        if kw == "false" { return from_sd(SD::False) }
+        if kw == "true"  { return from_sd(SD::True ) }
+
+        return Err(kw.error("unknown derive-adhoc keyword"));
     }
 }
 
