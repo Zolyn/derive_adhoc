@@ -64,6 +64,7 @@ enum SubstDetails {
     // expressions
     False,
     True,
+    not(Box<Subst>),
 }
 
 use SubstDetails as SD;
@@ -258,15 +259,18 @@ impl Parse for Subst {
         if kw == "false" { return from_sd(SD::False) }
         if kw == "true"  { return from_sd(SD::True ) }
 
+        keyword!{ not(input.parse()?) }
+
         return Err(kw.error("unknown derive-adhoc keyword"));
     }
 }
 
 impl Subst {
-    fn eval_bool(&self, _ctx: &Context) -> syn::Result<bool> {
-        let r = match self.sd {
+    fn eval_bool(&self, ctx: &Context) -> syn::Result<bool> {
+        let r = match &self.sd {
             SD::False => false,
             SD::True => true,
+            SD::not(v) => ! v.eval_bool(ctx)?,
             _ => return Err(self.kw.error(
      "derive-adhoc keyword is an expansion - not valid as a condition"
             )),
