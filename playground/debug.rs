@@ -3,15 +3,8 @@
 
 // Read "Hash" first for more discussion.
 
-#[derive(Adhoc)]
-#[derive_adhoc(MyDebug)]
-struct DataType {
-    foo: u8,
-    #[adhoc(debug(into="PrettyVec"))]
-    bar: Vec<String>,
-    #[adhoc(debug(skip))]
-    opaque: Opaque,
-}
+use derive_adhoc_macros::define_derive_adhoc;
+use derive_adhoc_macros::{derive_adhoc, derive_adhoc_expand, Adhoc};
 
 define_derive_adhoc!{
     MyDebug =
@@ -21,7 +14,7 @@ define_derive_adhoc!{
         ${if fattr(debug::skip) {
         } else if fattr(debug(into)) {
             & $ftype : Into<${attr(debug(into)) as ty}> +
-                ${attr::debug::into as ty} : Debug,
+                ${attr(debug(into)) as ty} : Debug,
         } else {
             $ftype: Debug,
         }}
@@ -30,12 +23,13 @@ define_derive_adhoc!{
         fn debug(&self, f: &mut Formatter<'_>)
                  -> Result<(), Error>
         {
-            f.debug_struct(stringify!($typename))
+            f.debug_struct(stringify!($tname))
                 $(
                     ${if fattr(debug(skip)) {
-                    } elseif fattr(debug(into)) {
+                    } else if fattr(debug(into)) {
               .field(stringify!($fname),
-       < ${fattr(debug(into)) as ty} as From<&$ftype>>::from(&self.field))
+       < ${fattr(debug(into)) as ty} as From<&$ftype> >::from(&self.field)
+              )
                     } else {
               .field(stringify($fname), &self.$fname)
                     }}
@@ -43,6 +37,16 @@ define_derive_adhoc!{
                 .finish()
         }
     }
+}
+
+#[derive(Adhoc)]
+#[derive_adhoc(MyDebug)]
+struct DataType {
+    foo: u8,
+    #[adhoc(debug(into="PrettyVec"))]
+    bar: Vec<String>,
+    #[adhoc(debug(skip))]
+    opaque: Opaque,
 }
 
 // Expands to...
