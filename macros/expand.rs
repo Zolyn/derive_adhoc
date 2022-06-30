@@ -68,7 +68,15 @@ struct Subst {
 //   - iteration inspection
 //   - attribute recursive descent matching
 // Keeping them a single type avoids us making weird syntactic
-// wrinkles (and may help avoid semantic wrinkles).
+// wrinkles (and may help avoid semantic wrinkles). -Diziet
+//
+// Hrm, actually, compare
+//     ${if fattr(foo) { ...
+//     ${fattr(foo) as ty}
+// and this demonstrates different parsing.  We want to forbid
+//     ${if fattr(foo) as ty { ...
+// and right now that is a bit funny.
+
 enum SubstDetails {
     // variables
     tname,
@@ -112,11 +120,30 @@ use SubstDetails as SD;
 
 #[derive(Debug, Clone)]
 struct SubstAttr {
+    path: SubstAttrPath,
+    as_: Option<SubstAttrAs>,
+    as_span: Span,
+}
+
+#[derive(Debug, Clone, AsRefStr, EnumIter)]
+#[allow(non_camel_case_types)] // clearer to use the exact ident
+enum SubstAttrAs {
+    lit,
+}
+
+#[derive(Debug, Clone)]
+struct SubstAttrPath {
     path: syn::Path, // nonempty segments
-    deeper: Option<Box<SubstAttr>>,
+    deeper: Option<Box<SubstAttrPath>>,
 }
 
 impl Spanned for SubstAttr {
+    fn span(&self) -> Span {
+        self.path.span()
+    }
+}
+
+impl Spanned for SubstAttrPath {
     fn span(&self) -> Span {
         self.path.segments.first().expect("empty path!").span()
     }
@@ -261,6 +288,30 @@ impl Parse for AdhocAttrList {
 }
 
 impl Parse for SubstAttr {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let path: SubstAttrPath = input.parse()?;
+
+        let as_;
+        let as_span;
+
+        if input.peek(Token![as]) {
+            let _: Token![as] = input.parse()?;
+            let kw = input.call(syn::Ident::parse_any)?;
+            as_span = kw.span();
+            as_ = Some(SubstAttrAs::iter().find(|as_| kw == as_)
+                       .ok_or_else(|| kw.error(
+                           "unknown derive-adhoc 'as' syntax type keyword"
+                       ))?);
+        } else {
+            as_ = None;
+            as_span = path.span();
+        }
+        
+        Ok(SubstAttr { path, as_, as_span })
+    }
+}
+
+impl Parse for SubstAttrPath {
     fn parse(outer: ParseStream) -> syn::Result<Self> {
         let input;
         let paren = parenthesized!(input in outer);
@@ -278,7 +329,7 @@ impl Parse for SubstAttr {
             Some(Box::new(deeper))
         };
 
-        Ok(SubstAttr { path, deeper })
+        Ok(SubstAttrPath { path, deeper })
     }
 }
 
@@ -436,12 +487,12 @@ impl Subst {
         // TODO this is calling out for some generic stuff
         macro_rules! eval_attr { { $wa:expr, $for:ident, $($pattrs:tt)* } => {
             is_found(ctx.$for(|_ctx, within| {
-                $wa.search_eval_bool(&within . $($pattrs)*)
+                $wa.path.search_eval_bool(&within . $($pattrs)*)
             }))
         } }
 
         let r = match &self.sd {
-            SD::tattr(wa) => is_found(wa.search_eval_bool(ctx.tattrs)),
+            SD::tattr(wa) => is_found(wa.path.search_eval_bool(ctx.tattrs)),
             SD::vattr(wa) => eval_attr!{ wa, for_variants, pattrs },
             SD::fattr(wa) => eval_attr!{ wa, for_fields, pfield.pattrs },
             SD::is_enum => matches!(ctx.top.data, syn::Data::Enum(_)),
@@ -688,7 +739,7 @@ impl SubstAttr {
     ) -> syn::Result<()> {
         let mut found = None;
 
-        self.search(pattrs, &mut |av: AttrValue| {
+        self.path.search(pattrs, &mut |av: AttrValue| {
             if found.is_some() {
                 return Err(self.error(
  "tried to expand just attribute value, but it was specified multiple times"
@@ -709,7 +760,9 @@ impl SubstAttr {
         out.extend(found);
         Ok(())
     }
+}
 
+impl SubstAttrPath {
     fn search_eval_bool(
         &self,
         pattrs: &PreprocessedAttrs,
