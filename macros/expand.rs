@@ -90,6 +90,9 @@ enum SubstDetails {
     not(Box<Subst>),
     any(Punctuated<Subst, token::Comma>),
     all(Punctuated<Subst, token::Comma>),
+    is_enum,
+
+    // Conditional substitution.
     If(SubstIf),
 }
 
@@ -301,6 +304,7 @@ impl Parse for Subst {
         keyword! { vname }
         keyword! { fname }
         keyword! { ftype }
+        keyword! { is_enum }
 
         keyword! { tattr(input.parse()?) }
         keyword! { vattr(input.parse()?) }
@@ -440,6 +444,7 @@ impl Subst {
             SD::tattr(wa) => is_found(wa.search_eval_bool(&&ctx.tattrs)),
             SD::vattr(wa) => eval_attr!{ wa, for_variants, pattrs },
             SD::fattr(wa) => eval_attr!{ wa, for_fields, pfield.pattrs },
+            SD::is_enum => matches!(ctx.top.data, syn::Data::Enum(_)),
 
             SD::False => false,
             SD::True => true,
@@ -603,7 +608,7 @@ impl Subst {
 
             SD::when(when) => when.unfiltered_when(out),
             SD::If(conds) => conds.expand(ctx, out)?,
-            SD::False | SD::True | SD::not(_) | SD::any(_) | SD::all(_) => self.not_expansion(out),
+            SD::is_enum | SD::False | SD::True | SD::not(_) | SD::any(_) | SD::all(_) => self.not_expansion(out),
         };
         Ok(())
     }
@@ -613,6 +618,7 @@ impl Subst {
             SD::tname => None,
             SD::tattr(_) => None,
             SD::ttype => None,
+            SD::is_enum => None,
             SD::vname => Some(RO::Variants),
             SD::vattr(_) => Some(RO::Variants),
             SD::fname => Some(RO::Fields),
