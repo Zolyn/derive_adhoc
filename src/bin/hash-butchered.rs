@@ -14,9 +14,9 @@ struct DataType {
     bar: Vec<String>,
 }
 
-derive_adhoc!{
+derive_adhoc! {
     DataType:
-    
+
     impl Hash for $ttype
     where $( ${when not(fattr(hash(skip)))}
              $ftype : Hash + )
@@ -41,7 +41,6 @@ fn main() {
 }
 
 // [1] The "for struct" syntax here means that only structs are supported.
-
 
 // This should expand to:
 /*
@@ -74,4 +73,3 @@ impl Hash for IntPair
 // [3] Note that the "impl..where .. {}" generation here is completely magical.
 //    It needs to add the <S,T> after the impl,
 //    and it needs to add S:Debug and T:Debug.
-
