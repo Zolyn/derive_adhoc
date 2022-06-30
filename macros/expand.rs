@@ -92,6 +92,8 @@ enum SubstDetails {
     all(Punctuated<Subst, token::Comma>),
     is_enum,
 
+    // Explicit iteration
+    For(RepeatedTemplate),
     // Conditional substitution.
     If(SubstIf),
 }
@@ -235,7 +237,7 @@ impl Parse for TemplateElement {
                     let exp = exp.parse()?;
                     TE::Subst(exp)
                 } else if la.peek(token::Paren) {
-                    RepeatedTemplate::parse(input)?
+                    RepeatedTemplate::parse_in_parens(input)?
                 } else if la.peek(syn::Ident::peek_any) {
                     let exp: TokenTree = input.parse()?; // get it as TT
                     let exp = syn::parse2(exp.to_token_stream())?;
@@ -320,6 +322,9 @@ impl Parse for Subst {
         }
         if kw == "if" {
             return from_sd(SD::If(input.parse()?));
+        }
+        if kw == "for" {
+            return from_sd(SD::For(RepeatedTemplate::parse_for(input)?));
         }
 
         keyword! {
@@ -609,6 +614,7 @@ impl Subst {
             SD::when(when) => when.unfiltered_when(out),
             SD::If(conds) => conds.expand(ctx, out)?,
             SD::is_enum | SD::False | SD::True | SD::not(_) | SD::any(_) | SD::all(_) => self.not_expansion(out),
+            SD::For(repeat) => repeat.expand(ctx, out),
         };
         Ok(())
     }
@@ -637,6 +643,8 @@ impl Subst {
                 conds.iter().for_each(|c| c.analyse_repeat(visitor));
                 None
             }
+            // Has a RepeatOver, but does not imply anything about its context.
+            SD::For(_) => None,
             SD::False | SD::True => None, // condition: ignore.
         };
         if let Some(over) = over {
@@ -879,10 +887,36 @@ impl<'c> Context<'c> {
 }
 
 impl RepeatedTemplate {
-    fn parse(input: ParseStream) -> syn::Result<TemplateElement> {
+    fn parse_in_parens(input: ParseStream) -> syn::Result<TemplateElement> {
         let template;
         let paren = parenthesized!(template in input);
-        let mut template: Template = template.parse()?;
+        match RepeatedTemplate::parse(&template, paren.span, None) {
+            Ok(rt) => Ok(TE::Repeat(rt)),
+            Err(errs) => Ok(TE::Errors(errs)),
+        }
+    }
+
+    fn parse_for(input: ParseStream) -> syn::Result<RepeatedTemplate> {
+        let over: Ident = input.parse()?;
+        let over = if over == "fields" {
+            RepeatOver::Fields
+        } else if over == "variants" {
+            RepeatOver::Variants
+        } else {
+            return Err(over.error("$for must be followed by 'fields' or 'variants'"));
+        };
+        let template;
+        let brace = braced!(template in input);
+        match RepeatedTemplate::parse(&template, brace.span, Some(over)) {
+            Ok(rt) => Ok(rt),
+            // TODO: This discards all errors but one, which is sad.
+            // TODO: This panics if errs is empty.
+            Err(mut errs) => Err(errs.remove(0)),
+        }
+    }
+
+    fn parse(input: ParseStream, span: Span, over: Option<RepeatOver>) -> Result<RepeatedTemplate, Vec<syn::Error>> {
+        let mut template: Template = input.parse().map_err(|e| vec![e])?;
 
         // split `when` (and [todo] `for`) off
         let mut whens = vec![];
@@ -910,18 +944,23 @@ impl RepeatedTemplate {
         }
         template.elements = elements;
 
-        let mut visitor = RepeatAnalysisVisitor::default();
-        template.analyse_repeat(&mut visitor);
-        let over = visitor.finish(paren.span);
+        let over = match over {
+            Some(over) => Ok(over),
+            None => {
+                let mut visitor = RepeatAnalysisVisitor::default();
+                template.analyse_repeat(&mut visitor);
+                visitor.finish(span)
+            }
+        };
 
-        Ok(match over {
-            Ok(over) => TE::Repeat(RepeatedTemplate {
+        match over {
+            Ok(over) => Ok(RepeatedTemplate {
                 over,
                 template,
                 whens,
             }),
-            Err(errs) => TE::Errors(errs),
-        })
+            Err(errs) => Err(errs),
+        }
     }
 }
 
