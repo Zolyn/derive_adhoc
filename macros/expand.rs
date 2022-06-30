@@ -323,14 +323,14 @@ impl Parse for Subst {
                 let inner;
                 let _paren = parenthesized!(inner in input);
             }
-            (Punctuated::parse_terminated(input)?)
+            (Punctuated::parse_terminated(&inner)?)
         }
         keyword! {
             any {
                 let inner;
                 let _paren = parenthesized!(inner in input);
             }
-            (Punctuated::parse_terminated(input)?)
+            (Punctuated::parse_terminated(&inner)?)
         }
         keyword! {
             not {
