@@ -57,6 +57,8 @@ enum SubstDetails {
 
     // attributes
     tattr(SubstAttr),
+    vattr(SubstAttr),
+    fattr(SubstAttr),
 
     // special
     when(Box<Subst>),
@@ -253,6 +255,8 @@ impl Parse for Subst {
         keyword!{ fname }
 
         keyword!{ tattr(input.parse()?) }
+        keyword!{ vattr(input.parse()?) }
+        keyword!{ fattr(input.parse()?) }
 
         keyword!{ when(input.parse()?) }
 
