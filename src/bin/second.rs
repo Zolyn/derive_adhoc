@@ -71,7 +71,7 @@ fn main() {
     derive_adhoc! {
         ChannelsParams:
         $(
-            ${when not(fattr(foo))}
+//            ${when not(fattr(foo))}
             println!("field name {:?}", stringify!($fname));
         )
     }
