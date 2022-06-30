@@ -51,10 +51,6 @@ pub fn define_derive_adhoc_func_macro(
         template,
     } = syn::parse2(input)?;
 
-    //eprintln!("---------- derive_adhoc got start ----------");
-    //eprintln!("{}\n{}", &driver.to_token_stream(), &template);
-    //eprintln!("---------- derive_adhoc got end ----------");
-
     let template = escape_dollars(template);
 
     let mac_name = format_ident!("derive_adhoc_call_{}", &templ_name);
@@ -67,13 +63,17 @@ pub fn define_derive_adhoc_func_macro(
                 $dollar:tt
                 $( $driver:tt )*
             } => {
-                erive_adhoc_expand!{
-                    { $( $driver:tt )* }
+                derive_adhoc_expand!{
+                    { $( $driver )* }
                     # template
                 }
             }
         }
     };
+
+    eprintln!("---------- derive_adhoc_define start ----------");
+    eprintln!("{}", &output);
+    eprintln!("---------- derive_adhoc_define end ----------");
 
     Ok(output)
 }

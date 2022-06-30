@@ -1,5 +1,20 @@
 use crate::prelude::*;
 
+// (CannedName, CannedName, ...)
+struct PrecannedInvocationsAttr {
+    paths: Punctuated<syn::Path, token::Comma>,
+}
+
+impl Parse for PrecannedInvocationsAttr {
+    fn parse(outer: ParseStream) -> syn::Result<Self> {
+        let input;
+        let _paren = parenthesized!(input in outer);
+        let paths = Punctuated::parse_terminated_with
+            (&input, syn::Path::parse_mod_style)?;
+        Ok(PrecannedInvocationsAttr { paths })
+    }
+}
+
 // This is #[derive(Adhoc)]
 pub fn derive_adhoc_derive_macro(
     input: TokenStream,
@@ -15,9 +30,16 @@ pub fn derive_adhoc_derive_macro(
         _ => None,
     };
 
+    let precanned_paths: Vec<syn::Path> = input.attrs.iter().map(|attr| {
+        if ! attr.path.is_ident("derive_adhoc") { return Ok(None) }
+        let tokens = attr.tokens.clone();
+        let PrecannedInvocationsAttr { paths } = syn::parse2(tokens)?;
+        Ok(Some(paths))
+    }).flatten_ok().flatten_ok().collect::<syn::Result<Vec<_>>>()?;
+
     // TODO use a longer name for derive_adhoc_expand so users only
     // have to import the `derive_adhoc` crate.
-    let output = quote! {
+    let mut output = quote! {
         #export
         macro_rules! #mac_name {
             {
@@ -30,6 +52,26 @@ pub fn derive_adhoc_derive_macro(
             }
         }
     };
+
+    for mut path in precanned_paths {
+        if path.segments.is_empty() {
+            return Err(path.leading_colon.as_ref()
+                       .expect("path with no tokens!")
+                       .error("cannot derive_adhoc the empty path!"));
+        }
+        let last = path.segments.last_mut().expect("became empty!");
+        last.ident = format_ident!("derive_adhoc_call_{}", last.ident);
+
+        output.extend(quote! {
+            #path !{
+                $
+                #input
+            }
+        });
+    }
+    eprintln!("---------- derive(Adhoc) start ----------");
+    eprintln!("{}", &output);
+    eprintln!("---------- derive(Adhoc) end ----------");
 
     Ok(output)
 }

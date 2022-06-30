@@ -1028,7 +1028,7 @@ pub fn derive_adhoc_expand_func_macro(
     input.template.expand(&ctx, &mut output);
 
     // obviously nothing should print to stderr
-    dbg!(&&output);
+    //    dbg!(&&output);
     eprintln!("---------- derive_adhoc_expand got start ----------");
     eprintln!("{}", &output);
     eprintln!("---------- derive_adhoc_expand got end ----------");

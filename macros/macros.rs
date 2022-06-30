@@ -56,7 +56,7 @@ pub fn define_derive_adhoc(
 // and then it will perhaps want to do *something* with the attributes?
 // Although maybe just ignoring them and letting them get to the expander
 // is right.
-#[proc_macro_derive(Adhoc, attributes(adhoc))]
+#[proc_macro_derive(Adhoc, attributes(adhoc, derive_adhoc))]
 pub fn derive_adhoc_derive_macro(
     input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
