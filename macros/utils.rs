@@ -1,12 +1,12 @@
 use crate::prelude::*;
 
-pub trait SpannedExt: Spanned {
+pub trait JustSpannedExt: JustSpanned {
     fn error<M: Display>(&self, m: M) -> syn::Error {
-        syn::Error::new(self.span(), m)
+        syn::Error::new(self.jspan(), m)
     }
 }
 
-impl<T: Spanned> SpannedExt for T {}
+impl<T: JustSpanned> JustSpannedExt for T {}
 
 pub trait TokenStreamExt: Extend<TokenStream> {
     fn write_error<S: Spanned, M: Display>(&mut self, s: &S, m: M) {
