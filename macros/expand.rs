@@ -62,6 +62,7 @@ struct Subst {
 enum SubstDetails {
     // variables
     tname,
+    ttype,
     vname,
     fname,
     ftype,
@@ -275,6 +276,7 @@ impl Parse for Subst {
         }
 
         keyword! { tname }
+        keyword! { ttype }
         keyword! { vname }
         keyword! { fname }
         keyword! { ftype }
@@ -426,6 +428,10 @@ impl Subst {
     fn expand(&self, ctx: &Context, out: &mut TokenStream) -> syn::Result<()> {
         match &self.sd {
             SD::tname => ctx.top.ident.to_tokens(out),
+            SD::ttype => {
+                ctx.top.ident.to_tokens(out);
+                ctx.top.generics.to_tokens(out);
+            }
             SD::vname => ctx.syn_variant(self)?.ident.to_tokens(out),
             SD::fname => {
                 let f = ctx.field(self)?;
@@ -454,8 +460,10 @@ impl Subst {
     fn analyse_repeat(&self, visitor: &mut RepeatAnalysisVisitor) {
         let over = match self.sd {
             SD::tname => None,
+            SD::ttype => None,
             SD::vname => Some(RO::Variants),
             SD::fname => Some(RO::Fields),
+            SD::ftype => Some(RO::Fields),
             SD::when(_) => None, // out-of-place when, ignore it
             _ => None,           // out of place condition ignore it
         };
