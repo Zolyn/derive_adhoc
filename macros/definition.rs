@@ -18,6 +18,31 @@ impl Parse for TemplateDefinition {
     }
 }
 
+// Replaces every $ with ${dollar}
+// SRSLY
+fn escape_dollars(input: TokenStream) -> TokenStream {
+    let mut out = TokenStream::new();
+    for tt in input {
+        out.extend([match tt {
+            TT::Group(g) => {
+                let delim = g.delimiter();
+                let span = g.span_open();
+                let stream = g.stream();
+                let stream = escape_dollars(stream);
+                let mut g = proc_macro2::Group::new(delim, stream);
+                g.set_span(span);
+                TT::Group(g)
+            },
+            TT::Punct(p) if p.as_char() == '$' => {
+                out.extend(quote_spanned!{p.span()=> #p dollar });
+                continue;
+            },
+            other => other,
+        }])
+    }
+    out
+}
+
 pub fn define_derive_adhoc_func_macro(
     input: TokenStream,
 ) -> Result<TokenStream, syn::Error> {
@@ -30,10 +55,16 @@ pub fn define_derive_adhoc_func_macro(
     //eprintln!("{}\n{}", &driver.to_token_stream(), &template);
     //eprintln!("---------- derive_adhoc got end ----------");
 
+    let template = escape_dollars(template);
+
     let mac_name = format_ident!("derive_adhoc_call_{}", &templ_name);
+
+    // the macro must recent a dollar as its first argument because
+    // it is hard to find a dollar otherwise!
     let output = quote! {
         macro_rules! #mac_name {
             {
+                $dollar:tt
                 $( $driver:tt )*
             } => {
                 erive_adhoc_expand!{
