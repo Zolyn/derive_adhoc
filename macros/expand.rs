@@ -81,6 +81,9 @@ enum SubstDetails {
     False,
     True,
     not(Box<Subst>),
+    // Implementated as a series of test/result pairs.  The test that
+    // gives "true" short-circuits the rest.
+    If(Vec<(Subst, TemplateElement)>),
 }
 
 use SubstDetails as SD;
@@ -295,6 +298,41 @@ impl Parse for Subst {
         if kw == "true" {
             return from_sd(SD::True);
         }
+        if kw == "if" {
+            let mut tests = Vec::new();
+            while !input.is_empty() {
+                let condition = input.parse()?;
+                if !input.peek(token::Brace) {
+                    return Err(input.error("Expected a open-brace"));
+                }
+                let consequence = input.parse()?;
+                tests.push((condition, consequence));
+
+                if input.peek(Token![else]) {
+                    let _else: Token![else] = input.parse()?;
+                    let la = input.lookahead1();
+                    if la.peek(Token![if]) {
+                        let _if: Token![if] = input.parse()?;
+                        // got an else if: continue to the next iteration.
+                    } else if la.peek(token::Brace) {
+                        // This is the final else condition.
+                        let condition = from_sd(SD::True)?;
+                        let consequence = input.parse()?;
+                        tests.push((condition, consequence));
+                        break;
+                    } else {
+                        return Err(la.error());
+                    }
+                } else {
+                    // no more conditions if there is not an else.
+                    break;
+                }
+            }
+            // Q: What ensures that there are no unhandled
+            // tokens left for us?
+
+            return from_sd(SD::If(tests));
+        }
 
         keyword! {
             not {
@@ -477,13 +515,23 @@ impl Subst {
             }
 
             SD::when(when) => when.unfiltered_when(out),
+            SD::If(conds) => {
+                for (condition, consequence) in conds {
+                    dbg!(&condition);
+                    if condition.eval_bool(ctx)? {
+                        dbg!(&consequence);
+                        consequence.expand(ctx, out)?;
+                        break;
+                    }
+                }
+            }
             SD::False | SD::True | SD::not(_) => self.not_expansion(out),
         };
         Ok(())
     }
 
     fn analyse_repeat(&self, visitor: &mut RepeatAnalysisVisitor) {
-        let over = match self.sd {
+        let over = match &self.sd {
             SD::tname => None,
             SD::tattr(_) => None,
             SD::ttype => None,
@@ -492,8 +540,19 @@ impl Subst {
             SD::fname => Some(RO::Fields),
             SD::ftype => Some(RO::Fields),
             SD::fattr(_) => Some(RO::Fields),
-            SD::when(_) => None, // out-of-place when, ignore it
-            SD::False | SD::True | SD::not(_) => None, // condition: ignore.
+            SD::when(cond) | SD::not(cond) => {
+                cond.analyse_repeat(visitor);
+                None
+            }
+            SD::If(conds) => {
+                for (cond, _) in conds {
+                    cond.analyse_repeat(visitor);
+                    // TODO: diziet says not to recurse into the consequent
+                    // bodies.  Not sure why; let's document.
+                }
+                None
+            }
+            SD::False | SD::True => None, // condition: ignore.
         };
         if let Some(over) = over {
             let over = RepeatOverInference {
