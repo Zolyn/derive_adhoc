@@ -69,7 +69,14 @@ enum SubstDetails {
 use SubstDetails as SD;
 
 struct SubstAttr {
-    meta: syn::Meta,
+    meta: syn::NestedMeta,
+}
+
+// Parses (foo,bar(baz),zonk="value")
+// Like NestedMeta but doesn't allow lit, since we forbid #[adhoc("some")]
+// And discards the paren and the `ahoc` introducer
+struct AdhocAttrList {
+    meta: Punctuated<syn::Meta, token::Comma>,
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Display)]
@@ -182,6 +189,15 @@ impl Parse for TemplateElement {
     }
 }
 
+impl Parse for AdhocAttrList {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let meta;
+        let _paren = parenthesized!(meta in input);
+        let meta = Punctuated::parse_terminated(&meta)?;
+        Ok(AdhocAttrList { meta })
+    }
+}
+
 impl Parse for SubstAttr {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let meta;
@@ -241,17 +257,34 @@ impl Subst {
 
 struct Context<'c> {
     top: &'c syn::DeriveInput,
+    tattrs: &'c PreprocessedAttrs,
     variant: Option<&'c WithinVariant<'c>>,
     field: Option<&'c WithinField<'c>>,
+    pvariants: &'c [PreprocessedVariant<'c>],
 }
+
+struct PreprocessedVariant<'f> {
+    fields: &'f syn::Fields,
+    pattrs: PreprocessedAttrs,
+    pfields: Vec<PreprocessedField>,
+}
+
+struct PreprocessedField {
+    pattrs: PreprocessedAttrs,
+}
+
+type PreprocessedAttrs = Vec<syn::Meta>;
 
 struct WithinVariant<'c> {
     variant: Option<&'c syn::Variant>,
     fields: &'c syn::Fields,
+    pattrs: &'c PreprocessedAttrs,
+    pfields: &'c [PreprocessedField],
 }
 
 struct WithinField<'c> {
     field: &'c syn::Field,
+    pfield: &'c PreprocessedField,
     index: u32,
 }
 
@@ -334,6 +367,7 @@ impl Subst {
                         .to_tokens(out);
                 }
             },
+//            SD::tattr(wa) => wa.expand(&ctx.driver.attrs),
             SD::when(when) => when.unfiltered_when(out),
             _ => self.not_expansion(out),
         };
@@ -372,25 +406,24 @@ impl<'c> Context<'c> {
     where F: FnMut(&Context, &WithinVariant)
     {
         let ctx = self;
-        let mut within_variant = |variant, fields| {
-            let wv = WithinVariant { variant, fields };
+        let mut within_variant = |variant, pvariant: &PreprocessedVariant| {
+            let fields = &pvariant.fields;
+            let pattrs = &pvariant.pattrs;
+            let pfields = &pvariant.pfields;
+            let wv = WithinVariant { variant, fields, pattrs, pfields };
             let wv = &wv;
             let ctx = Context { variant: Some(wv), ..*ctx };
             call(&ctx, wv);
         };
         match &ctx.top.data {
-            syn::Data::Struct(syn::DataStruct { fields, .. }) => {
-                within_variant(None, fields);
-            },
             syn::Data::Enum(syn::DataEnum { variants, .. }) => {
-                for variant in variants {
-                    within_variant(Some(variant), &variant.fields);
+                for (variant, pvariant) in izip!(variants, ctx.pvariants) {
+                    within_variant(Some(variant), pvariant);
                 }
             }
-            syn::Data::Union(syn::DataUnion { fields, .. }) => {
-                let fields = syn::Fields::Named(fields.clone());
-                within_variant(None, &fields);
-            }
+            syn::Data::Struct(_) | syn::Data::Union(_) => {
+                within_variant(None, &ctx.pvariants[0]);
+            },
         }
     }
 
@@ -429,9 +462,12 @@ impl<'c> Context<'c> {
     {
         let ctx = self;
         ctx.for_with_variant(|ctx, variant| {
-            for (index, field) in variant.fields.iter().enumerate() {
+            for (index, (field, pfield)) in izip!(
+                variant.fields,
+                variant.pfields,
+            ).enumerate() {
                 let index = index.try_into().expect(">=2^32 fields!");
-                let wf = WithinField { field, index };
+                let wf = WithinField { field, index, pfield };
                 let wf = &wf;
                 let ctx = Context { field: Some(wf), ..*ctx };
                 call(&ctx, wf);
@@ -515,6 +551,37 @@ impl RepeatedTemplate {
     }
 }
 
+fn preprocess_attrs(attrs: &[syn::Attribute])
+                    -> syn::Result<PreprocessedAttrs> {
+    attrs.iter().filter_map(|attr| {
+        // infallible filtering for attributes we are interested in
+        match attr.style {
+            syn::AttrStyle::Outer => { },
+            syn::AttrStyle::Inner(_) => return None,
+        };
+        if attr.path.leading_colon.is_some() { return None }
+        let segment = attr.path.segments.iter().exactly_one().ok()?;
+        if segment.ident != "adhoc" { return None }
+        Some(attr)
+    }).map(|attr| {
+        let attr: AdhocAttrList = syn::parse2(attr.tokens.clone())?;
+        Ok(attr.meta.into_iter())
+    }).flatten_ok().collect()
+}
+
+fn preprocess_fields(fields: &syn::Fields)
+                     -> syn::Result<Vec<PreprocessedField>> {
+    let fields = match fields {
+        syn::Fields::Named(f) => &f.named,
+        syn::Fields::Unnamed(f) => &f.unnamed,
+        syn::Fields::Unit => return Ok(vec![]),
+    };
+    fields.into_iter().map(|field| {
+        let pattrs = preprocess_attrs(&field.attrs)?;
+        Ok(PreprocessedField { pattrs })
+    }).collect()
+}
+
 // This should implement the actual template engine
 //
 // In my design, the input contains, firstly, literally the definition
@@ -537,13 +604,40 @@ pub fn derive_adhoc_expand_func_macro(input: TokenStream)
     let ident = &input.driver.ident;
     dbg!(&ident);
 
+    let tattrs = preprocess_attrs(&input.driver.attrs)?;
+
+    let pvariants_one = |fields| {
+        let pattrs = vec![];
+        let pfields = preprocess_fields(fields)?;
+        let pvariant = PreprocessedVariant { fields, pattrs, pfields };
+        syn::Result::Ok(vec![ pvariant ])
+    };
+
+    let union_fields;
+
+    let pvariants = match &input.driver.data {
+        syn::Data::Struct(ds) => pvariants_one(&ds.fields)?,
+        syn::Data::Union(du) => {
+            union_fields = syn::Fields::Named(du.fields.clone());
+            pvariants_one(&union_fields)?
+        },
+        syn::Data::Enum(de) => de.variants.iter().map(|variant| {
+            let fields = &variant.fields;
+            let pattrs = preprocess_attrs(&variant.attrs)?;
+            let pfields = preprocess_fields(&variant.fields)?;
+            Ok(PreprocessedVariant { fields, pattrs, pfields })
+        }).collect::<Result<Vec<_>,syn::Error>>()?,
+    };
+
     // maybe we should be using syn::buffer::TokenBuffer ?
     // or Vec<TokenTree>, which we parse into a tree of our own full
     // of [TokenTree] ?
     let ctx = Context {
         top: &input.driver,
+        tattrs: &tattrs,
         field: None,
         variant: None,
+        pvariants: &pvariants,
     };
     let mut output = TokenStream::new();
     input.template.expand(&ctx, &mut output);

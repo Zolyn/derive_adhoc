@@ -4,6 +4,7 @@ version = "0.0.1"
 edition = "2018"
 
 [dependencies]
+itertools = "0.10"
 proc-macro2 = "1"
 quote = "1"
 strum = { version = "0.24", features = ["derive"] }

@@ -12,6 +12,7 @@ pub struct ChannelsParams {
 //    #[field educe(Default(expression = "interim_enable_by_env_var()"))]
     padding_enable: bool,
 
+    #[adhoc(foo)]
     padding_parameters: usize
 }
 
