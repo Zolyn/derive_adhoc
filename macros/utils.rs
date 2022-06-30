@@ -1,4 +1,3 @@
-
 use crate::prelude::*;
 
 pub trait SpannedExt: Spanned {
@@ -7,7 +6,7 @@ pub trait SpannedExt: Spanned {
     }
 }
 
-impl<T: Spanned> SpannedExt for T { }
+impl<T: Spanned> SpannedExt for T {}
 
 pub trait TokenStreamExt: Extend<TokenStream> {
     fn write_error<S: Spanned, M: Display>(&mut self, s: &S, m: M) {
@@ -15,4 +14,4 @@ pub trait TokenStreamExt: Extend<TokenStream> {
     }
 }
 
-impl<T: Extend<TokenStream>> TokenStreamExt for T { }
+impl<T: Extend<TokenStream>> TokenStreamExt for T {}

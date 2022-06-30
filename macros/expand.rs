@@ -14,7 +14,11 @@ impl Parse for SubstInput {
         let brace_token = braced!(driver in input);
         let driver = driver.parse()?;
         let template = input.parse()?;
-        Ok(SubstInput { brace_token, driver, template })
+        Ok(SubstInput {
+            brace_token,
+            driver,
+            template,
+        })
     }
 }
 
@@ -113,24 +117,32 @@ impl RepeatAnalysisVisitor {
     fn set_over(&mut self, over: RepeatOverInference) {
         match &self.over {
             None => self.over = Some(over),
-            Some(already) => if &already.over != &over.over {
-                self.errors([
-                    syn::Error::new(over.span, format!(
-                        "inconsistent repetition depth: \
+            Some(already) => {
+                if &already.over != &over.over {
+                    self.errors([
+                        syn::Error::new(
+                            over.span,
+                            format!(
+                                "inconsistent repetition depth: \
                          firstly, {} inferred here",
-                        already.over,
-                    )),
-                    syn::Error::new(over.span, format!(
-                        "inconsistent repetition depth: \
+                                already.over,
+                            ),
+                        ),
+                        syn::Error::new(
+                            over.span,
+                            format!(
+                                "inconsistent repetition depth: \
                          secondly, {} inferred here",
-                        over.over,
-                    )),
-                ]);
+                                over.over,
+                            ),
+                        ),
+                    ]);
+                }
             }
         }
     }
 
-    fn errors<EL: IntoIterator<Item=syn::Error>>(&mut self, errors: EL) {
+    fn errors<EL: IntoIterator<Item = syn::Error>>(&mut self, errors: EL) {
         if self.errors.is_empty() {
             self.errors.extend(errors)
         }
@@ -140,7 +152,9 @@ impl RepeatAnalysisVisitor {
         use RepeatAnalysisVisitor as RAV;
         match self {
             RAV { errors, .. } if !errors.is_empty() => Err(errors),
-            RAV { over: Some(over), .. } => Ok(over.over),
+            RAV {
+                over: Some(over), ..
+            } => Ok(over.over),
             _ => Err(vec![syn::Error::new(
                 start,
                 "no contained expansion field determined what to repeat here",
@@ -152,7 +166,7 @@ impl RepeatAnalysisVisitor {
 impl Parse for Template {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let mut elements = vec![];
-        while ! input.is_empty() {
+        while !input.is_empty() {
             elements.push(input.parse()?)
         }
         Ok(Template { elements })
@@ -166,15 +180,14 @@ impl Parse for TemplateElement {
                 let delim_span = group.span_open();
                 let delimiter = group.delimiter();
                 let template = syn::parse2(group.stream())?;
-                TE::Group { delim_span, delimiter, template }
-            },
-            tt@ TT::Ident(_) |
-            tt@ TT::Literal(_) => {
-                TE::Pass(tt)
-            },
-            TT::Punct(tok) if tok.as_char() != '$' => {
-                TE::Pass(TT::Punct(tok))
-            },
+                TE::Group {
+                    delim_span,
+                    delimiter,
+                    template,
+                }
+            }
+            tt @ TT::Ident(_) | tt @ TT::Literal(_) => TE::Pass(tt),
+            TT::Punct(tok) if tok.as_char() != '$' => TE::Pass(TT::Punct(tok)),
             TT::Punct(_dollar) => {
                 let la = input.lookahead1();
                 if la.peek(Token![$]) {
@@ -192,9 +205,9 @@ impl Parse for TemplateElement {
                     let exp = syn::parse2(exp.to_token_stream())?;
                     TE::Subst(exp)
                 } else {
-                    return Err(la.error())
+                    return Err(la.error());
                 }
-            },
+            }
         })
     }
 }
@@ -214,9 +227,9 @@ impl Parse for SubstAttr {
         let paren = parenthesized!(input in outer);
         let path = input.call(syn::Path::parse_mod_style)?;
         if path.segments.is_empty() {
-            return Err(paren.span.error(
-                "adhoc attribute must have nonempty path"
-            ));
+            return Err(paren
+                .span
+                .error("adhoc attribute must have nonempty path"));
         }
 
         let deeper = if input.is_empty() {
@@ -250,20 +263,24 @@ impl Parse for Subst {
             };
         }
 
-        keyword!{ tname }
-        keyword!{ vname }
-        keyword!{ fname }
+        keyword! { tname }
+        keyword! { vname }
+        keyword! { fname }
 
-        keyword!{ tattr(input.parse()?) }
-        keyword!{ vattr(input.parse()?) }
-        keyword!{ fattr(input.parse()?) }
+        keyword! { tattr(input.parse()?) }
+        keyword! { vattr(input.parse()?) }
+        keyword! { fattr(input.parse()?) }
 
-        keyword!{ when(input.parse()?) }
+        keyword! { when(input.parse()?) }
 
-        if kw == "false" { return from_sd(SD::False) }
-        if kw == "true"  { return from_sd(SD::True ) }
+        if kw == "false" {
+            return from_sd(SD::False);
+        }
+        if kw == "true" {
+            return from_sd(SD::True);
+        }
 
-        keyword!{
+        keyword! {
             not {
                 let inner;
                 let _paren = parenthesized!(inner in input);
@@ -326,7 +343,8 @@ struct WithinField<'c> {
 impl Template {
     fn expand(&self, ctx: &Context, out: &mut TokenStream) {
         for element in &self.elements {
-            let () = element.expand(ctx, out)
+            let () = element
+                .expand(ctx, out)
                 .unwrap_or_else(|err| out.extend(err.into_compile_error()));
         }
     }
@@ -340,25 +358,27 @@ impl Template {
 }
 
 impl TemplateElement {
-    fn expand(&self, ctx: &Context, out: &mut TokenStream)
-        -> syn::Result<()>
-    {
+    fn expand(&self, ctx: &Context, out: &mut TokenStream) -> syn::Result<()> {
         match self {
             TE::Pass(tt) => out.extend([tt.clone()]),
-            TE::Group { delim_span, delimiter, template } => {
-                use proc_macro2::Group as Group;
+            TE::Group {
+                delim_span,
+                delimiter,
+                template,
+            } => {
+                use proc_macro2::Group;
                 let mut content = TokenStream::new();
                 template.expand(ctx, &mut content);
                 let mut group = Group::new(delimiter.clone(), content);
                 group.set_span(delim_span.clone());
                 out.extend([TT::Group(group)]);
-            },
+            }
             TE::Subst(exp) => {
                 exp.expand(ctx, out)?;
-            },
+            }
             TE::Repeat(repeated_template) => {
                 repeated_template.expand(ctx, out);
-            },
+            }
             TE::Errors(el) => {
                 for e in el {
                     out.extend(e.to_compile_error())
@@ -370,8 +390,8 @@ impl TemplateElement {
 
     fn analyse_repeat(&self, visitor: &mut RepeatAnalysisVisitor) {
         match self {
-            TE::Pass(_) => { }
-            TE::Repeat(_) => { }
+            TE::Pass(_) => {}
+            TE::Repeat(_) => {}
             TE::Group { template, .. } => template.analyse_repeat(visitor),
             TE::Subst(exp) => exp.analyse_repeat(visitor),
             TE::Errors(el) => visitor.errors(el.clone()),
@@ -386,9 +406,7 @@ impl Spanned for Subst {
 }
 
 impl Subst {
-    fn expand(&self, ctx: &Context, out: &mut TokenStream)
-              -> syn::Result<()>
-    {
+    fn expand(&self, ctx: &Context, out: &mut TokenStream) -> syn::Result<()> {
         match &self.sd {
             SD::tname => ctx.top.ident.to_tokens(out),
             SD::vname => ctx.syn_variant(self)?.ident.to_tokens(out),
@@ -398,11 +416,14 @@ impl Subst {
                     // todo is this the right span to emit?
                     fname.to_tokens(out);
                 } else {
-                    syn::Index { index: f.index, span: self.kw.span() }
-                        .to_tokens(out);
+                    syn::Index {
+                        index: f.index,
+                        span: self.kw.span(),
+                    }
+                    .to_tokens(out);
                 }
-            },
-            SD::tattr(wa) => wa.expand(ctx,out, &ctx.tattrs)?,
+            }
+            SD::tattr(wa) => wa.expand(ctx, out, &ctx.tattrs)?,
             SD::when(when) => when.unfiltered_when(out),
             _ => self.not_expansion(out),
         };
@@ -415,10 +436,13 @@ impl Subst {
             SD::vname => Some(RO::Variants),
             SD::fname => Some(RO::Fields),
             SD::when(_) => None, // out-of-place when, ignore it
-            _ => None, // out of place condition ignore it
+            _ => None,           // out of place condition ignore it
         };
         if let Some(over) = over {
-            let over = RepeatOverInference { over, span: self.kw.span() };
+            let over = RepeatOverInference {
+                over,
+                span: self.kw.span(),
+            };
             visitor.set_over(over);
         }
     }
@@ -431,12 +455,12 @@ impl Subst {
     fn not_expansion(&self, out: &mut TokenStream) {
         out.write_error(
             self,
-            "derive-adhoc keyword is a condition - not valid as an expansion"
+            "derive-adhoc keyword is a condition - not valid as an expansion",
         )
     }
 }
 
-enum Todo { }
+enum Todo {}
 
 enum AttrValue<'l> {
     Unit,
@@ -447,8 +471,12 @@ enum AttrValue<'l> {
 use AttrValue as AV;
 
 impl SubstAttr {
-    fn expand(&self, _ctx: &Context, out: &mut TokenStream,
-              pattrs: &PreprocessedAttrs) -> syn::Result<()> {
+    fn expand(
+        &self,
+        _ctx: &Context,
+        out: &mut TokenStream,
+        pattrs: &PreprocessedAttrs,
+    ) -> syn::Result<()> {
         let mut found = None;
 
         self.search(pattrs, &mut |av: AttrValue| {
@@ -463,56 +491,61 @@ impl SubstAttr {
             Ok(())
         })?;
 
-        let found = found.ok_or_else(|| self.error(
+        let found = found.ok_or_else(|| {
+            self.error(
  "attribute value expanded, but no value in data structure definition"
-        ))?;
+        )
+        })?;
 
         out.extend(found);
         Ok(())
     }
 
-    fn search<'a,A,F,E>(&self, pattrs: A, f: &mut F) -> Result<(),E>
-    where F: FnMut(AttrValue<'a>) -> Result<(),E>,
-          A: IntoIterator<Item=&'a PreprocessedAttr>
-    {    
+    fn search<'a, A, F, E>(&self, pattrs: A, f: &mut F) -> Result<(), E>
+    where
+        F: FnMut(AttrValue<'a>) -> Result<(), E>,
+        A: IntoIterator<Item = &'a PreprocessedAttr>,
+    {
         for pattr in pattrs {
             self.search_1(pattr, &mut *f)?;
         }
         Ok(())
     }
 
-    fn search_1<'a,E,F>(&self,
-                        pattr: &'a PreprocessedAttr,
-                        f: &mut F,
-                        ) -> Result<(),E>
-    where F: FnMut(AttrValue<'a>) -> Result<(),E>
+    fn search_1<'a, E, F>(
+        &self,
+        pattr: &'a PreprocessedAttr,
+        f: &mut F,
+    ) -> Result<(), E>
+    where
+        F: FnMut(AttrValue<'a>) -> Result<(), E>,
     {
         #[allow(non_camel_case_types)]
         use syn::Meta as sM;
 
-        if pattr.path() != &self.path { return Ok(()) }
+        if pattr.path() != &self.path {
+            return Ok(());
+        }
 
         match (&self.deeper, pattr) {
             (None, sM::Path(_)) => f(AV::Unit)?,
             (None, sM::List(_)) => f(AV::Deeper)?,
             (None, sM::NameValue(nv)) => f(AV::Lit(&nv.lit))?,
-            (Some(_), sM::NameValue(_)) => { },
-            (Some(_), sM::Path(_)) => { }, // self is deeper than pattr
+            (Some(_), sM::NameValue(_)) => {}
+            (Some(_), sM::Path(_)) => {} // self is deeper than pattr
             (Some(d), sM::List(l)) => {
                 for nm in &l.nested {
-                    let  m = match nm {
+                    let m = match nm {
                         syn::NestedMeta::Meta(m) => m,
                         syn::NestedMeta::Lit(_) => continue,
                     };
                     d.search_1(m, &mut *f)?;
                 }
-            },
+            }
         }
         Ok(())
     }
 }
-
-
 
 impl<'l> AttrValue<'l> {
     fn expand(&self, span: Span, out: &mut TokenStream) -> syn::Result<()> {
@@ -529,20 +562,28 @@ impl<'l> AttrValue<'l> {
         Ok(())
     }
 }
-                
 
 impl<'c> Context<'c> {
     fn for_variants<F>(&self, mut call: F)
-    where F: FnMut(&Context, &WithinVariant)
+    where
+        F: FnMut(&Context, &WithinVariant),
     {
         let ctx = self;
         let mut within_variant = |variant, pvariant: &PreprocessedVariant| {
             let fields = &pvariant.fields;
             let pattrs = &pvariant.pattrs;
             let pfields = &pvariant.pfields;
-            let wv = WithinVariant { variant, fields, pattrs, pfields };
+            let wv = WithinVariant {
+                variant,
+                fields,
+                pattrs,
+                pfields,
+            };
             let wv = &wv;
-            let ctx = Context { variant: Some(wv), ..*ctx };
+            let ctx = Context {
+                variant: Some(wv),
+                ..*ctx
+            };
             call(&ctx, wv);
         };
         match &ctx.top.data {
@@ -553,12 +594,13 @@ impl<'c> Context<'c> {
             }
             syn::Data::Struct(_) | syn::Data::Union(_) => {
                 within_variant(None, &ctx.pvariants[0]);
-            },
+            }
         }
     }
 
     fn for_with_variant<F>(&self, mut call: F)
-    where F: FnMut(&Context, &WithinVariant)
+    where
+        F: FnMut(&Context, &WithinVariant),
     {
         let ctx = self;
         if let Some(wv) = &self.variant {
@@ -570,49 +612,56 @@ impl<'c> Context<'c> {
 
     fn variant(&self, why: &dyn Spanned) -> syn::Result<&WithinVariant> {
         // TODO helper function, maybe ext trait on Spanned, for syn::Error
-        let r = self.variant.as_ref().ok_or_else(|| syn::Error::new(
-            why.span(),
-            "expansion must be within a variant (so, in a repeat group)"
-        ))?;
+        let r = self.variant.as_ref().ok_or_else(|| {
+            syn::Error::new(
+                why.span(),
+                "expansion must be within a variant (so, in a repeat group)",
+            )
+        })?;
         Ok(r)
     }
 
     fn syn_variant(&self, why: &dyn Spanned) -> syn::Result<&syn::Variant> {
-        let r = self.variant(why)?
-            .variant.as_ref().ok_or_else(|| syn::Error::new(
-                why.span(),
-                "expansion only valid in enums"
-            ))?;
+        let r = self.variant(why)?.variant.as_ref().ok_or_else(|| {
+            syn::Error::new(why.span(), "expansion only valid in enums")
+        })?;
         Ok(r)
     }
 
-
     fn for_fields<F>(&self, mut call: F)
-    where F: FnMut(&Context, &WithinField)
+    where
+        F: FnMut(&Context, &WithinField),
     {
         let ctx = self;
         ctx.for_with_variant(|ctx, variant| {
-            for (index, (field, pfield)) in izip!(
-                variant.fields,
-                variant.pfields,
-            ).enumerate() {
+            for (index, (field, pfield)) in
+                izip!(variant.fields, variant.pfields,).enumerate()
+            {
                 let index = index.try_into().expect(">=2^32 fields!");
-                let wf = WithinField { field, index, pfield };
+                let wf = WithinField {
+                    field,
+                    index,
+                    pfield,
+                };
                 let wf = &wf;
-                let ctx = Context { field: Some(wf), ..*ctx };
+                let ctx = Context {
+                    field: Some(wf),
+                    ..*ctx
+                };
                 call(&ctx, wf);
             }
         })
     }
 
     fn field(&self, why: &dyn Spanned) -> syn::Result<&WithinField> {
-        let r = self.field.as_ref().ok_or_else(|| syn::Error::new(
-            why.span(),
-            "expansion must be within a field (so, in a repeat group)"
-        ))?;
+        let r = self.field.as_ref().ok_or_else(|| {
+            syn::Error::new(
+                why.span(),
+                "expansion must be within a field (so, in a repeat group)",
+            )
+        })?;
         Ok(r)
     }
-
 }
 
 impl RepeatedTemplate {
@@ -622,20 +671,26 @@ impl RepeatedTemplate {
         let mut template: Template = template.parse()?;
 
         // split `when` (and [todo] `for`) off
-        let mut whens = vec![]; 
+        let mut whens = vec![];
         let mut elements = Vec::with_capacity(template.elements.len());
         let mut beginning = true;
         for elem in template.elements.drain(..) {
             let not_special = match elem {
-                _ if ! beginning    => elem,
-                TE::Pass(_)         => elem,
+                _ if !beginning => elem,
+                TE::Pass(_) => elem,
 
                 TE::Subst(subst) => match subst.sd {
-                    SD::when(when) => { whens.push(when); continue; }
-                    _              => TE::Subst(subst),
+                    SD::when(when) => {
+                        whens.push(when);
+                        continue;
+                    }
+                    _ => TE::Subst(subst),
                 },
 
-                _                   => { beginning = false; elem }
+                _ => {
+                    beginning = false;
+                    elem
+                }
             };
             elements.push(not_special);
         }
@@ -659,12 +714,12 @@ impl RepeatedTemplate {
 impl RepeatedTemplate {
     fn expand(&self, ctx: &Context, out: &mut TokenStream) {
         match self.over {
-            RO::Variants => ctx.for_variants(
-                |ctx, _variant| self.expand_inner(ctx, out)
-            ),
-            RO::Fields => ctx.for_fields(
-                |ctx, _field| self.expand_inner(ctx, out)
-            ),
+            RO::Variants => {
+                ctx.for_variants(|ctx, _variant| self.expand_inner(ctx, out))
+            }
+            RO::Fields => {
+                ctx.for_fields(|ctx, _field| self.expand_inner(ctx, out))
+            }
         }
     }
 
@@ -674,42 +729,59 @@ impl RepeatedTemplate {
             match when.eval_bool(ctx) {
                 Ok(true) => continue,
                 Ok(false) => return,
-                Err(e) => { out.extend([e.into_compile_error()]); return; }
+                Err(e) => {
+                    out.extend([e.into_compile_error()]);
+                    return;
+                }
             }
         }
         self.template.expand(ctx, out)
     }
 }
 
-fn preprocess_attrs(attrs: &[syn::Attribute])
-                    -> syn::Result<PreprocessedAttrs> {
-    attrs.iter().filter_map(|attr| {
-        // infallible filtering for attributes we are interested in
-        match attr.style {
-            syn::AttrStyle::Outer => { },
-            syn::AttrStyle::Inner(_) => return None,
-        };
-        if attr.path.leading_colon.is_some() { return None }
-        let segment = attr.path.segments.iter().exactly_one().ok()?;
-        if segment.ident != "adhoc" { return None }
-        Some(attr)
-    }).map(|attr| {
-        let attr: AdhocAttrList = syn::parse2(attr.tokens.clone())?;
-        Ok(attr.meta.into_iter())
-    }).flatten_ok().collect()
+fn preprocess_attrs(
+    attrs: &[syn::Attribute],
+) -> syn::Result<PreprocessedAttrs> {
+    attrs
+        .iter()
+        .filter_map(|attr| {
+            // infallible filtering for attributes we are interested in
+            match attr.style {
+                syn::AttrStyle::Outer => {}
+                syn::AttrStyle::Inner(_) => return None,
+            };
+            if attr.path.leading_colon.is_some() {
+                return None;
+            }
+            let segment = attr.path.segments.iter().exactly_one().ok()?;
+            if segment.ident != "adhoc" {
+                return None;
+            }
+            Some(attr)
+        })
+        .map(|attr| {
+            let attr: AdhocAttrList = syn::parse2(attr.tokens.clone())?;
+            Ok(attr.meta.into_iter())
+        })
+        .flatten_ok()
+        .collect()
 }
 
-fn preprocess_fields(fields: &syn::Fields)
-                     -> syn::Result<Vec<PreprocessedField>> {
+fn preprocess_fields(
+    fields: &syn::Fields,
+) -> syn::Result<Vec<PreprocessedField>> {
     let fields = match fields {
         syn::Fields::Named(f) => &f.named,
         syn::Fields::Unnamed(f) => &f.unnamed,
         syn::Fields::Unit => return Ok(vec![]),
     };
-    fields.into_iter().map(|field| {
-        let pattrs = preprocess_attrs(&field.attrs)?;
-        Ok(PreprocessedField { pattrs })
-    }).collect()
+    fields
+        .into_iter()
+        .map(|field| {
+            let pattrs = preprocess_attrs(&field.attrs)?;
+            Ok(PreprocessedField { pattrs })
+        })
+        .collect()
 }
 
 // This should implement the actual template engine
@@ -728,8 +800,9 @@ fn preprocess_fields(fields: &syn::Fields)
 // Eg, how about making a thing where the templater just replaces
 //   $ Struct
 // with the original struct ident.
-pub fn derive_adhoc_expand_func_macro(input: TokenStream)
-                                      -> syn::Result<TokenStream> {
+pub fn derive_adhoc_expand_func_macro(
+    input: TokenStream,
+) -> syn::Result<TokenStream> {
     let input: SubstInput = syn::parse2(input)?;
     let ident = &input.driver.ident;
     dbg!(&ident);
@@ -739,8 +812,12 @@ pub fn derive_adhoc_expand_func_macro(input: TokenStream)
     let pvariants_one = |fields| {
         let pattrs = vec![];
         let pfields = preprocess_fields(fields)?;
-        let pvariant = PreprocessedVariant { fields, pattrs, pfields };
-        syn::Result::Ok(vec![ pvariant ])
+        let pvariant = PreprocessedVariant {
+            fields,
+            pattrs,
+            pfields,
+        };
+        syn::Result::Ok(vec![pvariant])
     };
 
     let union_fields;
@@ -750,13 +827,21 @@ pub fn derive_adhoc_expand_func_macro(input: TokenStream)
         syn::Data::Union(du) => {
             union_fields = syn::Fields::Named(du.fields.clone());
             pvariants_one(&union_fields)?
-        },
-        syn::Data::Enum(de) => de.variants.iter().map(|variant| {
-            let fields = &variant.fields;
-            let pattrs = preprocess_attrs(&variant.attrs)?;
-            let pfields = preprocess_fields(&variant.fields)?;
-            Ok(PreprocessedVariant { fields, pattrs, pfields })
-        }).collect::<Result<Vec<_>,syn::Error>>()?,
+        }
+        syn::Data::Enum(de) => de
+            .variants
+            .iter()
+            .map(|variant| {
+                let fields = &variant.fields;
+                let pattrs = preprocess_attrs(&variant.attrs)?;
+                let pfields = preprocess_fields(&variant.fields)?;
+                Ok(PreprocessedVariant {
+                    fields,
+                    pattrs,
+                    pfields,
+                })
+            })
+            .collect::<Result<Vec<_>, syn::Error>>()?,
     };
 
     // maybe we should be using syn::buffer::TokenBuffer ?

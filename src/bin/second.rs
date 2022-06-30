@@ -1,19 +1,17 @@
-
 // This is a file full of random crap for experimentation.
 //
 // Instead, there should be a POC/MVP test case?, which maybe this is
 // becoming?
 
-use derive_adhoc_macros::{derive_adhoc, Adhoc, derive_adhoc_expand};
+use derive_adhoc_macros::{derive_adhoc, derive_adhoc_expand, Adhoc};
 
-#[derive(Adhoc)]
-#[derive(Debug, Clone, Eq, Default, PartialEq)]
+#[derive(Adhoc, Debug, Clone, Eq, Default, PartialEq)]
 pub struct ChannelsParams {
-//    #[field educe(Default(expression = "interim_enable_by_env_var()"))]
+    //    #[field educe(Default(expression = "interim_enable_by_env_var()"))]
     padding_enable: bool,
 
     #[adhoc(foo)]
-    padding_parameters: usize
+    padding_parameters: usize,
 }
 
 /*
@@ -23,8 +21,8 @@ derive_adhoc_apply_ChannelsParams!{
     #[derive(Debug, Default, Clone, Eq, PartialEq)]
     pub struct ChannelsParamsUpdates {
     $(
-	/// New value, if it has changed.
-	pub(crate) $field: Option<$ty>,
+    /// New value, if it has changed.
+    pub(crate) $field: Option<$ty>,
     )*
 
             thing: &'lifetime T,
@@ -34,7 +32,6 @@ derive_adhoc_apply_ChannelsParams!{
 }
 */
 
-
 // Possible invocation ssyntaxes
 
 /*
@@ -43,7 +40,7 @@ derive_adhoc!{
     type Wombat1 = $ Struct;
 }*/
 
-derive_adhoc!{
+derive_adhoc! {
     ChannelsParams:
     type Wombat = $ tname;
 }
@@ -68,13 +65,13 @@ $(
 }
 */
 
-fn main(){
+fn main() {
     let _: K = ChannelsParams::default();
 
-    derive_adhoc!{
+    derive_adhoc! {
         ChannelsParams:
         $(
-            ${when true}
+            ${when not(fattr(foo))}
             println!("field name {:?}", stringify!($fname));
         )
     }
