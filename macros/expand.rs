@@ -531,7 +531,7 @@ impl Subst {
     }
 
     fn analyse_repeat(&self, visitor: &mut RepeatAnalysisVisitor) {
-        let over = match self.sd {
+        let over = match &self.sd {
             SD::tname => None,
             SD::tattr(_) => None,
             SD::ttype => None,
@@ -540,10 +540,19 @@ impl Subst {
             SD::fname => Some(RO::Fields),
             SD::ftype => Some(RO::Fields),
             SD::fattr(_) => Some(RO::Fields),
-            // TODO: RECURSE.
-            SD::when(_) => None, // out-of-place when, ignore it
-            SD::If(_) => None,
-            SD::False | SD::True | SD::not(_) => None, // condition: ignore.
+            SD::when(cond) | SD::not(cond) => {
+                cond.analyse_repeat(visitor);
+                None
+            }
+            SD::If(conds) => {
+                for (cond, _) in conds {
+                    cond.analyse_repeat(visitor);
+                    // TODO: diziet says not to recurse into the consequent
+                    // bodies.  Not sure why; let's document.
+                }
+                None
+            }
+            SD::False | SD::True => None, // condition: ignore.
         };
         if let Some(over) = over {
             let over = RepeatOverInference {
