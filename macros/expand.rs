@@ -308,11 +308,27 @@ impl Parse for Subst {
     }
 }
 
+struct Found;
+
+fn is_found(r: Result<(), Found>) -> bool { r.is_err() }
+
 impl Subst {
     fn eval_bool(&self, ctx: &Context) -> syn::Result<bool> {
+        // TODO this is calling out for some generic stuff
+        macro_rules! eval_attr { { $wa:expr, $for:ident, $($pattrs:tt)* } => {
+            is_found(ctx.$for(|_ctx, within| {
+                $wa.search_eval_bool(&within . $($pattrs)*)
+            }))
+        } }
+
         let r = match &self.sd {
+            SD::tattr(wa) => is_found(wa.search_eval_bool(&&ctx.tattrs)),
+            SD::vattr(wa) => eval_attr!{ wa, for_variants, pattrs },
+            SD::fattr(wa) => eval_attr!{ wa, for_fields, pfield.pattrs },
+
             SD::False => false,
             SD::True => true,
+
             SD::not(v) => ! v.eval_bool(ctx)?,
             _ => return Err(self.kw.error(
      "derive-adhoc keyword is an expansion - not valid as a condition"
@@ -453,9 +469,10 @@ impl Subst {
                 f.field.ty.to_tokens(out);
             }
             SD::tattr(wa) => wa.expand(ctx, out, &ctx.tattrs)?,
+            SD::vattr(wa) => wa.expand(ctx, out, &ctx.variant(wa)?.pattrs)?,
+            SD::fattr(wa) => wa.expand(ctx, out, &ctx.field(wa)?.pfield.pattrs)?,
+
             SD::when(when) => when.unfiltered_when(out),
-            SD::fattr(_) => todo!(),
-            SD::vattr(_) => todo!(),
             SD::False | SD::True | SD::not(_) => self.not_expansion(out),
         };
         Ok(())
@@ -535,6 +552,12 @@ impl SubstAttr {
 
         out.extend(found);
         Ok(())
+    }
+
+    fn search_eval_bool(&self, pattrs: &PreprocessedAttrs)
+                        -> Result<(), Found>
+    {
+        self.search(pattrs, &mut |_av| /* got it! */ Err(Found))
     }
 
     fn search<'a, A, F, E>(&self, pattrs: A, f: &mut F) -> Result<(), E>
@@ -653,7 +676,7 @@ impl<'c> Context<'c> {
         let r = self.variant.as_ref().ok_or_else(|| {
             syn::Error::new(
                 why.jspan(),
-                "expansion must be within a variant (so, in a repeat group)",
+                "must be within a variant (so, in a repeat group)",
             )
         })?;
         Ok(r)
