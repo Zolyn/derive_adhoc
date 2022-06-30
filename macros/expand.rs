@@ -45,6 +45,7 @@ enum TemplateElement {
 #[derive(Debug)]
 struct RepeatedTemplate {
     template: Template,
+    #[allow(clippy::vec_box)]
     whens: Vec<Box<Subst>>,
     over: RepeatOver,
 }
@@ -155,8 +156,8 @@ impl RepeatAnalysisVisitor {
         match &self.over {
             None => self.over = Some(over),
             Some(already) => {
-                if &already.over != &over.over {
-                    let already_over = already.over.clone();
+                if already.over != over.over {
+                    let already_over = already.over;
                     self.errors([
                         syn::Error::new(
                             over.span,
@@ -349,7 +350,7 @@ impl Parse for Subst {
             (inner.parse()?)
         }
 
-        return Err(kw.error("unknown derive-adhoc keyword"));
+        Err(kw.error("unknown derive-adhoc keyword"))
     }
 }
 
@@ -397,7 +398,7 @@ impl Parse for SubstIf {
         // Q: What ensures that there are no unhandled
         // tokens left for us?
 
-        return Ok(SubstIf { tests, otherwise });
+        Ok(SubstIf { tests, otherwise })
     }
 }
 
@@ -446,7 +447,7 @@ impl Subst {
         } }
 
         let r = match &self.sd {
-            SD::tattr(wa) => is_found(wa.search_eval_bool(&&ctx.tattrs)),
+            SD::tattr(wa) => is_found(wa.search_eval_bool(ctx.tattrs)),
             SD::vattr(wa) => eval_attr!{ wa, for_variants, pattrs },
             SD::fattr(wa) => eval_attr!{ wa, for_fields, pfield.pattrs },
             SD::is_enum => matches!(ctx.top.data, syn::Data::Enum(_)),
@@ -543,8 +544,8 @@ impl TemplateElement {
                 use proc_macro2::Group;
                 let mut content = TokenStream::new();
                 template.expand(ctx, &mut content);
-                let mut group = Group::new(delimiter.clone(), content);
-                group.set_span(delim_span.clone());
+                let mut group = Group::new(*delimiter, content);
+                group.set_span(*delim_span);
                 out.extend([TT::Group(group)]);
             }
             TE::Subst(exp) => {
@@ -605,8 +606,8 @@ impl Subst {
                 let f = ctx.field(self)?;
                 f.field.ty.to_tokens(out);
             }
-            SD::tattr(wa) => wa.expand(ctx, out, &ctx.tattrs)?,
-            SD::vattr(wa) => wa.expand(ctx, out, &ctx.variant(wa)?.pattrs)?,
+            SD::tattr(wa) => wa.expand(ctx, out, ctx.tattrs)?,
+            SD::vattr(wa) => wa.expand(ctx, out, ctx.variant(wa)?.pattrs)?,
             SD::fattr(wa) => {
                 wa.expand(ctx, out, &ctx.field(wa)?.pfield.pattrs)?
             }
@@ -741,7 +742,7 @@ impl SubstAttr {
     where
         F: FnMut(AttrValue<'a>) -> Result<(), E>,
     {
-        #[allow(non_camel_case_types)]
+        #![allow(non_camel_case_types)]
         use syn::Meta as sM;
 
         if pattr.path() != &self.path {
@@ -977,6 +978,9 @@ impl RepeatedTemplate {
 
 impl RepeatedTemplate {
     fn expand(&self, ctx: &Context, out: &mut TokenStream) {
+        // TODO(nickm): Clippy thinks that this Void stuff is
+        // gratuituous, but I don't understand it.
+        #[allow(clippy::unit_arg)]
         match self.over {
             RO::Variants => ctx.for_variants(|ctx, _variant| {
                 Ok::<_, Void>(self.expand_inner(ctx, out))
@@ -1127,5 +1131,5 @@ pub fn derive_adhoc_expand_func_macro(
     eprintln!("---------- derive_adhoc_expand got start ----------");
     eprintln!("{}", &output);
     eprintln!("---------- derive_adhoc_expand got end ----------");
-    Ok(output.into())
+    Ok(output)
 }
