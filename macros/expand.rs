@@ -540,7 +540,8 @@ impl Subst {
             SD::fname => Some(RO::Fields),
             SD::ftype => Some(RO::Fields),
             SD::fattr(_) => Some(RO::Fields),
-            SD::when(cond) | SD::not(cond) => {
+            SD::when(_) => None, // out-of-place when, ignore it
+            SD::not(cond) => {
                 cond.analyse_repeat(visitor);
                 None
             }
