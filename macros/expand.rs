@@ -37,7 +37,7 @@ enum TemplateElement {
 
 struct RepeatedTemplate {
     template: Template,
-    whens: Vec<Expr>,
+    whens: Vec<Box<Subst>>,
     over: RepeatOver,
 }
 
@@ -50,10 +50,17 @@ struct Subst {
 
 #[allow(non_camel_case_types)] // clearer to use the exact ident
 enum SubstDetails {
+    // variables
     tname,
     vname,
     fname,
-    when(Expr),
+
+    // special
+    when(Box<Subst>),
+
+    // expressions
+    False,
+    True,
 }
 
 use SubstDetails as SD;
@@ -71,20 +78,6 @@ struct RepeatOverInference {
     over: RepeatOver,
     span: Span,
 }
-
-struct Expr {
-    kw: Ident,
-    ed: ExprDetails,
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Display)]
-#[strum(serialize_all = "snake_case")]
-enum ExprDetails {
-    False,
-    True,
-}
-
-use ExprDetails as ED;
 
 #[derive(Default)]
 struct RepeatAnalysisVisitor {
@@ -195,34 +188,25 @@ impl Parse for Subst {
             SD::fname
         } else if kw == "when" {
             SD::when(input.parse()?)
-        } else {
-            return Err(kw.error("unknown expansion item"));
+        } else if kw == "false" {
+            SD::False
+        } else if kw == "true" {
+            SD::True
+        } else{
+            return Err(kw.error("unknown derive-adhoc keyword"));
         };
         Ok(Subst { sd, kw: kw.clone() })
     }
 }
 
-impl Parse for Expr {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let kw = input.call(syn::Ident::parse_any)?;
-
-        // todo: use a macro_rules macro?
-        let ed = if kw == "false" {
-            ED::False
-        } else if kw == "true" {
-            ED::True
-        } else {
-            return Err(kw.error("unknown expression keyword"));
-        };
-        Ok(Expr { ed, kw: kw.clone() })
-    }
-}
-
-impl Expr {
+impl Subst {
     fn eval_bool(&self, _ctx: &Context) -> syn::Result<bool> {
-        let r = match self.ed {
-            ED::False => false,
-            ED::True => true,
+        let r = match self.sd {
+            SD::False => false,
+            SD::True => true,
+            _ => return Err(self.kw.error(
+     "derive-adhoc keyword is an expansion - not valid as a condition"
+            )),
         };
         Ok(r)
     }
@@ -324,6 +308,7 @@ impl Subst {
                 }
             },
             SD::when(when) => when.unfiltered_when(out),
+            _ => self.not_expansion(out),
         };
         Ok(())
     }
@@ -334,6 +319,7 @@ impl Subst {
             SD::vname => Some(RO::Variants),
             SD::fname => Some(RO::Fields),
             SD::when(_) => None, // out-of-place when, ignore it
+            _ => None, // out of place condition ignore it
         };
         if let Some(over) = over {
             let over = RepeatOverInference { over, span: self.kw.span() };
@@ -342,15 +328,15 @@ impl Subst {
     }
 }
 
-impl Spanned for Expr {
-    fn span(&self) -> Span {
-        self.kw.span()
-    }
-}
-
-impl Expr {
+impl Subst {
     fn unfiltered_when(&self, out: &mut TokenStream) {
         out.write_error(self, "${when } only allowed in toplevel of $( )");
+    }
+    fn not_expansion(&self, out: &mut TokenStream) {
+        out.write_error(
+            self,
+            "derive-adhoc keyword is a condition - not valid as an expansion"
+        )
     }
 }
 
