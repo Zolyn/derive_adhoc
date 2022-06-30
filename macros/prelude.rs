@@ -16,6 +16,7 @@ pub use syn::spanned::Spanned;
 pub use syn::Token;
 pub use syn::{braced, parenthesized};
 pub use syn::{parse_macro_input, token};
+pub use void::{Void, ResultVoidErrExt as _, ResultVoidExt as _};
 
 pub use TokenTree as TT;
 

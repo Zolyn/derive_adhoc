@@ -565,9 +565,9 @@ impl<'l> AttrValue<'l> {
 }
 
 impl<'c> Context<'c> {
-    fn for_variants<F>(&self, mut call: F)
+    fn for_variants<F, E>(&self, mut call: F) -> Result<(),E>
     where
-        F: FnMut(&Context, &WithinVariant),
+        F: FnMut(&Context, &WithinVariant) -> Result<(),E>,
     {
         let ctx = self;
         let mut within_variant = |variant, pvariant: &PreprocessedVariant| {
@@ -585,30 +585,32 @@ impl<'c> Context<'c> {
                 variant: Some(wv),
                 ..*ctx
             };
-            call(&ctx, wv);
+            call(&ctx, wv)
         };
         match &ctx.top.data {
             syn::Data::Enum(syn::DataEnum { variants, .. }) => {
                 for (variant, pvariant) in izip!(variants, ctx.pvariants) {
-                    within_variant(Some(variant), pvariant);
+                    within_variant(Some(variant), pvariant)?;
                 }
             }
             syn::Data::Struct(_) | syn::Data::Union(_) => {
-                within_variant(None, &ctx.pvariants[0]);
+                within_variant(None, &ctx.pvariants[0])?;
             }
         }
+        Ok(())
     }
 
-    fn for_with_variant<F>(&self, mut call: F)
+    fn for_with_variant<F, E>(&self, mut call: F) -> Result<(),E>
     where
-        F: FnMut(&Context, &WithinVariant),
+        F: FnMut(&Context, &WithinVariant) -> Result<(),E>,
     {
         let ctx = self;
         if let Some(wv) = &self.variant {
-            call(ctx, wv);
+            call(ctx, wv)?;
         } else {
-            ctx.for_variants(call);
+            ctx.for_variants(call)?;
         }
+        Ok(())
     }
 
     fn variant(&self, why: &dyn Spanned) -> syn::Result<&WithinVariant> {
@@ -629,9 +631,9 @@ impl<'c> Context<'c> {
         Ok(r)
     }
 
-    fn for_fields<F>(&self, mut call: F)
+    fn for_fields<F, E>(&self, mut call: F) -> Result<(),E>
     where
-        F: FnMut(&Context, &WithinField),
+        F: FnMut(&Context, &WithinField) -> Result<(),E>,
     {
         let ctx = self;
         ctx.for_with_variant(|ctx, variant| {
@@ -649,8 +651,9 @@ impl<'c> Context<'c> {
                     field: Some(wf),
                     ..*ctx
                 };
-                call(&ctx, wf);
+                call(&ctx, wf)?;
             }
+            Ok(())
         })
     }
 
@@ -716,12 +719,16 @@ impl RepeatedTemplate {
     fn expand(&self, ctx: &Context, out: &mut TokenStream) {
         match self.over {
             RO::Variants => {
-                ctx.for_variants(|ctx, _variant| self.expand_inner(ctx, out))
+                ctx.for_variants(|ctx, _variant| Ok::<_,Void>(
+                    self.expand_inner(ctx, out)
+                ))
             }
             RO::Fields => {
-                ctx.for_fields(|ctx, _field| self.expand_inner(ctx, out))
+                ctx.for_fields(|ctx, _field| Ok::<_,Void>(
+                    self.expand_inner(ctx, out)
+                ))
             }
-        }
+        }.void_unwrap()
     }
 
     /// private, does the condition
