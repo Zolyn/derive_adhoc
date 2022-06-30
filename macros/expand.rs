@@ -326,34 +326,40 @@ impl Parse for SubstIf {
         let mut tests = Vec::new();
         let mut otherwise = None;
 
-        if input.is_empty() {
-            return Err(input.error("'if' must have at least one condition"));
-        }
-
-        while !input.is_empty() {
+        loop {
             let condition = input.parse()?;
             let content;
             let _br = braced![ content in input ];
             let consequence = content.parse()?;
             tests.push((condition, consequence));
 
-            let else_tok: Option<Token![else]> = input.parse()?;
-            if else_tok.is_none() {
+            // (I'd like to use a lookahead here too, but it doesn't
+            // accept "Nothing")
+            if input.is_empty() {
                 // no more conditions if there is not an "else"
                 break;
-            }
-            let if_tok: Option<Token![if]> = input.parse()?;
-            if if_tok.is_some() {
-                // got an "else if": continue to the next iteration.
-                continue;
+            } else {
+                let lookahead = input.lookahead1();
+                if lookahead.peek(Token![else]) {
+                    let _else: Token![else] = input.parse()?;
+                } else {
+                    return Err(lookahead.error());
+                }
             }
 
-            // We have an else and only an else.  It's the final
-            // else condition, so we set `otherwise`.
-            let content;
-            let _br = braced![ content in input ];
-            otherwise = Some(content.parse()?);
-            break;
+            let lookahead = input.lookahead1();
+            if lookahead.peek(Token![if]) {
+                let _if: Token![if] = input.parse()?;
+                // got an "else if": continue to the next iteration.
+                continue;
+            } else if lookahead.peek(token::Brace) {
+                let content;
+                let _br = braced![ content in input ];
+                otherwise = Some(content.parse()?);
+                break; // no more input allowed.
+            } else {
+                return Err(lookahead.error());
+            }
         }
 
         // Q: What ensures that there are no unhandled
