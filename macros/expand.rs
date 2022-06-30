@@ -103,9 +103,9 @@ enum SubstDetails {
 struct SubstIf {
     // A series of test/result pairs.  The test that gives "true"
     // short-circuits the rest.
-    tests: Vec<(Subst, TemplateElement)>,
+    tests: Vec<(Subst, Template)>,
     // A final element to expand if all tests fail.
-    otherwise: Option<Box<TemplateElement>>,
+    otherwise: Option<Box<Template>>,
 }
 
 use SubstDetails as SD;
@@ -408,13 +408,13 @@ impl SubstIf {
             dbg!(&condition);
             if condition.eval_bool(ctx)? {
                 dbg!(&consequence);
-                consequence.expand(ctx, out)?;
+                consequence.expand(ctx, out);
                 return Ok(());
             }
         }
         if let Some(consequence) = &self.otherwise {
             dbg!(&consequence);
-            consequence.expand(ctx, out)?;
+            consequence.expand(ctx, out);
         }
         Ok(())
     }
