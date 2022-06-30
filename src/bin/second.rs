@@ -69,10 +69,10 @@ fn main() {
     let _: K = ChannelsParams::default();
 
     derive_adhoc! {
-            ChannelsParams:
-            $(
-                ${when not(fattr(foo))}
-                println!("field name {:?}", stringify!($fname));
-            )
-        }
+        ChannelsParams:
+        $(
+            ${when not(fattr(foo))}
+            println!("field name {:?}", stringify!($fname));
+        )
+    }
 }

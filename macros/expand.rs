@@ -310,7 +310,9 @@ impl Parse for Subst {
 
 struct Found;
 
-fn is_found(r: Result<(), Found>) -> bool { r.is_err() }
+fn is_found(r: Result<(), Found>) -> bool {
+    r.is_err()
+}
 
 impl Subst {
     fn eval_bool(&self, ctx: &Context) -> syn::Result<bool> {
@@ -470,7 +472,9 @@ impl Subst {
             }
             SD::tattr(wa) => wa.expand(ctx, out, &ctx.tattrs)?,
             SD::vattr(wa) => wa.expand(ctx, out, &ctx.variant(wa)?.pattrs)?,
-            SD::fattr(wa) => wa.expand(ctx, out, &ctx.field(wa)?.pfield.pattrs)?,
+            SD::fattr(wa) => {
+                wa.expand(ctx, out, &ctx.field(wa)?.pfield.pattrs)?
+            }
 
             SD::when(when) => when.unfiltered_when(out),
             SD::False | SD::True | SD::not(_) => self.not_expansion(out),
@@ -554,9 +558,10 @@ impl SubstAttr {
         Ok(())
     }
 
-    fn search_eval_bool(&self, pattrs: &PreprocessedAttrs)
-                        -> Result<(), Found>
-    {
+    fn search_eval_bool(
+        &self,
+        pattrs: &PreprocessedAttrs,
+    ) -> Result<(), Found> {
         self.search(pattrs, &mut |_av| /* got it! */ Err(Found))
     }
 
