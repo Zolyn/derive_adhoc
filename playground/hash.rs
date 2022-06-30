@@ -26,7 +26,7 @@ struct IntPair( usize, usize );
 define_derive_adhoc!{
     MyHash for struct =  // [1]
         impl Hash for $ttype
-            where $( ${when not(fattr(hash::skip))}
+            where $( ${when not(fattr(hash(skip)))}
                      $ftype : Hash + )*
         {
             fn hash<H : Hasher>(&self, state: &mut H) {
