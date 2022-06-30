@@ -88,6 +88,8 @@ enum SubstDetails {
     False,
     True,
     not(Box<Subst>),
+    any(Punctuated<Subst, token::Comma>),
+    all(Punctuated<Subst, token::Comma>),
     If(SubstIf),
 }
 
@@ -317,6 +319,20 @@ impl Parse for Subst {
         }
 
         keyword! {
+            all {
+                let inner;
+                let _paren = parenthesized!(inner in input);
+            }
+            (Punctuated::parse_terminated(input)?)
+        }
+        keyword! {
+            any {
+                let inner;
+                let _paren = parenthesized!(inner in input);
+            }
+            (Punctuated::parse_terminated(input)?)
+        }
+        keyword! {
             not {
                 let inner;
                 let _paren = parenthesized!(inner in input);
@@ -429,6 +445,18 @@ impl Subst {
             SD::True => true,
 
             SD::not(v) => ! v.eval_bool(ctx)?,
+            SD::any(vs) =>
+                vs.iter().find_map(|v| match v.eval_bool(ctx) {
+                    Ok(true) => Some(Ok(true)),
+                    Err(e) => Some(Err(e)),
+                    Ok(false) => None,
+                }).unwrap_or(Ok(false))?,
+            SD::all(vs) =>
+                vs.iter().find_map(|v| match v.eval_bool(ctx) {
+                    Ok(true) => None,
+                    Err(e) => Some(Err(e)),
+                    Ok(false) => Some(Ok(false)),
+                }).unwrap_or(Ok(true))?,
             _ => return Err(self.kw.error(
      "derive-adhoc keyword is an expansion - not valid as a condition"
             )),
@@ -575,7 +603,7 @@ impl Subst {
 
             SD::when(when) => when.unfiltered_when(out),
             SD::If(conds) => conds.expand(ctx, out)?,
-            SD::False | SD::True | SD::not(_) => self.not_expansion(out),
+            SD::False | SD::True | SD::not(_) | SD::any(_) | SD::all(_) => self.not_expansion(out),
         };
         Ok(())
     }
@@ -597,6 +625,10 @@ impl Subst {
             }
             SD::If(conds) => {
                 conds.analyse_repeat(visitor);
+                None
+            }
+            SD::any(conds) | SD::all(conds) => {
+                conds.iter().for_each(|c| c.analyse_repeat(visitor));
                 None
             }
             SD::False | SD::True => None, // condition: ignore.
