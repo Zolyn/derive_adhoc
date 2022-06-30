@@ -32,11 +32,11 @@ fn escape_dollars(input: TokenStream) -> TokenStream {
                 let mut g = proc_macro2::Group::new(delim, stream);
                 g.set_span(span);
                 TT::Group(g)
-            },
+            }
             TT::Punct(p) if p.as_char() == '$' => {
-                out.extend(quote_spanned!{p.span()=> #p dollar });
+                out.extend(quote_spanned! {p.span()=> #p dollar });
                 continue;
-            },
+            }
             other => other,
         }])
     }

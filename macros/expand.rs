@@ -613,7 +613,12 @@ impl Subst {
 
             SD::when(when) => when.unfiltered_when(out),
             SD::If(conds) => conds.expand(ctx, out)?,
-            SD::is_enum | SD::False | SD::True | SD::not(_) | SD::any(_) | SD::all(_) => self.not_expansion(out),
+            SD::is_enum
+            | SD::False
+            | SD::True
+            | SD::not(_)
+            | SD::any(_)
+            | SD::all(_) => self.not_expansion(out),
             SD::For(repeat) => repeat.expand(ctx, out),
         };
         Ok(())
@@ -903,7 +908,9 @@ impl RepeatedTemplate {
         } else if over == "variants" {
             RepeatOver::Variants
         } else {
-            return Err(over.error("$for must be followed by 'fields' or 'variants'"));
+            return Err(
+                over.error("$for must be followed by 'fields' or 'variants'")
+            );
         };
         let template;
         let brace = braced!(template in input);
@@ -915,7 +922,11 @@ impl RepeatedTemplate {
         }
     }
 
-    fn parse(input: ParseStream, span: Span, over: Option<RepeatOver>) -> Result<RepeatedTemplate, Vec<syn::Error>> {
+    fn parse(
+        input: ParseStream,
+        span: Span,
+        over: Option<RepeatOver>,
+    ) -> Result<RepeatedTemplate, Vec<syn::Error>> {
         let mut template: Template = input.parse().map_err(|e| vec![e])?;
 
         // split `when` (and [todo] `for`) off

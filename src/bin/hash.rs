@@ -5,14 +5,13 @@
 //#![feature(trace_macros)]
 //trace_macros!(true);
 
+use derive_adhoc_macros::define_derive_adhoc;
 use derive_adhoc_macros::{derive_adhoc, derive_adhoc_expand, Adhoc};
-use derive_adhoc_macros::{define_derive_adhoc};
 
-
-use std::hash::{Hash, Hasher};
 use std::fmt::Debug;
+use std::hash::{Hash, Hasher};
 
-define_derive_adhoc!{
+define_derive_adhoc! {
     MyHash /*for struct*/ =  // [1]
 
     impl Hash for $ttype
@@ -35,7 +34,6 @@ struct DataType {
     bar: Vec<String>,
 }
 
-
 /*
 #[derive(Adhoc)]
 #[derive_adhoc(MyHash)]
@@ -49,10 +47,9 @@ struct Pair<S,T:Debug>
 
 #[derive(Adhoc)]
 #[derive_adhoc(MyHash)]
-struct IntPair( usize, usize );
+struct IntPair(usize, usize);
 
 // [1] The "for struct" syntax here means that only structs are supported.
-
 
 // This should expand to:
 
