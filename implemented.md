@@ -1,18 +1,16 @@
-$fname
-$vname
-$tname
+EXPANSIONS
 
-${tmeta(...)}
-${vmeta(...)}
-${fmeta(...)}
-# like this
+$fname $vname $tname
+$ftype        $ttype
+
+${tmeta(...)} ${vmeta(...)} ${fmeta(...)}
+  like this:
 ${tmeta(name)}
+${tmeta(name) as ty}
 ${tmeta(name(in(depth)))}
-# ^ mirrors #[derive(adhoc(name(in(depth))))]
+  ^ mirrors #[derive(adhoc(name(in(depth))))]
 
-$tattrs
-$vattrs
-$fattrs
+$tattrs $vattrs $fattrs
 ${tattrs attrname, attrname, ...}
 ${tattrs ! attrname, attrname, ...}
 ${tattrs = attrname, attrname, ...}
@@ -23,17 +21,18 @@ ${keyword ...}
 # as applicable
 
 $( )
-# automatic iteration determination by scanning for expansions eg $fname
+   repetition automatically tells what to loop over
+   by scanning for expansions eg $fname
 
-${when }
+$( ${when CONDITION} ... )
+${if ... { ... } else if COND2 { ... } else { ... }}
+${for fields { ... }
 
 
-expressions
+EXPRESSIONS
 
 false
 true
-
-
-
-actually expressions and substitutions have the same keyword namespace
-and the distinction is semantic
+not(...)
+all(...)
+any(...)
