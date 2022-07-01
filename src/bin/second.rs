@@ -23,8 +23,8 @@ derive_adhoc!{
     #[derive(Debug, Default, Clone, Eq, PartialEq)]
     pub struct ChannelsParamsUpdates {
         $(
-         // ${fattrs doc[0]}
-//          ${fattrs serde}
+            // ${fattrs doc[0]}
+            ${fattrs serde}
             ///
             /// New value, if it has changed.
             //
@@ -38,10 +38,10 @@ derive_adhoc!{
     ChannelsParams:
 
     #[allow(dead_code)]
-//  ${fattrs doc, serde}
+    ${tattrs doc, serde}
     struct ChannelsParamsDupliate {
         $(
-//          ${fattrs ! serde}
+            ${fattrs ! serde}
             $fname: $ftype,
         )
     }
