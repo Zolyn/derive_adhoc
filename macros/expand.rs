@@ -904,14 +904,31 @@ struct RawAttrEntry {
 }
 
 impl RawAttr {
-    #[allow(unused_variables)] // TODO
-    fn expand(&self, _ctx: &Context, out: &mut TokenStream,
+    fn expand(&self, ctx: &Context, out: &mut TokenStream,
               attrs: &[syn::Attribute])
-              -> syn::Result<()> {
-        // TODO
+              -> syn::Result<()>
+    {
+        for attr in attrs {
+            let ent = self.entries.iter().find(|ent| ent.matches(attr));
+            let ent = if let Some(ent) = ent { ent } else { continue; };
+            ent.expand(ctx, out, attr)?;
+        }
         Ok(())
     }
 }
+
+impl RawAttrEntry {
+    fn matches(&self, attr: &syn::Attribute) -> bool {
+        &self.path == &attr.path
+    }
+
+    fn expand(&self, _ctx: &Context, out: &mut TokenStream,
+              attr: &syn::Attribute) -> syn::Result<()>
+    {
+        attr.to_tokens(out);
+        Ok(())
+    }
+}    
 
 impl Parse for RawAttr {
     fn parse(input: ParseStream) -> syn::Result<Self> {
