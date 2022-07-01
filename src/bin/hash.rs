@@ -15,7 +15,7 @@ define_derive_adhoc! {
     MyHash /*for struct*/ =  // [1]
 
     impl Hash for $ttype
-    where $( ${when not(fattr(hash(skip)))}
+    where $( ${when not(fmeta(hash(skip)))}
              $ftype : Hash , )
     {
         fn hash<H : Hasher>(&self, state: &mut H) {
