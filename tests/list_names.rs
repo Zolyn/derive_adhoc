@@ -3,9 +3,6 @@
 
 use derive_adhoc::{define_derive_adhoc, Adhoc};
 
-//XXXX BUG: derive_adhoc_expand should not need to be in-scope!
-use derive_adhoc::derive_adhoc_expand;
-
 define_derive_adhoc! {
     ListFields =
 

@@ -55,6 +55,8 @@ pub fn define_derive_adhoc_func_macro(
 
     let mac_name = format_ident!("derive_adhoc_call_{}", &templ_name);
 
+    let expand_macro = expand_macro_name()?;
+
     // the macro must recent a dollar as its first argument because
     // it is hard to find a dollar otherwise!
     let output = quote! {
@@ -63,7 +65,7 @@ pub fn define_derive_adhoc_func_macro(
                 $dollar:tt
                 $( $driver:tt )*
             } => {
-                derive_adhoc_expand!{
+                #expand_macro! {
                     { $( $driver )* }
                     # template
                 }

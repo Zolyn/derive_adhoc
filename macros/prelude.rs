@@ -22,5 +22,6 @@ pub use void::{ResultVoidErrExt as _, ResultVoidExt as _, Void};
 
 pub use TokenTree as TT;
 
+pub use crate::utils::expand_macro_name;
 pub use crate::utils::ErrorAccumulator;
 pub use crate::utils::{SpannedExt as _, TokenStreamExt as _};

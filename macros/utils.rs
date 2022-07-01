@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use proc_macro_crate::{crate_name, FoundCrate};
 
 pub trait SpannedExt: Spanned {
     fn error<M: Display>(&self, m: M) -> syn::Error {
@@ -69,5 +70,21 @@ impl ErrorAccumulator {
 impl Drop for ErrorAccumulator {
     fn drop(&mut self) {
         assert!(self.defused);
+    }
+}
+
+/// Return a full path to the location of `derive_adhoc_expand`.
+pub fn expand_macro_name() -> Result<TokenStream, syn::Error> {
+    match crate_name("derive-adhoc").or_else(|_| crate_name("derive-adhoc-macros")) {
+        Ok(FoundCrate::Itself) => Ok(quote!( crate::derive_adhoc_expand )),
+        Ok(FoundCrate::Name(name)) => {
+            let ident = Ident::new(&name, Span::call_site());
+            Ok(quote!( ::#ident::derive_adhoc_expand ))
+        }
+        Err(e) => {
+            Err(syn::Error::new(
+                Span::call_site(),
+                format!("Expected derive-adhoc or derive-adhoc-macro to be present in Cargo.toml: {}", e)))
+        }
     }
 }
