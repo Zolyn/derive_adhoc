@@ -120,14 +120,15 @@ use SubstDetails as SD;
 #[derive(Debug, Clone)]
 struct SubstAttr {
     path: SubstAttrPath,
-    as_: Option<SubstAttrAs>,
+    as_: SubstAttrAs,
     as_span: Span,
 }
 
-#[derive(Debug, Clone, AsRefStr, EnumIter)]
+#[derive(Debug, Clone, AsRefStr, Display, EnumIter)]
 #[allow(non_camel_case_types)] // clearer to use the exact ident
 enum SubstAttrAs {
     lit,
+    ty,
 }
 
 #[derive(Debug, Clone)]
@@ -282,12 +283,12 @@ impl Parse for SubstAttr {
             let _: Token![as] = input.parse()?;
             let kw = input.call(syn::Ident::parse_any)?;
             as_span = kw.span();
-            as_ = Some(SubstAttrAs::iter().find(|as_| kw == as_)
-                       .ok_or_else(|| kw.error(
-                           "unknown derive-adhoc 'as' syntax type keyword"
-                       ))?);
+            as_ = SubstAttrAs::iter().find(|as_| kw == as_)
+                .ok_or_else(|| kw.error(
+                    "unknown derive-adhoc 'as' syntax type keyword"
+                ))?;
         } else {
-            as_ = None;
+            as_ = SubstAttrAs::lit;
             as_span = path.span();
         }
         
@@ -742,7 +743,7 @@ impl SubstAttr {
                 ));
             }
             let mut buf = TokenStream::new();
-            av.expand(self.span(), &mut buf)?;
+            av.expand(self.span(), &self.as_, &mut buf)?;
             found = Some(buf);
             Ok(())
         })?;
@@ -813,7 +814,8 @@ impl SubstAttrPath {
 }
 
 impl<'l> AttrValue<'l> {
-    fn expand(&self, span: Span, out: &mut TokenStream) -> syn::Result<()> {
+    fn expand(&self, span: Span, as_: &SubstAttrAs, out: &mut TokenStream)
+              -> syn::Result<()> {
         let lit = match self {
             AttrValue::Unit => return Err(span.error(
  "tried to expand attribute which is just a unit, not a literal"
@@ -823,7 +825,32 @@ impl<'l> AttrValue<'l> {
             )),
             AttrValue::Lit(lit) => lit,
         };
-        lit.to_tokens(out);
+
+        fn lit_as<T>(lit: &syn::Lit, span: Span, as_: &SubstAttrAs,
+                     out: &mut TokenStream)
+                     -> syn::Result<()>
+        where T: Parse + ToTokens
+        {
+            let s: &syn::LitStr = match lit {
+                syn::Lit::Str(s) => s,
+                // having checked derive_builder, it doesn't handle
+                // Lit::Verbatim so I guess we don't need to either.
+                _ => return Err(span.error(format!(
+                    "expected string literal, for conversion to {}",
+                    as_,
+                ))),
+            };
+
+            let thing: T = s.parse()?;
+            thing.to_tokens(out);
+            Ok(())
+        }
+
+        use SubstAttrAs as SAS;
+        match as_ {
+            SAS::lit => lit.to_tokens(out),
+            SAS::ty => lit_as::<syn::Type>(lit, span, as_, out)?,
+        }
         Ok(())
     }
 }
