@@ -2,6 +2,10 @@
 name = "derive-adhoc-macros"
 version = "0.0.1"
 edition = "2018"
+readme = "../README.md"
+authors=["Ian Jackson <ijackson@chiark.greenend.org.uk>",
+         "and the contributors to Rust derive-adhoc"]
+license = "MIT"
 
 [dependencies]
 itertools = "0.10"
