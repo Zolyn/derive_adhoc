@@ -231,10 +231,21 @@ impl RepeatAnalysisVisitor {
 
 impl Parse for Template {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let mut elements = vec![];
+        let mut good = vec![];
+        let mut bad = vec![];
         while !input.is_empty() {
-            elements.push(input.parse()?)
+            let elem = input.parse();
+            match elem {
+                Ok(TE::Errors(errs)) => bad.extend(errs),
+                Ok(other) => good.push(other),
+                Err(err) => bad.push(err),
+            }
         }
+        let elements = if bad.is_empty() {
+            good
+        } else {
+            vec![ TE::Errors(bad) ]
+        };
         Ok(Template { elements })
     }
 }
