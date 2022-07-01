@@ -15,8 +15,5 @@
 // docs.
 
 pub use derive_adhoc_macros::{
-    Adhoc,
-    define_derive_adhoc,
-    derive_adhoc,
-    derive_adhoc_expand,
+    define_derive_adhoc, derive_adhoc, derive_adhoc_expand, Adhoc,
 };
