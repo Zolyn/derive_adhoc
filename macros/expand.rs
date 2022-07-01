@@ -231,6 +231,25 @@ impl RepeatAnalysisVisitor {
 
 impl Parse for Template {
     fn parse(input: ParseStream) -> syn::Result<Self> {
+        // We handle errors by emitting compile_error! invocations.
+        // These only work properly in certain positions in Rust syntax.
+        // We arrange this by ensuring that we only ever emit either
+        // compile errors, or other stuff - never both.
+        //
+        // This is implemented mostly here:
+        //
+        //  1. capture Result-bubbling syn::Error into TE::Error
+        //     (and then abandon parsing of this group, since it's
+        //     probably busted).
+        //
+        //  2. collect all the errors separately, and if there are any
+        //     return a template that is itself only errors
+        //
+        // We allow the compile_error! calls to be inside a Group; since
+        // I think that ought to work.  If it turns out not to then
+        // the TT::Group case in impl Parse for TemplateElement ought to
+        // handle it specially, and maybe the types around here
+        // should change a bit.
         let mut good = vec![];
         let mut bad = vec![];
         while !input.is_empty() {
