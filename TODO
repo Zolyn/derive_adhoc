@@ -1,0 +1,67 @@
+
+Proper tests
+
+  Tests that expansions come out the way we expect.
+  Err, look for a crate to help with this?
+
+  Possibly, tests of compilation failures (but these are fragile
+  if done in the obvious way with trybuild).
+
+
+Proper docs
+
+A public writeup blog post
+
+
+Bugs
+
+   Make the macro encapsulating the struct body that #[derive(Adhoc)]
+   generates not be #[macro_export] if any of the fields are pub.
+
+
+Innards
+
+   expand.rs is too big a file
+
+   There is some flabbiness where code is repeated for different
+   levels.
+
+
+Missing features
+
+   Ability to control publicness of define_derive_adhoc
+
+   Handling of generics
+      list of generic bindings (ie with bounds) (for toplevel)
+      list of generic parameter names (without bounds) (for toplevel)
+      list of generic parameter uses (for fields)
+      where clauses (for toplevel) (all where clauses?)
+
+   Ability to generate the various wrapping delimiters
+      Something to generate { } iff it's an enum
+      Something to generate field_name: iff it's named field, else nothing
+      Something to generate ( ) for tuple variants, { } for named
+
+   Token pasting
+      Should be able to paste a type with prefix and suffixes,
+      affecting the last path component
+
+   Stringifying
+      Perhaps stringify! will do ?
+
+Think properly about cross-crate API stability
+
+   What about if crates use semver-different versions of derive-adhoc
+      The define_derive_adhoc macros embody a template,
+      should perhaps embody the derive-adhoc expander major version
+
+   We should make semver major breaks the template language infrequently.
+   Extensions are OK: if one crate needs the latest then they can all
+   have it.
+
+   Can you derive_adhoc! someone else's struct
+      The generated capture macro embodies the calling convention
+      for the expander but not an expansion syntax.
+      And it embodies the struct innards!
+
+   What about crate renaming?  This is a bit of a mess in Rust.
