@@ -13,9 +13,9 @@ define_derive_adhoc!{
 
     impl Debug for $ttype
     where $(
-        ${if fattr(debug::skip) {
+        ${if fattr(debug(skip)) {
         } else if fattr(debug(into)) {
-            & $ftype : Into< ${fattr(debug(into)) as ty} > +
+            for <'x> &'x $ftype : Into< ${fattr(debug(into)) as ty} >,
                 ${fattr(debug(into)) as ty} : Debug,
         } else {
             $ftype: Debug,
@@ -30,7 +30,7 @@ define_derive_adhoc!{
                     ${if fattr(debug(skip)) {
                     } else if fattr(debug(into)) {
               .field(stringify!($fname),
-       < ${fattr(debug(into)) as ty} as From<&$ftype> >::from(&self.field)
+       &< ${fattr(debug(into)) as ty} as From<&$ftype> >::from(&self.$fname)
               )
                     } else {
               .field(stringify!($fname), &self.$fname)
@@ -41,6 +41,15 @@ define_derive_adhoc!{
     }
 }
 
+#[derive(Debug)]
+struct PrettyVec<T>(Vec<T>);
+
+impl<T: Clone> From<&Vec<T>> for PrettyVec<T> {
+    fn from(v: &Vec<T>) -> Self {
+        PrettyVec(v.clone())
+    }
+}
+
 struct Opaque;
 
 #[derive(Adhoc)]
@@ -48,7 +57,7 @@ struct Opaque;
 #[allow(dead_code)]
 struct DataType {
     foo: u8,
-    #[adhoc(debug(into="PrettyVec"))]
+    #[adhoc(debug(into="PrettyVec<String>"))]
     bar: Vec<String>,
     #[adhoc(debug(skip))]
     opaque: Opaque,
