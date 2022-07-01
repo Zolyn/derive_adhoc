@@ -6,7 +6,7 @@
 use std::fmt::{self, Debug, Formatter};
 
 use derive_adhoc_macros::define_derive_adhoc;
-use derive_adhoc_macros::{derive_adhoc, derive_adhoc_expand, Adhoc};
+use derive_adhoc_macros::{derive_adhoc, Adhoc};
 
 define_derive_adhoc! {
     MyDebug =

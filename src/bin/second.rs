@@ -3,7 +3,7 @@
 // Instead, there should be a POC/MVP test case?, which maybe this is
 // becoming?
 
-use derive_adhoc_macros::{derive_adhoc, derive_adhoc_expand, Adhoc};
+use derive_adhoc_macros::{derive_adhoc, Adhoc};
 
 #[derive(Adhoc, Debug, Clone, Eq, Default, PartialEq)]
 /// Some docs

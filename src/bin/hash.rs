@@ -6,7 +6,7 @@
 //trace_macros!(true);
 
 use derive_adhoc_macros::define_derive_adhoc;
-use derive_adhoc_macros::{derive_adhoc, derive_adhoc_expand, Adhoc};
+use derive_adhoc_macros::{derive_adhoc, Adhoc};
 
 // use std::fmt::Debug;
 use std::hash::{Hash, Hasher};

@@ -75,7 +75,7 @@ impl Drop for ErrorAccumulator {
 
 /// Return a full path to the location of `derive_adhoc_expand`.
 pub fn expand_macro_name() -> Result<TokenStream, syn::Error> {
-    match crate_name("derive-adhoc").or_else(|_| crate_name("derive-adhoc-macros")) {
+    match crate_name("derive-adhoc-macros").or_else(|_| crate_name("derive-adhoc")) {
         Ok(FoundCrate::Itself) => Ok(quote!( crate::derive_adhoc_expand )),
         Ok(FoundCrate::Name(name)) => {
             let ident = Ident::new(&name, Span::call_site());
