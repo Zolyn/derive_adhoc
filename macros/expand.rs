@@ -354,6 +354,10 @@ impl Parse for Subst {
         keyword! { vmeta(input.parse()?) }
         keyword! { fmeta(input.parse()?) }
 
+        keyword! { tattrs(input.parse()?) }
+        keyword! { vattrs(input.parse()?) }
+        keyword! { fattrs(input.parse()?) }
+
         keyword! { when(input.parse()?) }
 
         if kw == "false" {
@@ -888,10 +892,10 @@ impl<'l> AttrValue<'l> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 struct RawAttr {
     negated: Option<Token![!]>,
-    entries: RawAttrEntry,
+    entries: Punctuated<RawAttrEntry, token::Comma>,
 }
 
 #[derive(Debug, Clone)]
@@ -906,6 +910,32 @@ impl RawAttr {
               -> syn::Result<()> {
         // TODO
         Ok(())
+    }
+}
+
+impl Parse for RawAttr {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let la = input.lookahead1();
+        let negated;
+        if la.peek(Token![!]) {
+            negated = Some(input.parse()?);
+        } else if la.peek(Token![=]) {
+            let _: Token![=] = input.parse()?;
+            negated = None;
+        } else {
+            negated = None;
+        }
+
+        let entries = input.call(Punctuated::parse_terminated)?;
+
+        Ok(RawAttr { negated, entries })
+    }
+}
+
+impl Parse for RawAttrEntry {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let path = input.parse()?;
+        Ok(RawAttrEntry { path })
     }
 }
 
