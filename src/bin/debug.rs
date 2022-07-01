@@ -8,7 +8,7 @@ use std::fmt::{self, Debug, Formatter};
 use derive_adhoc_macros::define_derive_adhoc;
 use derive_adhoc_macros::{derive_adhoc, derive_adhoc_expand, Adhoc};
 
-define_derive_adhoc!{
+define_derive_adhoc! {
     MyDebug =
 
     impl Debug for $ttype
@@ -57,7 +57,7 @@ struct Opaque;
 #[allow(dead_code)]
 struct DataType {
     foo: u8,
-    #[adhoc(debug(into="PrettyVec<String>"))]
+    #[adhoc(debug(into = "PrettyVec<String>"))]
     bar: Vec<String>,
     #[adhoc(debug(skip))]
     opaque: Opaque,
@@ -83,7 +83,7 @@ impl Debug for DataType
 fn main() {
     let dt = DataType {
         foo: 42,
-        bar: ["a","bar"].iter().map(|s| s.to_string()).collect(),
+        bar: ["a", "bar"].iter().map(|s| s.to_string()).collect(),
         opaque: Opaque,
     };
 

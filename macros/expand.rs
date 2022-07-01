@@ -666,10 +666,10 @@ impl Subst {
                 let variant = ctx.variant(self)?.variant;
                 let attrs = variant.as_ref().map(|v| &*v.attrs);
                 ra.expand(ctx, out, attrs.unwrap_or_default())?;
-            },
+            }
             SD::fattrs(ra) => {
                 ra.expand(ctx, out, &ctx.field(self)?.field.attrs)?
-            },
+            }
 
             SD::when(when) => when.unfiltered_when(out),
             SD::If(conds) => conds.expand(ctx, out)?,
@@ -899,7 +899,7 @@ enum RawAttr {
     },
     Exclude {
         exclusions: Punctuated<syn::Path, token::Comma>,
-    }
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -908,10 +908,12 @@ struct RawAttrEntry {
 }
 
 impl RawAttr {
-    fn expand(&self, ctx: &Context, out: &mut TokenStream,
-              attrs: &[syn::Attribute])
-              -> syn::Result<()>
-    {
+    fn expand(
+        &self,
+        ctx: &Context,
+        out: &mut TokenStream,
+        attrs: &[syn::Attribute],
+    ) -> syn::Result<()> {
         for attr in attrs {
             match self {
                 RawAttr::Include { entries } => {
@@ -919,12 +921,12 @@ impl RawAttr {
                     if let Some(ent) = ent {
                         ent.expand(ctx, out, attr)?;
                     }
-                },
+                }
                 RawAttr::Exclude { exclusions } => {
-                    if ! exclusions.iter().any(|excl| excl == &attr.path) {
+                    if !exclusions.iter().any(|excl| excl == &attr.path) {
                         attr.to_tokens(out);
                     }
-                },
+                }
             }
         }
         Ok(())
@@ -936,9 +938,12 @@ impl RawAttrEntry {
         &self.path == &attr.path
     }
 
-    fn expand(&self, _ctx: &Context, out: &mut TokenStream,
-              attr: &syn::Attribute) -> syn::Result<()>
-    {
+    fn expand(
+        &self,
+        _ctx: &Context,
+        out: &mut TokenStream,
+        attr: &syn::Attribute,
+    ) -> syn::Result<()> {
         attr.to_tokens(out);
         Ok(())
     }
@@ -946,7 +951,7 @@ impl RawAttrEntry {
     fn simple(self, _negated: &Token![!]) -> syn::Result<syn::Path> {
         Ok(self.path)
     }
-}    
+}
 
 impl Parse for RawAttr {
     fn parse(input: ParseStream) -> syn::Result<Self> {
@@ -961,11 +966,13 @@ impl Parse for RawAttr {
             negated = None;
         }
 
-        let entries: Punctuated<RawAttrEntry,_> =
+        let entries: Punctuated<RawAttrEntry, _> =
             input.call(Punctuated::parse_terminated)?;
 
         if let Some(negated) = &negated {
-            let exclusions = entries.into_iter().map(|ent| ent.simple(negated))
+            let exclusions = entries
+                .into_iter()
+                .map(|ent| ent.simple(negated))
                 .try_collect()?;
             Ok(RawAttr::Exclude { exclusions })
         } else {
@@ -1326,8 +1333,14 @@ pub fn derive_adhoc_expand_func_macro(
     // obviously nothing should print to stderr
     //    dbg!(&&output);
     let ident = input.driver.ident;
-    eprintln!("---------- derive_adhoc_expand start for {} ----------", ident);
+    eprintln!(
+        "---------- derive_adhoc_expand start for {} ----------",
+        ident
+    );
     eprintln!("{}", &output);
-    eprintln!("---------- derive_adhoc_expand end for {} ----------", ident);
+    eprintln!(
+        "---------- derive_adhoc_expand end for {} ----------",
+        ident
+    );
     Ok(output)
 }

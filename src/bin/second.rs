@@ -17,7 +17,7 @@ pub struct ChannelsParams {
     padding_parameters: usize,
 }
 
-derive_adhoc!{
+derive_adhoc! {
     ChannelsParams:
 
     #[derive(Debug, Default, Clone, Eq, PartialEq)]
@@ -34,7 +34,7 @@ derive_adhoc!{
     }
 }
 
-derive_adhoc!{
+derive_adhoc! {
     ChannelsParams:
 
     #[allow(dead_code)]

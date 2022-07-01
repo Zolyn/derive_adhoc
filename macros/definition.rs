@@ -71,12 +71,15 @@ pub fn define_derive_adhoc_func_macro(
         }
     };
 
-    eprintln!("---------- derive_adhoc_define start for {} ----------",
-              mac_name
+    eprintln!(
+        "---------- derive_adhoc_define start for {} ----------",
+        mac_name
     );
     eprintln!("{}", &output);
-    eprintln!("---------- derive_adhoc_define end for {} ----------",
-              mac_name);
+    eprintln!(
+        "---------- derive_adhoc_define end for {} ----------",
+        mac_name
+    );
 
     Ok(output)
 }
