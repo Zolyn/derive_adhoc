@@ -47,10 +47,8 @@ pub fn derive_adhoc_derive_macro(
         .flatten_ok()
         .collect::<syn::Result<Vec<_>>>()?;
 
-    // TODO use a longer name for derive_adhoc_expand so users only
-    // have to import the `derive_adhoc` crate.
     let expand_macro = expand_macro_name()?;
-    
+
     let mut output = quote! {
         #[allow(unused_macros)]
         #export

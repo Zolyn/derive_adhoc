@@ -9,8 +9,12 @@ mod expand;
 mod invocation;
 mod utils;
 
-// This calls the actual template engine
+// This calls the actual template engine.
+//
+// It should only get invoked by other macros; the user shouldn't need to
+// touch it.
 #[proc_macro]
+#[doc(hidden)]
 pub fn derive_adhoc_expand(
     input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
