@@ -437,15 +437,15 @@ impl Parse for SubstIf {
 impl SubstIf {
     fn expand(&self, ctx: &Context, out: &mut TokenStream) -> syn::Result<()> {
         for (condition, consequence) in &self.tests {
-            dbg!(&condition);
+            //dbg!(&condition);
             if condition.eval_bool(ctx)? {
-                dbg!(&consequence);
+                //dbg!(&consequence);
                 consequence.expand(ctx, out);
                 return Ok(());
             }
         }
         if let Some(consequence) = &self.otherwise {
-            dbg!(&consequence);
+            //dbg!(&consequence);
             consequence.expand(ctx, out);
         }
         Ok(())
@@ -1162,8 +1162,8 @@ pub fn derive_adhoc_expand_func_macro(
     input: TokenStream,
 ) -> syn::Result<TokenStream> {
     let input: SubstInput = syn::parse2(input)?;
-    let ident = &input.driver.ident;
-    dbg!(&ident);
+    //let ident = &input.driver.ident;
+    //dbg!(&ident);
 
     let tattrs = preprocess_attrs(&input.driver.attrs)?;
 
