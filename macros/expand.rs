@@ -12,11 +12,9 @@ struct SubstInput {
 impl Parse for SubstInput {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let driver;
-        dbg!();
         let brace_token = braced!(driver in input);
-        dbg!();
-        let driver = dbg!(driver.parse())?;
-        let template = dbg!(input.parse())?;
+        let driver = driver.parse()?;
+        let template = input.parse()?;
         Ok(SubstInput {
             brace_token,
             driver,
@@ -1123,7 +1121,7 @@ fn preprocess_fields(
 pub fn derive_adhoc_expand_func_macro(
     input: TokenStream,
 ) -> syn::Result<TokenStream> {
-    let input: SubstInput = dbg!(syn::parse2(input))?;
+    let input: SubstInput = syn::parse2(input)?;
     let ident = &input.driver.ident;
     dbg!(&ident);
 
