@@ -3,6 +3,8 @@
 
 // Read "Hash" first for more discussion.
 
+use std::fmt::{self, Debug, Formatter};
+
 use derive_adhoc_macros::define_derive_adhoc;
 use derive_adhoc_macros::{derive_adhoc, derive_adhoc_expand, Adhoc};
 
@@ -13,15 +15,15 @@ define_derive_adhoc!{
     where $(
         ${if fattr(debug::skip) {
         } else if fattr(debug(into)) {
-            & $ftype : Into<${attr(debug(into)) as ty}> +
-                ${attr(debug(into)) as ty} : Debug,
+            & $ftype : Into< ${fattr(debug(into)) as ty} > +
+                ${fattr(debug(into)) as ty} : Debug,
         } else {
             $ftype: Debug,
         }}
       ) // [1]
     {
-        fn debug(&self, f: &mut Formatter<'_>)
-                 -> Result<(), Error>
+        fn fmt(&self, f: &mut Formatter<'_>)
+                 -> Result<(), fmt::Error>
         {
             f.debug_struct(stringify!($tname))
                 $(
@@ -31,7 +33,7 @@ define_derive_adhoc!{
        < ${fattr(debug(into)) as ty} as From<&$ftype> >::from(&self.field)
               )
                     } else {
-              .field(stringify($fname), &self.$fname)
+              .field(stringify!($fname), &self.$fname)
                     }}
                 )
                 .finish()
@@ -39,8 +41,11 @@ define_derive_adhoc!{
     }
 }
 
+struct Opaque;
+
 #[derive(Adhoc)]
 #[derive_adhoc(MyDebug)]
+#[allow(dead_code)]
 struct DataType {
     foo: u8,
     #[adhoc(debug(into="PrettyVec"))]
@@ -65,3 +70,13 @@ impl Debug for DataType
     }
 }
 */
+
+fn main() {
+    let dt = DataType {
+        foo: 42,
+        bar: ["a","bar"].iter().map(|s| s.to_string()).collect(),
+        opaque: Opaque,
+    };
+
+    println!("dt = {:?}", &dt);
+}
