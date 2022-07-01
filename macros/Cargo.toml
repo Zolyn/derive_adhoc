@@ -6,6 +6,9 @@ readme = "../README.md"
 authors=["Ian Jackson <ijackson@chiark.greenend.org.uk>",
          "and the contributors to Rust derive-adhoc"]
 license = "MIT"
+description="Macros that implement the derive_adhoc crate"
+homepage = "https://gitlab.torproject.org/Diziet/rust-derive-adhoc"
+repository = "https://gitlab.torproject.org/Diziet/rust-derive-adhoc"
 
 [dependencies]
 itertools = "0.10"
