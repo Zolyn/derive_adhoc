@@ -50,6 +50,7 @@ pub fn derive_adhoc_derive_macro(
     // TODO use a longer name for derive_adhoc_expand so users only
     // have to import the `derive_adhoc` crate.
     let mut output = quote! {
+        #[allow(unused_macros)]
         #export
         macro_rules! #mac_name {
             {
