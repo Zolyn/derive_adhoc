@@ -12,9 +12,11 @@ struct SubstInput {
 impl Parse for SubstInput {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let driver;
+        dbg!();
         let brace_token = braced!(driver in input);
-        let driver = driver.parse()?;
-        let template = input.parse()?;
+        dbg!();
+        let driver = dbg!(driver.parse())?;
+        let template = dbg!(input.parse())?;
         Ok(SubstInput {
             brace_token,
             driver,
@@ -39,7 +41,6 @@ enum TemplateElement {
     },
     Subst(Subst),
     Repeat(RepeatedTemplate),
-    Errors(Vec<syn::Error>),
 }
 
 #[derive(Debug)]
@@ -175,97 +176,61 @@ struct RepeatOverInference {
 #[derive(Default, Debug, Clone)]
 struct RepeatAnalysisVisitor {
     over: Option<RepeatOverInference>,
-    errors: Vec<syn::Error>,
 }
 
 impl RepeatAnalysisVisitor {
-    fn set_over(&mut self, over: RepeatOverInference) {
+    fn set_over(&mut self, over: RepeatOverInference) -> syn::Result<()> {
         match &self.over {
             None => self.over = Some(over),
             Some(already) => {
                 if already.over != over.over {
-                    let already_over = already.over;
-                    self.errors([
-                        syn::Error::new(
-                            over.span,
-                            format!(
-                                "inconsistent repetition depth: \
-                         firstly, {} inferred here",
-                                already_over,
-                            ),
-                        ),
-                        syn::Error::new(
-                            over.span,
-                            format!(
-                                "inconsistent repetition depth: \
-                         secondly, {} inferred here",
-                                over.over,
-                            ),
-                        ),
-                    ]);
+                    let mut e1 = already.span.error(
+                        format!(
+ "inconsistent repetition depth: firstly, {} inferred here",
+                            already.over,
+                        ));
+                    let e2 = over.span.error(
+                        format!(
+ "inconsistent repetition depth: secondly, {} inferred here",
+                            over.over,
+                        ));
+                    e1.combine(e2);
+                    return Err(e1);
                 }
             }
         }
+        Ok(())
     }
 
-    fn errors<EL: IntoIterator<Item = syn::Error>>(&mut self, errors: EL) {
-        if self.errors.is_empty() {
-            self.errors.extend(errors)
-        }
-    }
-
-    fn finish(self, start: Span) -> Result<RepeatOver, Vec<syn::Error>> {
-        use RepeatAnalysisVisitor as RAV;
-        match self {
-            RAV { errors, .. } if !errors.is_empty() => Err(errors),
-            RAV {
-                over: Some(over), ..
-            } => Ok(over.over),
-            _ => Err(vec![syn::Error::new(
-                start,
-                "no contained expansion field determined what to repeat here",
-            )]),
-        }
+    fn finish(self, start: Span) -> Result<RepeatOver, syn::Error> {
+        Ok(self.over.ok_or_else(|| start.error(
+            "no contained expansion field determined what to repeat here"
+        ))?.over)
     }
 }
 
 impl Parse for Template {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        // We handle errors by emitting compile_error! invocations.
-        // These only work properly in certain positions in Rust syntax.
-        // We arrange this by ensuring that we only ever emit either
-        // compile errors, or other stuff - never both.
-        //
-        // This is implemented mostly here:
-        //
-        //  1. capture Result-bubbling syn::Error into TE::Error
-        //     (and then abandon parsing of this group, since it's
-        //     probably busted).
-        //
-        //  2. collect all the errors separately, and if there are any
-        //     return a template that is itself only errors
-        //
-        // We allow the compile_error! calls to be inside a Group; since
-        // I think that ought to work.  If it turns out not to then
-        // the TT::Group case in impl Parse for TemplateElement ought to
-        // handle it specially, and maybe the types around here
-        // should change a bit.
+        // eprintln!("@@@@@@@@@@ PARSE {}", &input);
         let mut good = vec![];
-        let mut bad = vec![];
+        let mut bad: Option<syn::Error> = None;
         while !input.is_empty() {
             let elem = input.parse();
             match elem {
-                Ok(TE::Errors(errs)) => bad.extend(errs),
                 Ok(other) => good.push(other),
-                Err(err) => bad.push(err),
+                Err(err) => {
+                    if let Some(bad) = &mut bad {
+                        bad.combine(err)
+                    } else {
+                        bad = Some(err);
+                    }
+                },
             }
         }
-        let elements = if bad.is_empty() {
-            good
-        } else {
-            vec![ TE::Errors(bad) ]
-        };
-        Ok(Template { elements })
+        if let Some(bad) = bad {
+            return Err(bad)
+        }
+        Ok(Template { elements: good })
     }
 }
 
@@ -275,7 +240,7 @@ impl Parse for TemplateElement {
             TT::Group(group) => {
                 let delim_span = group.span_open();
                 let delimiter = group.delimiter();
-                let template = syn::parse2(group.stream())?;
+                let template: Template = syn::parse2(group.stream())?;
                 TE::Group {
                     delim_span,
                     delimiter,
@@ -494,15 +459,18 @@ impl SubstIf {
         Ok(())
     }
 
-    fn analyse_repeat(&self, visitor: &mut RepeatAnalysisVisitor) {
+    fn analyse_repeat(&self, visitor: &mut RepeatAnalysisVisitor)
+                      -> syn::Result<()>
+    {
         for (cond, _) in &self.tests {
-            cond.analyse_repeat(visitor);
+            cond.analyse_repeat(visitor)?;
             // TODO: diziet says not to recurse into the consequent
             // bodies.  Not sure why; let's document.
         }
         if let Some(consequence) = &self.otherwise {
-            consequence.analyse_repeat(visitor);
+            consequence.analyse_repeat(visitor)?;
         }
+        Ok(())
     }
 }
 
@@ -602,10 +570,13 @@ impl Template {
     }
 
     /// Analyses a template section to be repeated
-    fn analyse_repeat(&self, visitor: &mut RepeatAnalysisVisitor) {
+    fn analyse_repeat(&self, visitor: &mut RepeatAnalysisVisitor)
+                      -> syn::Result<()>
+    {
         for element in &self.elements {
-            element.analyse_repeat(visitor);
+            element.analyse_repeat(visitor)?;
         }
+        Ok(())
     }
 }
 
@@ -631,23 +602,20 @@ impl TemplateElement {
             TE::Repeat(repeated_template) => {
                 repeated_template.expand(ctx, out);
             }
-            TE::Errors(el) => {
-                for e in el {
-                    out.extend(e.to_compile_error())
-                }
-            }
         }
         Ok(())
     }
 
-    fn analyse_repeat(&self, visitor: &mut RepeatAnalysisVisitor) {
+    fn analyse_repeat(&self, visitor: &mut RepeatAnalysisVisitor)
+                      -> syn::Result<()>
+    {
         match self {
             TE::Pass(_) => {}
             TE::Repeat(_) => {}
-            TE::Group { template, .. } => template.analyse_repeat(visitor),
-            TE::Subst(exp) => exp.analyse_repeat(visitor),
-            TE::Errors(el) => visitor.errors(el.clone()),
+            TE::Group { template, .. } => template.analyse_repeat(visitor)?,
+            TE::Subst(exp) => exp.analyse_repeat(visitor)?,
         }
+        Ok(())
     }
 }
 
@@ -704,7 +672,9 @@ impl Subst {
         Ok(())
     }
 
-    fn analyse_repeat(&self, visitor: &mut RepeatAnalysisVisitor) {
+    fn analyse_repeat(&self, visitor: &mut RepeatAnalysisVisitor)
+        -> syn::Result<()>
+    {
         let over = match &self.sd {
             SD::tname => None,
             SD::tattr(_) => None,
@@ -717,15 +687,17 @@ impl Subst {
             SD::fattr(_) => Some(RO::Fields),
             SD::when(_) => None, // out-of-place when, ignore it
             SD::not(cond) => {
-                cond.analyse_repeat(visitor);
+                cond.analyse_repeat(visitor)?;
                 None
             }
             SD::If(conds) => {
-                conds.analyse_repeat(visitor);
+                conds.analyse_repeat(visitor)?;
                 None
             }
             SD::any(conds) | SD::all(conds) => {
-                conds.iter().for_each(|c| c.analyse_repeat(visitor));
+                for c in conds.iter() {
+                    c.analyse_repeat(visitor)?;
+                }
                 None
             }
             // Has a RepeatOver, but does not imply anything about its context.
@@ -737,8 +709,9 @@ impl Subst {
                 over,
                 span: self.kw.span(),
             };
-            visitor.set_over(over);
+            visitor.set_over(over)?;
         }
+        Ok(())
     }
 }
 
@@ -990,10 +963,8 @@ impl RepeatedTemplate {
     fn parse_in_parens(input: ParseStream) -> syn::Result<TemplateElement> {
         let template;
         let paren = parenthesized!(template in input);
-        match RepeatedTemplate::parse(&template, paren.span, None) {
-            Ok(rt) => Ok(TE::Repeat(rt)),
-            Err(errs) => Ok(TE::Errors(errs)),
-        }
+        let rt = RepeatedTemplate::parse(&template, paren.span, None)?;
+        Ok(TE::Repeat(rt))
     }
 
     fn parse_for(input: ParseStream) -> syn::Result<RepeatedTemplate> {
@@ -1009,20 +980,15 @@ impl RepeatedTemplate {
         };
         let template;
         let brace = braced!(template in input);
-        match RepeatedTemplate::parse(&template, brace.span, Some(over)) {
-            Ok(rt) => Ok(rt),
-            // TODO: This discards all errors but one, which is sad.
-            // TODO: This panics if errs is empty.
-            Err(mut errs) => Err(errs.remove(0)),
-        }
+        RepeatedTemplate::parse(&template, brace.span, Some(over))
     }
 
     fn parse(
         input: ParseStream,
         span: Span,
         over: Option<RepeatOver>,
-    ) -> Result<RepeatedTemplate, Vec<syn::Error>> {
-        let mut template: Template = input.parse().map_err(|e| vec![e])?;
+    ) -> Result<RepeatedTemplate, syn::Error> {
+        let mut template: Template = input.parse()?;
 
         // split `when` (and [todo] `for`) off
         let mut whens = vec![];
@@ -1054,7 +1020,7 @@ impl RepeatedTemplate {
             Some(over) => Ok(over),
             None => {
                 let mut visitor = RepeatAnalysisVisitor::default();
-                template.analyse_repeat(&mut visitor);
+                template.analyse_repeat(&mut visitor)?;
                 visitor.finish(span)
             }
         };
@@ -1166,7 +1132,7 @@ fn preprocess_fields(
 pub fn derive_adhoc_expand_func_macro(
     input: TokenStream,
 ) -> syn::Result<TokenStream> {
-    let input: SubstInput = syn::parse2(input)?;
+    let input: SubstInput = dbg!(syn::parse2(input))?;
     let ident = &input.driver.ident;
     dbg!(&ident);
 
