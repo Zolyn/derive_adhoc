@@ -1165,8 +1165,6 @@ pub fn derive_adhoc_expand_func_macro(
     input: TokenStream,
 ) -> syn::Result<TokenStream> {
     let input: SubstInput = syn::parse2(input)?;
-    //let ident = &input.driver.ident;
-    //dbg!(&ident);
 
     let tattrs = preprocess_attrs(&input.driver.attrs)?;
 
@@ -1220,8 +1218,9 @@ pub fn derive_adhoc_expand_func_macro(
 
     // obviously nothing should print to stderr
     //    dbg!(&&output);
-    eprintln!("---------- derive_adhoc_expand got start ----------");
+    let ident = input.driver.ident;
+    eprintln!("---------- derive_adhoc_expand start for {} ----------", ident);
     eprintln!("{}", &output);
-    eprintln!("---------- derive_adhoc_expand got end ----------");
+    eprintln!("---------- derive_adhoc_expand end for {} ----------", ident);
     Ok(output)
 }
