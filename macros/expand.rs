@@ -183,13 +183,11 @@ impl RepeatAnalysisVisitor {
             None => self.over = Some(over),
             Some(already) => {
                 if already.over != over.over {
-                    let mut e1 = already.span.error(
-                        format!(
+                    let mut e1 = already.span.error(format!(
  "inconsistent repetition depth: firstly, {} inferred here",
                             already.over,
                         ));
-                    let e2 = over.span.error(
-                        format!(
+                    let e2 = over.span.error(format!(
  "inconsistent repetition depth: secondly, {} inferred here",
                             over.over,
                         ));
@@ -202,9 +200,14 @@ impl RepeatAnalysisVisitor {
     }
 
     fn finish(self, start: Span) -> Result<RepeatOver, syn::Error> {
-        Ok(self.over.ok_or_else(|| start.error(
+        Ok(self
+            .over
+            .ok_or_else(|| {
+                start.error(
             "no contained expansion field determined what to repeat here"
-        ))?.over)
+        )
+            })?
+            .over)
     }
 }
 
@@ -214,7 +217,7 @@ impl Parse for Template {
         let mut good = vec![];
         let mut errors = ErrorAccumulator::default();
         while !input.is_empty() {
-            errors.handle_in(||{
+            errors.handle_in(|| {
                 let elem = input.parse()?;
                 good.push(elem);
                 Ok(())
@@ -283,15 +286,14 @@ impl Parse for SubstAttr {
             let _: Token![as] = input.parse()?;
             let kw = input.call(syn::Ident::parse_any)?;
             as_span = kw.span();
-            as_ = SubstAttrAs::iter().find(|as_| kw == as_)
-                .ok_or_else(|| kw.error(
-                    "unknown derive-adhoc 'as' syntax type keyword"
-                ))?;
+            as_ = SubstAttrAs::iter().find(|as_| kw == as_).ok_or_else(
+                || kw.error("unknown derive-adhoc 'as' syntax type keyword"),
+            )?;
         } else {
             as_ = SubstAttrAs::lit;
             as_span = path.span();
         }
-        
+
         Ok(SubstAttr { path, as_, as_span })
     }
 }
@@ -449,9 +451,10 @@ impl SubstIf {
         Ok(())
     }
 
-    fn analyse_repeat(&self, visitor: &mut RepeatAnalysisVisitor)
-                      -> syn::Result<()>
-    {
+    fn analyse_repeat(
+        &self,
+        visitor: &mut RepeatAnalysisVisitor,
+    ) -> syn::Result<()> {
         for (cond, _) in &self.tests {
             cond.analyse_repeat(visitor)?;
             // TODO: diziet says not to recurse into the consequent
@@ -560,9 +563,10 @@ impl Template {
     }
 
     /// Analyses a template section to be repeated
-    fn analyse_repeat(&self, visitor: &mut RepeatAnalysisVisitor)
-                      -> syn::Result<()>
-    {
+    fn analyse_repeat(
+        &self,
+        visitor: &mut RepeatAnalysisVisitor,
+    ) -> syn::Result<()> {
         for element in &self.elements {
             element.analyse_repeat(visitor)?;
         }
@@ -596,9 +600,10 @@ impl TemplateElement {
         Ok(())
     }
 
-    fn analyse_repeat(&self, visitor: &mut RepeatAnalysisVisitor)
-                      -> syn::Result<()>
-    {
+    fn analyse_repeat(
+        &self,
+        visitor: &mut RepeatAnalysisVisitor,
+    ) -> syn::Result<()> {
         match self {
             TE::Pass(_) => {}
             TE::Repeat(_) => {}
@@ -662,9 +667,10 @@ impl Subst {
         Ok(())
     }
 
-    fn analyse_repeat(&self, visitor: &mut RepeatAnalysisVisitor)
-        -> syn::Result<()>
-    {
+    fn analyse_repeat(
+        &self,
+        visitor: &mut RepeatAnalysisVisitor,
+    ) -> syn::Result<()> {
         let over = match &self.sd {
             SD::tname => None,
             SD::tattr(_) => None,
@@ -814,8 +820,12 @@ impl SubstAttrPath {
 }
 
 impl<'l> AttrValue<'l> {
-    fn expand(&self, span: Span, as_: &SubstAttrAs, out: &mut TokenStream)
-              -> syn::Result<()> {
+    fn expand(
+        &self,
+        span: Span,
+        as_: &SubstAttrAs,
+        out: &mut TokenStream,
+    ) -> syn::Result<()> {
         let lit = match self {
             AttrValue::Unit => return Err(span.error(
  "tried to expand attribute which is just a unit, not a literal"
@@ -826,19 +836,25 @@ impl<'l> AttrValue<'l> {
             AttrValue::Lit(lit) => lit,
         };
 
-        fn lit_as<T>(lit: &syn::Lit, span: Span, as_: &SubstAttrAs,
-                     out: &mut TokenStream)
-                     -> syn::Result<()>
-        where T: Parse + ToTokens
+        fn lit_as<T>(
+            lit: &syn::Lit,
+            span: Span,
+            as_: &SubstAttrAs,
+            out: &mut TokenStream,
+        ) -> syn::Result<()>
+        where
+            T: Parse + ToTokens,
         {
             let s: &syn::LitStr = match lit {
                 syn::Lit::Str(s) => s,
                 // having checked derive_builder, it doesn't handle
                 // Lit::Verbatim so I guess we don't need to either.
-                _ => return Err(span.error(format!(
-                    "expected string literal, for conversion to {}",
-                    as_,
-                ))),
+                _ => {
+                    return Err(span.error(format!(
+                        "expected string literal, for conversion to {}",
+                        as_,
+                    )))
+                }
             };
 
             let thing: T = s.parse()?;
@@ -915,10 +931,7 @@ impl<'c> Context<'c> {
         Ok(r)
     }
 
-    fn syn_variant(
-        &self,
-        why: &dyn Spanned,
-    ) -> syn::Result<&syn::Variant> {
+    fn syn_variant(&self, why: &dyn Spanned) -> syn::Result<&syn::Variant> {
         let r = self.variant(why)?.variant.as_ref().ok_or_else(|| {
             syn::Error::new(why.span(), "expansion only valid in enums")
         })?;

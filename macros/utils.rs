@@ -24,17 +24,22 @@ pub struct ErrorAccumulator {
 
 impl ErrorAccumulator {
     pub fn handle_in<T, F>(&mut self, f: F) -> Option<T>
-    where F: FnOnce() -> syn::Result<T> {
+    where
+        F: FnOnce() -> syn::Result<T>,
+    {
         self.handle(f())
     }
 
     pub fn handle<T>(&mut self, result: syn::Result<T>) -> Option<T> {
         match result {
             Ok(y) => Some(y),
-            Err(e) => { self.push(e); None }
+            Err(e) => {
+                self.push(e);
+                None
+            }
         }
     }
-        
+
     pub fn push(&mut self, err: syn::Error) {
         if let Some(bad) = &mut self.bad {
             bad.combine(err)
@@ -47,7 +52,7 @@ impl ErrorAccumulator {
     pub fn finish(self) -> syn::Result<()> {
         self.finish_with(())
     }
-        
+
     pub fn finish_with<T>(self, success: T) -> syn::Result<T> {
         match self.into_inner() {
             None => Ok(success),
@@ -58,7 +63,7 @@ impl ErrorAccumulator {
     pub fn into_inner(mut self) -> Option<syn::Error> {
         self.defused = true;
         self.bad.take()
-    }   
+    }
 }
 
 impl Drop for ErrorAccumulator {
