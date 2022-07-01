@@ -70,10 +70,10 @@ struct Subst {
 // wrinkles (and may help avoid semantic wrinkles). -Diziet
 //
 // Hrm, actually, compare
-//     ${if fattr(foo) { ...
-//     ${fattr(foo) as ty}
+//     ${if fmeta(foo) { ...
+//     ${fmeta(foo) as ty}
 // and this demonstrates different parsing.  We want to forbid
-//     ${if fattr(foo) as ty { ...
+//     ${if fmeta(foo) as ty { ...
 // and right now that is a bit funny.
 
 enum SubstDetails {
@@ -85,9 +85,9 @@ enum SubstDetails {
     ftype,
 
     // attributes
-    tattr(SubstAttr),
-    vattr(SubstAttr),
-    fattr(SubstAttr),
+    tmeta(SubstAttr),
+    vmeta(SubstAttr),
+    fmeta(SubstAttr),
 
     // special
     when(Box<Subst>),
@@ -347,9 +347,9 @@ impl Parse for Subst {
         keyword! { ftype }
         keyword! { is_enum }
 
-        keyword! { tattr(input.parse()?) }
-        keyword! { vattr(input.parse()?) }
-        keyword! { fattr(input.parse()?) }
+        keyword! { tmeta(input.parse()?) }
+        keyword! { vmeta(input.parse()?) }
+        keyword! { fmeta(input.parse()?) }
 
         keyword! { when(input.parse()?) }
 
@@ -485,9 +485,9 @@ impl Subst {
         } }
 
         let r = match &self.sd {
-            SD::tattr(wa) => is_found(wa.path.search_eval_bool(ctx.tattrs)),
-            SD::vattr(wa) => eval_attr!{ wa, for_with_variant, pattrs },
-            SD::fattr(wa) => eval_attr!{ wa, for_with_field, pfield.pattrs },
+            SD::tmeta(wa) => is_found(wa.path.search_eval_bool(ctx.tattrs)),
+            SD::vmeta(wa) => eval_attr!{ wa, for_with_variant, pattrs },
+            SD::fmeta(wa) => eval_attr!{ wa, for_with_field, pfield.pattrs },
             SD::is_enum => matches!(ctx.top.data, syn::Data::Enum(_)),
 
             SD::False => false,
@@ -648,9 +648,9 @@ impl Subst {
                 let f = ctx.field(self)?;
                 f.field.ty.to_tokens(out);
             }
-            SD::tattr(wa) => wa.expand(ctx, out, ctx.tattrs)?,
-            SD::vattr(wa) => wa.expand(ctx, out, ctx.variant(wa)?.pattrs)?,
-            SD::fattr(wa) => {
+            SD::tmeta(wa) => wa.expand(ctx, out, ctx.tattrs)?,
+            SD::vmeta(wa) => wa.expand(ctx, out, ctx.variant(wa)?.pattrs)?,
+            SD::fmeta(wa) => {
                 wa.expand(ctx, out, &ctx.field(wa)?.pfield.pattrs)?
             }
 
@@ -673,14 +673,14 @@ impl Subst {
     ) -> syn::Result<()> {
         let over = match &self.sd {
             SD::tname => None,
-            SD::tattr(_) => None,
+            SD::tmeta(_) => None,
             SD::ttype => None,
             SD::is_enum => None,
             SD::vname => Some(RO::Variants),
-            SD::vattr(_) => Some(RO::Variants),
+            SD::vmeta(_) => Some(RO::Variants),
             SD::fname => Some(RO::Fields),
             SD::ftype => Some(RO::Fields),
-            SD::fattr(_) => Some(RO::Fields),
+            SD::fmeta(_) => Some(RO::Fields),
             SD::when(_) => None, // out-of-place when, ignore it
             SD::not(cond) => {
                 cond.analyse_repeat(visitor)?;

@@ -19,7 +19,7 @@ define_derive_adhoc! {
              $ftype : Hash , )
     {
         fn hash<H : Hasher>(&self, state: &mut H) {
-            $( ${when not(fattr(hash::skip))}
+            $( ${when not(fmeta(hash::skip))}
                self.$fname.hash(state); )
         }
     }

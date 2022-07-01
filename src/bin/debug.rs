@@ -13,10 +13,10 @@ define_derive_adhoc!{
 
     impl Debug for $ttype
     where $(
-        ${if fattr(debug(skip)) {
-        } else if fattr(debug(into)) {
-            for <'x> &'x $ftype : Into< ${fattr(debug(into)) as ty} >,
-                ${fattr(debug(into)) as ty} : Debug,
+        ${if fmeta(debug(skip)) {
+        } else if fmeta(debug(into)) {
+            for <'x> &'x $ftype : Into< ${fmeta(debug(into)) as ty} >,
+                ${fmeta(debug(into)) as ty} : Debug,
         } else {
             $ftype: Debug,
         }}
@@ -27,10 +27,10 @@ define_derive_adhoc!{
         {
             f.debug_struct(stringify!($tname))
                 $(
-                    ${if fattr(debug(skip)) {
-                    } else if fattr(debug(into)) {
+                    ${if fmeta(debug(skip)) {
+                    } else if fmeta(debug(into)) {
               .field(stringify!($fname),
-       &< ${fattr(debug(into)) as ty} as From<&$ftype> >::from(&self.$fname)
+       &< ${fmeta(debug(into)) as ty} as From<&$ftype> >::from(&self.$fname)
               )
                     } else {
               .field(stringify!($fname), &self.$fname)
