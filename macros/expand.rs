@@ -675,14 +675,15 @@ impl Subst {
     ) -> syn::Result<()> {
         let over = match &self.sd {
             SD::tname => None,
-            SD::tmeta(_) => None,
-            SD::ttype => None,
-            SD::is_enum => None,
             SD::vname => Some(RO::Variants),
-            SD::vmeta(_) => Some(RO::Variants),
             SD::fname => Some(RO::Fields),
+            SD::ttype => None,
+            // TODO vtype
             SD::ftype => Some(RO::Fields),
+            SD::tmeta(_) => None,
+            SD::vmeta(_) => Some(RO::Variants),
             SD::fmeta(_) => Some(RO::Fields),
+            SD::is_enum => None,
             SD::when(_) => None, // out-of-place when, ignore it
             SD::not(cond) => {
                 cond.analyse_repeat(visitor)?;
