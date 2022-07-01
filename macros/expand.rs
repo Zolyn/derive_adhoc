@@ -485,6 +485,7 @@ fn is_found(r: Result<(), Found>) -> bool {
 impl Subst {
     fn eval_bool(&self, ctx: &Context) -> syn::Result<bool> {
         // TODO this is calling out for some generic stuff
+        // eprintln!("@@@@@@@@@@@@@@@@@@@@ EVAL {:?}", self);
 
         macro_rules! eval_attr { { $wa:expr, $with:ident, $($pattrs:tt)* } => {
             is_found(ctx.$with(|_ctx, within| {
@@ -628,6 +629,8 @@ impl Spanned for Subst {
 
 impl Subst {
     fn expand(&self, ctx: &Context, out: &mut TokenStream) -> syn::Result<()> {
+        // eprintln!("@@@@@@@@@@@@@@@@@@@@ EXPAND {:?}", self);
+
         match &self.sd {
             SD::tname => ctx.top.ident.to_tokens(out),
             SD::ttype => {
