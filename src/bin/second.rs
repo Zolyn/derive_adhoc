@@ -20,12 +20,29 @@ derive_adhoc!{
     #[derive(Debug, Default, Clone, Eq, PartialEq)]
     pub struct ChannelsParamsUpdates {
         $(
+         // ${fattrs:doc:1}
+//          ${fattrs:doc}  // for now
+//          ${fattrs:serde}
+            ///
             /// New value, if it has changed.
+            //
+            // ${fattrs:doc:+}
             pub(crate) $fname: Option<$ftype>,
         )
     }
 }
 
+derive_adhoc!{
+    ChannelsParams:
+
+    #[allow(dead_code)]
+    struct ChannelsParamsDupliate {
+        $(
+//          $fattrs
+            $fname: $ftype,
+        )
+    }
+}
 
 // Possible invocation ssyntaxes
 
