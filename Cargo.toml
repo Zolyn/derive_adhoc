@@ -7,6 +7,7 @@ authors=["Ian Jackson <ijackson@chiark.greenend.org.uk>",
          "and the contributors to Rust derive-adhoc"]
 description="An ergonomic way to write derive() macros"
 homepage = "https://gitlab.torproject.org/Diziet/rust-derive-adhoc"
+repository = "https://gitlab.torproject.org/Diziet/rust-derive-adhoc"
 
 [workspace]
 members = ["macros"]
