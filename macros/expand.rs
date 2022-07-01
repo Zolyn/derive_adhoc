@@ -892,10 +892,14 @@ impl<'l> AttrValue<'l> {
     }
 }
 
-#[derive(Debug, Clone, Default)]
-struct RawAttr {
-    negated: Option<Token![!]>,
-    entries: Punctuated<RawAttrEntry, token::Comma>,
+#[derive(Debug, Clone)]
+enum RawAttr {
+    Include {
+        entries: Punctuated<RawAttrEntry, token::Comma>,
+    },
+    Exclude {
+        exclusions: Punctuated<syn::Path, token::Comma>,
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -909,9 +913,19 @@ impl RawAttr {
               -> syn::Result<()>
     {
         for attr in attrs {
-            let ent = self.entries.iter().find(|ent| ent.matches(attr));
-            let ent = if let Some(ent) = ent { ent } else { continue; };
-            ent.expand(ctx, out, attr)?;
+            match self {
+                RawAttr::Include { entries } => {
+                    let ent = entries.iter().find(|ent| ent.matches(attr));
+                    if let Some(ent) = ent {
+                        ent.expand(ctx, out, attr)?;
+                    }
+                },
+                RawAttr::Exclude { exclusions } => {
+                    if ! exclusions.iter().any(|excl| excl == &attr.path) {
+                        attr.to_tokens(out);
+                    }
+                },
+            }
         }
         Ok(())
     }
@@ -928,6 +942,10 @@ impl RawAttrEntry {
         attr.to_tokens(out);
         Ok(())
     }
+
+    fn simple(self, _negated: &Token![!]) -> syn::Result<syn::Path> {
+        Ok(self.path)
+    }
 }    
 
 impl Parse for RawAttr {
@@ -943,9 +961,16 @@ impl Parse for RawAttr {
             negated = None;
         }
 
-        let entries = input.call(Punctuated::parse_terminated)?;
+        let entries: Punctuated<RawAttrEntry,_> =
+            input.call(Punctuated::parse_terminated)?;
 
-        Ok(RawAttr { negated, entries })
+        if let Some(negated) = &negated {
+            let exclusions = entries.into_iter().map(|ent| ent.simple(negated))
+                .try_collect()?;
+            Ok(RawAttr::Exclude { exclusions })
+        } else {
+            Ok(RawAttr::Include { entries })
+        }
     }
 }
 
