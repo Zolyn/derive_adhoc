@@ -624,6 +624,10 @@ impl Subst {
     fn expand(&self, ctx: &Context, out: &mut TokenStream) -> syn::Result<()> {
         // eprintln!("@@@@@@@@@@@@@@@@@@@@ EXPAND {:?}", self);
 
+        let do_meta = |wa: &SubstAttr, out, pattrs| {
+            wa.expand(ctx, out, pattrs)
+        };
+
         match &self.sd {
             SD::tname => ctx.top.ident.to_tokens(out),
             SD::ttype => {
@@ -648,11 +652,9 @@ impl Subst {
                 let f = ctx.field(self)?;
                 f.field.ty.to_tokens(out);
             }
-            SD::tmeta(wa) => wa.expand(ctx, out, ctx.tattrs)?,
-            SD::vmeta(wa) => wa.expand(ctx, out, ctx.variant(wa)?.pattrs)?,
-            SD::fmeta(wa) => {
-                wa.expand(ctx, out, &ctx.field(wa)?.pfield.pattrs)?
-            }
+            SD::tmeta(wa) => do_meta(wa, out, ctx.tattrs)?,
+            SD::vmeta(wa) => do_meta(wa, out, ctx.variant(wa)?.pattrs)?,
+            SD::fmeta(wa) => do_meta(wa, out, &ctx.field(wa)?.pfield.pattrs)?,
 
             SD::when(when) => when.unfiltered_when(out),
             SD::If(conds) => conds.expand(ctx, out)?,
