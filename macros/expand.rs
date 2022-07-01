@@ -628,7 +628,6 @@ impl Subst {
         // eprintln!("@@@@@@@@@@@@@@@@@@@@ EXPAND {:?}", self);
 
         let do_meta = |wa: &SubstAttr, out, meta| wa.expand(ctx, out, meta);
-        let do_attrs = |ra: &RawAttr, out, attrs| ra.expand(ctx, out, attrs);
 
         match &self.sd {
             SD::tname => ctx.top.ident.to_tokens(out),
@@ -658,13 +657,15 @@ impl Subst {
             SD::vmeta(wa) => do_meta(wa, out, ctx.variant(wa)?.pattrs)?,
             SD::fmeta(wa) => do_meta(wa, out, &ctx.field(wa)?.pfield.pattrs)?,
 
-            SD::tattrs(ra) => do_attrs(ra, out, &ctx.top.attrs)?,
+            SD::tattrs(ra) => ra.expand(ctx, out, &ctx.top.attrs)?,
             SD::vattrs(ra) => {
-                let variant = ctx.variant(ra)?.variant;
+                let variant = ctx.variant(self)?.variant;
                 let attrs = variant.as_ref().map(|v| &*v.attrs);
-                do_attrs(ra, out, attrs.unwrap_or_default())?;
+                ra.expand(ctx, out, attrs.unwrap_or_default())?;
             },
-            SD::fattrs(ra) => do_attrs(ra, out, &ctx.field(ra)?.field.attrs)?,
+            SD::fattrs(ra) => {
+                ra.expand(ctx, out, &ctx.field(self)?.field.attrs)?
+            },
 
             SD::when(when) => when.unfiltered_when(out),
             SD::If(conds) => conds.expand(ctx, out)?,
@@ -889,7 +890,6 @@ impl<'l> AttrValue<'l> {
 
 #[derive(Debug, Clone)]
 struct RawAttr {
-    kw_span: Span,
     negated: Option<Token![!]>,
     entries: RawAttrEntry,
 }
@@ -899,13 +899,8 @@ struct RawAttrEntry {
     path: syn::Path,
 }
 
-impl Spanned for RawAttr {
-    fn span(&self) -> Span {
-        self.kw_span.span()
-    }
-}
-
 impl RawAttr {
+    #[allow(unused_variables)] // TODO
     fn expand(&self, _ctx: &Context, out: &mut TokenStream,
               attrs: &[syn::Attribute])
               -> syn::Result<()> {
