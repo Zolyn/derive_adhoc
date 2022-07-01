@@ -485,16 +485,17 @@ fn is_found(r: Result<(), Found>) -> bool {
 impl Subst {
     fn eval_bool(&self, ctx: &Context) -> syn::Result<bool> {
         // TODO this is calling out for some generic stuff
-        macro_rules! eval_attr { { $wa:expr, $for:ident, $($pattrs:tt)* } => {
-            is_found(ctx.$for(|_ctx, within| {
+
+        macro_rules! eval_attr { { $wa:expr, $with:ident, $($pattrs:tt)* } => {
+            is_found(ctx.$with(|_ctx, within| {
                 $wa.path.search_eval_bool(&within . $($pattrs)*)
             }))
         } }
 
         let r = match &self.sd {
             SD::tattr(wa) => is_found(wa.path.search_eval_bool(ctx.tattrs)),
-            SD::vattr(wa) => eval_attr!{ wa, for_variants, pattrs },
-            SD::fattr(wa) => eval_attr!{ wa, for_fields, pfield.pattrs },
+            SD::vattr(wa) => eval_attr!{ wa, for_with_variant, pattrs },
+            SD::fattr(wa) => eval_attr!{ wa, for_with_field, pfield.pattrs },
             SD::is_enum => matches!(ctx.top.data, syn::Data::Enum(_)),
 
             SD::False => false,
@@ -926,6 +927,19 @@ impl<'c> Context<'c> {
             }
             Ok(())
         })
+    }
+
+    fn for_with_field<F, E>(&self, mut call: F) -> Result<(), E>
+    where
+        F: FnMut(&Context, &WithinField) -> Result<(), E>,
+    {
+        let ctx = self;
+        if let Some(wv) = &self.field {
+            call(ctx, wv)?;
+        } else {
+            ctx.for_fields(call)?;
+        }
+        Ok(())
     }
 
     fn field(&self, why: &dyn Spanned) -> syn::Result<&WithinField> {
