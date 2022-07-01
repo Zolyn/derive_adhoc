@@ -213,24 +213,15 @@ impl Parse for Template {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         // eprintln!("@@@@@@@@@@ PARSE {}", &input);
         let mut good = vec![];
-        let mut bad: Option<syn::Error> = None;
+        let mut errors = ErrorAccumulator::default();
         while !input.is_empty() {
-            let elem = input.parse();
-            match elem {
-                Ok(other) => good.push(other),
-                Err(err) => {
-                    if let Some(bad) = &mut bad {
-                        bad.combine(err)
-                    } else {
-                        bad = Some(err);
-                    }
-                },
-            }
+            errors.handle_in(||{
+                let elem = input.parse()?;
+                good.push(elem);
+                Ok(())
+            });
         }
-        if let Some(bad) = bad {
-            return Err(bad)
-        }
-        Ok(Template { elements: good })
+        errors.finish_with(Template { elements: good })
     }
 }
 
