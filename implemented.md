@@ -2,13 +2,20 @@ $fname
 $vname
 $tname
 
-${tattr(...)}
-${vattr(...)}
-${fattr(...)}
+${tmeta(...)}
+${vmeta(...)}
+${fmeta(...)}
 # like this
-${tattr(name)}
-${tattr(name(in(depth)))}
+${tmeta(name)}
+${tmeta(name(in(depth)))}
 # ^ mirrors #[derive(adhoc(name(in(depth))))]
+
+$tattrs
+$vattrs
+$fattrs
+${tattrs attrname, attrname, ...}
+${tattrs ! attrname, attrname, ...}
+${tattrs = attrname, attrname, ...}
 
 $keyword
 ${keyword}
