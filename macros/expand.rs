@@ -88,6 +88,9 @@ enum SubstDetails {
     tmeta(SubstAttr),
     vmeta(SubstAttr),
     fmeta(SubstAttr),
+    tattrs(RawAttr),
+    vattrs(RawAttr),
+    fattrs(RawAttr),
 
     // special
     when(Box<Subst>),
@@ -624,9 +627,8 @@ impl Subst {
     fn expand(&self, ctx: &Context, out: &mut TokenStream) -> syn::Result<()> {
         // eprintln!("@@@@@@@@@@@@@@@@@@@@ EXPAND {:?}", self);
 
-        let do_meta = |wa: &SubstAttr, out, pattrs| {
-            wa.expand(ctx, out, pattrs)
-        };
+        let do_meta = |wa: &SubstAttr, out, meta| wa.expand(ctx, out, meta);
+        let do_attrs = |ra: &RawAttr, out, attrs| ra.expand(ctx, out, attrs);
 
         match &self.sd {
             SD::tname => ctx.top.ident.to_tokens(out),
@@ -656,6 +658,14 @@ impl Subst {
             SD::vmeta(wa) => do_meta(wa, out, ctx.variant(wa)?.pattrs)?,
             SD::fmeta(wa) => do_meta(wa, out, &ctx.field(wa)?.pfield.pattrs)?,
 
+            SD::tattrs(ra) => do_attrs(ra, out, &ctx.top.attrs)?,
+            SD::vattrs(ra) => {
+                let variant = ctx.variant(ra)?.variant;
+                let attrs = variant.as_ref().map(|v| &*v.attrs);
+                do_attrs(ra, out, attrs.unwrap_or_default())?;
+            },
+            SD::fattrs(ra) => do_attrs(ra, out, &ctx.field(ra)?.field.attrs)?,
+
             SD::when(when) => when.unfiltered_when(out),
             SD::If(conds) => conds.expand(ctx, out)?,
             SD::is_enum
@@ -683,6 +693,9 @@ impl Subst {
             SD::tmeta(_) => None,
             SD::vmeta(_) => Some(RO::Variants),
             SD::fmeta(_) => Some(RO::Fields),
+            SD::tattrs(_) => None,
+            SD::vattrs(_) => Some(RO::Variants),
+            SD::fattrs(_) => Some(RO::Fields),
             SD::is_enum => None,
             SD::when(_) => None, // out-of-place when, ignore it
             SD::not(cond) => {
@@ -870,6 +883,33 @@ impl<'l> AttrValue<'l> {
             SAS::lit => lit.to_tokens(out),
             SAS::ty => lit_as::<syn::Type>(lit, span, as_, out)?,
         }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone)]
+struct RawAttr {
+    kw_span: Span,
+    negated: Option<Token![!]>,
+    entries: RawAttrEntry,
+}
+
+#[derive(Debug, Clone)]
+struct RawAttrEntry {
+    path: syn::Path,
+}
+
+impl Spanned for RawAttr {
+    fn span(&self) -> Span {
+        self.kw_span.span()
+    }
+}
+
+impl RawAttr {
+    fn expand(&self, _ctx: &Context, out: &mut TokenStream,
+              attrs: &[syn::Attribute])
+              -> syn::Result<()> {
+        // TODO
         Ok(())
     }
 }

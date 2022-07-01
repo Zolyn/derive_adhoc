@@ -6,11 +6,14 @@
 use derive_adhoc_macros::{derive_adhoc, derive_adhoc_expand, Adhoc};
 
 #[derive(Adhoc, Debug, Clone, Eq, Default, PartialEq)]
+/// Some docs
 pub struct ChannelsParams {
-    //    #[field educe(Default(expression = "interim_enable_by_env_var()"))]
+    /// thing
+    ///
+    /// paragraph
     padding_enable: bool,
 
-    #[adhoc(foo)]
+    #[allow(dead_code)]
     padding_parameters: usize,
 }
 
@@ -20,13 +23,12 @@ derive_adhoc!{
     #[derive(Debug, Default, Clone, Eq, PartialEq)]
     pub struct ChannelsParamsUpdates {
         $(
-         // ${fattrs:doc:1}
-//          ${fattrs:doc}  // for now
-//          ${fattrs:serde}
+         // ${fattrs doc[0]}
+//          ${fattrs serde}
             ///
             /// New value, if it has changed.
             //
-            // ${fattrs:doc:+}
+            // ${fattrs doc[+]}
             pub(crate) $fname: Option<$ftype>,
         )
     }
@@ -36,9 +38,10 @@ derive_adhoc!{
     ChannelsParams:
 
     #[allow(dead_code)]
+//  ${fattrs doc, serde}
     struct ChannelsParamsDupliate {
         $(
-//          $fattrs
+//          ${fattrs ! serde}
             $fname: $ftype,
         )
     }
