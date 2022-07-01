@@ -14,23 +14,18 @@ pub struct ChannelsParams {
     padding_parameters: usize,
 }
 
-/*
-derive_adhoc_apply_ChannelsParams!{
+derive_adhoc!{
+    ChannelsParams:
 
-    #[derive_adhoc(ChannelsParams)]
     #[derive(Debug, Default, Clone, Eq, PartialEq)]
     pub struct ChannelsParamsUpdates {
-    $(
-    /// New value, if it has changed.
-    pub(crate) $field: Option<$ty>,
-    )*
-
-            thing: &'lifetime T,
-            'char'
+        $(
+            /// New value, if it has changed.
+            pub(crate) $fname: Option<$ftype>,
+        )
     }
-
 }
-*/
+
 
 // Possible invocation ssyntaxes
 
@@ -71,8 +66,10 @@ fn main() {
     derive_adhoc! {
         ChannelsParams:
         $(
-            ${when not(fattr(foo))}
             println!("field name {:?}", stringify!($fname));
         )
     }
+
+    let u = ChannelsParamsUpdates::default();
+    println!("updates = {:?}", &u);
 }
