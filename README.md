@@ -1,3 +1,11 @@
+# derive_adhoc: An ergonomic replacement for (some) proc macros
+
+### Status
+
+As of 1 July 2022, this is still very much a work-in-progress: you probably
+shouldn't use it yet unless you like playing with sharp edges.
+
+
 ### Background
 
 Rust has two primary macro systems: `macro_rules`, which is easy to use, and proc macros, which are powerful: in particular, they can `derive`: autogenerate code from data structure definitions.
