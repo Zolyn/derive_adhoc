@@ -13,3 +13,10 @@
 //
 // Also this crate is where the docs live, right here as crate-level
 // docs.
+
+pub use derive_adhoc_macros::{
+    Adhoc,
+    define_derive_adhoc,
+    derive_adhoc,
+    derive_adhoc_expand,
+};
