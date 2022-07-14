@@ -65,3 +65,13 @@ Think properly about cross-crate API stability
       And it embodies the struct innards!
 
    What about crate renaming?  This is a bit of a mess in Rust.
+
+
+Future-proofing: ensure we haven't painted ourselves into a corner for
+
+   adhoc-derive from a trait, fn, impl block, ...
+
+   apply adhoc derive as an attribute macro, rather than derive macro,
+   thus arranging that the decorated struct is not actually emitted
+
+   token pasting (reuse quote, implement our own, what?)
