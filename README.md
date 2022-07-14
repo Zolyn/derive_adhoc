@@ -1,23 +1,32 @@
 # derive_adhoc: An ergonomic replacement for (some) proc macros
 
-### Status
+**WARNING**
 
-As of 1 July 2022, this is still very much a work-in-progress: you probably
+As of 14 July 2022, this is still quite a work-in-progress: you probably
 shouldn't use it yet unless you like playing with sharp edges.
 
-## Expansions
+(overview doc TBD)
+
+## Template syntax
 
 Within the macro template,
 expansions (and control structures) are introduced with `$`.
+They generally refer to properties of the data structure that
+we're deriving from.
+We call that data structure the **driver**.
 
-In general the syntax is
+In general the syntax is:
 
  * `$KEYWORD`: Invoke the expansion of the keyword `KEYWORD`.
  * `${KEYWORD PARAMS...}`: Invoke with parameters.
- * `$( .... )`: Repetition (abbreviated form).
+ * `$( .... )`: Repetition (abbreviated, automatic, form).
    (Note: there is no `+` or `*` after the `)`)
 
-In all cases, `$_identifier_` is equivalent to `${_identifier_}`.
+In all cases, `$KEYWORD` is equivalent to `${KEYWORD}`.
+You can pass a `$` through
+(e.g. if you want to confuse yourself
+by making derive-adhoc-generated pattern macros)
+by writing `$$`.
 
 Many of the expansion keywords start with `f`, `v`, or `s` to indicate
 the depth of the thing being expanded:
@@ -31,23 +40,26 @@ the depth of the thing being expanded:
 In the keyword descriptions below,
 `X` is used to stand in for one of `f`, `v` or `t`.
 
-### Repetition and nesting
+(Here, within this documentation,
+we often write in `CAPITALS` to indicate meta-meta-syntactic elements,
+since all of the punctuation is already taken.)
+
+## Repetition and nesting
 
 The driving data structure can contain multiple variants,
 which can in turn contain multiple fields;
 there are also attributes.
-So there are repeated sub-sectons.
 
 Correspondingly,
 sections of the template, indicated by `${for ...}` and `$( ...)`,
 are expanded multiple times.
 
-What is being repeated over is specified explicitly with `${for ...}`.
+With `${for ...}`, what is iterated over is specified explicitly.
 
-When `$( ... )` is used, what is being repeated over is automatically
+When `$( ... )` is used, what is iterated over is automatically
 inferred from the content:
-Each expansion keyword has a "level":
-what possibly-repeated part of the driver it corresponds to.
+most expansions and conditions imply a "level":
+what possibly-repeated part of the driver they correspond to.
 All the expansions directly within `$(...)`
 must have the same repetition level.
 
@@ -65,7 +77,7 @@ in turn.
 structs and unions do not have variants, but
 derive-adhoc treats them as having a single (unnamed) variant.
 
-### Expansion keywords
+## Expansions
 
  * `$fname`, `$vname`, `$tname`:
    The name of the field, variant, or toplevel type.
@@ -136,7 +148,7 @@ derive-adhoc treats them as having a single (unnamed) variant.
  * `${for fields { ... }}`:
    Expands the contents once per field.
 
-## CONDITIONS
+## Conditions
 
 Conditions all start with a `KEYWORD`.
 They are found within `${if }` and `${when }`.
