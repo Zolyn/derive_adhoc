@@ -49,6 +49,8 @@ Missing features
    Stringifying
       Perhaps stringify! will do ?
 
+   Check the case of reuseable derive names.
+
 Think properly about cross-crate API stability
 
    What about if crates use semver-different versions of derive-adhoc
