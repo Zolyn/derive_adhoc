@@ -24,7 +24,7 @@ We are using `derive_adhoc!` for the main truly adhoc from-struct derivation.  I
 
  * **`derive_adhoc!{ DRIVERNAME: TEMPLATE }`**: truly-adhoc derivation from something previously annotated with `#[derive(Ahoc)]` or `#[item_derive_adhoc]`.  `DRIVERNAME` is an item name; we conflate the type and value namespaces.
 
- * **`#[item_derive_adhoc]`**: attribute macro to be applied to items.  The item is reproduced unchanged, except that `#[adhoc]` attributes *in places where we would look for them* are filtered out.
+ * **`#[item_derive_adhoc]`**: attribute macro to be applied to items.  The item is reproduced unchanged, except that `#[adhoc]` attributes *in places where we would look for them* are filtered out.  `#[item_derive_adhoc(MACNAME)]` can be used to apply a reuseable template.
 
  * **`#[adhoc]`**: Inert helper attribute for `#[derive(Adhoc)]`.  Filtered-out attribute for `#[item_derive_adhoc]`.  Contents available via `$Xmeta`.
 
