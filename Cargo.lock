@@ -7,6 +7,7 @@ name = "derive-adhoc"
 version = "0.0.1"
 dependencies = [
  "derive-adhoc-macros",
+ "macrotest",
  "trybuild",
 ]
 
@@ -22,6 +23,12 @@ dependencies = [
  "syn",
  "void",
 ]
+
+[[package]]
+name = "diff"
+version = "0.1.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56254986775e3233ffa9c4d7d3faaf6d36a2c09d30b20687e9f88bc8bafc16c8"
 
 [[package]]
 name = "either"
@@ -57,10 +64,35 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c8af84674fe1f223a982c933a0ee1086ac4d4052aa0fb8060c12c6ad838e754"
 
 [[package]]
+name = "macrotest"
+version = "1.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7489ae0986ce45414b7b3122c2e316661343ecf396b206e3e15f07c846616f10"
+dependencies = [
+ "diff",
+ "glob",
+ "prettyplease",
+ "serde",
+ "serde_json",
+ "syn",
+ "toml",
+]
+
+[[package]]
 name = "once_cell"
 version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2f7254b99e31cad77da24b08ebf628882739a608578bb1bcdfc1f9c21260d7c0"
+
+[[package]]
+name = "prettyplease"
+version = "0.1.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a49e86d2c26a24059894a3afa13fd17d063419b05dfb83f06d9c3566060c3f5a"
+dependencies = [
+ "proc-macro2",
+ "syn",
+]
 
 [[package]]
 name = "proc-macro-crate"
@@ -108,6 +140,9 @@ name = "serde"
 version = "1.0.144"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0f747710de3dcd43b88c9168773254e809d8ddbdf9653b84e2554ab219f17860"
+dependencies = [
+ "serde_derive",
+]
 
 [[package]]
 name = "serde_derive"
