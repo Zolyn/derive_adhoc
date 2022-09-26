@@ -1,13 +1,4 @@
 
-Proper tests
-
-  Tests that expansions come out the way we expect.
-  Err, look for a crate to help with this?
-
-  Possibly, tests of compilation failures (but these are fragile
-  if done in the obvious way with trybuild).
-
-
 Proper docs
 
 A public writeup blog post
@@ -77,3 +68,9 @@ Future-proofing: ensure we haven't painted ourselves into a corner for
    thus arranging that the decorated struct is not actually emitted
 
    token pasting (reuse quote, implement our own, what?)
+
+
+Deferred:
+
+  Possibly, tests of compilation failures (but these are fragile
+  if done in the obvious way with trybuild).
