@@ -1,7 +1,7 @@
 // Here's an example of an attribute that overrides the default behavior
 // for an attribute.
 
-// Read "Hash" first for more discussion.
+// Read "hash.rs" first for more discussion.
 
 use std::fmt::{self, Debug, Formatter};
 
@@ -62,23 +62,6 @@ struct DataType {
     #[adhoc(debug(skip))]
     opaque: Opaque,
 }
-
-// Expands to...
-
-/*
-impl Debug for DataType
-    where u8: Debug,
-          &Vec<String>: Into<PrettyVec>,
-          PrettyVec: Debug
-{
-    fn debug(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        f.debug_struct("DataType")
-            .field("foo", &self.foo)
-            .field("bar", <PrettyVec as From<&Vec<String>>>::from(&self.bar))
-            .finish()
-    }
-}
-*/
 
 fn main() {
     let dt = DataType {
