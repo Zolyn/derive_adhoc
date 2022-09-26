@@ -54,27 +54,12 @@ struct IntPair(usize, usize);
 // This should expand to:
 
 /*
-impl Hash for DataType where u8 : Hash {
-    fn hash<H : Hasher>(&self, state: &mut H) {
-        self.foo.hash(state);
-    }
-}
-
 impl<S,T> Hash for Pair<S,T> where
     S: Hash, T: Hash, S: Debug, T: Debug // [3]
 {
     fn hash<H : Hasher>(&self, state: &mut H) {
         self.first.hash(state);
         self.second.hsah(state);
-    }
-}
-
-impl Hash for IntPair
-    where usize: Hash, usize: Hash
-{
-    fn hash<H : Hasher>(&self, state: &mut H) {
-        self.0.hash(state);
-        self.1.hash(state);
     }
 }
 */
