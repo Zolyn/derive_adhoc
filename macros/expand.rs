@@ -1332,15 +1332,16 @@ pub fn derive_adhoc_expand_func_macro(
 
     // obviously nothing should print to stderr
     //    dbg!(&&output);
-    let ident = input.driver.ident;
-    eprintln!(
-        "---------- derive_adhoc_expand start for {} ----------",
-        ident
-    );
-    eprintln!("{}", &output);
-    eprintln!(
-        "---------- derive_adhoc_expand end for {} ----------",
-        ident
-    );
+    // let ident = input.driver.ident;
+    // eprintln!(
+    //     "---------- derive_adhoc_expand start for {} ----------",
+    //     ident
+    // );
+    // eprintln!("{}", &output);
+    // eprintln!(
+    //     "---------- derive_adhoc_expand end for {} ----------",
+    //     ident
+    // );
+
     Ok(output)
 }

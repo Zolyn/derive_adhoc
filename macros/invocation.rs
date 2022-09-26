@@ -37,9 +37,9 @@ pub fn derive_adhoc_func_macro(
         template,
     } = syn::parse2(input)?;
 
-    //eprintln!("---------- derive_adhoc got start ----------");
-    //eprintln!("{}\n{}", &driver.to_token_stream(), &template);
-    //eprintln!("---------- derive_adhoc got end ----------");
+    // eprintln!("---------- derive_adhoc got start ----------");
+    // eprintln!("{}\n{}", &driver.to_token_stream(), &template);
+    // eprintln!("---------- derive_adhoc got end ----------");
 
     let mac_name = {
         let mut name = driver;

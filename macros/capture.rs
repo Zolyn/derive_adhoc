@@ -83,10 +83,10 @@ pub fn derive_adhoc_derive_macro(
         });
     }
 
-    let ident = &input.ident;
-    eprintln!("---------- derive(Adhoc) start on {} ----------", ident);
-    eprintln!("{}", &output);
-    eprintln!("---------- derive(Adhoc) end on {} ----------", ident);
+    // let ident = &input.ident;
+    // eprintln!("---------- derive(Adhoc) start on {} ----------", ident);
+    // eprintln!("{}", &output);
+    // eprintln!("---------- derive(Adhoc) end on {} ----------", ident);
 
     Ok(output)
 }
