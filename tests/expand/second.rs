@@ -1,8 +1,3 @@
-// This is a file full of random crap for experimentation.
-//
-// Instead, there should be a POC/MVP test case?, which maybe this is
-// becoming?
-
 use derive_adhoc_macros::{derive_adhoc, Adhoc};
 
 #[derive(Adhoc)]
