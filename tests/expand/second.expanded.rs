@@ -8,59 +8,6 @@ pub struct ChannelsParams {
     #[allow(dead_code)]
     padding_parameters: usize,
 }
-#[automatically_derived]
-impl ::core::fmt::Debug for ChannelsParams {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        ::core::fmt::Formatter::debug_struct_field2_finish(
-            f,
-            "ChannelsParams",
-            "padding_enable",
-            &&self.padding_enable,
-            "padding_parameters",
-            &&self.padding_parameters,
-        )
-    }
-}
-#[automatically_derived]
-impl ::core::clone::Clone for ChannelsParams {
-    #[inline]
-    fn clone(&self) -> ChannelsParams {
-        ChannelsParams {
-            padding_enable: ::core::clone::Clone::clone(&self.padding_enable),
-            padding_parameters: ::core::clone::Clone::clone(&self.padding_parameters),
-        }
-    }
-}
-impl ::core::marker::StructuralEq for ChannelsParams {}
-#[automatically_derived]
-impl ::core::cmp::Eq for ChannelsParams {
-    #[inline]
-    #[doc(hidden)]
-    #[no_coverage]
-    fn assert_receiver_is_total_eq(&self) -> () {
-        let _: ::core::cmp::AssertParamIsEq<bool>;
-        let _: ::core::cmp::AssertParamIsEq<usize>;
-    }
-}
-#[automatically_derived]
-impl ::core::default::Default for ChannelsParams {
-    #[inline]
-    fn default() -> ChannelsParams {
-        ChannelsParams {
-            padding_enable: ::core::default::Default::default(),
-            padding_parameters: ::core::default::Default::default(),
-        }
-    }
-}
-impl ::core::marker::StructuralPartialEq for ChannelsParams {}
-#[automatically_derived]
-impl ::core::cmp::PartialEq for ChannelsParams {
-    #[inline]
-    fn eq(&self, other: &ChannelsParams) -> bool {
-        self.padding_enable == other.padding_enable
-            && self.padding_parameters == other.padding_parameters
-    }
-}
 pub struct ChannelsParamsUpdates {
     ///
     /// New value, if it has changed.

@@ -5,7 +5,7 @@
 
 use derive_adhoc_macros::{derive_adhoc, Adhoc};
 
-#[derive(Adhoc, Debug, Clone, Eq, Default, PartialEq)]
+#[derive(Adhoc)]
 /// Some docs
 pub struct ChannelsParams {
     /// thing
