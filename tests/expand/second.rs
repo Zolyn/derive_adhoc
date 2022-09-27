@@ -1,11 +1,12 @@
 use derive_adhoc_macros::{derive_adhoc, Adhoc};
 
-#[derive(Adhoc)]
+#[derive(Adhoc, Default)]
 /// Some docs
 pub struct ChannelsParams {
     /// thing
     ///
     /// paragraph
+    #[allow(dead_code)]
     padding_enable: bool,
 
     #[allow(dead_code)]

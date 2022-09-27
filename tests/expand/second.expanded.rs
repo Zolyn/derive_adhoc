@@ -4,9 +4,20 @@ pub struct ChannelsParams {
     /// thing
     ///
     /// paragraph
+    #[allow(dead_code)]
     padding_enable: bool,
     #[allow(dead_code)]
     padding_parameters: usize,
+}
+#[automatically_derived]
+impl ::core::default::Default for ChannelsParams {
+    #[inline]
+    fn default() -> ChannelsParams {
+        ChannelsParams {
+            padding_enable: ::core::default::Default::default(),
+            padding_parameters: ::core::default::Default::default(),
+        }
+    }
 }
 pub struct ChannelsParamsUpdates {
     ///
@@ -74,6 +85,7 @@ struct ChannelsParamsDupliate {
     /// thing
     ///
     /// paragraph
+    #[allow(dead_code)]
     padding_enable: bool,
     #[allow(dead_code)]
     padding_parameters: usize,
