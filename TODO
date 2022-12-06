@@ -1,3 +1,88 @@
+Template features planned
+=========================
+
+   Ability to control publicness of define_derive_adhoc
+	define_derive_adhoc!{ [pub] MACNAME = TEMPLATE }
+                              ^^^^^
+
+   Handling of generics
+      supposing				struct Foo<'l:'a, T:X, const C=1>
+					where T: 'a
+      generic bindings (ie with bounds)
+		$tgens				'l:'a, T:X, const C=1,
+      generic param names (without bounds)
+		$tgnames			'l, T, C
+      where clauses (for toplevel)
+		$twheres			T: 'a,
+      So you can write
+		impl<$tgens> struct Bar<$tgnames> where $twheres {
+
+   Token pasting
+                ${paste ....}
+
+      Argument contains expansions - only some allowed -
+      and literal identifier chunks.
+
+      Should be able to paste a type with prefix and suffixes,
+      affecting the last path component.  Eg
+		struct $[ $ttype Builder ] {
+      should be able to generate
+		struct crate::config::WombatBuilder<K> {
+
+   String concatenation
+		${string ...}
+      Argument can contain any expansions, which will be stringified,
+      and literals in " ".  No un-quoted literal text is allowed.
+      Expansion is a single string literal.
+      FTAOD  ${string ${string "y"}}  =>  r#""y""#
+
+   Case conversion, applied to names within token pasting
+   or string concatenation:
+      		$expansion:CASE
+	Cases
+      		lower upper snake camel		like in paste!
+		pascal				like convert_case
+		others may be added later
+	Expansions
+		Anything is allowed, $KEYWORD or ${...}
+
+   Check the case of reuseable derive names.
+      These should be in Pascal case.
+
+   Variant (or value) body and delimiter
+	${vbody  ....  }	( ... )		tuple struct/variant
+				{ ... }		struct [variant] or union
+				nothing		unit struct/variant
+
+   Field specifier
+	$fspec			$fname :	in struct [variant] or union
+				nothing		in tuple variant/struct
+
+
+FEATURES WITH SYNTAX AND/OR SEMANTICS TBD
+=========================================
+
+
+   For things that need to split off fields and    struct Foo as above {
+   talk only about subsets of the generics             field: Box<T>,
+      generic parameter uses (for fields)
+      		$fgens					T,
+		$fgens_omitted				'l, C
+      For explicit iteration, within ${for tgens ...} or $( ... )
+		$tgname					'l   	T   	C
+		$tgbounds ???
+
+   Something for being able to handle structs/unions/enums
+   equally in template, whatever that means.  We need to expand
+   something to struct/union/enum, and possibly the brackets and
+   commas in enum { ..., ..., }, and so on.
+
+   Case conversion of strings.
+
+
+OTHER TODO LIST ITEMS
+=====================
+
 
 Proper docs
 
@@ -9,6 +94,8 @@ Bugs
    Make the macro encapsulating the struct body that #[derive(Adhoc)]
    generates not be #[macro_export] if any of the fields are pub.
 
+   https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/issues/1
+
 
 Innards
 
@@ -18,35 +105,11 @@ Innards
    levels.
 
 
-Missing features
-
-   Ability to control publicness of define_derive_adhoc
-
-   Handling of generics
-      list of generic bindings (ie with bounds) (for toplevel)
-      list of generic parameter names (without bounds) (for toplevel)
-      list of generic parameter uses (for fields)
-      where clauses (for toplevel) (all where clauses?)
-
-   Ability to generate the various wrapping delimiters
-      Something to generate { } iff it's an enum
-      Something to generate field_name: iff it's named field, else nothing
-      Something to generate ( ) for tuple variants, { } for named
-
-   Token pasting
-      Should be able to paste a type with prefix and suffixes,
-      affecting the last path component
-
-   Stringifying
-      Perhaps stringify! will do ?
-
-   Check the case of reuseable derive names.
-
-Think properly about cross-crate API stability
+Think properly about 
 
    What about if crates use semver-different versions of derive-adhoc
       The define_derive_adhoc macros embody a template,
-      should perhaps embody the derive-adhoc expander major version
+      should perhaps embody the derive-adhoc expander major version.
 
    We should make semver major breaks the template language infrequently.
    Extensions are OK: if one crate needs the latest then they can all
