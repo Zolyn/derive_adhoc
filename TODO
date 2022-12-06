@@ -5,11 +5,11 @@ TEMPLATE FEATURES PLANNED
       supposing				struct Foo<'l:'a, T:X, const C=1>
 					where T: 'a
       generic bindings (ie with bounds)
-		$tgens				'l:'a, T:X, const C=1,
+		$tgens			=>	'l:'a, T:X, const C=1,
       generic param names (without bounds)
-		$tgnames			'l, T, C,
+		$tgnames		=>	'l, T, C,
       where clauses (for toplevel)
-		$twheres			T: 'a,
+		$twheres		=>	T: 'a,
    (In each case with a trailing , after each one.)
    So you can write
        impl<$tgens> struct Bar<$tgnames> where $twheres {
@@ -22,19 +22,21 @@ TEMPLATE FEATURES PLANNED
 
       Should be able to paste a type with prefix and suffixes,
       affecting the last path component.  Eg
-		struct $[ $ttype Builder ] {
+          impl<$tgens> ${paste Zingy $ttype Builder } {
       should be able to generate
-		struct crate::config::WombatBuilder<K> {
+          impl<'l:'a, T:X, const C=1> crate::config::ZingyFooBuilder<'a,T,C> {
 
    String concatenation
 		${string ...}
-      Argument can contain any expansions, which will be stringified,
-      and literals in " ".  No un-quoted literal text is allowed.
+      Argument can contain any expansions,
+      which will be expanded into tokens and stringified,
+      and string literals (in " ").
+      No un-quoted literal text is allowed.
       Expansion is a single string literal.
       FTAOD  ${string ${string "y"}}  =>  r#""y""#
 
-   Case conversion, applied to names within token pasting
-   or string concatenation:
+   Case conversion
+   Can be applied to names (only) within token or string concatenation:
       		$expansion:CASE
 	Cases
       		lower upper snake camel		like in paste!
@@ -42,9 +44,13 @@ TEMPLATE FEATURES PLANNED
 		others may be added later
 	Expansions
 		Anything is allowed, $KEYWORD or ${...}
+   So, eg,
+      fn ${paste zingy_ $tname:snake _builder}();
+   expands to
+      fn zingy_foo_builder();
 
    Variant (or value) body and delimiter
-	${vbody  ....  }	{ ... }		struct [variant] or union
+	${vbody ... }		{ ... }		struct [variant] or union
 				( ... )		tuple struct/variant
 				nothing		unit struct/variant
 
@@ -70,7 +76,8 @@ FEATURES WITH SYNTAX AND/OR SEMANTICS TBD
    something to struct/union/enum, and possibly the brackets and
    commas in enum { ..., ..., }, and so on.
 
-   Case conversion of strings.
+   Case conversion of general strings (ie non-name expansions
+   within ${string }).
 
 
 OTHER TODO LIST ITEMS
