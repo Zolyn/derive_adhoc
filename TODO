@@ -12,7 +12,7 @@ TEMPLATE FEATURES PLANNED
 		$twheres		=>	T: 'a,
    (In each case with a trailing , after each one.)
    So you can write
-       impl<$tgens> struct Bar<$tgnames> where $twheres {
+       impl<$tgens> Bar<$tgnames> where $twheres {
 
    Token pasting
                 ${paste ....}
