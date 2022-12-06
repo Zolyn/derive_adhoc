@@ -89,3 +89,22 @@ The result of expanding the above is this:
 and implements a bespoke template expander,
 whose template syntax resembles the expansion syntax from `macro_rules`.
 
+
+Cross-crate API stability
+=========================
+
+We want people to be able to export derive-adhoc reuseable macros,
+and also to export the "struct captures".
+
+This is not so easy because:
+
+ * The template language might evolve, and then we would need to
+   make sure that the right expander was used.
+   (Possibly newer expanders would support old syntax, but there
+   would at least need to be a way to *specify* the desired variant,
+   and always using a newer expander might complicate MSRV etc. etc.)
+
+ * The various macros need to find the template expander, and the
+   right versions of things.  Rust's rather strange import rules,
+   and the interaction of this with strange macro_rules scoping,
+   are not helping.
