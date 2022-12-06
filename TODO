@@ -1,9 +1,5 @@
-Template features planned
+TEMPLATE FEATURES PLANNED
 =========================
-
-   Ability to control publicness of define_derive_adhoc
-	define_derive_adhoc!{ [pub] MACNAME = TEMPLATE }
-                              ^^^^^
 
    Handling of generics
       supposing				struct Foo<'l:'a, T:X, const C=1>
@@ -11,11 +7,12 @@ Template features planned
       generic bindings (ie with bounds)
 		$tgens				'l:'a, T:X, const C=1,
       generic param names (without bounds)
-		$tgnames			'l, T, C
+		$tgnames			'l, T, C,
       where clauses (for toplevel)
 		$twheres			T: 'a,
-      So you can write
-		impl<$tgens> struct Bar<$tgnames> where $twheres {
+   (In each case with a trailing , after each one.)
+   So you can write
+       impl<$tgens> struct Bar<$tgnames> where $twheres {
 
    Token pasting
                 ${paste ....}
@@ -46,12 +43,9 @@ Template features planned
 	Expansions
 		Anything is allowed, $KEYWORD or ${...}
 
-   Check the case of reuseable derive names.
-      These should be in Pascal case.
-
    Variant (or value) body and delimiter
-	${vbody  ....  }	( ... )		tuple struct/variant
-				{ ... }		struct [variant] or union
+	${vbody  ....  }	{ ... }		struct [variant] or union
+				( ... )		tuple struct/variant
 				nothing		unit struct/variant
 
    Field specifier
@@ -62,9 +56,8 @@ Template features planned
 FEATURES WITH SYNTAX AND/OR SEMANTICS TBD
 =========================================
 
-
-   For things that need to split off fields and    struct Foo as above {
-   talk only about subsets of the generics             field: Box<T>,
+   For things that need to split off fields        struct Foo as above {
+   and talk only about subsets of the generics         field: Box<T>,
       generic parameter uses (for fields)
       		$fgens					T,
 		$fgens_omitted				'l, C
@@ -83,18 +76,31 @@ FEATURES WITH SYNTAX AND/OR SEMANTICS TBD
 OTHER TODO LIST ITEMS
 =====================
 
-
 Proper docs
+Sort out NOTES.md
 
 A public writeup blog post
 
 
 Bugs
 
+ * Make results of define_derive_adhoc not exported.
    Make the macro encapsulating the struct body that #[derive(Adhoc)]
-   generates not be #[macro_export] if any of the fields are pub.
+   generates not be #[macro_export] for now.
 
-   https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/issues/1
+   (In the future we will change these.  It will be like this
+	define_derive_adhoc!{ [pub] MACNAME = TEMPLATE }
+   and
+        https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/issues/1
+   but see "Cross-crate API stability" in NOTES.md.)
+
+
+ * Make things work if you have a normal crate that imports things
+   in a normal way.
+
+ * Ideally we would check the case of reuseable derive names.
+   These should be in Pascal case.
+   But we only want to *lint* for this, not fail, and that's hard.
 
 
 Innards
@@ -105,35 +111,19 @@ Innards
    levels.
 
 
-Think properly about 
-
-   What about if crates use semver-different versions of derive-adhoc
-      The define_derive_adhoc macros embody a template,
-      should perhaps embody the derive-adhoc expander major version.
-
-   We should make semver major breaks the template language infrequently.
-   Extensions are OK: if one crate needs the latest then they can all
-   have it.
-
-   Can you derive_adhoc! someone else's struct
-      The generated capture macro embodies the calling convention
-      for the expander but not an expansion syntax.
-      And it embodies the struct innards!
-
-   What about crate renaming?  This is a bit of a mess in Rust.
-
 
 Future-proofing: ensure we haven't painted ourselves into a corner for
 
    adhoc-derive from a trait, fn, impl block, ...
 
-   apply adhoc derive as an attribute macro, rather than derive macro,
-   thus arranging that the decorated struct is not actually emitted
+   Apply adhoc derive as an attribute macro, rather than derive macro,
+   thus arranging that the decorated struct is not actually emitted?
 
-   token pasting (reuse quote, implement our own, what?)
+   See FUTURE.md.
 
 
-Deferred:
+DEFERRED TODO LIST ITEMS
+========================
 
-  Possibly, tests of compilation failures (but these are fragile
-  if done in the obvious way with trybuild).
+Possibly, tests of compilation failures (but these are fragile
+if done in the obvious way with trybuild).

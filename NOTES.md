@@ -108,3 +108,26 @@ This is not so easy because:
    right versions of things.  Rust's rather strange import rules,
    and the interaction of this with strange macro_rules scoping,
    are not helping.
+
+We need to think properly about the following:
+
+ * What about if crates use semver-different versions of derive-adhoc
+
+   The define_derive_adhoc macros embody a template,
+   should perhaps embody the derive-adhoc expander major version.
+
+ * We should make semver major breaks the template language infrequently.
+   Extensions are OK: if one crate needs the latest then they can all
+   have it.
+
+ * Can you derive_adhoc! someone else's struct ?
+
+   The generated capture macro embodies the calling convention
+   for the expander but not an expansion syntax.
+   And it embodies the struct innards!
+
+ * What about crate renaming?  This is a bit of a mess in Rust.
+
+ * `derive_adhoc_expand!` should perhaps take an argument saying what
+   the driver is.  Right now it gets the driver in `{ }` so actually
+   wouldn't be ambiguous, and maybe we could just punt.
