@@ -810,9 +810,7 @@ impl SubstAttr {
  "tried to expand just attribute value, but it was specified multiple times"
                 ));
             }
-            let mut buf = TokenStream::new();
-            av.expand(self.span(), &self.as_, &mut buf)?;
-            found = Some(buf);
+            found = Some(av);
             Ok(())
         })?;
 
@@ -821,6 +819,10 @@ impl SubstAttr {
  "attribute value expanded, but no value in data structure definition"
         )
         })?;
+
+        let mut buf = TokenStream::new();
+        found.expand(self.span(), &self.as_, &mut buf)?;
+        let found = Some(buf);
 
         out.extend(found);
         Ok(())
