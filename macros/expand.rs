@@ -1021,10 +1021,10 @@ impl<'w> WithinRepeatLevel<'w> for WithinVariant<'w> {
         'c: 'w,
         F: FnMut(&Context, &WithinVariant<'w>) -> Result<(), E>,
     {
-        let mut within_variant = |variant, pvariant: &'c PreprocessedVariant| {
-            let fields = &pvariant.fields;
-            let pattrs = &pvariant.pattrs;
-            let pfields = &pvariant.pfields;
+        let mut within_variant = |variant, ppv: &'c PreprocessedVariant| {
+            let fields = &ppv.fields;
+            let pattrs = &ppv.pattrs;
+            let pfields = &ppv.pfields;
             let wv = WithinVariant {
                 variant,
                 fields,
