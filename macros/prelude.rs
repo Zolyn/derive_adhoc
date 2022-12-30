@@ -25,3 +25,4 @@ pub use TokenTree as TT;
 pub use crate::utils::expand_macro_name;
 pub use crate::utils::ErrorAccumulator;
 pub use crate::utils::{SpannedExt as _, TokenStreamExt as _};
+pub use crate::utils::ToTokensPunctComposable;

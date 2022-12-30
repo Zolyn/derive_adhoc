@@ -17,6 +17,39 @@ pub trait TokenStreamExt: Extend<TokenStream> {
 
 impl<T: Extend<TokenStream>> TokenStreamExt for T {}
 
+pub trait ToTokensPunctComposable {
+    /// Convert to a token stream in a way that composes nicely
+    fn to_tokens_punct_composable(&self, out: &mut TokenStream);
+}
+/// Ensure that there is a trailing punctuation if needed
+impl<T, P> ToTokensPunctComposable for Punctuated<T, P>
+where T: ToTokens,
+      P: ToTokens + Default
+{
+    fn to_tokens_punct_composable(&self, out: &mut TokenStream) {
+        self.to_tokens(out);
+        if !self.empty_or_trailing() {
+            P::default().to_tokens(out)
+        }
+    }
+}
+/// Ensure that something is output, for punctuation `P`
+///
+/// Implemented for `Option<&&P>` because that's what you get from
+/// `Punctuated::pairs().next().punct()`.
+impl<P> ToTokensPunctComposable for Option<&&P>
+where P: ToTokens,
+      P: Default
+{
+    fn to_tokens_punct_composable(&self, out: &mut TokenStream) {
+        if let Some(self_) = self {
+            self_.to_tokens(out)
+        } else {
+            P::default().to_tokens(out)
+        }
+    }
+}
+
 #[derive(Debug, Default)]
 pub struct ErrorAccumulator {
     bad: Option<syn::Error>,

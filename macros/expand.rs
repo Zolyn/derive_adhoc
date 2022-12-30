@@ -92,6 +92,11 @@ enum SubstDetails {
     vattrs(RawAttr),
     fattrs(RawAttr),
 
+    // generics
+    tgens,
+    tgnames,
+    twheres,
+
     // special
     when(Box<Subst>),
 
@@ -349,6 +354,10 @@ impl Parse for Subst {
         keyword! { fname }
         keyword! { ftype }
         keyword! { is_enum }
+
+        keyword! { tgens }
+        keyword! { tgnames }
+        keyword! { twheres }
 
         keyword! { tmeta(input.parse()?) }
         keyword! { vmeta(input.parse()?) }
@@ -632,6 +641,17 @@ impl Subst {
         // eprintln!("@@@@@@@@@@@@@@@@@@@@ EXPAND {:?}", self);
 
         let do_meta = |wa: &SubstAttr, out, meta| wa.expand(ctx, out, meta);
+        let do_tgnames = |out: &mut _| {
+            for pair in ctx.top.generics.params.pairs() {
+                use syn::GenericParam as GP;
+                match pair.value() {
+                    GP::Type(t) => t.ident.to_tokens(out),
+                    GP::Const(c) => c.ident.to_tokens(out),
+                    GP::Lifetime(l) => l.lifetime.to_tokens(out),
+                }
+                pair.punct().to_tokens_punct_composable(out);
+            }
+        };
 
         match &self.sd {
             SD::tname => ctx.top.ident.to_tokens(out),
@@ -671,6 +691,14 @@ impl Subst {
                 ra.expand(ctx, out, &ctx.field(self)?.field.attrs)?
             }
 
+            SD::tgens => ctx.top.generics.params.to_tokens(out),
+            SD::tgnames => do_tgnames(out),
+            SD::twheres => {
+                if let Some(clause) = &ctx.top.generics.where_clause {
+                    clause.predicates.to_tokens_punct_composable(out);
+                }
+            }
+
             SD::when(when) => when.unfiltered_when(out),
             SD::If(conds) => conds.expand(ctx, out)?,
             SD::is_enum
@@ -701,6 +729,9 @@ impl Subst {
             SD::tattrs(_) => None,
             SD::vattrs(_) => Some(RO::Variants),
             SD::fattrs(_) => Some(RO::Fields),
+            SD::tgens => None,
+            SD::tgnames => None,
+            SD::twheres => None,
             SD::is_enum => None,
             SD::when(_) => None, // out-of-place when, ignore it
             SD::not(cond) => {

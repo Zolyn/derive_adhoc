@@ -92,6 +92,36 @@ derive-adhoc treats them as having a single (unnamed) variant.
    `derive_adhoc!{ }`
    had a path prefix.
 
+ * **`$tgens`**, **`$tgens`**, **`$twheres`**:
+   Generic parameters and bounds, from the toplevel type,
+   in various forms.
+
+   * **`$tgens`**:
+     The generic arguments, with bounds,
+     as written in the toplevel type definition.
+
+     Example: `'l:'a, T:X, const C=1,` .
+
+   * **`$tgnames`**:
+     The generic argument names, without bounds,
+     as might be used in a field type or inherent impl.
+
+     Example: `'l, T, C,` .
+
+   * **`$twheres`**:
+     The where clauses, as written in the toplevel type definition.
+
+     Example: `T: 'a,` .
+
+   If not empty, will always have a trailing comma.
+
+   Bounds appear in `$tgens` or `$twheres`,
+   according to where they appear in the toplevel type,
+   so for full support of generic types the template must expand both.
+
+   Examples each show the expansion for
+   `struct Foo<'l:'a, T:X, const C=1> where T: 'a {...}`.
+
  * **`${tmeta(...)}` `${vmeta(...)}` `${fmeta(...)}`**:
    Accesses macro parameters passed via `#[adhoc(...)]` attributes.
 

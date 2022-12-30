@@ -1,19 +1,6 @@
 TEMPLATE FEATURES PLANNED
 =========================
 
-   Handling of generics
-      supposing				struct Foo<'l:'a, T:X, const C=1>
-					where T: 'a
-      generic bindings (ie with bounds)
-		$tgens			=>	'l:'a, T:X, const C=1,
-      generic param names (without bounds)
-		$tgnames		=>	'l, T, C,
-      where clauses (for toplevel)
-		$twheres		=>	T: 'a,
-   (In each case with a trailing , after each one.)
-   So you can write
-       impl<$tgens> Bar<$tgnames> where $twheres {
-
    Token pasting
                 ${paste ....}
 
