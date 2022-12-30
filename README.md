@@ -88,7 +88,7 @@ derive-adhoc treats them as having a single (unnamed) variant.
    The type of the field, or the toplevel type.
    This contains all necessary generics.
    For the toplevel type it contains a path prefix iff
-   the driver stype argument to
+   the driver type argument to
    `derive_adhoc!{ }`
    had a path prefix.
 
