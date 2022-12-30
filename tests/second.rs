@@ -43,38 +43,12 @@ derive_adhoc! {
     }
 }
 
-// Possible invocation ssyntaxes
-
-/*
-derive_adhoc!{
-    #[derive_adhoc(ChannelsParams)]
-    type Wombat1 = $ Struct;
-}*/
-
 derive_adhoc! {
     ChannelsParams:
     type Wombat = $ tname;
 }
 
-/*#[derive_adhoc(ChannelsParams)] x!{
-    type Wombat3 = $ Struct;
-}
-
-derive_adhoc_apply_ChannelsParams!{
-    type Wombat4 = $ Struct;
-}*/
-
 type K = Wombat;
-
-/*
-#[derive(Debug, Default, Clone, Eq, PartialEq)]
-pub struct ChannelsParamsUpdates {
-$(
-    /// New value, if it has changed.
-    pub(crate) $field: Option<$ty>,
-)*
-}
-*/
 
 fn main() {
     let _: K = ChannelsParams::default();
