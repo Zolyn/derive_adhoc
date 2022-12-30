@@ -8,14 +8,15 @@
 use derive_adhoc_macros::define_derive_adhoc;
 use derive_adhoc_macros::{derive_adhoc, Adhoc};
 
-// use std::fmt::Debug;
+use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 
 define_derive_adhoc! {
     MyHash /*for struct*/ =  // [1]
 
-    impl Hash for $ttype
-    where $( ${when not(fmeta(hash(skip)))}
+    impl<$tgens> Hash for $ttype
+    where $twheres
+          $( ${when not(fmeta(hash(skip)))}
              $ftype : Hash , )
     {
         fn hash<H : Hasher>(&self, state: &mut H) {
@@ -26,7 +27,6 @@ define_derive_adhoc! {
 }
 
 #[derive(Adhoc)]
-//#[derive_adhoc(MyHash)]
 #[derive_adhoc(MyHash)]
 struct DataType {
     foo: u8,
@@ -34,7 +34,6 @@ struct DataType {
     bar: Vec<String>,
 }
 
-/*
 #[derive(Adhoc)]
 #[derive_adhoc(MyHash)]
 struct Pair<S,T:Debug>
@@ -43,30 +42,12 @@ struct Pair<S,T:Debug>
     first: S,
     second: T,
 }
-*/
 
 #[derive(Adhoc)]
 #[derive_adhoc(MyHash)]
 struct IntPair(usize, usize);
 
 // [1] The "for struct" syntax here means that only structs are supported.
-
-// This should expand to:
-
-/*
-impl<S,T> Hash for Pair<S,T> where
-    S: Hash, T: Hash, S: Debug, T: Debug // [3]
-{
-    fn hash<H : Hasher>(&self, state: &mut H) {
-        self.first.hash(state);
-        self.second.hsah(state);
-    }
-}
-*/
-
-// [3] Note that the "impl..where .. {}" generation here is completely magical.
-//    It needs to add the <S,T> after the impl,
-//    and it needs to add S:Debug and T:Debug.
 
 fn main() {
     let v = DataType {
