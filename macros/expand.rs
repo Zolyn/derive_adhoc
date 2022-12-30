@@ -485,16 +485,16 @@ impl Subst {
         // TODO this is calling out for some generic stuff
         // eprintln!("@@@@@@@@@@@@@@@@@@@@ EVAL {:?}", self);
 
-        macro_rules! eval_attr { { $wa:expr, $with:ident, $($pattrs:tt)* } => {
-            is_found(ctx.$with(|_ctx, within| {
+        macro_rules! eval_attr { { $wa:expr, $lev:ident, $($pattrs:tt)* } => {
+            is_found(ctx.for_with_within::<$lev,_,_>(|_ctx, within| {
                 $wa.path.search_eval_bool(&within . $($pattrs)*)
             }))
         } }
 
         let r = match &self.sd {
             SD::tmeta(wa) => is_found(wa.path.search_eval_bool(ctx.tattrs)),
-            SD::vmeta(wa) => eval_attr!{ wa, for_with_variant, pattrs },
-            SD::fmeta(wa) => eval_attr!{ wa, for_with_field, pfield.pattrs },
+            SD::vmeta(wa) => eval_attr!{ wa, WithinVariant, pattrs },
+            SD::fmeta(wa) => eval_attr!{ wa, WithinField, pfield.pattrs },
             SD::is_enum => matches!(ctx.top.data, syn::Data::Enum(_)),
 
             SD::False => false,
@@ -988,13 +988,40 @@ impl Parse for RawAttrEntry {
     }
 }
 
-impl<'c> Context<'c> {
-    fn for_variants<F, E>(&self, mut call: F) -> Result<(), E>
+/// Implemented for [`WithinVariant`] and [`WithinField`]
+///
+/// For combining code that applies similarly for different repeat levels.
+trait WithinRepeatLevel<'w>: 'w {
+    fn level_display_name() -> &'static str;
+
+    fn current(ctx: &'w Context) -> Option<&'w Self>;
+
+    /// Iterate over all the things at this level
+    ///
+    /// If it needs a current container of the next level up (eg, a
+    /// field needing a variant) and there is none current, iterates
+    /// over containing things too.
+    fn for_each<'c, F, E>(ctx: &'c Context<'c>, call: F) -> Result<(), E>
     where
-        F: FnMut(&Context, &WithinVariant) -> Result<(), E>,
+        'c: 'w,
+        F: FnMut(&Context, &Self) -> Result<(), E>;
+}
+
+impl<'w> WithinRepeatLevel<'w> for WithinVariant<'w> {
+    fn level_display_name() -> &'static str {
+        "variant"
+    }
+
+    fn current(ctx: &'w Context) -> Option<&'w WithinVariant<'w>> {
+        ctx.variant
+    }
+
+    fn for_each<'c, F, E>(ctx: &'c Context<'c>, mut call: F) -> Result<(), E>
+    where
+        'c: 'w,
+        F: FnMut(&Context, &WithinVariant<'w>) -> Result<(), E>,
     {
-        let ctx = self;
-        let mut within_variant = |variant, pvariant: &PreprocessedVariant| {
+        let mut within_variant = |variant, pvariant: &'c PreprocessedVariant| {
             let fields = &pvariant.fields;
             let pattrs = &pvariant.pattrs;
             let pfields = &pvariant.pfields;
@@ -1023,44 +1050,23 @@ impl<'c> Context<'c> {
         }
         Ok(())
     }
+}
 
-    fn for_with_variant<F, E>(&self, mut call: F) -> Result<(), E>
+impl<'w> WithinRepeatLevel<'w> for WithinField<'w> {
+    fn level_display_name() -> &'static str {
+        "field"
+    }
+
+    fn current(ctx: &'w Context) -> Option<&'w WithinField<'w>> {
+        ctx.field
+    }
+
+    fn for_each<'c, F, E>(ctx: &'c Context<'c>, mut call: F) -> Result<(), E>
     where
-        F: FnMut(&Context, &WithinVariant) -> Result<(), E>,
+        'c: 'w,
+        F: FnMut(&Context, &WithinField<'w>) -> Result<(), E>,
     {
-        let ctx = self;
-        if let Some(wv) = &self.variant {
-            call(ctx, wv)?;
-        } else {
-            ctx.for_variants(call)?;
-        }
-        Ok(())
-    }
-
-    fn variant(&self, why: &dyn Spanned) -> syn::Result<&WithinVariant> {
-        // TODO helper function, maybe ext trait on Spanned, for syn::Error
-        let r = self.variant.as_ref().ok_or_else(|| {
-            syn::Error::new(
-                why.span(),
-                "must be within a variant (so, in a repeat group)",
-            )
-        })?;
-        Ok(r)
-    }
-
-    fn syn_variant(&self, why: &dyn Spanned) -> syn::Result<&syn::Variant> {
-        let r = self.variant(why)?.variant.as_ref().ok_or_else(|| {
-            syn::Error::new(why.span(), "expansion only valid in enums")
-        })?;
-        Ok(r)
-    }
-
-    fn for_fields<F, E>(&self, mut call: F) -> Result<(), E>
-    where
-        F: FnMut(&Context, &WithinField) -> Result<(), E>,
-    {
-        let ctx = self;
-        ctx.for_with_variant(|ctx, variant| {
+        ctx.for_with_within(|ctx, variant: &WithinVariant| {
             for (index, (field, pfield)) in
                 izip!(variant.fields, variant.pfields,).enumerate()
             {
@@ -1080,26 +1086,61 @@ impl<'c> Context<'c> {
             Ok(())
         })
     }
+}
 
-    fn for_with_field<F, E>(&self, mut call: F) -> Result<(), E>
+impl<'c> Context<'c> {
+    /// Obtains the relevant `Within`(s), and calls `call` for each one
+    ///
+    /// If there is a current `W`, simply calls `call`.
+    /// Otherwise, iterates over all of them and calls `call` for each one.
+    fn for_with_within<'w, W, F, E>(&'c self, mut call: F) -> Result<(), E>
     where
-        F: FnMut(&Context, &WithinField) -> Result<(), E>,
+        'c: 'w,
+        W: WithinRepeatLevel<'w>,
+        F: FnMut(&Context, &W) -> Result<(), E>,
     {
         let ctx = self;
-        if let Some(wv) = &self.field {
-            call(ctx, wv)?;
+        if let Some(w) = W::current(ctx) {
+            call(ctx, w)?;
         } else {
-            ctx.for_fields(call)?;
+            W::for_each(ctx, call)?;
         }
         Ok(())
     }
 
-    fn field(&self, why: &dyn Spanned) -> syn::Result<&WithinField> {
-        let r = self.field.as_ref().ok_or_else(|| {
+    /// Obtains the current `Within` of type `W`
+    ///
+    /// Demands that there actually is a current container `W`.
+    /// If we aren't, calls it an error.
+    fn within_level<W>(&'c self, why: &dyn Spanned) -> syn::Result<&W>
+    where
+        W: WithinRepeatLevel<'c>,
+    {
+        // TODO helper function, maybe ext trait on Spanned, for syn::Error
+        let r = W::current(self).ok_or_else(|| {
             syn::Error::new(
                 why.span(),
-                "expansion must be within a field (so, in a repeat group)",
+                format_args!(
+                    "must be within a {} (so, in a repeat group)",
+                    W::level_display_name(),
+                ),
             )
+        })?;
+        Ok(r)
+    }
+
+    /// Obtains the current field (or calls it an error)
+    fn field(&self, why: &dyn Spanned) -> syn::Result<&WithinField> {
+        self.within_level(why)
+    }
+    /// Obtains the current variant (or calls it an error)
+    fn variant(&self, why: &dyn Spanned) -> syn::Result<&WithinVariant> {
+        self.within_level(why)
+    }
+    /// Obtains the current variant as a `syn::Variant`
+    fn syn_variant(&self, why: &dyn Spanned) -> syn::Result<&syn::Variant> {
+        let r = self.variant(why)?.variant.as_ref().ok_or_else(|| {
+            syn::Error::new(why.span(), "expansion only valid in enums")
         })?;
         Ok(r)
     }
@@ -1188,10 +1229,10 @@ impl RepeatedTemplate {
         // gratuituous, but I don't understand it.
         #[allow(clippy::unit_arg)]
         match self.over {
-            RO::Variants => ctx.for_variants(|ctx, _variant| {
+            RO::Variants => ctx.for_with_within(|ctx, _: &WithinVariant| {
                 Ok::<_, Void>(self.expand_inner(ctx, out))
             }),
-            RO::Fields => ctx.for_fields(|ctx, _field| {
+            RO::Fields => ctx.for_with_within(|ctx, _: &WithinField| {
                 Ok::<_, Void>(self.expand_inner(ctx, out))
             }),
         }

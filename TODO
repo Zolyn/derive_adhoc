@@ -114,10 +114,6 @@ Innards
 
    expand.rs is too big a file
 
-   There is some flabbiness where code is repeated for different
-   levels.
-
-
 
 Future-proofing: ensure we haven't painted ourselves into a corner for
 

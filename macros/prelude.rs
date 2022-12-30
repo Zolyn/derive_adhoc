@@ -2,7 +2,7 @@
 
 pub use std::convert::{TryFrom, TryInto};
 pub use std::default::Default;
-pub use std::fmt::Display;
+pub use std::fmt::{self, Display};
 pub use std::mem;
 
 pub use itertools::{izip, Itertools};
