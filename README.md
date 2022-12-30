@@ -86,7 +86,7 @@ derive-adhoc treats them as having a single (unnamed) variant.
 
  * **`$ftype`, `$ttype`**:
    The type of the field, or the toplevel type.
-   This contains all necessary generics.
+   This contains all necessary generics (as names).
    For the toplevel type it contains a path prefix iff
    the driver type argument to
    `derive_adhoc!{ }`

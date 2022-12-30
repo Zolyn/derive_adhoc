@@ -657,7 +657,17 @@ impl Subst {
             SD::tname => ctx.top.ident.to_tokens(out),
             SD::ttype => {
                 ctx.top.ident.to_tokens(out);
-                ctx.top.generics.to_tokens(out);
+
+                let gens = &ctx.top.generics;
+                match (&gens.lt_token,&gens.gt_token) {
+                    (None, None) => (),
+                    (Some(lt), Some(rt)) => {
+                        lt.to_tokens(out);
+                        do_tgnames(out);
+                        rt.to_tokens(out);
+                    }
+                    _ => panic!("unmatched < > in syn::Generics {:?}", gens),
+                }
             }
             SD::vname => ctx.syn_variant(self)?.ident.to_tokens(out),
             SD::fname => {
