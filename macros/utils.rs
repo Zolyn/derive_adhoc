@@ -9,22 +9,15 @@ pub trait SpannedExt: Spanned {
 
 impl<T: Spanned> SpannedExt for T {}
 
-pub trait TokenStreamExt: Extend<TokenStream> {
-    fn write_error<S: Spanned, M: Display>(&mut self, s: &S, m: M) {
-        self.extend([s.error(m).into_compile_error()])
-    }
-}
-
-impl<T: Extend<TokenStream>> TokenStreamExt for T {}
-
 pub trait ToTokensPunctComposable {
     /// Convert to a token stream in a way that composes nicely
     fn to_tokens_punct_composable(&self, out: &mut TokenStream);
 }
 /// Ensure that there is a trailing punctuation if needed
 impl<T, P> ToTokensPunctComposable for Punctuated<T, P>
-where T: ToTokens,
-      P: ToTokens + Default
+where
+    T: ToTokens,
+    P: ToTokens + Default,
 {
     fn to_tokens_punct_composable(&self, out: &mut TokenStream) {
         self.to_tokens(out);
@@ -38,8 +31,9 @@ where T: ToTokens,
 /// Implemented for `Option<&&P>` because that's what you get from
 /// `Punctuated::pairs().next().punct()`.
 impl<P> ToTokensPunctComposable for Option<&&P>
-where P: ToTokens,
-      P: Default
+where
+    P: ToTokens,
+    P: Default,
 {
     fn to_tokens_punct_composable(&self, out: &mut TokenStream) {
         if let Some(self_) = self {

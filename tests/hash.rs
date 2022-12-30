@@ -36,8 +36,9 @@ struct DataType {
 
 #[derive(Adhoc)]
 #[derive_adhoc(MyHash)]
-struct Pair<S,T:Debug>
-    where S: Debug
+struct Pair<S, T: Debug>
+where
+    S: Debug,
 {
     first: S,
     second: T,

@@ -2,6 +2,8 @@
 
 use crate::prelude::*;
 
+mod paste;
+
 #[derive(Debug)]
 struct SubstInput {
     brace_token: token::Brace,
@@ -450,8 +452,68 @@ impl Parse for SubstIf {
     }
 }
 
-impl SubstIf {
-    fn expand(&self, ctx: &Context, out: &mut TokenStream) -> syn::Result<()> {
+pub trait Expand<O, R = syn::Result<()>> {
+    fn expand(&self, ctx: &Context, out: &mut O) -> R;
+}
+
+pub trait ExpansionOutput {
+    fn push_ident<I: quote::IdentFragment + Spanned + ToTokens>(
+        &mut self,
+        ident: &I,
+    );
+    fn push_idpath<A, B>(&mut self, pre: A, ident: &syn::Ident, post: B)
+    where
+        A: FnOnce(&mut TokenStream),
+        B: FnOnce(&mut TokenStream);
+    fn push_type(&mut self, ty: &syn::Type);
+    fn push_other_subst<S, F>(&mut self, _: &S, f: F) -> syn::Result<()>
+    where
+        S: Spanned,
+        F: FnOnce(&mut TokenStream) -> syn::Result<()>;
+    fn record_error(&mut self, err: syn::Error);
+
+    fn write_error<S: Spanned, M: Display>(&mut self, s: &S, m: M) {
+        self.record_error(s.error(m));
+    }
+}
+
+impl ExpansionOutput for TokenStream {
+    fn push_ident<I: quote::IdentFragment + Spanned + ToTokens>(
+        &mut self,
+        ident: &I,
+    ) {
+        ident.to_tokens(self)
+    }
+    fn push_idpath<A, B>(&mut self, pre: A, ident: &syn::Ident, post: B)
+    where
+        A: FnOnce(&mut TokenStream),
+        B: FnOnce(&mut TokenStream),
+    {
+        pre(self);
+        ident.to_tokens(self);
+        post(self);
+    }
+    fn push_type(&mut self, ty: &syn::Type) {
+        ty.to_tokens(self);
+    }
+    fn push_other_subst<S, F>(&mut self, _: &S, f: F) -> syn::Result<()>
+    where
+        S: Spanned,
+        F: FnOnce(&mut TokenStream) -> syn::Result<()>,
+    {
+        f(self)
+    }
+    fn record_error(&mut self, err: syn::Error) {
+        self.extend(err.into_compile_error())
+    }
+}
+
+impl<O> Expand<O> for SubstIf
+where
+    Template: Expand<O, ()>,
+    O: ExpansionOutput,
+{
+    fn expand(&self, ctx: &Context, out: &mut O) -> syn::Result<()> {
         for (condition, consequence) in &self.tests {
             //dbg!(&condition);
             if condition.eval_bool(ctx)? {
@@ -466,7 +528,9 @@ impl SubstIf {
         }
         Ok(())
     }
+}
 
+impl SubstIf {
     fn analyse_repeat(
         &self,
         visitor: &mut RepeatAnalysisVisitor,
@@ -531,7 +595,7 @@ impl Subst {
 }
 
 #[derive(Debug, Clone)]
-struct Context<'c> {
+pub struct Context<'c> {
     top: &'c syn::DeriveInput,
     tattrs: &'c PreprocessedAttrs,
     variant: Option<&'c WithinVariant<'c>>,
@@ -569,15 +633,21 @@ struct WithinField<'c> {
     index: u32,
 }
 
-impl Template {
-    fn expand(&self, ctx: &Context, out: &mut TokenStream) {
+impl<O> Expand<O, ()> for Template
+where
+    TemplateElement: Expand<O>,
+    O: ExpansionOutput,
+{
+    fn expand(&self, ctx: &Context, out: &mut O) {
         for element in &self.elements {
             let () = element
                 .expand(ctx, out)
-                .unwrap_or_else(|err| out.extend(err.into_compile_error()));
+                .unwrap_or_else(|err| out.record_error(err));
         }
     }
+}
 
+impl Template {
     /// Analyses a template section to be repeated
     fn analyse_repeat(
         &self,
@@ -590,7 +660,7 @@ impl Template {
     }
 }
 
-impl TemplateElement {
+impl Expand<TokenStream> for TemplateElement {
     fn expand(&self, ctx: &Context, out: &mut TokenStream) -> syn::Result<()> {
         match self {
             TE::Pass(tt) => out.extend([tt.clone()]),
@@ -615,7 +685,9 @@ impl TemplateElement {
         }
         Ok(())
     }
+}
 
+impl TemplateElement {
     fn analyse_repeat(
         &self,
         visitor: &mut RepeatAnalysisVisitor,
@@ -636,8 +708,12 @@ impl Spanned for Subst {
     }
 }
 
-impl Subst {
-    fn expand(&self, ctx: &Context, out: &mut TokenStream) -> syn::Result<()> {
+impl<O> Expand<O> for Subst
+where
+    O: ExpansionOutput,
+    TemplateElement: Expand<O>,
+{
+    fn expand(&self, ctx: &Context, out: &mut O) -> syn::Result<()> {
         // eprintln!("@@@@@@@@@@@@@@@@@@@@ EXPAND {:?}", self);
 
         let do_meta = |wa: &SubstAttr, out, meta| wa.expand(ctx, out, meta);
@@ -654,10 +730,8 @@ impl Subst {
         };
 
         match &self.sd {
-            SD::tname => ctx.top.ident.to_tokens(out),
-            SD::ttype => {
-                ctx.top.ident.to_tokens(out);
-
+            SD::tname => out.push_ident(&ctx.top.ident),
+            SD::ttype => out.push_idpath(|_| {}, &ctx.top.ident, |out| {
                 let gens = &ctx.top.generics;
                 match (&gens.lt_token,&gens.gt_token) {
                     (None, None) => (),
@@ -668,60 +742,76 @@ impl Subst {
                     }
                     _ => panic!("unmatched < > in syn::Generics {:?}", gens),
                 }
-            }
-            SD::vname => ctx.syn_variant(self)?.ident.to_tokens(out),
+            }),
+            SD::vname => out.push_ident(&ctx.syn_variant(self)?.ident),
             SD::fname => {
                 let f = ctx.field(self)?;
                 if let Some(fname) = &f.field.ident {
                     // todo is this the right span to emit?
-                    fname.to_tokens(out);
+                    out.push_ident(fname);
                 } else {
-                    syn::Index {
+                    out.push_ident(&syn::Index {
                         index: f.index,
                         span: self.kw.span(),
-                    }
-                    .to_tokens(out);
+                    });
                 }
             }
             SD::ftype => {
                 let f = ctx.field(self)?;
-                f.field.ty.to_tokens(out);
+                out.push_type(&f.field.ty);
             }
             SD::tmeta(wa) => do_meta(wa, out, ctx.tattrs)?,
             SD::vmeta(wa) => do_meta(wa, out, ctx.variant(wa)?.pattrs)?,
             SD::fmeta(wa) => do_meta(wa, out, &ctx.field(wa)?.pfield.pattrs)?,
 
-            SD::tattrs(ra) => ra.expand(ctx, out, &ctx.top.attrs)?,
-            SD::vattrs(ra) => {
+            SD::tattrs(ra) => out.push_other_subst(self, |out| {
+                ra.expand(ctx, out, &ctx.top.attrs)
+            })?,
+            SD::vattrs(ra) => out.push_other_subst(self, |out| {
                 let variant = ctx.variant(self)?.variant;
                 let attrs = variant.as_ref().map(|v| &*v.attrs);
-                ra.expand(ctx, out, attrs.unwrap_or_default())?;
-            }
-            SD::fattrs(ra) => {
-                ra.expand(ctx, out, &ctx.field(self)?.field.attrs)?
-            }
+                ra.expand(ctx, out, attrs.unwrap_or_default())
+            })?,
+            SD::fattrs(ra) => out.push_other_subst(self, |out| {
+                ra.expand(ctx, out, &ctx.field(self)?.field.attrs)
+            })?,
 
-            SD::tgens => ctx.top.generics.params.to_tokens(out),
-            SD::tgnames => do_tgnames(out),
-            SD::twheres => {
+            SD::tgens => out.push_other_subst(self, |out| {
+                ctx.top.generics.params.to_tokens(out);
+                Ok(())
+            })?,
+            SD::tgnames => out.push_other_subst(self, |out| {
+                do_tgnames(out);
+                Ok(())
+            })?,
+            SD::twheres => out.push_other_subst(self, |out| {
                 if let Some(clause) = &ctx.top.generics.where_clause {
                     clause.predicates.to_tokens_punct_composable(out);
                 }
-            }
+                Ok(())
+            })?,
 
-            SD::when(when) => when.unfiltered_when(out),
+            SD::when(_) => out.write_error(
+                self,
+                "${when } only allowed in toplevel of $( )"
+            ),
             SD::If(conds) => conds.expand(ctx, out)?,
             SD::is_enum
             | SD::False
             | SD::True
             | SD::not(_)
             | SD::any(_)
-            | SD::all(_) => self.not_expansion(out),
+            | SD::all(_) => out.write_error(
+                self,
+                "derive-adhoc keyword is a condition - not valid as an expansion",
+            ),
             SD::For(repeat) => repeat.expand(ctx, out),
         };
         Ok(())
     }
+}
 
+impl Subst {
     fn analyse_repeat(
         &self,
         visitor: &mut RepeatAnalysisVisitor,
@@ -773,18 +863,6 @@ impl Subst {
     }
 }
 
-impl Subst {
-    fn unfiltered_when(&self, out: &mut TokenStream) {
-        out.write_error(self, "${when } only allowed in toplevel of $( )");
-    }
-    fn not_expansion(&self, out: &mut TokenStream) {
-        out.write_error(
-            self,
-            "derive-adhoc keyword is a condition - not valid as an expansion",
-        )
-    }
-}
-
 enum Todo {}
 
 enum AttrValue<'l> {
@@ -796,18 +874,22 @@ enum AttrValue<'l> {
 use AttrValue as AV;
 
 impl SubstAttr {
-    fn expand(
+    fn expand<O>(
         &self,
         _ctx: &Context,
-        out: &mut TokenStream,
+        out: &mut O,
         pattrs: &PreprocessedAttrs,
-    ) -> syn::Result<()> {
+    ) -> syn::Result<()>
+    where
+        O: ExpansionOutput,
+    {
+        out.push_other_subst(self, |out| {
         let mut found = None;
 
         self.path.search(pattrs, &mut |av: AttrValue| {
             if found.is_some() {
                 return Err(self.error(
- "tried to expand just attribute value, but it was specified multiple times"
+                    "tried to expand just attribute value, but it was specified multiple times"
                 ));
             }
             found = Some(av);
@@ -816,8 +898,8 @@ impl SubstAttr {
 
         let found = found.ok_or_else(|| {
             self.error(
- "attribute value expanded, but no value in data structure definition"
-        )
+                "attribute value expanded, but no value in data structure definition"
+            )
         })?;
 
         let mut buf = TokenStream::new();
@@ -826,6 +908,7 @@ impl SubstAttr {
 
         out.extend(found);
         Ok(())
+        })
     }
 }
 
@@ -1266,8 +1349,12 @@ impl RepeatedTemplate {
     }
 }
 
-impl RepeatedTemplate {
-    fn expand(&self, ctx: &Context, out: &mut TokenStream) {
+impl<O> Expand<O, ()> for RepeatedTemplate
+where
+    Template: Expand<O, ()>,
+    O: ExpansionOutput,
+{
+    fn expand(&self, ctx: &Context, out: &mut O) {
         // TODO(nickm): Clippy thinks that this Void stuff is
         // gratuituous, but I don't understand it.
         #[allow(clippy::unit_arg)]
@@ -1281,15 +1368,21 @@ impl RepeatedTemplate {
         }
         .void_unwrap()
     }
+}
 
+impl RepeatedTemplate {
     /// private, does the condition
-    fn expand_inner(&self, ctx: &Context, out: &mut TokenStream) {
+    fn expand_inner<O>(&self, ctx: &Context, out: &mut O)
+    where
+        Template: Expand<O, ()>,
+        O: ExpansionOutput,
+    {
         for when in &self.whens {
             match when.eval_bool(ctx) {
                 Ok(true) => continue,
                 Ok(false) => return,
                 Err(e) => {
-                    out.extend([e.into_compile_error()]);
+                    out.record_error(e);
                     return;
                 }
             }
