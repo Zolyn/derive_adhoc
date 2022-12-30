@@ -457,6 +457,7 @@ pub trait Expand<O, R = syn::Result<()>> {
 }
 
 pub trait ExpansionOutput {
+    fn push_lit<I: Display + Spanned + ToTokens>(&mut self, ident: &I);
     fn push_ident<I: quote::IdentFragment + Spanned + ToTokens>(
         &mut self,
         ident: &I,
@@ -465,7 +466,8 @@ pub trait ExpansionOutput {
     where
         A: FnOnce(&mut TokenStream),
         B: FnOnce(&mut TokenStream);
-    fn push_type(&mut self, ty: &syn::Type);
+    fn push_syn_lit(&mut self, v: &syn::Lit);
+    fn push_syn_type(&mut self, v: &syn::Type);
     fn push_other_subst<S, F>(&mut self, _: &S, f: F) -> syn::Result<()>
     where
         S: Spanned,
@@ -478,6 +480,9 @@ pub trait ExpansionOutput {
 }
 
 impl ExpansionOutput for TokenStream {
+    fn push_lit<L: Display + Spanned + ToTokens>(&mut self, lit: &L) {
+        lit.to_tokens(self)
+    }
     fn push_ident<I: quote::IdentFragment + Spanned + ToTokens>(
         &mut self,
         ident: &I,
@@ -493,9 +498,19 @@ impl ExpansionOutput for TokenStream {
         ident.to_tokens(self);
         post(self);
     }
-    fn push_type(&mut self, ty: &syn::Type) {
+    fn push_syn_lit(&mut self, lit: &syn::Lit) {
+        lit.to_tokens(self);
+    }
+    fn push_syn_type(&mut self, ty: &syn::Type) {
         ty.to_tokens(self);
     }
+    /*    fn push_attr_value(&mut self, av: AttrValue, as_: SubstAttrAs) {
+        let mut buf = TokenStream::new();
+        av.expand(self.span(), &self.as_, &mut buf)?;
+        let found = Some(buf);
+
+        self.extend(found);
+    }*/
     fn push_other_subst<S, F>(&mut self, _: &S, f: F) -> syn::Result<()>
     where
         S: Spanned,
@@ -758,7 +773,7 @@ where
             }
             SD::ftype => {
                 let f = ctx.field(self)?;
-                out.push_type(&f.field.ty);
+                out.push_syn_type(&f.field.ty);
             }
             SD::tmeta(wa) => do_meta(wa, out, ctx.tattrs)?,
             SD::vmeta(wa) => do_meta(wa, out, ctx.variant(wa)?.pattrs)?,
@@ -883,7 +898,6 @@ impl SubstAttr {
     where
         O: ExpansionOutput,
     {
-        out.push_other_subst(self, |out| {
         let mut found = None;
 
         self.path.search(pattrs, &mut |av: AttrValue| {
@@ -902,13 +916,9 @@ impl SubstAttr {
             )
         })?;
 
-        let mut buf = TokenStream::new();
-        found.expand(self.span(), &self.as_, &mut buf)?;
-        let found = Some(buf);
+        found.expand(self.span(), &self.as_, out)?;
 
-        out.extend(found);
         Ok(())
-        })
     }
 }
 
@@ -967,12 +977,15 @@ impl SubstAttrPath {
 }
 
 impl<'l> AttrValue<'l> {
-    fn expand(
+    fn expand<O>(
         &self,
         span: Span,
         as_: &SubstAttrAs,
-        out: &mut TokenStream,
-    ) -> syn::Result<()> {
+        out: &mut O,
+    ) -> syn::Result<()>
+    where
+        O: ExpansionOutput,
+    {
         let lit = match self {
             AttrValue::Unit => return Err(span.error(
  "tried to expand attribute which is just a unit, not a literal"
@@ -987,8 +1000,7 @@ impl<'l> AttrValue<'l> {
             lit: &syn::Lit,
             span: Span,
             as_: &SubstAttrAs,
-            out: &mut TokenStream,
-        ) -> syn::Result<()>
+        ) -> syn::Result<T>
         where
             T: Parse + ToTokens,
         {
@@ -1005,14 +1017,13 @@ impl<'l> AttrValue<'l> {
             };
 
             let thing: T = s.parse()?;
-            thing.to_tokens(out);
-            Ok(())
+            Ok(thing)
         }
 
         use SubstAttrAs as SAS;
         match as_ {
-            SAS::lit => lit.to_tokens(out),
-            SAS::ty => lit_as::<syn::Type>(lit, span, as_, out)?,
+            SAS::lit => out.push_syn_lit(lit),
+            SAS::ty => out.push_syn_type(&lit_as(lit, span, as_)?),
         }
         Ok(())
     }

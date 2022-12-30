@@ -25,15 +25,18 @@ enum PasteItem {
 }
 
 impl PasteItems {
-    pub fn push_plain<S: Display + Spanned>(&mut self, plain: &S) {
+    fn push_lit_pair<V: Display, S: Spanned>(&mut self, v: &V, s: &S) {
         self.items.push(PasteItem::Plain {
-            text: plain.to_string(),
-            span: plain.span(),
+            text: v.to_string(),
+            span: s.span(),
         })
     }
 }
 
 impl ExpansionOutput for PasteItems {
+    fn push_lit<S: Display + Spanned>(&mut self, plain: &S) {
+        self.push_lit_pair(plain, plain);
+    }
     fn push_ident<I: quote::IdentFragment + Spanned + ToTokens>(
         &mut self,
         ident: &I,
@@ -45,10 +48,7 @@ impl ExpansionOutput for PasteItems {
                 QIF::fmt(&self.0, f)
             }
         }
-        self.items.push(PasteItem::Plain {
-            text: AsIdentFragment(ident).to_string(),
-            span: Spanned::span(ident),
-        })
+        self.push_lit_pair(&AsIdentFragment(ident), ident);
     }
     fn push_idpath<A, B>(&mut self, pre_: A, ident: &syn::Ident, post_: B)
     where
@@ -68,7 +68,23 @@ impl ExpansionOutput for PasteItems {
             span,
         });
     }
-    fn push_type(&mut self, ty: &syn::Type) {
+    fn push_syn_lit(&mut self, lit: &syn::Lit) {
+        use syn::Lit as L;
+        match lit {
+            L::Str(s) => self.items.push(PasteItem::Plain {
+                text: s.value(),
+                span: s.span(),
+            }),
+            L::Int(v) => self.push_lit(v),
+            L::Bool(v) => self.push_lit_pair(&v.value(), lit),
+            L::Verbatim(v) => self.push_lit(v),
+            x => self.write_error(
+                x,
+                "derive-adhoc macro wanted to do identifier pasting, but inappropriate literal provided",
+            ),
+        }
+    }
+    fn push_syn_type(&mut self, ty: &syn::Type) {
         match ty {
             syn::Type::Path(path) => {
                 self.items.push(PasteItem::Path(path.clone()))
@@ -100,7 +116,7 @@ impl Expand<PasteItems> for TemplateElement {
             TE::Pass(TT::Ident(ident)) => out.push_ident(&ident),
             TE::Pass(TT::Group(x)) => return bad(x.span()),
             TE::Pass(TT::Punct(x)) => return bad(x.span()),
-            TE::Pass(TT::Literal(lit)) => out.push_plain(&lit),
+            TE::Pass(TT::Literal(lit)) => out.push_lit(&lit),
             TE::Group { delim_span, .. } => return bad(*delim_span),
             TE::Subst(e) => e.expand(ctx, out)?,
             TE::Repeat(e) => e.expand(ctx, out),
