@@ -4,6 +4,7 @@ pub use std::convert::{TryFrom, TryInto};
 pub use std::default::Default;
 pub use std::fmt::{self, Display};
 pub use std::iter;
+pub use std::marker::PhantomData;
 pub use std::mem;
 pub use std::panic::catch_unwind;
 

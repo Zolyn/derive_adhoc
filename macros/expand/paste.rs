@@ -226,7 +226,7 @@ impl ExpansionOutput for Items {
         &mut self,
         ctx: &Context,
         _span: Span,
-        paste_body: &Template,
+        paste_body: &Template<paste::Items>,
     ) -> syn::Result<()> {
         // ${pate .. ${pate ..} ...}
         // Strange, but, whatever.
@@ -239,7 +239,7 @@ impl ExpansionOutput for Items {
     }
 }
 
-impl Expand<Items> for TemplateElement {
+impl Expand<Items> for TemplateElement<Items> {
     fn expand(&self, ctx: &Context, out: &mut Items) -> syn::Result<()> {
         let bad = |span: Span| Err(span.error("not allowed in ${paste }"));
         match self {
