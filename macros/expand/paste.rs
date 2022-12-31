@@ -153,7 +153,10 @@ impl Items {
 
 impl ExpansionOutput for Items {
     type NoPaste = Void;
+    type NoBool = ();
     type BoolOnly = Void;
+
+    fn no_bool(_: &impl Spanned) -> syn::Result<()> { Ok(()) }
 
     fn no_paste(span: &impl Spanned) -> syn::Result<Void> {
         Err(span.error("not allowed in within ${paste ...}"))
