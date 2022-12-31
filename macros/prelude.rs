@@ -3,9 +3,11 @@
 pub use std::convert::{TryFrom, TryInto};
 pub use std::default::Default;
 pub use std::fmt::{self, Display};
+pub use std::iter;
 pub use std::mem;
+pub use std::panic::catch_unwind;
 
-pub use itertools::{izip, Itertools};
+pub use itertools::{chain, izip, Itertools};
 pub use proc_macro2::{Delimiter, Ident, Literal, Punct};
 pub use proc_macro2::{Span, TokenStream, TokenTree};
 pub use quote::{format_ident, quote, quote_spanned, ToTokens};

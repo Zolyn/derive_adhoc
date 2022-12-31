@@ -99,6 +99,9 @@ enum SubstDetails {
     tgnames,
     twheres,
 
+    // expansion manipulation
+    paste(Template),
+
     // special
     when(Box<Subst>),
 
@@ -369,6 +372,7 @@ impl Parse for Subst {
         keyword! { vattrs(input.parse()?) }
         keyword! { fattrs(input.parse()?) }
 
+        keyword! { paste(input.parse()?) }
         keyword! { when(input.parse()?) }
 
         if kw == "false" {
@@ -452,11 +456,11 @@ impl Parse for SubstIf {
     }
 }
 
-pub trait Expand<O, R = syn::Result<()>> {
+trait Expand<O, R = syn::Result<()>> {
     fn expand(&self, ctx: &Context, out: &mut O) -> R;
 }
 
-pub trait ExpansionOutput {
+trait ExpansionOutput {
     fn push_lit<I: Display + Spanned + ToTokens>(&mut self, ident: &I);
     fn push_ident<I: quote::IdentFragment + Spanned + ToTokens>(
         &mut self,
@@ -472,6 +476,11 @@ pub trait ExpansionOutput {
     where
         S: Spanned,
         F: FnOnce(&mut TokenStream) -> syn::Result<()>;
+
+    fn expand_paste(&mut self, ctx: &Context,
+                    span: Span, paste_body: &Template)
+                    -> syn::Result<()>;
+
     fn record_error(&mut self, err: syn::Error);
 
     fn write_error<S: Spanned, M: Display>(&mut self, s: &S, m: M) {
@@ -518,6 +527,15 @@ impl ExpansionOutput for TokenStream {
     {
         f(self)
     }
+    fn expand_paste(&mut self, ctx: &Context, span: Span,
+                    paste_body: &Template)
+                    -> syn::Result<()>
+    {
+        let mut items = paste::Items::new(span);
+        paste_body.expand(ctx, &mut items);
+        items.assemble(self)
+    }
+
     fn record_error(&mut self, err: syn::Error) {
         self.extend(err.into_compile_error())
     }
@@ -806,6 +824,8 @@ where
                 Ok(())
             })?,
 
+            SD::paste(paste) => out.expand_paste(ctx, self.span(), paste)?,
+
             SD::when(_) => out.write_error(
                 self,
                 "${when } only allowed in toplevel of $( )"
@@ -848,6 +868,10 @@ impl Subst {
             SD::tgnames => None,
             SD::twheres => None,
             SD::is_enum => None,
+            SD::paste(body) => {
+                body.analyse_repeat(visitor)?;
+                None
+            }
             SD::when(_) => None, // out-of-place when, ignore it
             SD::not(cond) => {
                 cond.analyse_repeat(visitor)?;

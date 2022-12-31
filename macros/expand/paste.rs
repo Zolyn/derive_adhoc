@@ -4,13 +4,15 @@ use super::*;
 
 use TemplateElement as TE;
 
-pub struct PasteItems {
-    items: Vec<PasteItem>,
+#[derive(Debug)]
+pub struct Items {
+    span: Span,
+    items: Vec<Item>,
     errors: Vec<syn::Error>,
 }
 
 #[derive(Debug)]
-enum PasteItem {
+enum Item {
     Plain {
         text: String,
         span: Span,
@@ -24,16 +26,119 @@ enum PasteItem {
     Path(syn::TypePath),
 }
 
-impl PasteItems {
+impl Spanned for Item {
+    fn span(&self) -> Span {
+        match self {
+            Item::Plain { span, .. } => *span,
+            Item::IdPath { span, .. } => *span,
+            Item::Path(path) => path.span(),
+        }
+    }
+}
+
+impl Items {
+    pub fn new(span: Span) -> Self {
+        Items {
+            span,
+            items: vec![],
+            errors: vec![],
+        }
+    }
+
     fn push_lit_pair<V: Display, S: Spanned>(&mut self, v: &V, s: &S) {
-        self.items.push(PasteItem::Plain {
+        self.items.push(Item::Plain {
             text: v.to_string(),
             span: s.span(),
         })
     }
+
+    pub fn assemble(self, out: &mut TokenStream) -> syn::Result<()> {
+        if ! self.errors.is_empty() {
+            for error in self.errors {
+                out.record_error(error);
+            }
+            return Ok(())
+        }
+
+        let nontrivial = self
+            .items
+            .iter()
+            .enumerate()
+            .filter(|(_,it)| !matches!(it, Item::Plain { .. }))
+            .at_most_one()
+            .map_err(|mut eoe| eoe.next().unwrap().1.span().error(
+                "multiple nontrivial entries in ${paste ...}"
+            ))?
+            .map(|(i,_)| i);
+
+        fn plain_strs(items: &[Item]) -> impl Iterator<Item=&str> {
+            items.iter().map(|item| match item {
+                Item::Plain { text, .. } => text.as_str(),
+                _ => panic!("non plain item"),
+            })
+        }
+
+        fn mk_ident<'i>(span: Span, items: impl Iterator<Item=&'i str>)
+                        -> syn::Result<syn::Ident> {
+            let ident = items.collect::<String>();
+            catch_unwind(|| {
+                format_ident!("{}", ident, span=span)
+            }).map_err(|_| {
+                span.error(format_args!("pasted identifier {:?} is invalid",
+                                        ident))
+            })
+        }
+
+        let path_last_s;
+
+        if let Some(nontrivial) = nontrivial {
+            let mut items = self.items;
+            let (items, items_before) = items.split_at_mut(nontrivial+1);
+            let (items_after, items) = items.split_at_mut(nontrivial);
+            let nontrivial = &mut items[0];
+            let items_before = plain_strs(items_before);
+            let items_after = plain_strs(items_after);
+
+            match nontrivial {
+                Item::IdPath { pre, text, span, post } => {
+                    out.extend(pre.clone());
+                    mk_ident(*span, chain!(
+                        items_before,
+                        iter::once(text.as_str()),
+                        items_after,
+                    ))?.to_tokens(out);
+                    out.extend(post.clone());
+                }
+                Item::Path(path) => {
+                    let span = path.span();
+                    let last = &mut path.path.segments.last_mut().ok_or_else(
+                        ||
+                        span.error("derive-adhoc token pasting applied to path with no components")
+                    )?.ident;
+                    path_last_s = last.to_string();
+                    *last = mk_ident(last.span(), chain!(
+                        items_before,
+                        iter::once(path_last_s.as_str()),
+                        items_after,
+                    ))?;
+                    path.to_tokens(out);
+                }
+                Item::Plain { .. } => panic!("trivial nontrivial"),
+            }
+        } else {
+            mk_ident(
+                self.items.first().ok_or_else(
+                    || self.span.error("empty ${paste ... }")
+                )?.span(),
+                plain_strs(&self.items),
+            )?.to_tokens(out);
+        }
+
+        Ok(())
+    }
 }
 
-impl ExpansionOutput for PasteItems {
+impl ExpansionOutput for Items {
     fn push_lit<S: Display + Spanned>(&mut self, plain: &S) {
         self.push_lit_pair(plain, plain);
     }
@@ -61,7 +166,7 @@ impl ExpansionOutput for PasteItems {
         post_(&mut post);
         let text = ident.to_string();
         let span = ident.span();
-        self.items.push(PasteItem::IdPath {
+        self.items.push(Item::IdPath {
             pre,
             post,
             text,
@@ -71,7 +176,7 @@ impl ExpansionOutput for PasteItems {
     fn push_syn_lit(&mut self, lit: &syn::Lit) {
         use syn::Lit as L;
         match lit {
-            L::Str(s) => self.items.push(PasteItem::Plain {
+            L::Str(s) => self.items.push(Item::Plain {
                 text: s.value(),
                 span: s.span(),
             }),
@@ -87,7 +192,7 @@ impl ExpansionOutput for PasteItems {
     fn push_syn_type(&mut self, ty: &syn::Type) {
         match ty {
             syn::Type::Path(path) => {
-                self.items.push(PasteItem::Path(path.clone()))
+                self.items.push(Item::Path(path.clone()))
             },
             x => self.write_error(
                 x,
@@ -104,13 +209,22 @@ impl ExpansionOutput for PasteItems {
             .span()
             .error("unsupported substitution in identifier pasting"))
     }
+    fn expand_paste(&mut self, ctx: &Context, _span: Span,
+                    paste_body: &Template)
+                    -> syn::Result<()> {
+        // ${pate .. ${pate ..} ...}
+        // Strange, but, whatever.
+        paste_body.expand(ctx, self);
+        Ok(())
+    }
+
     fn record_error(&mut self, err: syn::Error) {
         self.errors.push(err);
     }
 }
 
-impl Expand<PasteItems> for TemplateElement {
-    fn expand(&self, ctx: &Context, out: &mut PasteItems) -> syn::Result<()> {
+impl Expand<Items> for TemplateElement {
+    fn expand(&self, ctx: &Context, out: &mut Items) -> syn::Result<()> {
         let bad = |span: Span| Err(span.error("not allowed in ${paste }"));
         match self {
             TE::Pass(TT::Ident(ident)) => out.push_ident(&ident),
