@@ -11,7 +11,7 @@ pub use AttrValue as AV;
 
 impl<O> Expand<O> for SubstIf<O>
 where
-    Template<O>: Expand<O, ()>,
+    Template<O>: ExpandInfallible<O>,
     O: ExpansionOutput,
 {
     fn expand(&self, ctx: &Context, out: &mut O) -> syn::Result<()> {
@@ -31,7 +31,7 @@ where
     }
 }
 
-impl<O> Expand<O, ()> for Template<O>
+impl<O> ExpandInfallible<O> for Template<O>
 where
     TemplateElement<O>: Expand<O>,
     O: ExpansionOutput,
@@ -317,9 +317,9 @@ impl RawAttrEntry {
     }
 }
 
-impl<O> Expand<O, ()> for RepeatedTemplate<O>
+impl<O> ExpandInfallible<O> for RepeatedTemplate<O>
 where
-    Template<O>: Expand<O, ()>,
+    Template<O>: ExpandInfallible<O>,
     O: ExpansionOutput,
 {
     fn expand(&self, ctx: &Context, out: &mut O) {
@@ -342,7 +342,7 @@ impl<O: ExpansionOutput> RepeatedTemplate<O> {
     /// private, does the condition
     fn expand_inner(&self, ctx: &Context, out: &mut O)
     where
-        Template<O>: Expand<O, ()>,
+        Template<O>: ExpandInfallible<O>,
         O: ExpansionOutput,
     {
         for when in &self.whens {

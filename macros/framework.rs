@@ -97,8 +97,11 @@ pub trait ExpansionOutput: SubstParseContext {
     }
 }
 
-pub trait Expand<O, R = syn::Result<()>> {
-    fn expand(&self, ctx: &Context, out: &mut O) -> R;
+pub trait Expand<O> {
+    fn expand(&self, ctx: &Context, out: &mut O) -> syn::Result<()>;
+}
+pub trait ExpandInfallible<O> {
+    fn expand(&self, ctx: &Context, out: &mut O);
 }
 
 impl SubstParseContext for TokenStream {
