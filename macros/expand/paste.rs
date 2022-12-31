@@ -104,8 +104,17 @@ impl Items {
             let (items, items_before) = items.split_at_mut(nontrivial + 1);
             let (items_after, items) = items.split_at_mut(nontrivial);
             let nontrivial = &mut items[0];
-            let items_before = plain_strs(items_before);
-            let items_after = plain_strs(items_after);
+
+            let mk_ident_nt = |span, text: &str| {
+                mk_ident(
+                    span,
+                    chain!(
+                        plain_strs(items_before),
+                        iter::once(text),
+                        plain_strs(items_after),
+                    ),
+                )
+            };
 
             match nontrivial {
                 Item::IdPath {
@@ -115,15 +124,7 @@ impl Items {
                     post,
                 } => {
                     out.extend(pre.clone());
-                    mk_ident(
-                        *span,
-                        chain!(
-                            items_before,
-                            iter::once(text.as_str()),
-                            items_after,
-                        ),
-                    )?
-                    .to_tokens(out);
+                    mk_ident_nt(*span, text)?.to_tokens(out);
                     out.extend(post.clone());
                 }
                 Item::Path(path) => {
@@ -139,27 +140,18 @@ impl Items {
                         })?
                         .ident;
                     path_last_s = last.to_string();
-                    *last = mk_ident(
-                        last.span(),
-                        chain!(
-                            items_before,
-                            iter::once(path_last_s.as_str()),
-                            items_after,
-                        ),
-                    )?;
+                    *last = mk_ident_nt(last.span(), &path_last_s)?;
                     path.to_tokens(out);
                 }
                 Item::Plain { .. } => panic!("trivial nontrivial"),
             }
         } else {
-            mk_ident(
-                self.items
-                    .first()
-                    .ok_or_else(|| self.span.error("empty ${paste ... }"))?
-                    .span(),
-                plain_strs(&self.items),
-            )?
-            .to_tokens(out);
+            let span = self
+                .items
+                .first()
+                .ok_or_else(|| self.span.error("empty ${paste ... }"))?
+                .span();
+            mk_ident(span, plain_strs(&self.items))?.to_tokens(out);
         }
 
         Ok(())
