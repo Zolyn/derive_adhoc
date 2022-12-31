@@ -78,12 +78,12 @@ impl Parse for SubstInput {
 }
 
 #[derive(Debug)]
-struct Template<O: ExpansionOutput> {
+struct Template<O: ExpansionContext> {
     elements: Vec<TemplateElement<O>>,
 }
 
 #[derive(Debug)]
-enum TemplateElement<O: ExpansionOutput> {
+enum TemplateElement<O: ExpansionContext> {
     Pass(TokenTree),
     Group {
         /// Sadly Group's constructors let us only set *both* delimiters
@@ -122,60 +122,8 @@ impl ExpansionContext for BooleanContext {
     }
 }
 
-impl ExpansionOutput for BooleanContext {
-    fn push_lit<L: Display + Spanned + ToTokens>(&mut self, _lit: &L) {
-        self.unreachable();
-    }
-    fn push_ident<I: quote::IdentFragment + Spanned + ToTokens>(
-        &mut self,
-        _ident: &I,
-    ) {
-        self.unreachable()
-    }
-    fn push_idpath<A, B>(&mut self, _pre: A, _ident: &syn::Ident, _post: B)
-    where
-        A: FnOnce(&mut TokenStream),
-        B: FnOnce(&mut TokenStream),
-    {
-        self.unreachable()
-    }
-    fn push_syn_lit(&mut self, _lit: &syn::Lit) {
-        self.unreachable()
-    }
-    fn push_syn_type(&mut self, _ty: &syn::Type) {
-        self.unreachable()
-    }
-    fn push_other_subst<S, F>(
-        &mut self,
-        _: &Self::NoPaste,
-        _: &S,
-        _f: F,
-    ) -> syn::Result<()>
-    where
-        S: Spanned,
-        F: FnOnce(&mut TokenStream) -> syn::Result<()>,
-    {
-        self.unreachable()
-    }
-    fn expand_paste(
-        &mut self,
-        _ctx: &Context,
-        _span: Span,
-        _paste_body: &Template<paste::Items>,
-    ) -> syn::Result<()> {
-        self.unreachable()
-    }
-    fn expand_bool_only(&mut self, _bool_only: &()) -> ! {
-        self.unreachable()
-    }
-
-    fn record_error(&mut self, _err: syn::Error) {
-        self.unreachable()
-    }
-}
-
 #[derive(Debug)]
-struct RepeatedTemplate<O: ExpansionOutput> {
+struct RepeatedTemplate<O: ExpansionContext> {
     template: Template<O>,
     #[allow(clippy::vec_box)]
     whens: Vec<Box<Subst<BooleanContext>>>,
@@ -185,7 +133,7 @@ struct RepeatedTemplate<O: ExpansionOutput> {
 use TemplateElement as TE;
 
 #[derive(Debug)]
-struct Subst<O: ExpansionOutput> {
+struct Subst<O: ExpansionContext> {
     kw: Ident,
     sd: SubstDetails<O>,
     output_marker: PhantomData<O>,
@@ -210,7 +158,7 @@ struct Subst<O: ExpansionOutput> {
 //     ${if fmeta(foo) as ty { ...
 // and right now that is a bit funny.
 
-enum SubstDetails<O: ExpansionOutput> {
+enum SubstDetails<O: ExpansionContext> {
     // variables
     tname(O::NoBool),
     ttype(O::NoBool),
@@ -252,7 +200,7 @@ enum SubstDetails<O: ExpansionOutput> {
 }
 
 #[derive(Debug)]
-struct SubstIf<O: ExpansionOutput> {
+struct SubstIf<O: ExpansionContext> {
     // A series of test/result pairs.  The test that gives "true"
     // short-circuits the rest.
     tests: Vec<(Subst<BooleanContext>, Template<O>)>,
@@ -356,7 +304,7 @@ impl RepeatAnalysisVisitor {
     }
 }
 
-impl<O: ExpansionOutput> Parse for Template<O> {
+impl<O: ExpansionContext> Parse for Template<O> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         // eprintln!("@@@@@@@@@@ PARSE {}", &input);
         let mut good = vec![];
@@ -372,7 +320,7 @@ impl<O: ExpansionOutput> Parse for Template<O> {
     }
 }
 
-impl<O: ExpansionOutput> Parse for TemplateElement<O> {
+impl<O: ExpansionContext> Parse for TemplateElement<O> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(match input.parse()? {
             TT::Group(group) => {
@@ -465,7 +413,7 @@ impl Parse for SubstAttrPath {
     }
 }
 
-impl<O: ExpansionOutput> Parse for Subst<O> {
+impl<O: ExpansionContext> Parse for Subst<O> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let kw = input.call(syn::Ident::parse_any)?;
         let output_marker = PhantomData;
@@ -560,7 +508,7 @@ impl<O: ExpansionOutput> Parse for Subst<O> {
     }
 }
 
-impl<O: ExpansionOutput> Parse for SubstIf<O> {
+impl<O: ExpansionContext> Parse for SubstIf<O> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let mut tests = Vec::new();
         let mut otherwise = None;
@@ -704,7 +652,7 @@ where
     }
 }
 
-impl<O: ExpansionOutput> SubstIf<O> {
+impl<O: ExpansionContext> SubstIf<O> {
     fn analyse_repeat(
         &self,
         visitor: &mut RepeatAnalysisVisitor,
@@ -838,7 +786,7 @@ where
     }
 }
 
-impl<O: ExpansionOutput> Template<O> {
+impl<O: ExpansionContext> Template<O> {
     /// Analyses a template section to be repeated
     fn analyse_repeat(
         &self,
@@ -878,7 +826,7 @@ impl Expand<TokenStream> for TemplateElement<TokenStream> {
     }
 }
 
-impl<O: ExpansionOutput> TemplateElement<O> {
+impl<O: ExpansionContext> TemplateElement<O> {
     fn analyse_repeat(
         &self,
         visitor: &mut RepeatAnalysisVisitor,
@@ -893,7 +841,7 @@ impl<O: ExpansionOutput> TemplateElement<O> {
     }
 }
 
-impl<O: ExpansionOutput> Spanned for Subst<O> {
+impl<O: ExpansionContext> Spanned for Subst<O> {
     fn span(&self) -> Span {
         self.kw.span()
     }
@@ -1015,7 +963,7 @@ where
     }
 }
 
-impl<O: ExpansionOutput> Subst<O> {
+impl<O: ExpansionContext> Subst<O> {
     fn analyse_repeat(
         &self,
         visitor: &mut RepeatAnalysisVisitor,
@@ -1476,7 +1424,7 @@ impl<'c> Context<'c> {
     }
 }
 
-impl<O: ExpansionOutput> RepeatedTemplate<O> {
+impl<O: ExpansionContext> RepeatedTemplate<O> {
     fn parse_in_parens(input: ParseStream) -> syn::Result<TemplateElement<O>> {
         let template;
         let paren = parenthesized!(template in input);
