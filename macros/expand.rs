@@ -4,6 +4,56 @@ use crate::prelude::*;
 
 mod paste;
 
+trait ExpansionOutput {
+    type NoPaste: Debug + Copy + Sized;
+    type NoBool: Debug + Copy + Sized;
+    type BoolOnly: Debug + Copy + Sized;
+
+    fn no_paste(span: &impl Spanned) -> syn::Result<Self::NoPaste>;
+    fn no_bool(span: &impl Spanned) -> syn::Result<Self::NoBool>;
+    fn bool_only(span: &impl Spanned) -> syn::Result<Self::BoolOnly> {
+        Err(span.error(
+            "derive-adhoc keyword is a condition - not valid as an expansion",
+        ))
+    }
+
+    fn push_lit<I: Display + Spanned + ToTokens>(&mut self, ident: &I);
+    fn push_ident<I: quote::IdentFragment + Spanned + ToTokens>(
+        &mut self,
+        ident: &I,
+    );
+    fn push_idpath<A, B>(&mut self, pre: A, ident: &syn::Ident, post: B)
+    where
+        A: FnOnce(&mut TokenStream),
+        B: FnOnce(&mut TokenStream);
+    fn push_syn_lit(&mut self, v: &syn::Lit);
+    fn push_syn_type(&mut self, v: &syn::Type);
+    fn push_other_subst<S, F>(
+        &mut self,
+        np: &Self::NoPaste,
+        _: &S,
+        f: F,
+    ) -> syn::Result<()>
+    where
+        S: Spanned,
+        F: FnOnce(&mut TokenStream) -> syn::Result<()>;
+
+    fn expand_bool_only(&mut self, bool_only: &Self::BoolOnly) -> !;
+
+    fn expand_paste(
+        &mut self,
+        ctx: &Context,
+        span: Span,
+        paste_body: &Template<paste::Items>,
+    ) -> syn::Result<()>;
+
+    fn record_error(&mut self, err: syn::Error);
+
+    fn write_error<S: Spanned, M: Display>(&mut self, s: &S, m: M) {
+        self.record_error(s.error(m));
+    }
+}
+
 #[derive(Debug)]
 struct SubstInput {
     brace_token: token::Brace,
@@ -550,56 +600,6 @@ impl<O: ExpansionOutput> Parse for SubstIf<O> {
 
 trait Expand<O, R = syn::Result<()>> {
     fn expand(&self, ctx: &Context, out: &mut O) -> R;
-}
-
-trait ExpansionOutput {
-    type NoPaste: Debug + Copy + Sized;
-    type NoBool: Debug + Copy + Sized;
-    type BoolOnly: Debug + Copy + Sized;
-
-    fn no_paste(span: &impl Spanned) -> syn::Result<Self::NoPaste>;
-    fn no_bool(span: &impl Spanned) -> syn::Result<Self::NoBool>;
-    fn bool_only(span: &impl Spanned) -> syn::Result<Self::BoolOnly> {
-        Err(span.error(
-            "derive-adhoc keyword is a condition - not valid as an expansion",
-        ))
-    }
-
-    fn push_lit<I: Display + Spanned + ToTokens>(&mut self, ident: &I);
-    fn push_ident<I: quote::IdentFragment + Spanned + ToTokens>(
-        &mut self,
-        ident: &I,
-    );
-    fn push_idpath<A, B>(&mut self, pre: A, ident: &syn::Ident, post: B)
-    where
-        A: FnOnce(&mut TokenStream),
-        B: FnOnce(&mut TokenStream);
-    fn push_syn_lit(&mut self, v: &syn::Lit);
-    fn push_syn_type(&mut self, v: &syn::Type);
-    fn push_other_subst<S, F>(
-        &mut self,
-        np: &Self::NoPaste,
-        _: &S,
-        f: F,
-    ) -> syn::Result<()>
-    where
-        S: Spanned,
-        F: FnOnce(&mut TokenStream) -> syn::Result<()>;
-
-    fn expand_bool_only(&mut self, bool_only: &Self::BoolOnly) -> !;
-
-    fn expand_paste(
-        &mut self,
-        ctx: &Context,
-        span: Span,
-        paste_body: &Template<paste::Items>,
-    ) -> syn::Result<()>;
-
-    fn record_error(&mut self, err: syn::Error);
-
-    fn write_error<S: Spanned, M: Display>(&mut self, s: &S, m: M) {
-        self.record_error(s.error(m));
-    }
 }
 
 impl ExpansionOutput for TokenStream {
