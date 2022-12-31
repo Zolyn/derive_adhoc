@@ -44,39 +44,46 @@ enum TemplateElement<O: ExpansionOutput> {
 }
 
 #[derive(Debug)]
-struct BooleanContext;
+struct BooleanContext(Void);
+
+impl BooleanContext {
+    fn unreachable(&self) -> ! {
+        void::unreachable(self.0)
+    }
+}
+
 impl ExpansionOutput for BooleanContext {
     type NoPaste = ();
     fn no_paste(_: &impl Spanned) -> syn::Result<()> { Ok(()) }
 
     fn push_lit<L: Display + Spanned + ToTokens>(&mut self, _lit: &L) {
-        todo!()
+        self.unreachable();
     }
     fn push_ident<I: quote::IdentFragment + Spanned + ToTokens>(
         &mut self,
         _ident: &I,
     ) {
-        todo!()
+        self.unreachable()
     }
     fn push_idpath<A, B>(&mut self, _pre: A, _ident: &syn::Ident, _post: B)
     where
         A: FnOnce(&mut TokenStream),
         B: FnOnce(&mut TokenStream),
     {
-        todo!()
+        self.unreachable()
     }
     fn push_syn_lit(&mut self, _lit: &syn::Lit) {
-        todo!()
+        self.unreachable()
     }
     fn push_syn_type(&mut self, _ty: &syn::Type) {
-        todo!()
+        self.unreachable()
     }
     fn push_other_subst<S, F>(&mut self, _: &Self::NoPaste, _: &S, _f: F) -> syn::Result<()>
     where
         S: Spanned,
         F: FnOnce(&mut TokenStream) -> syn::Result<()>,
     {
-        todo!()
+        self.unreachable()
     }
     fn expand_paste(
         &mut self,
@@ -84,11 +91,11 @@ impl ExpansionOutput for BooleanContext {
         _span: Span,
         _paste_body: &Template<paste::Items>,
     ) -> syn::Result<()> {
-        todo!()
+        self.unreachable()
     }
 
     fn record_error(&mut self, _err: syn::Error) {
-        todo!()
+        self.unreachable()
     }
 }
 
