@@ -60,6 +60,7 @@ impl ::core::clone::Clone for ChannelsParamsUpdates {
         }
     }
 }
+#[automatically_derived]
 impl ::core::marker::StructuralEq for ChannelsParamsUpdates {}
 #[automatically_derived]
 impl ::core::cmp::Eq for ChannelsParamsUpdates {
@@ -68,8 +69,10 @@ impl ::core::cmp::Eq for ChannelsParamsUpdates {
     #[no_coverage]
     fn assert_receiver_is_total_eq(&self) -> () {
         let _: ::core::cmp::AssertParamIsEq<Option<bool>>;
+        let _: ::core::cmp::AssertParamIsEq<Option<usize>>;
     }
 }
+#[automatically_derived]
 impl ::core::marker::StructuralPartialEq for ChannelsParamsUpdates {}
 #[automatically_derived]
 impl ::core::cmp::PartialEq for ChannelsParamsUpdates {
