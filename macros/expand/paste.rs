@@ -151,7 +151,7 @@ impl Items {
     }
 }
 
-impl ExpansionContext for Items {
+impl SubstParseContext for Items {
     type NoPaste = Void;
     type NoBool = ();
     type BoolOnly = Void;

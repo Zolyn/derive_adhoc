@@ -4,7 +4,7 @@ use crate::prelude::*;
 
 mod paste;
 
-trait ExpansionContext {
+trait SubstParseContext {
     type NoPaste: Debug + Copy + Sized;
     type NoBool: Debug + Copy + Sized;
     type BoolOnly: Debug + Copy + Sized;
@@ -18,7 +18,7 @@ trait ExpansionContext {
     }
 }
 
-trait ExpansionOutput: ExpansionContext {
+trait ExpansionOutput: SubstParseContext {
     fn push_lit<I: Display + Spanned + ToTokens>(&mut self, ident: &I);
     fn push_ident<I: quote::IdentFragment + Spanned + ToTokens>(
         &mut self,
@@ -78,12 +78,12 @@ impl Parse for SubstInput {
 }
 
 #[derive(Debug)]
-struct Template<O: ExpansionContext> {
+struct Template<O: SubstParseContext> {
     elements: Vec<TemplateElement<O>>,
 }
 
 #[derive(Debug)]
-enum TemplateElement<O: ExpansionContext> {
+enum TemplateElement<O: SubstParseContext> {
     Pass(TokenTree),
     Group {
         /// Sadly Group's constructors let us only set *both* delimiters
@@ -104,7 +104,7 @@ impl BooleanContext {
     }
 }
 
-impl ExpansionContext for BooleanContext {
+impl SubstParseContext for BooleanContext {
     type NoPaste = ();
     type NoBool = Void;
     type BoolOnly = ();
@@ -123,7 +123,7 @@ impl ExpansionContext for BooleanContext {
 }
 
 #[derive(Debug)]
-struct RepeatedTemplate<O: ExpansionContext> {
+struct RepeatedTemplate<O: SubstParseContext> {
     template: Template<O>,
     #[allow(clippy::vec_box)]
     whens: Vec<Box<Subst<BooleanContext>>>,
@@ -133,7 +133,7 @@ struct RepeatedTemplate<O: ExpansionContext> {
 use TemplateElement as TE;
 
 #[derive(Debug)]
-struct Subst<O: ExpansionContext> {
+struct Subst<O: SubstParseContext> {
     kw: Ident,
     sd: SubstDetails<O>,
     output_marker: PhantomData<O>,
@@ -158,7 +158,7 @@ struct Subst<O: ExpansionContext> {
 //     ${if fmeta(foo) as ty { ...
 // and right now that is a bit funny.
 
-enum SubstDetails<O: ExpansionContext> {
+enum SubstDetails<O: SubstParseContext> {
     // variables
     tname(O::NoBool),
     ttype(O::NoBool),
@@ -200,7 +200,7 @@ enum SubstDetails<O: ExpansionContext> {
 }
 
 #[derive(Debug)]
-struct SubstIf<O: ExpansionContext> {
+struct SubstIf<O: SubstParseContext> {
     // A series of test/result pairs.  The test that gives "true"
     // short-circuits the rest.
     tests: Vec<(Subst<BooleanContext>, Template<O>)>,
@@ -304,7 +304,7 @@ impl RepeatAnalysisVisitor {
     }
 }
 
-impl<O: ExpansionContext> Parse for Template<O> {
+impl<O: SubstParseContext> Parse for Template<O> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         // eprintln!("@@@@@@@@@@ PARSE {}", &input);
         let mut good = vec![];
@@ -320,7 +320,7 @@ impl<O: ExpansionContext> Parse for Template<O> {
     }
 }
 
-impl<O: ExpansionContext> Parse for TemplateElement<O> {
+impl<O: SubstParseContext> Parse for TemplateElement<O> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(match input.parse()? {
             TT::Group(group) => {
@@ -413,7 +413,7 @@ impl Parse for SubstAttrPath {
     }
 }
 
-impl<O: ExpansionContext> Parse for Subst<O> {
+impl<O: SubstParseContext> Parse for Subst<O> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let kw = input.call(syn::Ident::parse_any)?;
         let output_marker = PhantomData;
@@ -508,7 +508,7 @@ impl<O: ExpansionContext> Parse for Subst<O> {
     }
 }
 
-impl<O: ExpansionContext> Parse for SubstIf<O> {
+impl<O: SubstParseContext> Parse for SubstIf<O> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let mut tests = Vec::new();
         let mut otherwise = None;
@@ -554,7 +554,7 @@ trait Expand<O, R = syn::Result<()>> {
     fn expand(&self, ctx: &Context, out: &mut O) -> R;
 }
 
-impl ExpansionContext for TokenStream {
+impl SubstParseContext for TokenStream {
     type NoPaste = ();
     type NoBool = ();
     fn no_bool(_: &impl Spanned) -> syn::Result<()> {
@@ -652,7 +652,7 @@ where
     }
 }
 
-impl<O: ExpansionContext> SubstIf<O> {
+impl<O: SubstParseContext> SubstIf<O> {
     fn analyse_repeat(
         &self,
         visitor: &mut RepeatAnalysisVisitor,
@@ -786,7 +786,7 @@ where
     }
 }
 
-impl<O: ExpansionContext> Template<O> {
+impl<O: SubstParseContext> Template<O> {
     /// Analyses a template section to be repeated
     fn analyse_repeat(
         &self,
@@ -826,7 +826,7 @@ impl Expand<TokenStream> for TemplateElement<TokenStream> {
     }
 }
 
-impl<O: ExpansionContext> TemplateElement<O> {
+impl<O: SubstParseContext> TemplateElement<O> {
     fn analyse_repeat(
         &self,
         visitor: &mut RepeatAnalysisVisitor,
@@ -841,7 +841,7 @@ impl<O: ExpansionContext> TemplateElement<O> {
     }
 }
 
-impl<O: ExpansionContext> Spanned for Subst<O> {
+impl<O: SubstParseContext> Spanned for Subst<O> {
     fn span(&self) -> Span {
         self.kw.span()
     }
@@ -963,7 +963,7 @@ where
     }
 }
 
-impl<O: ExpansionContext> Subst<O> {
+impl<O: SubstParseContext> Subst<O> {
     fn analyse_repeat(
         &self,
         visitor: &mut RepeatAnalysisVisitor,
@@ -1424,7 +1424,7 @@ impl<'c> Context<'c> {
     }
 }
 
-impl<O: ExpansionContext> RepeatedTemplate<O> {
+impl<O: SubstParseContext> RepeatedTemplate<O> {
     fn parse_in_parens(input: ParseStream) -> syn::Result<TemplateElement<O>> {
         let template;
         let paren = parenthesized!(template in input);
