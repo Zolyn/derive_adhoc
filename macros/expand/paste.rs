@@ -152,7 +152,7 @@ impl Items {
 }
 
 impl ExpansionOutput for Items {
-    type CannotPaste = Void;
+    type NoPaste = Void;
     fn push_lit<S: Display + Spanned>(&mut self, plain: &S) {
         self.push_lit_pair(plain, plain);
     }

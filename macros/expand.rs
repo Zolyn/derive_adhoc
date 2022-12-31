@@ -46,7 +46,7 @@ enum TemplateElement<O: ExpansionOutput> {
 #[derive(Debug)]
 struct BooleanContext;
 impl ExpansionOutput for BooleanContext {
-    type CannotPaste = ();
+    type NoPaste = ();
     fn push_lit<L: Display + Spanned + ToTokens>(&mut self, _lit: &L) {
         todo!()
     }
@@ -138,9 +138,9 @@ enum SubstDetails<O: ExpansionOutput> {
     tmeta(SubstAttr),
     vmeta(SubstAttr),
     fmeta(SubstAttr),
-    tattrs(RawAttr, O::CannotPaste),
-    vattrs(RawAttr, O::CannotPaste),
-    fattrs(RawAttr, O::CannotPaste),
+    tattrs(RawAttr, O::NoPaste),
+    vattrs(RawAttr, O::NoPaste),
+    fattrs(RawAttr, O::NoPaste),
 
     // generics
     tgens,
@@ -526,7 +526,7 @@ trait Expand<O, R = syn::Result<()>> {
 }
 
 trait ExpansionOutput {
-    type CannotPaste: ExpansionContextCheckResult;
+    type NoPaste: ExpansionContextCheckResult;
     fn push_lit<I: Display + Spanned + ToTokens>(&mut self, ident: &I);
     fn push_ident<I: quote::IdentFragment + Spanned + ToTokens>(
         &mut self,
@@ -558,7 +558,7 @@ trait ExpansionOutput {
 }
 
 impl ExpansionOutput for TokenStream {
-    type CannotPaste = ();
+    type NoPaste = ();
     fn push_lit<L: Display + Spanned + ToTokens>(&mut self, lit: &L) {
         lit.to_tokens(self)
     }
