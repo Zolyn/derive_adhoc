@@ -63,17 +63,13 @@ impl Items {
         let nontrivial = self
             .items
             .iter()
-            .enumerate()
-            .filter(|(_, it)| !matches!(it, Item::Plain { .. }))
+            .positions(|it| !matches!(it, Item::Plain { .. }))
             .at_most_one()
             .map_err(|mut eoe| {
-                eoe.next()
-                    .unwrap()
-                    .1
+                self.items[eoe.next().unwrap()]
                     .span()
                     .error("multiple nontrivial entries in ${paste ...}")
-            })?
-            .map(|(i, _)| i);
+            })?;
 
         fn plain_strs(items: &[Item]) -> impl Iterator<Item = &str> {
             items.iter().map(|item| match item {
