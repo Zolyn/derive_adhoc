@@ -123,9 +123,9 @@ impl Items {
                     span,
                     post,
                 } => {
-                    out.extend(pre.clone());
+                    out.extend(mem::take(pre));
                     mk_ident_nt(*span, text)?.to_tokens(out);
-                    out.extend(post.clone());
+                    out.extend(mem::take(post));
                 }
                 Item::Path(path) => {
                     let span = path.span();
