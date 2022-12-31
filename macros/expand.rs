@@ -56,12 +56,16 @@ impl ExpansionOutput for BooleanContext {
     type NoPaste = ();
     type NoBool = Void;
     type BoolOnly = ();
-    fn no_paste(_: &impl Spanned) -> syn::Result<()> { Ok(()) }
-    fn bool_only(_: &impl Spanned) -> syn::Result<()> { Ok(()) }
+    fn no_paste(_: &impl Spanned) -> syn::Result<()> {
+        Ok(())
+    }
+    fn bool_only(_: &impl Spanned) -> syn::Result<()> {
+        Ok(())
+    }
 
     fn no_bool(span: &impl Spanned) -> syn::Result<Void> {
         Err(span.error(
-     "derive-adhoc keyword is an expansion - not valid as a condition"
+            "derive-adhoc keyword is an expansion - not valid as a condition",
         ))
     }
 
@@ -87,7 +91,12 @@ impl ExpansionOutput for BooleanContext {
     fn push_syn_type(&mut self, _ty: &syn::Type) {
         self.unreachable()
     }
-    fn push_other_subst<S, F>(&mut self, _: &Self::NoPaste, _: &S, _f: F) -> syn::Result<()>
+    fn push_other_subst<S, F>(
+        &mut self,
+        _: &Self::NoPaste,
+        _: &S,
+        _f: F,
+    ) -> syn::Result<()>
     where
         S: Spanned,
         F: FnOnce(&mut TokenStream) -> syn::Result<()>,
@@ -102,10 +111,7 @@ impl ExpansionOutput for BooleanContext {
     ) -> syn::Result<()> {
         self.unreachable()
     }
-    fn expand_bool_only(
-        &mut self,
-        _bool_only: &(),
-    ) -> ! {
+    fn expand_bool_only(&mut self, _bool_only: &()) -> ! {
         self.unreachable()
     }
 
@@ -409,7 +415,13 @@ impl<O: ExpansionOutput> Parse for Subst<O> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let kw = input.call(syn::Ident::parse_any)?;
         let output_marker = PhantomData;
-        let from_sd = |sd| Ok(Subst { sd, kw: kw.clone(), output_marker });
+        let from_sd = |sd| {
+            Ok(Subst {
+                sd,
+                kw: kw.clone(),
+                output_marker,
+            })
+        };
 
         // keyword!{ KEYWORD [ {BLOCK WITH BINDINGS} ] [ CONSTRUCTOR-ARGS ] }
         // expands to   if ... { return ... }
@@ -564,15 +576,17 @@ trait ExpansionOutput {
         B: FnOnce(&mut TokenStream);
     fn push_syn_lit(&mut self, v: &syn::Lit);
     fn push_syn_type(&mut self, v: &syn::Type);
-    fn push_other_subst<S, F>(&mut self, np: &Self::NoPaste, _: &S, f: F) -> syn::Result<()>
+    fn push_other_subst<S, F>(
+        &mut self,
+        np: &Self::NoPaste,
+        _: &S,
+        f: F,
+    ) -> syn::Result<()>
     where
         S: Spanned,
         F: FnOnce(&mut TokenStream) -> syn::Result<()>;
 
-    fn expand_bool_only(
-        &mut self,
-        bool_only: &Self::BoolOnly,
-    ) -> !;
+    fn expand_bool_only(&mut self, bool_only: &Self::BoolOnly) -> !;
 
     fn expand_paste(
         &mut self,
@@ -591,8 +605,12 @@ trait ExpansionOutput {
 impl ExpansionOutput for TokenStream {
     type NoPaste = ();
     type NoBool = ();
-    fn no_bool(_: &impl Spanned) -> syn::Result<()> { Ok(()) }
-    fn no_paste(_: &impl Spanned) -> syn::Result<()> { Ok(()) }
+    fn no_bool(_: &impl Spanned) -> syn::Result<()> {
+        Ok(())
+    }
+    fn no_paste(_: &impl Spanned) -> syn::Result<()> {
+        Ok(())
+    }
 
     type BoolOnly = Void;
 
@@ -627,7 +645,12 @@ impl ExpansionOutput for TokenStream {
 
         self.extend(found);
     }*/
-    fn push_other_subst<S, F>(&mut self, _no_paste: &(), _: &S, f: F) -> syn::Result<()>
+    fn push_other_subst<S, F>(
+        &mut self,
+        _no_paste: &(),
+        _: &S,
+        f: F,
+    ) -> syn::Result<()>
     where
         S: Spanned,
         F: FnOnce(&mut TokenStream) -> syn::Result<()>,
@@ -644,10 +667,7 @@ impl ExpansionOutput for TokenStream {
         paste_body.expand(ctx, &mut items);
         items.assemble(self)
     }
-    fn expand_bool_only(
-        &mut self,
-        bool_only: &Self::BoolOnly,
-    ) -> ! {
+    fn expand_bool_only(&mut self, bool_only: &Self::BoolOnly) -> ! {
         void::unreachable(*bool_only)
     }
 
@@ -714,42 +734,46 @@ impl Subst<BooleanContext> {
 
         let r = match &self.sd {
             SD::tmeta(wa) => is_found(wa.path.search_eval_bool(ctx.tattrs)),
-            SD::vmeta(wa) => eval_attr!{ wa, WithinVariant, pattrs },
-            SD::fmeta(wa) => eval_attr!{ wa, WithinField, pfield.pattrs },
+            SD::vmeta(wa) => eval_attr! { wa, WithinVariant, pattrs },
+            SD::fmeta(wa) => eval_attr! { wa, WithinField, pfield.pattrs },
             SD::is_enum(..) => matches!(ctx.top.data, syn::Data::Enum(_)),
 
             SD::False(..) => false,
             SD::True(..) => true,
 
-            SD::not(v,_) => ! v.eval_bool(ctx)?,
-            SD::any(vs,_) =>
-                vs.iter().find_map(|v| match v.eval_bool(ctx) {
+            SD::not(v, _) => !v.eval_bool(ctx)?,
+            SD::any(vs, _) => vs
+                .iter()
+                .find_map(|v| match v.eval_bool(ctx) {
                     Ok(true) => Some(Ok(true)),
                     Err(e) => Some(Err(e)),
                     Ok(false) => None,
-                }).unwrap_or(Ok(false))?,
-            SD::all(vs,_) =>
-                vs.iter().find_map(|v| match v.eval_bool(ctx) {
+                })
+                .unwrap_or(Ok(false))?,
+            SD::all(vs, _) => vs
+                .iter()
+                .find_map(|v| match v.eval_bool(ctx) {
                     Ok(true) => None,
                     Err(e) => Some(Err(e)),
                     Ok(false) => Some(Ok(false)),
-                }).unwrap_or(Ok(true))?,
+                })
+                .unwrap_or(Ok(true))?,
 
-            SD::tname(no_bool) |
-            SD::ttype(no_bool) |
-            SD::vname(no_bool) |
-            SD::fname(no_bool) |
-            SD::ftype(no_bool) |
-            SD::tattrs(_, _, no_bool) |
-            SD::vattrs(_, _, no_bool) |
-            SD::fattrs(_, _, no_bool) |
-            SD::tgens(_, no_bool) |
-            SD::tgnames(_, no_bool) |
-            SD::twheres(_, no_bool) |
-            SD::paste(_, no_bool) |
-            SD::when(_, no_bool) |
-            SD::For(_, no_bool) |
-            SD::If(_, no_bool) => void::unreachable(*no_bool),
+            SD::tname(no_bool)
+            | SD::ttype(no_bool)
+            | SD::vname(no_bool)
+            | SD::fname(no_bool)
+            | SD::ftype(no_bool)
+            | SD::tattrs(_, _, no_bool)
+            | SD::vattrs(_, _, no_bool)
+            | SD::fattrs(_, _, no_bool)
+            | SD::tgens(_, no_bool)
+            | SD::tgnames(_, no_bool)
+            | SD::twheres(_, no_bool)
+            | SD::paste(_, no_bool)
+            | SD::when(_, no_bool)
+            | SD::For(_, no_bool)
+            | SD::If(_, no_bool) => void::unreachable(*no_bool),
         };
         Ok(r)
     }
@@ -892,18 +916,24 @@ where
 
         match &self.sd {
             SD::tname(_) => out.push_ident(&ctx.top.ident),
-            SD::ttype(_) => out.push_idpath(|_| {}, &ctx.top.ident, |out| {
-                let gens = &ctx.top.generics;
-                match (&gens.lt_token,&gens.gt_token) {
-                    (None, None) => (),
-                    (Some(lt), Some(rt)) => {
-                        lt.to_tokens(out);
-                        do_tgnames(out);
-                        rt.to_tokens(out);
+            SD::ttype(_) => out.push_idpath(
+                |_| {},
+                &ctx.top.ident,
+                |out| {
+                    let gens = &ctx.top.generics;
+                    match (&gens.lt_token, &gens.gt_token) {
+                        (None, None) => (),
+                        (Some(lt), Some(rt)) => {
+                            lt.to_tokens(out);
+                            do_tgnames(out);
+                            rt.to_tokens(out);
+                        }
+                        _ => {
+                            panic!("unmatched < > in syn::Generics {:?}", gens)
+                        }
                     }
-                    _ => panic!("unmatched < > in syn::Generics {:?}", gens),
-                }
-            }),
+                },
+            ),
             SD::vname(_) => out.push_ident(&ctx.syn_variant(self)?.ident),
             SD::fname(_) => {
                 let f = ctx.field(self)?;
@@ -925,17 +955,23 @@ where
             SD::vmeta(wa) => do_meta(wa, out, ctx.variant(wa)?.pattrs)?,
             SD::fmeta(wa) => do_meta(wa, out, &ctx.field(wa)?.pfield.pattrs)?,
 
-            SD::tattrs(ra, np, ..) => out.push_other_subst(np, self, |out| {
-                ra.expand(ctx, out, &ctx.top.attrs)
-            })?,
-            SD::vattrs(ra, np, ..) => out.push_other_subst(np, self, |out| {
-                let variant = ctx.variant(self)?.variant;
-                let attrs = variant.as_ref().map(|v| &*v.attrs);
-                ra.expand(ctx, out, attrs.unwrap_or_default())
-            })?,
-            SD::fattrs(ra, np, ..) => out.push_other_subst(np, self, |out| {
-                ra.expand(ctx, out, &ctx.field(self)?.field.attrs)
-            })?,
+            SD::tattrs(ra, np, ..) => {
+                out.push_other_subst(np, self, |out| {
+                    ra.expand(ctx, out, &ctx.top.attrs)
+                })?
+            }
+            SD::vattrs(ra, np, ..) => {
+                out.push_other_subst(np, self, |out| {
+                    let variant = ctx.variant(self)?.variant;
+                    let attrs = variant.as_ref().map(|v| &*v.attrs);
+                    ra.expand(ctx, out, attrs.unwrap_or_default())
+                })?
+            }
+            SD::fattrs(ra, np, ..) => {
+                out.push_other_subst(np, self, |out| {
+                    ra.expand(ctx, out, &ctx.field(self)?.field.attrs)
+                })?
+            }
 
             SD::tgens(np, ..) => out.push_other_subst(np, self, |out| {
                 ctx.top.generics.params.to_tokens(out);
@@ -952,19 +988,21 @@ where
                 Ok(())
             })?,
 
-            SD::paste(paste, ..) => out.expand_paste(ctx, self.span(), paste)?,
+            SD::paste(paste, ..) => {
+                out.expand_paste(ctx, self.span(), paste)?
+            }
 
             SD::when(..) => out.write_error(
                 self,
-                "${when } only allowed in toplevel of $( )"
+                "${when } only allowed in toplevel of $( )",
             ),
             SD::If(conds, ..) => conds.expand(ctx, out)?,
             SD::is_enum(bo)
             | SD::False(bo)
             | SD::True(bo)
-            | SD::not(_,bo)
-            | SD::any(_,bo)
-            | SD::all(_,bo) => out.expand_bool_only(bo),
+            | SD::not(_, bo)
+            | SD::any(_, bo)
+            | SD::all(_, bo) => out.expand_bool_only(bo),
             SD::For(repeat, _) => repeat.expand(ctx, out),
         };
         Ok(())
@@ -993,12 +1031,12 @@ impl<O: ExpansionOutput> Subst<O> {
             SD::tgnames(..) => None,
             SD::twheres(..) => None,
             SD::is_enum(..) => None,
-            SD::paste(body,..) => {
+            SD::paste(body, ..) => {
                 body.analyse_repeat(visitor)?;
                 None
             }
             SD::when(..) => None, // out-of-place when, ignore it
-            SD::not(cond,_) => {
+            SD::not(cond, _) => {
                 cond.analyse_repeat(visitor)?;
                 None
             }
@@ -1006,7 +1044,7 @@ impl<O: ExpansionOutput> Subst<O> {
                 conds.analyse_repeat(visitor)?;
                 None
             }
-            SD::any(conds,_) | SD::all(conds,_) => {
+            SD::any(conds, _) | SD::all(conds, _) => {
                 for c in conds.iter() {
                     c.analyse_repeat(visitor)?;
                 }
@@ -1473,7 +1511,7 @@ impl<O: ExpansionOutput> RepeatedTemplate<O> {
                 TE::Pass(_) => elem,
 
                 TE::Subst(subst) => match subst.sd {
-                    SD::when(when,_) => {
+                    SD::when(when, _) => {
                         whens.push(when);
                         continue;
                     }

@@ -156,7 +156,9 @@ impl ExpansionOutput for Items {
     type NoBool = ();
     type BoolOnly = Void;
 
-    fn no_bool(_: &impl Spanned) -> syn::Result<()> { Ok(()) }
+    fn no_bool(_: &impl Spanned) -> syn::Result<()> {
+        Ok(())
+    }
 
     fn no_paste(span: &impl Spanned) -> syn::Result<Void> {
         Err(span.error("not allowed in within ${paste ...}"))
@@ -223,7 +225,12 @@ impl ExpansionOutput for Items {
             ),
         }
     }
-    fn push_other_subst<S, F>(&mut self, no_paste: &Void, _: &S, _: F) -> syn::Result<()>
+    fn push_other_subst<S, F>(
+        &mut self,
+        no_paste: &Void,
+        _: &S,
+        _: F,
+    ) -> syn::Result<()>
     where
         S: Spanned,
         F: FnOnce(&mut TokenStream) -> syn::Result<()>,
@@ -241,10 +248,7 @@ impl ExpansionOutput for Items {
         paste_body.expand(ctx, self);
         Ok(())
     }
-    fn expand_bool_only(
-        &mut self,
-        bool_only: &Self::BoolOnly,
-    ) -> ! {
+    fn expand_bool_only(&mut self, bool_only: &Self::BoolOnly) -> ! {
         void::unreachable(*bool_only)
     }
 
