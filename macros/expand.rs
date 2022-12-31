@@ -47,6 +47,8 @@ enum TemplateElement<O: ExpansionOutput> {
 struct BooleanContext;
 impl ExpansionOutput for BooleanContext {
     type NoPaste = ();
+    fn no_paste(_: &impl Spanned) -> syn::Result<()> { Ok(()) }
+
     fn push_lit<L: Display + Spanned + ToTokens>(&mut self, _lit: &L) {
         todo!()
     }
@@ -402,7 +404,7 @@ impl<O: ExpansionOutput> Parse for Subst<O> {
             };
         }
 
-        let no_paste = chk_exp_ctx(&kw);
+        let no_paste = O::no_paste(&kw);
 
         keyword! { tname }
         keyword! { ttype }
@@ -507,28 +509,14 @@ impl<O: ExpansionOutput> Parse for SubstIf<O> {
     }
 }
 
-trait ExpansionContextCheckResult: Debug + Sized {
-    fn new_eccr() -> Option<Self>;
-}
-impl ExpansionContextCheckResult for () {
-    fn new_eccr() -> Option<Self> { Some(()) }
-}
-impl ExpansionContextCheckResult for Void {
-    fn new_eccr() -> Option<Self> { None }
-}
-
-fn chk_exp_ctx<C>(span: &impl Spanned) -> syn::Result<C>
-where C: ExpansionContextCheckResult
-{
-    C::new_eccr().ok_or_else(|| span.error("not allowed in this context"))
-}
-
 trait Expand<O, R = syn::Result<()>> {
     fn expand(&self, ctx: &Context, out: &mut O) -> R;
 }
 
 trait ExpansionOutput {
-    type NoPaste: ExpansionContextCheckResult;
+    type NoPaste: Debug + Copy + Sized;
+    fn no_paste(span: &impl Spanned) -> syn::Result<Self::NoPaste>;
+
     fn push_lit<I: Display + Spanned + ToTokens>(&mut self, ident: &I);
     fn push_ident<I: quote::IdentFragment + Spanned + ToTokens>(
         &mut self,
@@ -561,6 +549,8 @@ trait ExpansionOutput {
 
 impl ExpansionOutput for TokenStream {
     type NoPaste = ();
+    fn no_paste(_: &impl Spanned) -> syn::Result<()> { Ok(()) }
+
     fn push_lit<L: Display + Spanned + ToTokens>(&mut self, lit: &L) {
         lit.to_tokens(self)
     }

@@ -153,6 +153,11 @@ impl Items {
 
 impl ExpansionOutput for Items {
     type NoPaste = Void;
+
+    fn no_paste(span: &impl Spanned) -> syn::Result<Void> {
+        Err(span.error("not allowed in within ${paste ...}"))
+    }
+
     fn push_lit<S: Display + Spanned>(&mut self, plain: &S) {
         self.push_lit_pair(plain, plain);
     }
