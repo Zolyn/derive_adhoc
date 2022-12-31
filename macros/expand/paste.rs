@@ -214,14 +214,12 @@ impl ExpansionOutput for Items {
             ),
         }
     }
-    fn push_other_subst<S, F>(&mut self, subst: &S, _: F) -> syn::Result<()>
+    fn push_other_subst<S, F>(&mut self, no_paste: &Void, _: &S, _: F) -> syn::Result<()>
     where
         S: Spanned,
         F: FnOnce(&mut TokenStream) -> syn::Result<()>,
     {
-        Err(subst
-            .span()
-            .error("unsupported substitution in identifier pasting"))
+        void::unreachable(*no_paste)
     }
     fn expand_paste(
         &mut self,

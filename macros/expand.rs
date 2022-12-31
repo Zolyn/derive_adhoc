@@ -69,7 +69,7 @@ impl ExpansionOutput for BooleanContext {
     fn push_syn_type(&mut self, _ty: &syn::Type) {
         todo!()
     }
-    fn push_other_subst<S, F>(&mut self, _: &S, _f: F) -> syn::Result<()>
+    fn push_other_subst<S, F>(&mut self, _: &Self::NoPaste, _: &S, _f: F) -> syn::Result<()>
     where
         S: Spanned,
         F: FnOnce(&mut TokenStream) -> syn::Result<()>,
@@ -143,9 +143,9 @@ enum SubstDetails<O: ExpansionOutput> {
     fattrs(RawAttr, O::NoPaste),
 
     // generics
-    tgens,
-    tgnames,
-    twheres,
+    tgens(O::NoPaste),
+    tgnames(O::NoPaste),
+    twheres(O::NoPaste),
 
     // expansion manipulation
     paste(Template<paste::Items>),
@@ -402,6 +402,8 @@ impl<O: ExpansionOutput> Parse for Subst<O> {
             };
         }
 
+        let no_paste = chk_exp_ctx(&kw);
+
         keyword! { tname }
         keyword! { ttype }
         keyword! { vname }
@@ -409,17 +411,17 @@ impl<O: ExpansionOutput> Parse for Subst<O> {
         keyword! { ftype }
         keyword! { is_enum }
 
-        keyword! { tgens }
-        keyword! { tgnames }
-        keyword! { twheres }
+        keyword! { tgens(no_paste?) }
+        keyword! { tgnames(no_paste?) }
+        keyword! { twheres(no_paste?) }
 
         keyword! { tmeta(input.parse()?) }
         keyword! { vmeta(input.parse()?) }
         keyword! { fmeta(input.parse()?) }
 
-        keyword! { tattrs(input.parse()?, chk_exp_ctx(&kw)?) }
-        keyword! { vattrs(input.parse()?, chk_exp_ctx(&kw)?) }
-        keyword! { fattrs(input.parse()?, chk_exp_ctx(&kw)?) }
+        keyword! { tattrs(input.parse()?, no_paste?) }
+        keyword! { vattrs(input.parse()?, no_paste?) }
+        keyword! { fattrs(input.parse()?, no_paste?) }
 
         keyword! { paste(input.parse()?) }
         keyword! { when(input.parse()?) }
@@ -538,7 +540,7 @@ trait ExpansionOutput {
         B: FnOnce(&mut TokenStream);
     fn push_syn_lit(&mut self, v: &syn::Lit);
     fn push_syn_type(&mut self, v: &syn::Type);
-    fn push_other_subst<S, F>(&mut self, _: &S, f: F) -> syn::Result<()>
+    fn push_other_subst<S, F>(&mut self, np: &Self::NoPaste, _: &S, f: F) -> syn::Result<()>
     where
         S: Spanned,
         F: FnOnce(&mut TokenStream) -> syn::Result<()>;
@@ -590,7 +592,7 @@ impl ExpansionOutput for TokenStream {
 
         self.extend(found);
     }*/
-    fn push_other_subst<S, F>(&mut self, _: &S, f: F) -> syn::Result<()>
+    fn push_other_subst<S, F>(&mut self, _no_paste: &(), _: &S, f: F) -> syn::Result<()>
     where
         S: Spanned,
         F: FnOnce(&mut TokenStream) -> syn::Result<()>,
@@ -869,27 +871,27 @@ where
             SD::vmeta(wa) => do_meta(wa, out, ctx.variant(wa)?.pattrs)?,
             SD::fmeta(wa) => do_meta(wa, out, &ctx.field(wa)?.pfield.pattrs)?,
 
-            SD::tattrs(ra, _) => out.push_other_subst(self, |out| {
+            SD::tattrs(ra, np) => out.push_other_subst(np, self, |out| {
                 ra.expand(ctx, out, &ctx.top.attrs)
             })?,
-            SD::vattrs(ra, _) => out.push_other_subst(self, |out| {
+            SD::vattrs(ra, np) => out.push_other_subst(np, self, |out| {
                 let variant = ctx.variant(self)?.variant;
                 let attrs = variant.as_ref().map(|v| &*v.attrs);
                 ra.expand(ctx, out, attrs.unwrap_or_default())
             })?,
-            SD::fattrs(ra, _) => out.push_other_subst(self, |out| {
+            SD::fattrs(ra, np) => out.push_other_subst(np, self, |out| {
                 ra.expand(ctx, out, &ctx.field(self)?.field.attrs)
             })?,
 
-            SD::tgens => out.push_other_subst(self, |out| {
+            SD::tgens(np) => out.push_other_subst(np, self, |out| {
                 ctx.top.generics.params.to_tokens(out);
                 Ok(())
             })?,
-            SD::tgnames => out.push_other_subst(self, |out| {
+            SD::tgnames(np) => out.push_other_subst(np, self, |out| {
                 do_tgnames(out);
                 Ok(())
             })?,
-            SD::twheres => out.push_other_subst(self, |out| {
+            SD::twheres(np) => out.push_other_subst(np, self, |out| {
                 if let Some(clause) = &ctx.top.generics.where_clause {
                     clause.predicates.to_tokens_punct_composable(out);
                 }
@@ -936,9 +938,9 @@ impl<O: ExpansionOutput> Subst<O> {
             SD::tattrs(..) => None,
             SD::vattrs(..) => Some(RO::Variants),
             SD::fattrs(..) => Some(RO::Fields),
-            SD::tgens => None,
-            SD::tgnames => None,
-            SD::twheres => None,
+            SD::tgens(..) => None,
+            SD::tgnames(..) => None,
+            SD::twheres(..) => None,
             SD::is_enum => None,
             SD::paste(body) => {
                 body.analyse_repeat(visitor)?;
