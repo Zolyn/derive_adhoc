@@ -98,7 +98,7 @@ impl ErrorAccumulator {
 
 impl Drop for ErrorAccumulator {
     fn drop(&mut self) {
-        assert!(self.defused);
+        assert!(panicking() || self.defused);
     }
 }
 

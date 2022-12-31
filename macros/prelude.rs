@@ -7,6 +7,7 @@ pub use std::iter;
 pub use std::marker::PhantomData;
 pub use std::mem;
 pub use std::panic::catch_unwind;
+pub use std::thread::panicking;
 
 pub use itertools::{chain, izip, Itertools};
 pub use proc_macro2::{Delimiter, Ident, Literal, Punct};
