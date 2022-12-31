@@ -1,8 +1,6 @@
 #![allow(dead_code)]
 
-use super::*;
-
-use TemplateElement as TE;
+use crate::framework::*;
 
 #[derive(Debug)]
 pub struct Items {

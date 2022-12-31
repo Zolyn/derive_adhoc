@@ -5,9 +5,16 @@ use prelude::*;
 
 mod capture;
 mod definition;
-mod expand;
 mod invocation;
 mod utils;
+
+mod framework;
+
+mod boolean;
+mod expand;
+mod paste;
+mod repeat;
+mod syntax;
 
 // This calls the actual template engine.
 //
