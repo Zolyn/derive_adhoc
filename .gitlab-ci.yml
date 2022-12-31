@@ -5,9 +5,28 @@
 # https://hub.docker.com/r/library/rust/tags/
 image: "rust:latest"
 
-# Use cargo to test the project
-test:cargo:
+# Syntax checks
+cargo-check:
+  stage: test
   script:
     - rustc --version && cargo --version  # Print version info for debugging
-    - cargo check --workspace --verbose --all-features
-    - cargo test --workspace --verbose --all-features
+    - rustup component add rustfmt
+    - cargo check --locked --workspace --verbose --all-features
+    # rustfmt is disabled because the rust:latest rustfmt wants to change
+    # things compared to what rustfmt did the that last time fmt was run on
+    # the codebase.
+    - true cargo fmt --verbose --check
+
+
+# Actual tests
+cargo-test:
+  stage: test
+  # Pin to a particular nightly, so our macro expansions don't change.
+  image: rustlang/rust@sha256:415b7c22ab4a8a3ec3efc9cc8d7b018964f0c6757fff27bbd110e0ed92566321
+  script:
+    - rustc --version && cargo --version  # Print version info for debugging
+    - ./maint/via-cargo-install-in-ci cargo-expand
+    - cargo test --locked --workspace --verbose --all-features
+  cache:
+    paths:
+      - cargo-expand
