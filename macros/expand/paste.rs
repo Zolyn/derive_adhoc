@@ -97,8 +97,6 @@ impl Items {
             )
         }
 
-        let path_last_s;
-
         if let Some(nontrivial) = nontrivial {
             let mut items = self.items;
             let (items, items_before) = items.split_at_mut(nontrivial + 1);
@@ -139,8 +137,7 @@ impl Items {
                         )
                         })?
                         .ident;
-                    path_last_s = last.to_string();
-                    *last = mk_ident_nt(last.span(), &path_last_s)?;
+                    *last = mk_ident_nt(last.span(), &last.to_string())?;
                     path.to_tokens(out);
                 }
                 Item::Plain { .. } => panic!("trivial nontrivial"),
