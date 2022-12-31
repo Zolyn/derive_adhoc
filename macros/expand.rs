@@ -4,7 +4,7 @@ use crate::prelude::*;
 
 mod paste;
 
-trait ExpansionOutput {
+trait ExpansionContext {
     type NoPaste: Debug + Copy + Sized;
     type NoBool: Debug + Copy + Sized;
     type BoolOnly: Debug + Copy + Sized;
@@ -16,7 +16,9 @@ trait ExpansionOutput {
             "derive-adhoc keyword is a condition - not valid as an expansion",
         ))
     }
+}
 
+trait ExpansionOutput: ExpansionContext {
     fn push_lit<I: Display + Spanned + ToTokens>(&mut self, ident: &I);
     fn push_ident<I: quote::IdentFragment + Spanned + ToTokens>(
         &mut self,
@@ -102,7 +104,7 @@ impl BooleanContext {
     }
 }
 
-impl ExpansionOutput for BooleanContext {
+impl ExpansionContext for BooleanContext {
     type NoPaste = ();
     type NoBool = Void;
     type BoolOnly = ();
@@ -118,7 +120,9 @@ impl ExpansionOutput for BooleanContext {
             "derive-adhoc keyword is an expansion - not valid as a condition",
         ))
     }
+}
 
+impl ExpansionOutput for BooleanContext {
     fn push_lit<L: Display + Spanned + ToTokens>(&mut self, _lit: &L) {
         self.unreachable();
     }
@@ -602,7 +606,7 @@ trait Expand<O, R = syn::Result<()>> {
     fn expand(&self, ctx: &Context, out: &mut O) -> R;
 }
 
-impl ExpansionOutput for TokenStream {
+impl ExpansionContext for TokenStream {
     type NoPaste = ();
     type NoBool = ();
     fn no_bool(_: &impl Spanned) -> syn::Result<()> {
@@ -613,7 +617,9 @@ impl ExpansionOutput for TokenStream {
     }
 
     type BoolOnly = Void;
+}
 
+impl ExpansionOutput for TokenStream {
     fn push_lit<L: Display + Spanned + ToTokens>(&mut self, lit: &L) {
         lit.to_tokens(self)
     }
