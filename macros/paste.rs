@@ -52,7 +52,7 @@ impl Items {
     }
 
     /// Combine the accumulated pieces and write them as tokens
-    pub fn assemble(self, out: &mut TokenStream) -> syn::Result<()> {
+    pub fn assemble(self, out: &mut TokenAccumulator) -> syn::Result<()> {
         if !self.errors.is_empty() {
             for error in self.errors {
                 out.record_error(error);
@@ -117,9 +117,9 @@ impl Items {
                     span,
                     post,
                 } => {
-                    out.extend(mem::take(pre));
-                    mk_ident_nt(*span, text)?.to_tokens(out);
-                    out.extend(mem::take(post));
+                    out.write_tokens(mem::take(pre));
+                    out.write_tokens(mk_ident_nt(*span, text)?);
+                    out.write_tokens(/*mem::take(*/post/*)*/);
                 }
                 Item::Path(path) => {
                     let span = path.span();
@@ -134,7 +134,7 @@ impl Items {
                         })?
                         .ident;
                     *last = mk_ident_nt(last.span(), &last.to_string())?;
-                    path.to_tokens(out);
+                    out.write_tokens(path);
                 }
                 Item::Plain { .. } => panic!("trivial nontrivial"),
             }
@@ -144,7 +144,7 @@ impl Items {
                 .first()
                 .ok_or_else(|| self.span.error("empty ${paste ... }"))?
                 .span();
-            mk_ident(span, plain_strs(&self.items))?.to_tokens(out);
+            out.write_tokens(mk_ident(span, plain_strs(&self.items))?);
         }
 
         Ok(())
@@ -184,15 +184,23 @@ impl ExpansionOutput for Items {
     }
     fn push_idpath<A, B>(&mut self, pre_: A, ident: &syn::Ident, post_: B)
     where
-        A: FnOnce(&mut TokenStream),
-        B: FnOnce(&mut TokenStream),
+        A: FnOnce(&mut TokenAccumulator),
+        B: FnOnce(&mut TokenAccumulator),
     {
-        let mut pre = TokenStream::new();
+        let mut pre = TokenAccumulator::new();
         pre_(&mut pre);
-        let mut post = TokenStream::new();
+        let mut post = TokenAccumulator::new();
         post_(&mut post);
         let text = ident.to_string();
         let span = ident.span();
+        let mut handle_err = |prepost: TokenAccumulator| {
+            prepost.tokens().unwrap_or_else(|err| {
+                self.record_error(err);
+                TokenStream::new()
+            })
+        };
+        let pre = handle_err(pre);
+        let post = handle_err(post);
         self.items.push(Item::IdPath {
             pre,
             post,
@@ -235,7 +243,7 @@ impl ExpansionOutput for Items {
     ) -> syn::Result<()>
     where
         S: Spanned,
-        F: FnOnce(&mut TokenStream) -> syn::Result<()>,
+        F: FnOnce(&mut TokenAccumulator) -> syn::Result<()>,
     {
         void::unreachable(*no_paste)
     }

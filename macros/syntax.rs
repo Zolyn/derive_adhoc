@@ -14,7 +14,7 @@ pub use TemplateElement as TE;
 pub struct SubstInput {
     pub brace_token: token::Brace,
     pub driver: syn::DeriveInput,
-    pub template: Template<TokenStream>,
+    pub template: Template<TokenAccumulator>,
 }
 
 #[derive(Debug)]
