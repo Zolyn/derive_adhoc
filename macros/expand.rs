@@ -431,6 +431,7 @@ pub fn derive_adhoc_expand_func_macro(
     };
     let mut output = TokenAccumulator::new();
     input.template.expand(&ctx, &mut output);
+    let output = output.tokens()?;
 
     // obviously nothing should print to stderr
     //    dbg!(&&output);
@@ -445,5 +446,5 @@ pub fn derive_adhoc_expand_func_macro(
     //     ident
     // );
 
-    output.tokens()
+    Ok(output)
 }
