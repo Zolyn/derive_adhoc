@@ -1,3 +1,5 @@
+//! Macro impl for invoking a predefined template `derive_adhoc!`
+
 use crate::prelude::*;
 
 #[derive(Debug, Clone)]

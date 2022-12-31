@@ -97,11 +97,6 @@ Bugs
    But we only want to *lint* for this, not fail, and that's hard.
 
 
-Innards
-
-   expand.rs is too big a file
-
-
 Future-proofing: ensure we haven't painted ourselves into a corner for
 
    adhoc-derive from a trait, fn, impl block, ...

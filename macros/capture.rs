@@ -1,3 +1,5 @@
+//! Macro impl for capturing the driver `#[derive(Adhoc)]`
+
 use crate::prelude::*;
 
 // (CannedName, CannedName, ...)
