@@ -1,6 +1,14 @@
+//! Handling of boolean evaluation (conditions)
 
 use crate::framework::*;
 
+/// Implementor of [`SubstParseContext`] for booleans
+///
+/// No values of this type are ever created -
+/// it's just a generic parameter, used to select the associated
+/// marker types (and their constructor methods( in SubstParseContext.
+///
+/// So it can be uninhabited.
 #[derive(Debug)]
 pub struct BooleanContext(Void);
 
@@ -30,7 +38,6 @@ impl SubstParseContext for BooleanContext {
 
 impl Subst<BooleanContext> {
     pub fn eval_bool(&self, ctx: &Context) -> syn::Result<bool> {
-        // TODO this is calling out for some generic stuff
         // eprintln!("@@@@@@@@@@@@@@@@@@@@ EVAL {:?}", self);
 
         macro_rules! eval_attr { { $wa:expr, $lev:ident, $($pattrs:tt)* } => {

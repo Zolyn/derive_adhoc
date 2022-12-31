@@ -1,11 +1,20 @@
+//! Core types and traits for parsing and expansion
+//!
+//! Also re-exports the names that the implementation wants.
 
 pub use crate::prelude::*;
+
 pub use crate::boolean::*;
 pub use crate::repeat::*;
 pub use crate::syntax::*;
 
 pub(crate) use crate::paste;
 
+/// Context during expansion
+///
+/// References the driver, and digested information about it.
+/// Also represents where in the driver we are,
+/// including repetition context.
 #[derive(Debug, Clone)]
 pub struct Context<'c> {
     pub top: &'c syn::DeriveInput,
@@ -45,13 +54,41 @@ pub struct WithinField<'c> {
     pub index: u32,
 }
 
+/// Surrounding lexical context during parsing
+///
+/// This is the kind of lexical context a piece of a template appears in.
+/// It is implemented for
+///  * Types that represent an expansion output `ExpansionOutput`;
+///    in this case, the lexical context is one where
+///    the expansion is accumulated in this type.
+///  * Places where template substitution syntax `${keyword }`
+///    appears but where no output will be generated (eg, within
+///    the condition of `${if }`.
+///
+/// The associated types are either `Void` or `()`.
+/// They appears within the variants of `SubstDetails`,
+/// causing inapplicable variants to be eliminated.
+///
+/// Because a variant is only inhabited if all of its fields are,
+/// the conditions are effectively ANDed.
+/// So the "default" value (for context that don't have an opnion)
+/// is inhabitedness `()`.
+///
+/// Each type has an associated constructure,
+/// used during parsing.
+/// So this generates a parse error are parse time,
+/// if a construct appears in the wrong place.
 pub trait SubstParseContext {
+    /// Uninhabited iff this lexical context is within `${paste }`
     type NoPaste: Debug + Copy + Sized;
+    /// Uninhabited iff this lexical context is within a condition.
     type NoBool: Debug + Copy + Sized;
+    /// Uninhabited unless this lexical context is within a condition.
     type BoolOnly: Debug + Copy + Sized;
 
     fn no_paste(span: &impl Spanned) -> syn::Result<Self::NoPaste>;
     fn no_bool(span: &impl Spanned) -> syn::Result<Self::NoBool>;
+
     fn bool_only(span: &impl Spanned) -> syn::Result<Self::BoolOnly> {
         Err(span.error(
             "derive-adhoc keyword is a condition - not valid as an expansion",
@@ -59,18 +96,59 @@ pub trait SubstParseContext {
     }
 }
 
+/// Expansion output accumulator, for a template lexical context
+///
+/// Each template lexical context has a distinct type which
+///  * Represents the lexical context
+///  * If that lexical context generates expansions,
+///    accumulates the expansion.  That's what this trait is.
+///
+/// The methods are for accumulating various kinds of things
+/// that can be found in templates, or result from template expansion.
+///
+/// The accumulating type (`Self` might be accumulating
+/// tokens ([`TokenStream`]) or strings ([`paste::Items`)).
 pub trait ExpansionOutput: SubstParseContext {
-    fn push_lit<I: Display + Spanned + ToTokens>(&mut self, ident: &I);
+    /// Some kind of literal, whose `Display` impl is to be used
+    ///
+    /// This could be a literal `"..."` in the template text,
+    /// or a literal found due to expanding a meta attribute.
+    fn push_lit<I: Display + Spanned + ToTokens>(&mut self, lit: &I);
+
+    /// An identifier (or fragment of one)
     fn push_ident<I: quote::IdentFragment + Spanned + ToTokens>(
         &mut self,
         ident: &I,
     );
+
+    /// An identifier path
+    ///
+    /// Consisting of some prefix tokens (perhaps a scoping path),
+    /// the actual identifer,
+    /// and some suffix tokens (perhaps generics).
     fn push_idpath<A, B>(&mut self, pre: A, ident: &syn::Ident, post: B)
     where
         A: FnOnce(&mut TokenStream),
         B: FnOnce(&mut TokenStream);
+
+    /// [`syn::Lit`]
+    ///
+    /// This is its own method because `syn::Lit` is not `Display`,
+    /// and we don't want to unconditionally turn it into a string
+    /// before retokenising it.
     fn push_syn_lit(&mut self, v: &syn::Lit);
+
+    /// [`syn::Type`]
     fn push_syn_type(&mut self, v: &syn::Type);
+
+    /// Some other substitution which generates tokens
+    ///
+    /// Not supported within `${paste }`.
+    /// The `NoPaste` parameter makes this method unreachable
+    /// when expanding within `${paste }`;
+    /// or to put it another way,
+    /// it ensures that such an attempt would have been rejected
+    /// during template parsing.
     fn push_other_subst<S, F>(
         &mut self,
         np: &Self::NoPaste,
@@ -81,8 +159,18 @@ pub trait ExpansionOutput: SubstParseContext {
         S: Spanned,
         F: FnOnce(&mut TokenStream) -> syn::Result<()>;
 
+    /// A substitution which can only be used within a boolean.
+    ///
+    /// This cannot be expanded, so this function must be unreachable.
+    ///
+    /// The requirement to implement it involves demonstrating that
+    /// either self, or BoolOnly, is uninhabited.
+    ///
+    /// And, then, this function can be called in expansion contexts
+    /// to handle uninhabited variants.
     fn expand_bool_only(&mut self, bool_only: &Self::BoolOnly) -> !;
 
+    /// Expand a `${paste }`
     fn expand_paste(
         &mut self,
         ctx: &Context,
@@ -90,16 +178,37 @@ pub trait ExpansionOutput: SubstParseContext {
         paste_body: &Template<paste::Items>,
     ) -> syn::Result<()>;
 
+    /// Note that an error occurred
+    ///
+    /// This must arrange to
+    /// (eventually) convert it using `into_compile_error`
+    /// and emit it somewhere appropriate.
     fn record_error(&mut self, err: syn::Error);
 
-    fn write_error<S: Spanned, M: Display>(&mut self, s: &S, m: M) {
-        self.record_error(s.error(m));
+    /// Convenience method for noting an error with span and message
+    fn write_error<S: Spanned, M: Display>(&mut self, span: &S, message: M) {
+        self.record_error(span.error(message));
     }
 }
 
+/// Convenience trait providing `item.expand()`
+///
+/// Implementations of this are often specific to the [`ExpansionOutput`].
+///
+/// Having this as a separate trait,
+/// rather than hanging it off `ExpansionOutput`,
+/// makes the expansion method more convenient to call.
+///
+/// It also avoids having to make all of these expansion methods
+/// members of the `ExpansionOutput` trait.
 pub trait Expand<O> {
     fn expand(&self, ctx: &Context, out: &mut O) -> syn::Result<()>;
 }
+/// Convenience trait providing `fn expand(self)`, infallible version
+///
+/// Some of our `expand` functions always record errors
+/// within the output accumulator
+/// and therefore do not need to return them.
 pub trait ExpandInfallible<O> {
     fn expand(&self, ctx: &Context, out: &mut O);
 }
@@ -142,13 +251,6 @@ impl ExpansionOutput for TokenStream {
     fn push_syn_type(&mut self, ty: &syn::Type) {
         ty.to_tokens(self);
     }
-    /*    fn push_attr_value(&mut self, av: AttrValue, as_: SubstAttrAs) {
-        let mut buf = TokenStream::new();
-        av.expand(self.span(), &self.as_, &mut buf)?;
-        let found = Some(buf);
-
-        self.extend(found);
-    }*/
     fn push_other_subst<S, F>(
         &mut self,
         _no_paste: &(),
@@ -161,6 +263,7 @@ impl ExpansionOutput for TokenStream {
     {
         f(self)
     }
+
     fn expand_paste(
         &mut self,
         ctx: &Context,

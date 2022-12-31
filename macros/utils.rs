@@ -1,3 +1,4 @@
+//! Utilities for proc macro implementation
 
 use crate::prelude::*;
 use proc_macro_crate::{crate_name, FoundCrate};
@@ -10,8 +11,8 @@ pub trait SpannedExt: Spanned {
 
 impl<T: Spanned> SpannedExt for T {}
 
+/// Convert to a token stream in a way that composes nicely
 pub trait ToTokensPunctComposable {
-    /// Convert to a token stream in a way that composes nicely
     fn to_tokens_punct_composable(&self, out: &mut TokenStream);
 }
 /// Ensure that there is a trailing punctuation if needed

@@ -1,6 +1,8 @@
+//! Implementation of identifier pasting expansion `${paste }`
 
 use crate::framework::*;
 
+/// Accumulator for things to be pasted
 #[derive(Debug)]
 pub struct Items {
     span: Span,
@@ -49,6 +51,7 @@ impl Items {
         })
     }
 
+    /// Combine the accumulated pieces and write them as tokens
     pub fn assemble(self, out: &mut TokenStream) -> syn::Result<()> {
         if !self.errors.is_empty() {
             for error in self.errors {
@@ -236,6 +239,7 @@ impl ExpansionOutput for Items {
     {
         void::unreachable(*no_paste)
     }
+
     fn expand_paste(
         &mut self,
         ctx: &Context,

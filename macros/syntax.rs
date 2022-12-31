@@ -1,3 +1,9 @@
+//! Template syntax
+//!
+//! This module contains:
+//!
+//!  * The types representing a parsed template.
+//!  * The `parse` methods.
 
 use crate::framework::*;
 
@@ -44,8 +50,28 @@ pub struct Subst<O: SubstParseContext> {
     pub output_marker: PhantomData<O>,
 }
 
+/// Enum representing nature and payload of a substitution
+///
+/// This is a single enum, for all of the different lexical contexts
+/// (principal expansion, identifier pasting, boolean predicates)
+/// because this:
+///   * Unifies the parsing code, ensuring that all these
+///     constructs are parsed the same everywhere
+///     (unless we deviate deliberately).
+///   * Mostly unifies the expansion and loop/conditional walking code.
+///   * Avoids the need to recapitulate the keywords in multiple
+///     enums, or contexts with inner nested enums, or something.
+///
+/// The enum is generic over the lexical context [`SubstParseContext`].
+/// This allows the variants that are inapplicable in a particular
+/// lexical context to be made uninhabited:
+/// that ensures that detection of such errors occurs during template parsing.
 #[allow(non_camel_case_types)] // clearer to use the exact ident
 #[derive(Debug)]
+// TODO: This comment is largely obsolete,
+// but we should review the ${if } parsing to see if it can be
+// dealt with at parse type using `SubstParseContext`
+//
 // TODO: it might be good to separate this into separate enums for
 // conditions and substitutions? -nickm
 // I don't think so.  I unified these because the following places
@@ -62,7 +88,6 @@ pub struct Subst<O: SubstParseContext> {
 // and this demonstrates different parsing.  We want to forbid
 //     ${if fmeta(foo) as ty { ...
 // and right now that is a bit funny.
-
 pub enum SubstDetails<O: SubstParseContext> {
     // variables
     tname(O::NoBool),
@@ -106,10 +131,12 @@ pub enum SubstDetails<O: SubstParseContext> {
 
 #[derive(Debug)]
 pub struct SubstIf<O: SubstParseContext> {
-    // A series of test/result pairs.  The test that gives "true"
-    // short-circuits the rest.
+    /// A series of test/result pairs.
+    ///
+    /// The test that gives "true"
+    /// short-circuits the rest.
     pub tests: Vec<(Subst<BooleanContext>, Template<O>)>,
-    // A final element to expand if all tests fail.
+    /// A final element to expand if all tests fail.
     pub otherwise: Option<Box<Template<O>>>,
 }
 
@@ -133,9 +160,11 @@ pub struct SubstAttrPath {
     pub deeper: Option<Box<SubstAttrPath>>,
 }
 
-// Parses (foo,bar(baz),zonk="value")
-// Like NestedMeta but doesn't allow lit, since we forbid #[adhoc("some")]
-// And discards the paren and the `ahoc` introducer
+/// Parses `(foo,bar(baz),zonk="value")`
+///
+/// Like `NestedMeta` but doesn't allow lit,
+/// since we forbid `#[adhoc("some")]`
+/// And discards the paren and the `ahoc` introducer.
 #[derive(Debug, Clone)]
 struct AdhocAttrList {
     meta: Punctuated<syn::Meta, token::Comma>,
@@ -427,7 +456,7 @@ impl<O: SubstParseContext> Parse for SubstIf<O> {
             }
         }
 
-        // Q: What ensures that there are no unhandled
+        // TODO: Q: What ensures that there are no unhandled
         // tokens left for us?
 
         Ok(SubstIf { tests, otherwise })

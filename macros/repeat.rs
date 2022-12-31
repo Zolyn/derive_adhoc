@@ -1,3 +1,4 @@
+//! Handling of repetition
 
 use crate::framework::*;
 

@@ -1,3 +1,10 @@
+//! Expansion of a template into output tokens, plus `derive_adhoc_expand!()`
+//!
+//! Contains the implementations of `fn expand()`
+//! for the various template types in [`crate::syntax`].
+//!
+//! Also contains the top-level "do the work" macro function -
+//! the implementation of `derive_adhoc_expand!()`.
 
 use crate::framework::*;
 
@@ -359,22 +366,13 @@ impl<O: ExpansionOutput> RepeatedTemplate<O> {
     }
 }
 
-// This should implement the actual template engine
+// This implements the actual template engine
 //
 // In my design, the input contains, firstly, literally the definition
 // that #[derive(Adhoc)] was applied to (see NOTES.txt).
 // Using the literal input, rather than some pre-parsed version, is
 // slower, but means that we aren't inventing a nontrivial data format which
 // potentially crosses crate boundaries with semver implications.
-//
-// We should start with a POC where the template engine does something
-// totally trivial, but which does:
-//   - depend on parsing the original derive macro input (struct def'n)
-//   - treat $ in the template specially
-//   - make output that replicates mostly the template
-// Eg, how about making a thing where the templater just replaces
-//   $ Struct
-// with the original struct ident.
 pub fn derive_adhoc_expand_func_macro(
     input: TokenStream,
 ) -> syn::Result<TokenStream> {

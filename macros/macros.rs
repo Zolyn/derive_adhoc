@@ -1,15 +1,24 @@
-//!
+//! Macros for `derive_adhoc`
+//
+// This is the actual proc-macro crate.
+//
+// All it exports (or can export) are the proc macros themselves.
+// Everything else that is `pub` could be written `pub(crate)`.
 
 mod prelude;
+
 use prelude::*;
 
+// modules containing the actual implementations of our proc-macros
 mod capture;
 mod definition;
 mod invocation;
-mod utils;
 
+// Implementation - common parts
+mod utils;
 mod framework;
 
+// Implementation - specific areas
 mod boolean;
 mod expand;
 mod paste;
