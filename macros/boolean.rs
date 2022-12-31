@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 
 use crate::framework::*;
 
@@ -9,12 +8,6 @@ struct Found;
 
 fn is_found(r: Result<(), Found>) -> bool {
     r.is_err()
-}
-
-impl BooleanContext {
-    fn unreachable(&self) -> ! {
-        void::unreachable(self.0)
-    }
 }
 
 impl SubstParseContext for BooleanContext {

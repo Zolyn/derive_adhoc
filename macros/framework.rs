@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 
 pub use crate::prelude::*;
 pub use crate::boolean::*;
@@ -45,8 +44,6 @@ pub struct WithinField<'c> {
     pub pfield: &'c PreprocessedField,
     pub index: u32,
 }
-
-enum Todo {}
 
 pub trait SubstParseContext {
     type NoPaste: Debug + Copy + Sized;
