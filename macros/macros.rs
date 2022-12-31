@@ -15,8 +15,8 @@ mod definition;
 mod invocation;
 
 // Implementation - common parts
-mod utils;
 mod framework;
+mod utils;
 
 // Implementation - specific areas
 mod boolean;

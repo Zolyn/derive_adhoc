@@ -93,7 +93,6 @@ impl Subst<BooleanContext> {
     }
 }
 
-
 impl SubstAttrPath {
     fn search_eval_bool(
         &self,

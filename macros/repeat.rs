@@ -101,7 +101,6 @@ impl<O: SubstParseContext> TemplateElement<O> {
     }
 }
 
-
 impl<O: SubstParseContext> Subst<O> {
     fn analyse_repeat(
         &self,
@@ -308,7 +307,10 @@ impl<'c> Context<'c> {
         self.within_level(why)
     }
     /// Obtains the current variant as a `syn::Variant`
-    pub fn syn_variant(&self, why: &dyn Spanned) -> syn::Result<&syn::Variant> {
+    pub fn syn_variant(
+        &self,
+        why: &dyn Spanned,
+    ) -> syn::Result<&syn::Variant> {
         let r = self.variant(why)?.variant.as_ref().ok_or_else(|| {
             syn::Error::new(why.span(), "expansion only valid in enums")
         })?;

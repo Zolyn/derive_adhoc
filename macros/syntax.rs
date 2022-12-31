@@ -7,8 +7,8 @@
 
 use crate::framework::*;
 
-pub use TemplateElement as TE;
 pub use SubstDetails as SD;
+pub use TemplateElement as TE;
 
 #[derive(Debug)]
 pub struct SubstInput {
