@@ -54,7 +54,9 @@ impl BooleanContext {
 
 impl ExpansionOutput for BooleanContext {
     type NoPaste = ();
+    type BoolOnly = ();
     fn no_paste(_: &impl Spanned) -> syn::Result<()> { Ok(()) }
+    fn bool_only(_: &impl Spanned) -> syn::Result<()> { Ok(()) }
 
     fn push_lit<L: Display + Spanned + ToTokens>(&mut self, _lit: &L) {
         self.unreachable();
@@ -91,6 +93,12 @@ impl ExpansionOutput for BooleanContext {
         _span: Span,
         _paste_body: &Template<paste::Items>,
     ) -> syn::Result<()> {
+        self.unreachable()
+    }
+    fn expand_bool_only(
+        &mut self,
+        _bool_only: &(),
+    ) -> ! {
         self.unreachable()
     }
 
@@ -163,12 +171,12 @@ enum SubstDetails<O: ExpansionOutput> {
     when(Box<Subst<BooleanContext>>),
 
     // expressions
-    False,
-    True,
-    not(Box<Subst<BooleanContext>>),
-    any(Punctuated<Subst<BooleanContext>, token::Comma>),
-    all(Punctuated<Subst<BooleanContext>, token::Comma>),
-    is_enum,
+    False(O::BoolOnly),
+    True(O::BoolOnly),
+    not(Box<Subst<BooleanContext>>, O::BoolOnly),
+    any(Punctuated<Subst<BooleanContext>, token::Comma>, O::BoolOnly),
+    all(Punctuated<Subst<BooleanContext>, token::Comma>, O::BoolOnly),
+    is_enum(O::BoolOnly),
 
     // Explicit iteration
     For(RepeatedTemplate<O>),
@@ -412,13 +420,14 @@ impl<O: ExpansionOutput> Parse for Subst<O> {
         }
 
         let no_paste = O::no_paste(&kw);
+        let bool_only = O::bool_only(&kw);
 
         keyword! { tname }
         keyword! { ttype }
         keyword! { vname }
         keyword! { fname }
         keyword! { ftype }
-        keyword! { is_enum }
+        keyword! { is_enum(bool_only?) }
 
         keyword! { tgens(no_paste?) }
         keyword! { tgnames(no_paste?) }
@@ -436,10 +445,10 @@ impl<O: ExpansionOutput> Parse for Subst<O> {
         keyword! { when(input.parse()?) }
 
         if kw == "false" {
-            return from_sd(SD::False);
+            return from_sd(SD::False(bool_only?));
         }
         if kw == "true" {
-            return from_sd(SD::True);
+            return from_sd(SD::True(bool_only?));
         }
         if kw == "if" {
             return from_sd(SD::If(input.parse()?));
@@ -453,21 +462,21 @@ impl<O: ExpansionOutput> Parse for Subst<O> {
                 let inner;
                 let _paren = parenthesized!(inner in input);
             }
-            (Punctuated::parse_terminated(&inner)?)
+            (Punctuated::parse_terminated(&inner)?, bool_only?)
         }
         keyword! {
             any {
                 let inner;
                 let _paren = parenthesized!(inner in input);
             }
-            (Punctuated::parse_terminated(&inner)?)
+            (Punctuated::parse_terminated(&inner)?, bool_only?)
         }
         keyword! {
             not {
                 let inner;
                 let _paren = parenthesized!(inner in input);
             }
-            (inner.parse()?)
+            (inner.parse()?, bool_only?)
         }
 
         Err(kw.error("unknown derive-adhoc keyword"))
@@ -524,6 +533,13 @@ trait ExpansionOutput {
     type NoPaste: Debug + Copy + Sized;
     fn no_paste(span: &impl Spanned) -> syn::Result<Self::NoPaste>;
 
+    type BoolOnly: Debug + Copy + Sized;
+    fn bool_only(span: &impl Spanned) -> syn::Result<Self::BoolOnly> {
+        Err(span.error(
+            "derive-adhoc keyword is a condition - not valid as an expansion",
+        ))
+    }
+
     fn push_lit<I: Display + Spanned + ToTokens>(&mut self, ident: &I);
     fn push_ident<I: quote::IdentFragment + Spanned + ToTokens>(
         &mut self,
@@ -539,6 +555,11 @@ trait ExpansionOutput {
     where
         S: Spanned,
         F: FnOnce(&mut TokenStream) -> syn::Result<()>;
+
+    fn expand_bool_only(
+        &mut self,
+        bool_only: &Self::BoolOnly,
+    ) -> !;
 
     fn expand_paste(
         &mut self,
@@ -557,6 +578,8 @@ trait ExpansionOutput {
 impl ExpansionOutput for TokenStream {
     type NoPaste = ();
     fn no_paste(_: &impl Spanned) -> syn::Result<()> { Ok(()) }
+
+    type BoolOnly = Void;
 
     fn push_lit<L: Display + Spanned + ToTokens>(&mut self, lit: &L) {
         lit.to_tokens(self)
@@ -605,6 +628,12 @@ impl ExpansionOutput for TokenStream {
         let mut items = paste::Items::new(span);
         paste_body.expand(ctx, &mut items);
         items.assemble(self)
+    }
+    fn expand_bool_only(
+        &mut self,
+        bool_only: &Self::BoolOnly,
+    ) -> ! {
+        void::unreachable(*bool_only)
     }
 
     fn record_error(&mut self, err: syn::Error) {
@@ -672,19 +701,19 @@ impl Subst<BooleanContext> {
             SD::tmeta(wa) => is_found(wa.path.search_eval_bool(ctx.tattrs)),
             SD::vmeta(wa) => eval_attr!{ wa, WithinVariant, pattrs },
             SD::fmeta(wa) => eval_attr!{ wa, WithinField, pfield.pattrs },
-            SD::is_enum => matches!(ctx.top.data, syn::Data::Enum(_)),
+            SD::is_enum(..) => matches!(ctx.top.data, syn::Data::Enum(_)),
 
-            SD::False => false,
-            SD::True => true,
+            SD::False(..) => false,
+            SD::True(..) => true,
 
-            SD::not(v) => ! v.eval_bool(ctx)?,
-            SD::any(vs) =>
+            SD::not(v,_) => ! v.eval_bool(ctx)?,
+            SD::any(vs,_) =>
                 vs.iter().find_map(|v| match v.eval_bool(ctx) {
                     Ok(true) => Some(Ok(true)),
                     Err(e) => Some(Err(e)),
                     Ok(false) => None,
                 }).unwrap_or(Ok(false))?,
-            SD::all(vs) =>
+            SD::all(vs,_) =>
                 vs.iter().find_map(|v| match v.eval_bool(ctx) {
                     Ok(true) => None,
                     Err(e) => Some(Err(e)),
@@ -902,15 +931,12 @@ where
                 "${when } only allowed in toplevel of $( )"
             ),
             SD::If(conds) => conds.expand(ctx, out)?,
-            SD::is_enum
-            | SD::False
-            | SD::True
-            | SD::not(_)
-            | SD::any(_)
-            | SD::all(_) => out.write_error(
-                self,
-                "derive-adhoc keyword is a condition - not valid as an expansion",
-            ),
+            SD::is_enum(bo)
+            | SD::False(bo)
+            | SD::True(bo)
+            | SD::not(_,bo)
+            | SD::any(_,bo)
+            | SD::all(_,bo) => out.expand_bool_only(bo),
             SD::For(repeat) => repeat.expand(ctx, out),
         };
         Ok(())
@@ -938,13 +964,13 @@ impl<O: ExpansionOutput> Subst<O> {
             SD::tgens(..) => None,
             SD::tgnames(..) => None,
             SD::twheres(..) => None,
-            SD::is_enum => None,
+            SD::is_enum(..) => None,
             SD::paste(body) => {
                 body.analyse_repeat(visitor)?;
                 None
             }
             SD::when(_) => None, // out-of-place when, ignore it
-            SD::not(cond) => {
+            SD::not(cond,_) => {
                 cond.analyse_repeat(visitor)?;
                 None
             }
@@ -952,7 +978,7 @@ impl<O: ExpansionOutput> Subst<O> {
                 conds.analyse_repeat(visitor)?;
                 None
             }
-            SD::any(conds) | SD::all(conds) => {
+            SD::any(conds,_) | SD::all(conds,_) => {
                 for c in conds.iter() {
                     c.analyse_repeat(visitor)?;
                 }
@@ -960,7 +986,7 @@ impl<O: ExpansionOutput> Subst<O> {
             }
             // Has a RepeatOver, but does not imply anything about its context.
             SD::For(_) => None,
-            SD::False | SD::True => None, // condition: ignore.
+            SD::False(..) | SD::True(..) => None, // condition: ignore.
         };
         if let Some(over) = over {
             let over = RepeatOverInference {

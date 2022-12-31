@@ -153,6 +153,7 @@ impl Items {
 
 impl ExpansionOutput for Items {
     type NoPaste = Void;
+    type BoolOnly = Void;
 
     fn no_paste(span: &impl Spanned) -> syn::Result<Void> {
         Err(span.error("not allowed in within ${paste ...}"))
@@ -236,6 +237,12 @@ impl ExpansionOutput for Items {
         // Strange, but, whatever.
         paste_body.expand(ctx, self);
         Ok(())
+    }
+    fn expand_bool_only(
+        &mut self,
+        bool_only: &Self::BoolOnly,
+    ) -> ! {
+        void::unreachable(*bool_only)
     }
 
     fn record_error(&mut self, err: syn::Error) {
