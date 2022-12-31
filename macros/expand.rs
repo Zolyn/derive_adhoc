@@ -46,6 +46,7 @@ enum TemplateElement<O: ExpansionOutput> {
 #[derive(Debug)]
 struct BooleanContext;
 impl ExpansionOutput for BooleanContext {
+    type CannotPaste = ();
     fn push_lit<L: Display + Spanned + ToTokens>(&mut self, _lit: &L) {
         todo!()
     }
@@ -137,9 +138,9 @@ enum SubstDetails<O: ExpansionOutput> {
     tmeta(SubstAttr),
     vmeta(SubstAttr),
     fmeta(SubstAttr),
-    tattrs(RawAttr),
-    vattrs(RawAttr),
-    fattrs(RawAttr),
+    tattrs(RawAttr, O::CannotPaste),
+    vattrs(RawAttr, O::CannotPaste),
+    fattrs(RawAttr, O::CannotPaste),
 
     // generics
     tgens,
@@ -416,9 +417,9 @@ impl<O: ExpansionOutput> Parse for Subst<O> {
         keyword! { vmeta(input.parse()?) }
         keyword! { fmeta(input.parse()?) }
 
-        keyword! { tattrs(input.parse()?) }
-        keyword! { vattrs(input.parse()?) }
-        keyword! { fattrs(input.parse()?) }
+        keyword! { tattrs(input.parse()?, chk_exp_ctx(&kw)?) }
+        keyword! { vattrs(input.parse()?, chk_exp_ctx(&kw)?) }
+        keyword! { fattrs(input.parse()?, chk_exp_ctx(&kw)?) }
 
         keyword! { paste(input.parse()?) }
         keyword! { when(input.parse()?) }
@@ -504,11 +505,28 @@ impl<O: ExpansionOutput> Parse for SubstIf<O> {
     }
 }
 
+trait ExpansionContextCheckResult: Debug + Sized {
+    fn new_eccr() -> Option<Self>;
+}
+impl ExpansionContextCheckResult for () {
+    fn new_eccr() -> Option<Self> { Some(()) }
+}
+impl ExpansionContextCheckResult for Void {
+    fn new_eccr() -> Option<Self> { None }
+}
+
+fn chk_exp_ctx<C>(span: &impl Spanned) -> syn::Result<C>
+where C: ExpansionContextCheckResult
+{
+    C::new_eccr().ok_or_else(|| span.error("not allowed in this context"))
+}
+
 trait Expand<O, R = syn::Result<()>> {
     fn expand(&self, ctx: &Context, out: &mut O) -> R;
 }
 
 trait ExpansionOutput {
+    type CannotPaste: ExpansionContextCheckResult;
     fn push_lit<I: Display + Spanned + ToTokens>(&mut self, ident: &I);
     fn push_ident<I: quote::IdentFragment + Spanned + ToTokens>(
         &mut self,
@@ -540,6 +558,7 @@ trait ExpansionOutput {
 }
 
 impl ExpansionOutput for TokenStream {
+    type CannotPaste = ();
     fn push_lit<L: Display + Spanned + ToTokens>(&mut self, lit: &L) {
         lit.to_tokens(self)
     }
@@ -850,15 +869,15 @@ where
             SD::vmeta(wa) => do_meta(wa, out, ctx.variant(wa)?.pattrs)?,
             SD::fmeta(wa) => do_meta(wa, out, &ctx.field(wa)?.pfield.pattrs)?,
 
-            SD::tattrs(ra) => out.push_other_subst(self, |out| {
+            SD::tattrs(ra, _) => out.push_other_subst(self, |out| {
                 ra.expand(ctx, out, &ctx.top.attrs)
             })?,
-            SD::vattrs(ra) => out.push_other_subst(self, |out| {
+            SD::vattrs(ra, _) => out.push_other_subst(self, |out| {
                 let variant = ctx.variant(self)?.variant;
                 let attrs = variant.as_ref().map(|v| &*v.attrs);
                 ra.expand(ctx, out, attrs.unwrap_or_default())
             })?,
-            SD::fattrs(ra) => out.push_other_subst(self, |out| {
+            SD::fattrs(ra, _) => out.push_other_subst(self, |out| {
                 ra.expand(ctx, out, &ctx.field(self)?.field.attrs)
             })?,
 
@@ -914,9 +933,9 @@ impl<O: ExpansionOutput> Subst<O> {
             SD::tmeta(_) => None,
             SD::vmeta(_) => Some(RO::Variants),
             SD::fmeta(_) => Some(RO::Fields),
-            SD::tattrs(_) => None,
-            SD::vattrs(_) => Some(RO::Variants),
-            SD::fattrs(_) => Some(RO::Fields),
+            SD::tattrs(..) => None,
+            SD::vattrs(..) => Some(RO::Variants),
+            SD::fattrs(..) => Some(RO::Fields),
             SD::tgens => None,
             SD::tgnames => None,
             SD::twheres => None,
