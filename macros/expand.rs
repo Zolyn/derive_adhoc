@@ -477,9 +477,12 @@ trait ExpansionOutput {
         S: Spanned,
         F: FnOnce(&mut TokenStream) -> syn::Result<()>;
 
-    fn expand_paste(&mut self, ctx: &Context,
-                    span: Span, paste_body: &Template)
-                    -> syn::Result<()>;
+    fn expand_paste(
+        &mut self,
+        ctx: &Context,
+        span: Span,
+        paste_body: &Template,
+    ) -> syn::Result<()>;
 
     fn record_error(&mut self, err: syn::Error);
 
@@ -527,10 +530,12 @@ impl ExpansionOutput for TokenStream {
     {
         f(self)
     }
-    fn expand_paste(&mut self, ctx: &Context, span: Span,
-                    paste_body: &Template)
-                    -> syn::Result<()>
-    {
+    fn expand_paste(
+        &mut self,
+        ctx: &Context,
+        span: Span,
+        paste_body: &Template,
+    ) -> syn::Result<()> {
         let mut items = paste::Items::new(span);
         paste_body.expand(ctx, &mut items);
         items.assemble(self)

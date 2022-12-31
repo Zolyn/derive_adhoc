@@ -53,85 +53,113 @@ impl Items {
     }
 
     pub fn assemble(self, out: &mut TokenStream) -> syn::Result<()> {
-        if ! self.errors.is_empty() {
+        if !self.errors.is_empty() {
             for error in self.errors {
                 out.record_error(error);
             }
-            return Ok(())
+            return Ok(());
         }
 
         let nontrivial = self
             .items
             .iter()
             .enumerate()
-            .filter(|(_,it)| !matches!(it, Item::Plain { .. }))
+            .filter(|(_, it)| !matches!(it, Item::Plain { .. }))
             .at_most_one()
-            .map_err(|mut eoe| eoe.next().unwrap().1.span().error(
-                "multiple nontrivial entries in ${paste ...}"
-            ))?
-            .map(|(i,_)| i);
+            .map_err(|mut eoe| {
+                eoe.next()
+                    .unwrap()
+                    .1
+                    .span()
+                    .error("multiple nontrivial entries in ${paste ...}")
+            })?
+            .map(|(i, _)| i);
 
-        fn plain_strs(items: &[Item]) -> impl Iterator<Item=&str> {
+        fn plain_strs(items: &[Item]) -> impl Iterator<Item = &str> {
             items.iter().map(|item| match item {
                 Item::Plain { text, .. } => text.as_str(),
                 _ => panic!("non plain item"),
             })
         }
 
-        fn mk_ident<'i>(span: Span, items: impl Iterator<Item=&'i str>)
-                        -> syn::Result<syn::Ident> {
+        fn mk_ident<'i>(
+            span: Span,
+            items: impl Iterator<Item = &'i str>,
+        ) -> syn::Result<syn::Ident> {
             let ident = items.collect::<String>();
-            catch_unwind(|| {
-                format_ident!("{}", ident, span=span)
-            }).map_err(|_| {
-                span.error(format_args!("pasted identifier {:?} is invalid",
-                                        ident))
-            })
+            catch_unwind(|| format_ident!("{}", ident, span = span)).map_err(
+                |_| {
+                    span.error(format_args!(
+                        "pasted identifier {:?} is invalid",
+                        ident
+                    ))
+                },
+            )
         }
 
         let path_last_s;
 
         if let Some(nontrivial) = nontrivial {
             let mut items = self.items;
-            let (items, items_before) = items.split_at_mut(nontrivial+1);
+            let (items, items_before) = items.split_at_mut(nontrivial + 1);
             let (items_after, items) = items.split_at_mut(nontrivial);
             let nontrivial = &mut items[0];
             let items_before = plain_strs(items_before);
             let items_after = plain_strs(items_after);
 
             match nontrivial {
-                Item::IdPath { pre, text, span, post } => {
+                Item::IdPath {
+                    pre,
+                    text,
+                    span,
+                    post,
+                } => {
                     out.extend(pre.clone());
-                    mk_ident(*span, chain!(
-                        items_before,
-                        iter::once(text.as_str()),
-                        items_after,
-                    ))?.to_tokens(out);
+                    mk_ident(
+                        *span,
+                        chain!(
+                            items_before,
+                            iter::once(text.as_str()),
+                            items_after,
+                        ),
+                    )?
+                    .to_tokens(out);
                     out.extend(post.clone());
                 }
                 Item::Path(path) => {
                     let span = path.span();
-                    let last = &mut path.path.segments.last_mut().ok_or_else(
-                        ||
-                        span.error("derive-adhoc token pasting applied to path with no components")
-                    )?.ident;
+                    let last = &mut path
+                        .path
+                        .segments
+                        .last_mut()
+                        .ok_or_else(|| {
+                            span.error(
+               "derive-adhoc token pasting applied to path with no components"
+                        )
+                        })?
+                        .ident;
                     path_last_s = last.to_string();
-                    *last = mk_ident(last.span(), chain!(
-                        items_before,
-                        iter::once(path_last_s.as_str()),
-                        items_after,
-                    ))?;
+                    *last = mk_ident(
+                        last.span(),
+                        chain!(
+                            items_before,
+                            iter::once(path_last_s.as_str()),
+                            items_after,
+                        ),
+                    )?;
                     path.to_tokens(out);
                 }
                 Item::Plain { .. } => panic!("trivial nontrivial"),
             }
         } else {
             mk_ident(
-                self.items.first().ok_or_else(
-                    || self.span.error("empty ${paste ... }")
-                )?.span(),
+                self.items
+                    .first()
+                    .ok_or_else(|| self.span.error("empty ${paste ... }"))?
+                    .span(),
                 plain_strs(&self.items),
-            )?.to_tokens(out);
+            )?
+            .to_tokens(out);
         }
 
         Ok(())
@@ -209,9 +237,12 @@ impl ExpansionOutput for Items {
             .span()
             .error("unsupported substitution in identifier pasting"))
     }
-    fn expand_paste(&mut self, ctx: &Context, _span: Span,
-                    paste_body: &Template)
-                    -> syn::Result<()> {
+    fn expand_paste(
+        &mut self,
+        ctx: &Context,
+        _span: Span,
+        paste_body: &Template,
+    ) -> syn::Result<()> {
         // ${pate .. ${pate ..} ...}
         // Strange, but, whatever.
         paste_body.expand(ctx, self);
