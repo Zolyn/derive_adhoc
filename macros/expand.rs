@@ -657,7 +657,7 @@ fn is_found(r: Result<(), Found>) -> bool {
     r.is_err()
 }
 
-impl<O: ExpansionOutput> Subst<O> {
+impl Subst<BooleanContext> {
     fn eval_bool(&self, ctx: &Context) -> syn::Result<bool> {
         // TODO this is calling out for some generic stuff
         // eprintln!("@@@@@@@@@@@@@@@@@@@@ EVAL {:?}", self);
