@@ -95,8 +95,8 @@ impl Items {
 
         if let Some(nontrivial) = nontrivial {
             let mut items = self.items;
-            let (items, items_before) = items.split_at_mut(nontrivial + 1);
-            let (items_after, items) = items.split_at_mut(nontrivial);
+            let (items, items_after) = items.split_at_mut(nontrivial + 1);
+            let (items_before, items) = items.split_at_mut(nontrivial);
             let nontrivial = &mut items[0];
 
             let mk_ident_nt = |span, text: &str| {
