@@ -128,8 +128,8 @@ pub trait ExpansionOutput: SubstParseContext {
     /// and some suffix tokens (perhaps generics).
     fn push_idpath<A, B>(&mut self, pre: A, ident: &syn::Ident, post: B)
     where
-        A: FnOnce(&mut TokenStream),
-        B: FnOnce(&mut TokenStream);
+        A: FnOnce(&mut TokenAccumulator),
+        B: FnOnce(&mut TokenAccumulator);
 
     /// [`syn::Lit`]
     ///
@@ -157,7 +157,7 @@ pub trait ExpansionOutput: SubstParseContext {
     ) -> syn::Result<()>
     where
         S: Spanned,
-        F: FnOnce(&mut TokenStream) -> syn::Result<()>;
+        F: FnOnce(&mut TokenAccumulator) -> syn::Result<()>;
 
     /// A substitution which can only be used within a boolean.
     ///
@@ -213,7 +213,39 @@ pub trait ExpandInfallible<O> {
     fn expand(&self, ctx: &Context, out: &mut O);
 }
 
-impl SubstParseContext for TokenStream {
+/// Accumulates tokens, or errors
+///
+/// We collect all the errors, and if we get an error, don't write
+/// anything out.
+/// This is because `compile_error!` (from `into_compile_error`)
+/// only works in certain places in Rust syntax (!)
+#[derive(Debug)]
+pub struct TokenAccumulator(Result<TokenStream, syn::Error>);
+
+impl Default for TokenAccumulator {
+    fn default() -> Self {
+        TokenAccumulator(Ok(TokenStream::new()))
+    }
+}
+
+impl TokenAccumulator {
+    pub fn new() -> Self {
+        Self::default()
+    }
+    pub fn with_tokens<R>(&mut self, f: impl FnOnce(&mut TokenStream) -> R)
+                   -> Option<R>
+    {
+        self.0.as_mut().ok().map(f)
+    }
+    pub fn write_tokens(&mut self, t: impl ToTokens) {
+        self.with_tokens(|out| t.to_tokens(out));
+    }
+    pub fn tokens(self) -> syn::Result<TokenStream> {
+        self.0
+    }
+}
+
+impl SubstParseContext for TokenAccumulator {
     type NoPaste = ();
     type NoBool = ();
     fn no_bool(_: &impl Spanned) -> syn::Result<()> {
@@ -226,30 +258,30 @@ impl SubstParseContext for TokenStream {
     type BoolOnly = Void;
 }
 
-impl ExpansionOutput for TokenStream {
+impl ExpansionOutput for TokenAccumulator {
     fn push_lit<L: Display + Spanned + ToTokens>(&mut self, lit: &L) {
-        lit.to_tokens(self)
+        self.write_tokens(lit)
     }
     fn push_ident<I: quote::IdentFragment + Spanned + ToTokens>(
         &mut self,
         ident: &I,
     ) {
-        ident.to_tokens(self)
+        self.write_tokens(ident)
     }
     fn push_idpath<A, B>(&mut self, pre: A, ident: &syn::Ident, post: B)
     where
-        A: FnOnce(&mut TokenStream),
-        B: FnOnce(&mut TokenStream),
+        A: FnOnce(&mut TokenAccumulator),
+        B: FnOnce(&mut TokenAccumulator),
     {
         pre(self);
-        ident.to_tokens(self);
+        self.write_tokens(ident);
         post(self);
     }
     fn push_syn_lit(&mut self, lit: &syn::Lit) {
-        lit.to_tokens(self);
+        self.write_tokens(lit);
     }
     fn push_syn_type(&mut self, ty: &syn::Type) {
-        ty.to_tokens(self);
+        self.write_tokens(ty);
     }
     fn push_other_subst<S, F>(
         &mut self,
@@ -259,7 +291,7 @@ impl ExpansionOutput for TokenStream {
     ) -> syn::Result<()>
     where
         S: Spanned,
-        F: FnOnce(&mut TokenStream) -> syn::Result<()>,
+        F: FnOnce(&mut TokenAccumulator) -> syn::Result<()>,
     {
         f(self)
     }
@@ -279,6 +311,10 @@ impl ExpansionOutput for TokenStream {
     }
 
     fn record_error(&mut self, err: syn::Error) {
-        self.extend(err.into_compile_error())
+        if let Err(before) = &mut self.0 {
+            before.combine(err);
+        } else {
+            self.0 = Err(err)
+        }
     }
 }

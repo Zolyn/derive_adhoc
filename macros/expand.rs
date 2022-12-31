@@ -52,21 +52,21 @@ where
     }
 }
 
-impl Expand<TokenStream> for TemplateElement<TokenStream> {
-    fn expand(&self, ctx: &Context, out: &mut TokenStream) -> syn::Result<()> {
+impl Expand<TokenAccumulator> for TemplateElement<TokenAccumulator> {
+    fn expand(&self, ctx: &Context, out: &mut TokenAccumulator) -> syn::Result<()> {
         match self {
-            TE::Pass(tt) => out.extend([tt.clone()]),
+            TE::Pass(tt) => out.write_tokens(tt.clone()),
             TE::Group {
                 delim_span,
                 delimiter,
                 template,
             } => {
                 use proc_macro2::Group;
-                let mut content = TokenStream::new();
+                let mut content = TokenAccumulator::new();
                 template.expand(ctx, &mut content);
-                let mut group = Group::new(*delimiter, content);
+                let mut group = Group::new(*delimiter, content.tokens()?);
                 group.set_span(*delim_span);
-                out.extend([TT::Group(group)]);
+                out.write_tokens(TT::Group(group));
             }
             TE::Subst(exp) => {
                 exp.expand(ctx, out)?;
@@ -88,15 +88,17 @@ where
         // eprintln!("@@@@@@@@@@@@@@@@@@@@ EXPAND {:?}", self);
 
         let do_meta = |wa: &SubstAttr, out, meta| wa.expand(ctx, out, meta);
-        let do_tgnames = |out: &mut _| {
+        let do_tgnames = |out: &mut TokenAccumulator| {
             for pair in ctx.top.generics.params.pairs() {
                 use syn::GenericParam as GP;
                 match pair.value() {
-                    GP::Type(t) => t.ident.to_tokens(out),
-                    GP::Const(c) => c.ident.to_tokens(out),
-                    GP::Lifetime(l) => l.lifetime.to_tokens(out),
+                    GP::Type(t) => out.write_tokens(&t.ident),
+                    GP::Const(c) => out.write_tokens(&c.ident),
+                    GP::Lifetime(l) => out.write_tokens(&l.lifetime),
                 }
-                pair.punct().to_tokens_punct_composable(out);
+                out.with_tokens(|out| {
+                    pair.punct().to_tokens_punct_composable(out);
+                });
             }
         };
 
@@ -109,10 +111,10 @@ where
                     let gens = &ctx.top.generics;
                     match (&gens.lt_token, &gens.gt_token) {
                         (None, None) => (),
-                        (Some(lt), Some(rt)) => {
-                            lt.to_tokens(out);
+                        (Some(lt), Some(gt)) => {
+                            out.write_tokens(lt);
                             do_tgnames(out);
-                            rt.to_tokens(out);
+                            out.write_tokens(gt);
                         }
                         _ => {
                             panic!("unmatched < > in syn::Generics {:?}", gens)
@@ -160,7 +162,7 @@ where
             }
 
             SD::tgens(np, ..) => out.push_other_subst(np, self, |out| {
-                ctx.top.generics.params.to_tokens(out);
+                out.write_tokens(&ctx.top.generics.params);
                 Ok(())
             })?,
             SD::tgnames(np, ..) => out.push_other_subst(np, self, |out| {
@@ -169,7 +171,9 @@ where
             })?,
             SD::twheres(np, ..) => out.push_other_subst(np, self, |out| {
                 if let Some(clause) = &ctx.top.generics.where_clause {
-                    clause.predicates.to_tokens_punct_composable(out);
+                    out.with_tokens(|out| {
+                        clause.predicates.to_tokens_punct_composable(out);
+                    });
                 }
                 Ok(())
             })?,
@@ -286,7 +290,7 @@ impl RawAttr {
     fn expand(
         &self,
         ctx: &Context,
-        out: &mut TokenStream,
+        out: &mut TokenAccumulator,
         attrs: &[syn::Attribute],
     ) -> syn::Result<()> {
         for attr in attrs {
@@ -299,7 +303,7 @@ impl RawAttr {
                 }
                 RawAttr::Exclude { exclusions } => {
                     if !exclusions.iter().any(|excl| excl == &attr.path) {
-                        attr.to_tokens(out);
+                        out.write_tokens(attr);
                     }
                 }
             }
@@ -316,10 +320,10 @@ impl RawAttrEntry {
     fn expand(
         &self,
         _ctx: &Context,
-        out: &mut TokenStream,
+        out: &mut TokenAccumulator,
         attr: &syn::Attribute,
     ) -> syn::Result<()> {
-        attr.to_tokens(out);
+        out.write_tokens(attr);
         Ok(())
     }
 }
@@ -425,8 +429,9 @@ pub fn derive_adhoc_expand_func_macro(
         variant: None,
         pvariants: &pvariants,
     };
-    let mut output = TokenStream::new();
+    let mut output = TokenAccumulator::new();
     input.template.expand(&ctx, &mut output);
+    let output = output.tokens()?;
 
     // obviously nothing should print to stderr
     //    dbg!(&&output);
