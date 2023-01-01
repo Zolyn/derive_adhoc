@@ -3,6 +3,8 @@
 
 use derive_adhoc::{derive_adhoc, Adhoc};
 
+type FieldType = ();
+
 #[derive(Adhoc)]
 struct TypeNames {
     error: std::slice::Chunks<'static, ()>,
@@ -28,5 +30,17 @@ derive_adhoc! {
 
     struct ${paste Pre $ttype Post} {
         $( $fname: $ftype )
+    }
+}
+
+#[derive(Adhoc)]
+struct ExpandName {
+    f: FieldType,
+}
+
+derive_adhoc! {
+    ExpandName:
+
+    struct ${paste "Pre" $ttype "Post"} {
     }
 }
