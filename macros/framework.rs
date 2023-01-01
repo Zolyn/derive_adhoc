@@ -180,6 +180,7 @@ pub trait ExpansionOutput: SubstParseContext {
     /// Expand a `${paste }`
     fn expand_paste(
         &mut self,
+        np: &Self::NoPaste,
         ctx: &Context,
         span: Span,
         paste_body: &Template<paste::Items>,
@@ -308,6 +309,7 @@ impl ExpansionOutput for TokenAccumulator {
 
     fn expand_paste(
         &mut self,
+        _no_paste: &(),
         ctx: &Context,
         span: Span,
         paste_body: &Template<paste::Items>,
