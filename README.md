@@ -175,10 +175,17 @@ derive-adhoc treats them as having a single (unnamed) variant.
    Supported expansions are `${Xtype}`, `${Xname}`, `${Xmeta}`,
    as well as conditionals and repetitions.
 
-   It can at most one occurrence of a more complex type expansion
-   `${Xtype}`, must expand to a path (perhaps with generics);
-   the pasting will be applied to the final path element identifier,
+   The contents can contain at most one occurrence of
+   a more complex type expansion `${Xtype}`,
+   which must refer to a path (perhaps with generics).
+   Then the pasting will be applied to the final path element identifier,
    and the path prefix and generics reproduced unaltered.
+   For example, with
+   a struct field `field: crate::config::Foo<'a,T,C>`,
+   writing
+   `${paste Zingy $ftype Builder}`
+   generates
+   `crate::config::ZingyFooBuilder<'a,T,C>`.
 
    `${Xmeta}` must reference a (supplied) `#[adhoc]` meta item,
    whose value must be a literal.
