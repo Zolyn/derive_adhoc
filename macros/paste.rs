@@ -254,16 +254,16 @@ impl ExpansionOutput for Items {
         void::unreachable(*no_paste)
     }
 
+    // We forbid ${pate } inside itself, because when we do case
+    // conversion this will get very fiddly to implement.
     fn expand_paste(
         &mut self,
-        ctx: &Context,
+        no_paste: &Void,
+        _ctx: &Context,
         _span: Span,
-        paste_body: &Template<paste::Items>,
+        _paste_body: &Template<paste::Items>,
     ) -> syn::Result<()> {
-        // ${pate .. ${pate ..} ...}
-        // Strange, but, whatever.
-        paste_body.expand(ctx, self);
-        Ok(())
+        void::unreachable(*no_paste)
     }
     fn expand_bool_only(&mut self, bool_only: &Self::BoolOnly) -> ! {
         void::unreachable(*bool_only)

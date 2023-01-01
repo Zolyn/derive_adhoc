@@ -84,7 +84,7 @@ impl Subst<BooleanContext> {
             | SD::tgens(_, no_bool)
             | SD::tgnames(_, no_bool)
             | SD::twheres(_, no_bool)
-            | SD::paste(_, no_bool)
+            | SD::paste(_, _, no_bool)
             | SD::when(_, no_bool)
             | SD::For(_, no_bool)
             | SD::If(_, no_bool) => void::unreachable(*no_bool),
