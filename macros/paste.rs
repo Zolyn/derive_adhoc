@@ -95,8 +95,8 @@ impl Items {
 
         if let Some(nontrivial) = nontrivial {
             let mut items = self.items;
-            let (items, items_before) = items.split_at_mut(nontrivial + 1);
-            let (items_after, items) = items.split_at_mut(nontrivial);
+            let (items, items_after) = items.split_at_mut(nontrivial + 1);
+            let (items_before, items) = items.split_at_mut(nontrivial);
             let nontrivial = &mut items[0];
 
             let mk_ident_nt = |span, text: &str| {
@@ -166,7 +166,7 @@ impl SubstParseContext for Items {
 }
 
 impl ExpansionOutput for Items {
-    fn push_lit<S: Display + Spanned>(&mut self, plain: &S) {
+    fn push_display<S: Display + Spanned>(&mut self, plain: &S) {
         self.push_lit_pair(plain, plain);
     }
     fn push_ident<I: quote::IdentFragment + Spanned + ToTokens>(
@@ -208,6 +208,12 @@ impl ExpansionOutput for Items {
             span,
         });
     }
+    fn push_tt_literal(&mut self, literal: &Literal) {
+        match syn::parse2(TokenTree::Literal(literal.clone()).into()) {
+            Ok(lit) => self.push_syn_lit(&lit),
+            Err(err) => self.record_error(err),
+        }
+    }
     fn push_syn_lit(&mut self, lit: &syn::Lit) {
         use syn::Lit as L;
         match lit {
@@ -215,9 +221,9 @@ impl ExpansionOutput for Items {
                 text: s.value(),
                 span: s.span(),
             }),
-            L::Int(v) => self.push_lit(v),
+            L::Int(v) => self.push_display(v),
             L::Bool(v) => self.push_lit_pair(&v.value(), lit),
-            L::Verbatim(v) => self.push_lit(v),
+            L::Verbatim(v) => self.push_display(v),
             x => self.write_error(
                 x,
                 "derive-adhoc macro wanted to do identifier pasting, but inappropriate literal provided",
@@ -275,7 +281,7 @@ impl Expand<Items> for TemplateElement<Items> {
             TE::Pass(TT::Ident(ident)) => out.push_ident(&ident),
             TE::Pass(TT::Group(x)) => return bad(x.span()),
             TE::Pass(TT::Punct(x)) => return bad(x.span()),
-            TE::Pass(TT::Literal(lit)) => out.push_lit(&lit),
+            TE::Pass(TT::Literal(lit)) => out.push_tt_literal(&lit),
             TE::Group { delim_span, .. } => return bad(*delim_span),
             TE::Subst(e) => e.expand(ctx, out)?,
             TE::Repeat(e) => e.expand(ctx, out),
