@@ -168,6 +168,21 @@ derive-adhoc treats them as having a single (unnamed) variant.
      * The attributes can be filtered by toplevel attribute name,
        but not deeply manipulated.
 
+ * **`${paste ...}`**:
+   Expand the contents and paste it together into a single identifier.
+   The contents may only contain identifer fragments, strings (`"..."`),
+   and (certain) expansions.
+   Supported expansions are `${Xtype}`, `${Xname}`, `${Xmeta}`,
+   as well as conditionals and repetitions.
+
+   It can at most one occurrence of a more complex type expansion
+   `${Xtype}`, must expand to a path (perhaps with generics);
+   the pasting will be applied to the final path element identifier,
+   and the path prefix and generics reproduced unaltered.
+
+   `${Xmeta}` must reference a (supplied) `#[adhoc]` meta item,
+   whose value must be a literal.
+
  * **`${when CONDITION}`**:
    Allowed only within repetitions, and only at the toplevel,
    before other expansions.
