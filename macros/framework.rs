@@ -109,11 +109,12 @@ pub trait SubstParseContext {
 /// The accumulating type (`Self` might be accumulating
 /// tokens ([`TokenStream`]) or strings ([`paste::Items`)).
 pub trait ExpansionOutput: SubstParseContext {
-    /// Some kind of literal, whose `Display` impl is to be used
+    /// Some kind of thing, whose `Display` impl is to be used
     ///
-    /// This could be a literal `"..."` in the template text,
-    /// or a literal found due to expanding a meta attribute.
-    fn push_lit<I: Display + Spanned + ToTokens>(&mut self, lit: &I);
+    /// This could be an `str` for example.
+    /// This is *not* suitable for `TokenTree::Literal` or `syn::Lit`
+    /// because their `Display` impls produce the version with `" "`.
+    fn push_display<I: Display + Spanned + ToTokens>(&mut self, lit: &I);
 
     /// An identifier (or fragment of one)
     fn push_ident<I: quote::IdentFragment + Spanned + ToTokens>(
@@ -130,6 +131,12 @@ pub trait ExpansionOutput: SubstParseContext {
     where
         A: FnOnce(&mut TokenAccumulator),
         B: FnOnce(&mut TokenAccumulator);
+
+    /// [`proc_macro2::Literal`]
+    ///
+    /// This is a separate method because the `Display`
+    /// impl is wrong for our purposes.
+    fn push_tt_literal(&mut self, literal: &Literal);
 
     /// [`syn::Lit`]
     ///
@@ -259,7 +266,7 @@ impl SubstParseContext for TokenAccumulator {
 }
 
 impl ExpansionOutput for TokenAccumulator {
-    fn push_lit<L: Display + Spanned + ToTokens>(&mut self, lit: &L) {
+    fn push_display<L: Display + Spanned + ToTokens>(&mut self, lit: &L) {
         self.write_tokens(lit)
     }
     fn push_ident<I: quote::IdentFragment + Spanned + ToTokens>(
@@ -276,6 +283,9 @@ impl ExpansionOutput for TokenAccumulator {
         pre(self);
         self.write_tokens(ident);
         post(self);
+    }
+    fn push_tt_literal(&mut self, literal: &Literal) {
+        self.write_tokens(literal);
     }
     fn push_syn_lit(&mut self, lit: &syn::Lit) {
         self.write_tokens(lit);
