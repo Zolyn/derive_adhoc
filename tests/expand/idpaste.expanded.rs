@@ -15,6 +15,11 @@ struct PreTopNamePost<F> {
     f: F,
 }
 struct ExpandName {
+    #[adhoc(prefix = "attr", suffix = 24)]
     f: FieldType,
+    k: String,
 }
-struct PreExpandNamePost {}
+struct PreExpandNamePost {
+    attr_f_24: FieldType,
+    k: String,
+}
