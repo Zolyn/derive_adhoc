@@ -50,6 +50,7 @@ struct IntPair(usize, usize);
 
 // [1] The "for struct" syntax here means that only structs are supported.
 
+#[test]
 fn main() {
     let v = DataType {
         foo: 23,

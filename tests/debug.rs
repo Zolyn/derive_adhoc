@@ -63,6 +63,7 @@ struct DataType {
     opaque: Opaque,
 }
 
+#[test]
 fn main() {
     let dt = DataType {
         foo: 42,

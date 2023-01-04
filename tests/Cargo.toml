@@ -17,4 +17,8 @@ trybuild = "1"
 macrotest = "1"
 
 [lib]
-path = "lib.rs"
+path = "tests.rs"
+
+[[test]]
+name = "macrotest"
+path = "macrotest.rs"
