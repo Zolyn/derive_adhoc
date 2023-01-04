@@ -84,6 +84,29 @@ pub fn derive_adhoc(
 }
 
 /// Define a reuseable template
+///
+/// ```
+/// # use derive_adhoc_macros::define_derive_adhoc;
+/// define_derive_adhoc! {
+///     MyMacro =
+///     TEMPLATE
+/// }
+/// ```
+///
+/// Then, `MyMacro` can be used with
+/// `#[derive(Adhoc)] #[derive_adhoc(MyMacro)]`.
+///
+/// ## Captured template macro `derive_adhoc_call_MyMacro`
+///
+/// The template is captured as a `macro_rules` macro
+/// named `derive_adhoc_call_MyMacro`.
+/// This macro must be in scope when you try to use it
+/// with `#[derive_adhoc(MyMacro)]`.
+///
+/// The rules for scoping and ordering of `macro_rules` macros
+/// are subtle.
+/// For more information, see the
+/// [documentation for `#[derive(Adhoc)]`](derive.Adhoc.html#captured-data-structure-definition-derive_adhoc_apply_type).
 #[proc_macro]
 pub fn define_derive_adhoc(
     input: proc_macro::TokenStream,
