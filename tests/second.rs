@@ -50,7 +50,6 @@ derive_adhoc! {
 
 type K = Wombat;
 
-#[test]
 fn main() {
     let _: K = ChannelsParams::default();
 
@@ -63,4 +62,9 @@ fn main() {
 
     let u = ChannelsParamsUpdates::default();
     println!("updates = {:?}", &u);
+}
+
+#[test]
+fn test() {
+    main()
 }
