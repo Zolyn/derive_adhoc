@@ -40,7 +40,30 @@ pub fn derive_adhoc_expand(
     output.into()
 }
 
-/// Invoke an ad-hoc template, on a data structure decorated `#[derive(Adhoc)]`
+/// Expand an ad-hoc template, on a data structure decorated `#[derive(Adhoc)]`
+///
+/// ```
+/// # use derive_adhoc_macros::{Adhoc, derive_adhoc, derive_adhoc_expand};
+/// # #[derive(Adhoc)] struct DataStructureType;
+/// # fn main() {
+/// # const TEMPLATE: () = ();
+/// derive_adhoc! {
+///     DataStructureType:
+///     TEMPLATE
+/// }
+/// # ;
+/// # }
+/// ```
+///
+/// Expands the template `TEMPLATE` for the type `DataStructureType`.
+///
+/// The definition of `DataStructureType` must have been decorated
+/// with [`#[derive(Adhoc)]`](crate::Adhoc),
+/// and the resulting `derive_adhoc_apply_TYPE` macro must be
+/// available in scope.
+///
+/// The workhorse macro [`derive_adhoc_expand!`]
+/// must be in scope in the crate root.
 #[proc_macro]
 pub fn derive_adhoc(
     input: proc_macro::TokenStream,
@@ -90,6 +113,11 @@ pub fn define_derive_adhoc(
 /// For complicated reasons to do with Rust's macro name resolution,
 /// a `use crate::*` won't necessarily work.
 /// You may need to mention it by name explicitly.
+///
+/// There are also ordering requirements:
+/// within a crate, the data structure definition
+/// may need to precede its uses, in crate and module lexical order.
+/// (This can even be affected by the order of *modules* within a crate.)
 ///
 /// ## `#[adhoc]` attribute
 ///
