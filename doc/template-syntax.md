@@ -115,6 +115,7 @@ derive-adhoc treats them as having a single (unnamed) variant.
    `struct Foo<'l:'a, T:X, const C=1> where T: 'a {...}`.
 
  * **`${tmeta(...)}` `${vmeta(...)}` `${fmeta(...)}`**:
+   <a name="derive_adhoc_syntax_Xmeta" style="border-right:none"></a>
    Accesses macro parameters passed via `#[adhoc(...)]` attributes.
 
     + **`${Xmeta(NAME)}`**:

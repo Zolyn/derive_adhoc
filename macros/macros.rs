@@ -40,7 +40,7 @@ pub fn derive_adhoc_expand(
     output.into()
 }
 
-// This is derive_adhoc!, the invocation macro
+/// Invoke an ad-hoc template, on a data structure decorated `#[derive(Adhoc)]`
 #[proc_macro]
 pub fn derive_adhoc(
     input: proc_macro::TokenStream,
@@ -51,7 +51,7 @@ pub fn derive_adhoc(
     output.into()
 }
 
-// This is define_derive_adhoc!, the invocation macro
+/// Define a reuseable template
 #[proc_macro]
 pub fn define_derive_adhoc(
     input: proc_macro::TokenStream,
@@ -62,6 +62,46 @@ pub fn define_derive_adhoc(
     output.into()
 }
 
+/// Perform ad-hoc templating driven by a data structure
+///
+/// This macro does two things:
+///
+///  1. It captures the data structure definition,
+///     so that it can be used with calls to `derive_adhoc!`.
+///
+///  2. If `#[derive_adhoc(MyMacro)]` attributes are also specified,
+///     they are taken to refer to reuseable templates
+///     defined with `define_derive_adhoc!`.
+///     Each such `MyMacro` is invoked on the data structure.
+///
+/// ## Captured data structure definition `derive_adhoc_apply_TYPE`
+///
+/// The data structure is captured by defining
+/// a `macro_rules` macro called `derive_adhoc_apply_TYPE`,
+/// where `TYPE` is the name of the type
+/// that `#[derive(Adhoc)]` is applied to.
+///
+/// Like all macro_rules macros,
+/// this lives at the top level of your crate.
+/// So, sadly, its scoping and importing doesn't follow
+/// that of your actual data type `TYPE`.
+/// If you want to use it outside the containing module,
+/// it must be explicitly imported.
+/// For complicated reasons to do with Rust's macro name resolution,
+/// a `use crate::*` won't necessarily work.
+/// You may need to mention it by name explicitly.
+///
+/// ## `#[adhoc]` attribute
+///
+/// The contents of `#[adhoc]` attributes are made available
+/// to templates via the
+/// [`${Xmeta}`](doc_template_syntax/index.html#derive_adhoc_syntax_Xmeta)
+/// expansions.
+///
+/// If the template(s) don't use them, they are ignored.
+/// `derive-adhoc` does not impose any namespacing within `#[adhoc]`:
+/// all templates see the same adhoc meta attributes.
+//
 // This is the implementation of #[derive(Adhoc)]
 //
 // It should parse the struct name out of its input.
