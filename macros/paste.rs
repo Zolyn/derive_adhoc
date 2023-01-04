@@ -44,8 +44,11 @@ impl Items {
         }
     }
 
+    fn push_item(&mut self, item: Item) {
+        self.items.push(item);
+    }
     fn push_lit_pair<V: Display, S: Spanned>(&mut self, v: &V, s: &S) {
-        self.items.push(Item::Plain {
+        self.push_item(Item::Plain {
             text: v.to_string(),
             span: s.span(),
         })
@@ -201,7 +204,7 @@ impl ExpansionOutput for Items {
         };
         let pre = handle_err(pre);
         let post = handle_err(post);
-        self.items.push(Item::IdPath {
+        self.push_item(Item::IdPath {
             pre,
             post,
             text,
@@ -211,7 +214,7 @@ impl ExpansionOutput for Items {
     fn push_syn_lit(&mut self, lit: &syn::Lit) {
         use syn::Lit as L;
         match lit {
-            L::Str(s) => self.items.push(Item::Plain {
+            L::Str(s) => self.push_item(Item::Plain {
                 text: s.value(),
                 span: s.span(),
             }),
@@ -227,7 +230,7 @@ impl ExpansionOutput for Items {
     fn push_syn_type(&mut self, ty: &syn::Type) {
         match ty {
             syn::Type::Path(path) => {
-                self.items.push(Item::Path(path.clone()))
+                self.push_item(Item::Path(path.clone()))
             },
             x => self.write_error(
                 x,
