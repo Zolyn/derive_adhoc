@@ -5,9 +5,30 @@ use crate::framework::*;
 /// Accumulator for things to be pasted
 #[derive(Debug)]
 pub struct Items {
+    data: ItemsData,
+    /// The case change requested by the surrounding syntactic context.
+    case: Option<ChangeCase>,
+}
+
+/// Accumulator for things to be pasted
+#[derive(Debug)]
+pub struct ItemsData {
     span: Span,
-    items: Vec<Item>,
+    items: Vec<ItemEntry>,
     errors: Vec<syn::Error>,
+}
+
+pub type ChangeCase = Void; // TODO case
+
+#[derive(Debug)]
+struct ItemEntry {
+    item: Item,
+    /// The case change to make to this identifier fragment
+    ///
+    /// We accumulate these, and apply them during assembly, because it is
+    /// the assembly code which actually figures out what part of each
+    /// `Item` is even a string for pasting (and case conversion).
+    case: Option<ChangeCase>,
 }
 
 #[derive(Debug)]
@@ -36,16 +57,30 @@ impl Spanned for Item {
 }
 
 impl Items {
-    pub fn new(span: Span) -> Self {
+    pub fn new(span: Span) -> Items {
         Items {
+            data: ItemsData::new(span),
+            case: None,
+        }
+    }
+}
+
+impl ItemsData {
+    fn new(span: Span) -> Self {
+        ItemsData {
             span,
             items: vec![],
             errors: vec![],
         }
     }
+}
 
+impl Items {
     fn push_item(&mut self, item: Item) {
-        self.items.push(item);
+        self.data.items.push(ItemEntry {
+            item,
+            case: self.case,
+        });
     }
     fn push_lit_pair<V: Display, S: Spanned>(&mut self, v: &V, s: &S) {
         self.push_item(Item::Plain {
@@ -56,6 +91,12 @@ impl Items {
 
     /// Combine the accumulated pieces and write them as tokens
     pub fn assemble(self, out: &mut TokenAccumulator) -> syn::Result<()> {
+        self.data.assemble(out)
+    }
+}
+
+impl ItemsData {
+    fn assemble(self, out: &mut TokenAccumulator) -> syn::Result<()> {
         if !self.errors.is_empty() {
             for error in self.errors {
                 out.record_error(error);
@@ -66,25 +107,32 @@ impl Items {
         let nontrivial = self
             .items
             .iter()
-            .positions(|it| !matches!(it, Item::Plain { .. }))
+            .positions(|it| !matches!(it.item, Item::Plain { .. }))
             .at_most_one()
             .map_err(|mut eoe| {
                 self.items[eoe.next().unwrap()]
+                    .item
                     .span()
                     .error("multiple nontrivial entries in ${paste ...}")
             })?;
 
-        fn plain_strs(items: &[Item]) -> impl Iterator<Item = &str> {
-            items.iter().map(|item| match item {
-                Item::Plain { text, .. } => text.as_str(),
+        fn plain_strs(
+            items: &[ItemEntry],
+        ) -> impl Iterator<Item = (&str, Option<ChangeCase>)> {
+            items.iter().map(|item| match &item.item {
+                Item::Plain { text, .. } => (text.as_str(), item.case),
                 _ => panic!("non plain item"),
             })
         }
 
         fn mk_ident<'i>(
             span: Span,
-            items: impl Iterator<Item = &'i str>,
+            items: impl Iterator<Item = (&'i str, Option<ChangeCase>)>,
         ) -> syn::Result<syn::Ident> {
+            let items = items.map(|(s, case)| match case {
+                None => s,
+                Some(case) => void::unreachable(case),
+            });
             let ident = items.collect::<String>();
             catch_unwind(|| format_ident!("{}", ident, span = span)).map_err(
                 |_| {
@@ -101,19 +149,20 @@ impl Items {
             let (items, items_after) = items.split_at_mut(nontrivial + 1);
             let (items_before, items) = items.split_at_mut(nontrivial);
             let nontrivial = &mut items[0];
+            let nontrivial_case = nontrivial.case;
 
             let mk_ident_nt = |span, text: &str| {
                 mk_ident(
                     span,
                     chain!(
                         plain_strs(items_before),
-                        iter::once(text),
+                        iter::once((text, nontrivial_case)),
                         plain_strs(items_after),
                     ),
                 )
             };
 
-            match nontrivial {
+            match &mut nontrivial.item {
                 Item::IdPath {
                     pre,
                     text,
@@ -146,6 +195,7 @@ impl Items {
                 .items
                 .first()
                 .ok_or_else(|| self.span.error("empty ${paste ... }"))?
+                .item
                 .span();
             out.write_tokens(mk_ident(span, plain_strs(&self.items))?);
         }
@@ -267,7 +317,7 @@ impl ExpansionOutput for Items {
     }
 
     fn record_error(&mut self, err: syn::Error) {
-        self.errors.push(err);
+        self.data.errors.push(err);
     }
 }
 
