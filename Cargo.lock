@@ -25,6 +25,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "derive-adhoc-tests"
+version = "0.0.1"
+dependencies = [
+ "derive-adhoc",
+ "derive-adhoc-macros",
+ "macrotest",
+ "trybuild",
+]
+
+[[package]]
 name = "diff"
 version = "0.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
