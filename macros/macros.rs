@@ -25,7 +25,9 @@ mod paste;
 mod repeat;
 mod syntax;
 
-/// Template expansion engine, internal, but must be imported
+/// Template expansion engine, internal
+///
+/// Normally you do not need to mention this macro.
 ///
 /// `derive-adhoc` does its work by
 /// (defining and then) invoking various interrelated macros
@@ -33,9 +35,6 @@ mod syntax;
 /// These ultimately end up calling this macro,
 /// which takes a template and a data structure,
 /// and expands the template for that data structure.
-///
-/// This macro must be imported in your crate root,
-/// as `derive_adhoc_expand`.
 ///
 /// Its input syntax is not currently stable or documented.
 /// If you invoke it yourself, you get to keep all the pieces.
@@ -70,9 +69,6 @@ pub fn derive_adhoc_expand(
 /// with [`#[derive(Adhoc)]`](crate::Adhoc),
 /// and the resulting `derive_adhoc_apply_TYPE` macro must be
 /// available in scope.
-///
-/// The workhorse macro [`derive_adhoc_expand!`]
-/// must be in scope in the crate root.
 #[proc_macro]
 pub fn derive_adhoc(
     input: proc_macro::TokenStream,
@@ -128,9 +124,6 @@ pub fn define_derive_adhoc(
 ///     they are taken to refer to reuseable templates
 ///     defined with `define_derive_adhoc!`.
 ///     Each such `MyMacro` is invoked on the data structure.
-///
-///     For this. the workhorse macro [`derive_adhoc_expand!`]
-///     must be in scope in the crate root.
 ///
 /// ## Captured data structure definition `derive_adhoc_apply_TYPE`
 ///
