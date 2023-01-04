@@ -182,8 +182,8 @@ where
                 Ok(())
             })?,
 
-            SD::paste(paste, np, ..) => {
-                out.expand_paste(np, ctx, self.span(), paste)?
+            SD::paste(content, np, ..) => {
+                out.expand_paste(np, ctx, self.span(), content)?
             }
 
             SD::when(..) => out.write_error(
