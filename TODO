@@ -1,18 +1,6 @@
 TEMPLATE FEATURES PLANNED
 =========================
 
-   Token pasting
-                ${paste ....}
-
-      Argument contains expansions - only some allowed -
-      and literal identifier chunks.
-
-      Should be able to paste a type with prefix and suffixes,
-      affecting the last path component.  Eg
-          impl<$tgens> ${paste Zingy $ttype Builder } {
-      should be able to generate
-          impl<'l:'a, T:X, const C=1> crate::config::ZingyFooBuilder<'a,T,C> {
-
    String concatenation
 		${string ...}
       Argument can contain any expansions,
