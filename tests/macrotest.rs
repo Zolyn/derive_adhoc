@@ -1,4 +1,4 @@
 #[test]
 pub fn macrotest() {
-    macrotest::expand("tests/expand/*.rs");
+    macrotest::expand("expand/*.rs");
 }

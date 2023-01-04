@@ -50,7 +50,6 @@ struct IntPair(usize, usize);
 
 // [1] The "for struct" syntax here means that only structs are supported.
 
-#[test]
 fn main() {
     let v = DataType {
         foo: 23,
@@ -59,4 +58,9 @@ fn main() {
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     v.hash(&mut hasher);
     println!("{:x}", hasher.finish());
+}
+
+#[test]
+fn test() {
+    main()
 }
