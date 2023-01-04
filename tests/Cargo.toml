@@ -1,5 +1,5 @@
 [package]
-name = "derive-adhoc"
+name = "derive-adhoc-tests"
 version = "0.0.1"
 edition = "2018"
 license="MIT"
@@ -8,15 +8,16 @@ authors=["Ian Jackson <ijackson@chiark.greenend.org.uk>",
 description="An ergonomic way to write derive() macros"
 homepage = "https://gitlab.torproject.org/Diziet/rust-derive-adhoc"
 repository = "https://gitlab.torproject.org/Diziet/rust-derive-adhoc"
-
-autotests = false
-
-[workspace]
-members = ["macros", "tests"]
+publish = false
 
 [dependencies]
-derive-adhoc-macros = { path = "macros", version = "0.0.1" }
-
-[dev-dependencies]
+derive-adhoc = { path = "..", version = "0.0.1" }
 trybuild = "1"
 macrotest = "1"
+
+[lib]
+path = "tests.rs"
+
+[[test]]
+name = "macrotest"
+path = "macrotest.rs"

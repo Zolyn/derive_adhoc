@@ -1,5 +1,5 @@
-use derive_adhoc_macros::define_derive_adhoc;
-use derive_adhoc_macros::{derive_adhoc, Adhoc};
+use derive_adhoc::define_derive_adhoc;
+use derive_adhoc::{derive_adhoc, Adhoc};
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 #[derive_adhoc(MyHash)]

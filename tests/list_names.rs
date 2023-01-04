@@ -1,5 +1,4 @@
 //! Test name macros and several scopes of iteration.
-#![allow(dead_code)]
 
 use derive_adhoc::{define_derive_adhoc, Adhoc};
 
@@ -55,6 +54,7 @@ struct UnitStruct;
 
 #[derive(Adhoc)]
 #[derive_adhoc(ListFields)]
+#[allow(dead_code)]
 struct SimpleStruct {
     small: u8,
     medium: u16,
@@ -68,6 +68,7 @@ struct TupleStruct(u8, u16, String);
 #[derive(Adhoc)]
 #[derive_adhoc(ListFields)]
 #[derive_adhoc(ListVariants)]
+#[allow(dead_code)]
 enum Enum {
     UnitVariant,
     StructVariant { a: u8, b: u16 },

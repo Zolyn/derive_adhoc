@@ -1,6 +1,6 @@
 use std::fmt::{self, Debug, Formatter};
-use derive_adhoc_macros::define_derive_adhoc;
-use derive_adhoc_macros::{derive_adhoc, Adhoc};
+use derive_adhoc::define_derive_adhoc;
+use derive_adhoc::{derive_adhoc, Adhoc};
 struct PrettyVec<T>(Vec<T>);
 #[automatically_derived]
 impl<T: ::core::fmt::Debug> ::core::fmt::Debug for PrettyVec<T> {

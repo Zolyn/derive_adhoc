@@ -5,8 +5,8 @@
 
 use std::fmt::{self, Debug, Formatter};
 
-use derive_adhoc_macros::define_derive_adhoc;
-use derive_adhoc_macros::{derive_adhoc, Adhoc};
+use derive_adhoc::define_derive_adhoc;
+use derive_adhoc::{derive_adhoc, Adhoc};
 
 define_derive_adhoc! {
     MyDebug =
@@ -63,6 +63,7 @@ struct DataType {
     opaque: Opaque,
 }
 
+#[test]
 fn main() {
     let dt = DataType {
         foo: 42,

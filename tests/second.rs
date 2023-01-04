@@ -1,4 +1,4 @@
-use derive_adhoc_macros::{derive_adhoc, Adhoc};
+use derive_adhoc::{derive_adhoc, Adhoc};
 
 #[derive(Adhoc, Default)]
 /// Some docs
@@ -50,6 +50,7 @@ derive_adhoc! {
 
 type K = Wombat;
 
+#[test]
 fn main() {
     let _: K = ChannelsParams::default();
 

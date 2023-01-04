@@ -5,8 +5,8 @@
 //#![feature(trace_macros)]
 //trace_macros!(true);
 
-use derive_adhoc_macros::define_derive_adhoc;
-use derive_adhoc_macros::{derive_adhoc, Adhoc};
+use derive_adhoc::define_derive_adhoc;
+use derive_adhoc::{derive_adhoc, Adhoc};
 
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
@@ -50,6 +50,7 @@ struct IntPair(usize, usize);
 
 // [1] The "for struct" syntax here means that only structs are supported.
 
+#[test]
 fn main() {
     let v = DataType {
         foo: 23,
