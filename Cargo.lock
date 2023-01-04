@@ -7,8 +7,6 @@ name = "derive-adhoc"
 version = "0.0.1"
 dependencies = [
  "derive-adhoc-macros",
- "macrotest",
- "trybuild",
 ]
 
 [[package]]

@@ -16,7 +16,3 @@ members = ["macros", "tests"]
 
 [dependencies]
 derive-adhoc-macros = { path = "macros", version = "0.0.1" }
-
-[dev-dependencies]
-trybuild = "1"
-macrotest = "1"
