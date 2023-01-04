@@ -12,8 +12,9 @@ publish = false
 
 [dependencies]
 derive-adhoc = { path = "..", version = "0.0.1" }
-trybuild = "1"
+
 macrotest = "1"
+trybuild = "1"
 
 [lib]
 path = "tests.rs"
