@@ -12,10 +12,7 @@ cargo-check:
     - rustc --version && cargo --version  # Print version info for debugging
     - rustup component add rustfmt
     - cargo check --locked --workspace --verbose --all-features
-    # rustfmt is disabled because the rust:latest rustfmt wants to change
-    # things compared to what rustfmt did the that last time fmt was run on
-    # the codebase.
-    - true cargo fmt --verbose --check
+    - cargo fmt --verbose --check
 
 
 # Actual tests

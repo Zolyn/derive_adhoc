@@ -119,7 +119,7 @@ impl Items {
                 } => {
                     out.write_tokens(mem::take(pre));
                     out.write_tokens(mk_ident_nt(*span, text)?);
-                    out.write_tokens(/*mem::take(*/post/*)*/);
+                    out.write_tokens(/*mem::take(*/ post /*)*/);
                 }
                 Item::Path(path) => {
                     let span = path.span();

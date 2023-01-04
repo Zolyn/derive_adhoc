@@ -53,7 +53,11 @@ where
 }
 
 impl Expand<TokenAccumulator> for TemplateElement<TokenAccumulator> {
-    fn expand(&self, ctx: &Context, out: &mut TokenAccumulator) -> syn::Result<()> {
+    fn expand(
+        &self,
+        ctx: &Context,
+        out: &mut TokenAccumulator,
+    ) -> syn::Result<()> {
         match self {
             TE::Pass(tt) => out.write_tokens(tt.clone()),
             TE::Group {
