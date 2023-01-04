@@ -240,9 +240,10 @@ impl TokenAccumulator {
     pub fn new() -> Self {
         Self::default()
     }
-    pub fn with_tokens<R>(&mut self, f: impl FnOnce(&mut TokenStream) -> R)
-                   -> Option<R>
-    {
+    pub fn with_tokens<R>(
+        &mut self,
+        f: impl FnOnce(&mut TokenStream) -> R,
+    ) -> Option<R> {
         self.0.as_mut().ok().map(f)
     }
     pub fn write_tokens(&mut self, t: impl ToTokens) {
