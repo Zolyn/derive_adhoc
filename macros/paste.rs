@@ -278,10 +278,9 @@ impl Expand<Items> for TemplateElement<Items> {
     fn expand(&self, ctx: &Context, out: &mut Items) -> syn::Result<()> {
         let bad = |span: Span| Err(span.error("not allowed in ${paste }"));
         match self {
-            TE::Pass(TT::Ident(ident)) => out.push_ident(&ident),
-            TE::Pass(TT::Group(x)) => return bad(x.span()),
-            TE::Pass(TT::Punct(x)) => return bad(x.span()),
-            TE::Pass(TT::Literal(lit)) => out.push_tt_literal(&lit),
+            TE::Ident(ident) => out.push_ident(&ident),
+            TE::Punct(x) => return bad(x.span()), // TODO
+            TE::Literal(lit) => out.push_tt_literal(&lit),
             TE::Group { delim_span, .. } => return bad(*delim_span),
             TE::Subst(e) => e.expand(ctx, out)?,
             TE::Repeat(e) => e.expand(ctx, out),

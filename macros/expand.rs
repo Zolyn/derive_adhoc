@@ -59,7 +59,9 @@ impl Expand<TokenAccumulator> for TemplateElement<TokenAccumulator> {
         out: &mut TokenAccumulator,
     ) -> syn::Result<()> {
         match self {
-            TE::Pass(tt) => out.write_tokens(tt.clone()),
+            TE::Ident(tt) => out.write_tokens(tt.clone()),
+            TE::Literal(tt) => out.write_tokens(tt.clone()),
+            TE::Punct(tt) => out.write_tokens(tt.clone()),
             TE::Group {
                 delim_span,
                 delimiter,
