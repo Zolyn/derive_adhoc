@@ -23,14 +23,14 @@ derive_adhoc! {
 
 #[derive(Adhoc)]
 struct TopName<F> {
-    f: F,
+    top_name_field: F,
 }
 
 derive_adhoc! {
     TopName:
 
     struct ${paste Pre $ttype Post} {
-        $( $fname: $ftype )
+        $( ${pascal_case $fname}: $ftype )
     }
 }
 
