@@ -15,6 +15,10 @@ derive_adhoc! {
 
     $(
     )
+
+    ${for fields {
+        f ${fname junk}() { }
+    }}
 }
 
 fn main() {

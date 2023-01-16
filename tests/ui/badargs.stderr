@@ -11,3 +11,9 @@ error: no contained expansion field determined what to repeat here
    |  ______^
 17 | |     )
    | |_____^
+
+error: unexpected arguments to expansion keyword
+  --> ui/badargs.rs:20:19
+   |
+20 |         f ${fname junk}() { }
+   |                   ^^^^

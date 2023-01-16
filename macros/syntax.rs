@@ -255,8 +255,22 @@ impl<O: SubstParseContext> Parse for TemplateElement<O> {
                     TE::Pass(input.parse()?)
                 } else if la.peek(token::Brace) {
                     let exp;
+                    struct Only<O: SubstParseContext>(Subst<O>);
+                    impl<O: SubstParseContext> Parse for Only<O> {
+                        fn parse(input: ParseStream) -> syn::Result<Self> {
+                            let subst = input.parse()?;
+                            let unwanted: Option<TT> = input.parse()?;
+                            if let Some(unwanted) = unwanted {
+                                return Err(unwanted.error(
+                                    "unexpected arguments to expansion keyword"
+                                ));
+                            }
+                            Ok(Only(subst))
+                        }
+                    }
                     let _brace = braced!(exp in input);
                     let exp = exp.parse()?;
+                    let Only(exp) = exp;
                     TE::Subst(exp)
                 } else if la.peek(token::Paren) {
                     RepeatedTemplate::parse_in_parens(input)?
