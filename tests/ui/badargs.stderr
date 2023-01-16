@@ -1,0 +1,13 @@
+error: unknown derive-adhoc keyword
+  --> ui/badargs.rs:14:9
+   |
+14 |     fn $unknown() { }
+   |         ^^^^^^^
+
+error: no contained expansion field determined what to repeat here
+  --> ui/badargs.rs:16:6
+   |
+16 |       $(
+   |  ______^
+17 | |     )
+   | |_____^

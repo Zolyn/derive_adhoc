@@ -16,3 +16,9 @@ pub fn run_pass_expand() {
 //
 // Instead, put the file in tests/, with `#[test]` annotations,
 // and add a `mod` line to `tests/tests.rs`, as with `list_names.rs`.
+
+#[test]
+pub fn ui() {
+    let t = trybuild::TestCases::new();
+    t.compile_fail("ui/*.rs");
+}
