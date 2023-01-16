@@ -8,6 +8,7 @@
 
 mod debug;
 mod hash;
+mod idpaste;
 mod list_names;
 mod second;
 
