@@ -59,8 +59,3 @@ fn main() {
     v.hash(&mut hasher);
     println!("{:x}", hasher.finish());
 }
-
-#[test]
-fn test() {
-    main()
-}

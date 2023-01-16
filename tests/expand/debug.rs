@@ -72,8 +72,3 @@ fn main() {
 
     println!("dt = {:?}", &dt);
 }
-
-#[test]
-fn test() {
-    main()
-}

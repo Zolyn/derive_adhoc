@@ -58,8 +58,3 @@ derive_adhoc! {
 
 fn main() {
 }
-
-#[test]
-fn test() {
-    main()
-}

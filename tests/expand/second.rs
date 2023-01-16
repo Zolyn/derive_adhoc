@@ -63,8 +63,3 @@ fn main() {
     let u = ChannelsParamsUpdates::default();
     println!("updates = {:?}", &u);
 }
-
-#[test]
-fn test() {
-    main()
-}
