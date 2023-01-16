@@ -4,12 +4,12 @@
 
 #![cfg(test)]
 
-// Test cases that we compile and, maybe, run
+// This package has the following tests:
+//
+//  expand/*.rs
+//    run with trybuild, and expected to pass
+//    expanded with macrotest, compared with expand/*.expanded.rs
+//
+// The test modules listed here, containing #[test] tests:
 
-mod debug;
-mod hash;
 mod list_names;
-mod second;
-
-// macrotest.r is handled separately, since it's more complex
-// and we would rather run all its stuff in its own process.

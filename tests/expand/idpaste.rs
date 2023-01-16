@@ -1,5 +1,7 @@
 //! Test name macros and several scopes of iteration.
 
+#![allow(dead_code)]
+
 use derive_adhoc::{derive_adhoc, Adhoc};
 
 type FieldType = ();
@@ -52,4 +54,7 @@ derive_adhoc! {
             }: $ftype,
         )
     }
+}
+
+fn main() {
 }
