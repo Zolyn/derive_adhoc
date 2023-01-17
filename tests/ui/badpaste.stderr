@@ -1,0 +1,16 @@
+error: multiple nontrivial entries in ${paste ...}
+  --> ui/badpaste.rs:5:8
+   |
+5  |   struct DataType {
+   |          ^^^^^^^^
+...
+10 | / derive_adhoc! {
+11 | |     DataType:
+12 | |
+13 | |     ${for fields {
+14 | |         ${paste $ttype _ $ftype}
+15 | |     }}
+16 | | }
+   | |_- in this macro invocation
+   |
+   = note: this error originates in the macro `derive_adhoc_apply_DataType` which comes from the expansion of the macro `derive_adhoc` (in Nightly builds, run with -Z macro-backtrace for more info)
