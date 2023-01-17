@@ -43,8 +43,12 @@ enum Item {
         text: String,
         span: Span,
         post: TokenStream,
+        te_span: Span,
     },
-    Path(syn::TypePath),
+    Path {
+        path: syn::TypePath,
+        te_span: Span,
+    },
 }
 
 #[derive(Debug, Default)]
@@ -208,7 +212,7 @@ impl Spanned for Item {
         match self {
             Item::Plain { span, .. } => *span,
             Item::IdPath { span, .. } => *span,
-            Item::Path(path) => path.span(),
+            Item::Path { path, .. } => path.span(),
         }
     }
 }
@@ -335,12 +339,13 @@ impl ItemsData {
                     text,
                     span,
                     post,
+                    te_span: _,
                 } => {
                     out.write_tokens(mem::take(pre));
                     out.write_tokens(mk_ident_nt(*span, text)?);
                     out.write_tokens(/*mem::take(*/ post /*)*/);
                 }
-                Item::Path(path) => {
+                Item::Path { path, .. } => {
                     let span = path.span();
                     let last = &mut path
                         .path
@@ -410,8 +415,13 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
         }
         self.push_lit_pair(&AsIdentFragment(ident), ident);
     }
-    fn push_idpath<A, B>(&mut self, pre_: A, ident: &syn::Ident, post_: B)
-    where
+    fn push_idpath<A, B>(
+        &mut self,
+        te_span: Span,
+        pre_: A,
+        ident: &syn::Ident,
+        post_: B,
+    ) where
         A: FnOnce(&mut TokenAccumulator),
         B: FnOnce(&mut TokenAccumulator),
     {
@@ -434,6 +444,7 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
             post,
             text,
             span,
+            te_span,
         });
     }
     fn push_syn_lit(&mut self, lit: &syn::Lit) {
@@ -452,10 +463,10 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
             ),
         }
     }
-    fn push_syn_type(&mut self, ty: &syn::Type) {
+    fn push_syn_type(&mut self, te_span: Span, ty: &syn::Type) {
         match ty {
             syn::Type::Path(path) => {
-                self.push_item(Item::Path(path.clone()))
+                self.push_item(Item::Path { te_span, path: path.clone() })
             },
             x => self.write_error(
                 x,

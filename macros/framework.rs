@@ -138,8 +138,16 @@ pub trait ExpansionOutput: SubstParseContext {
     /// Consisting of some prefix tokens (perhaps a scoping path),
     /// the actual identifer,
     /// and some suffix tokens (perhaps generics).
-    fn push_idpath<A, B>(&mut self, pre: A, ident: &syn::Ident, post: B)
-    where
+    ///
+    /// `template_entry_span` is the span of the part of the template
+    /// which expanded into this identifier path.
+    fn push_idpath<A, B>(
+        &mut self,
+        template_entry_span: Span,
+        pre: A,
+        ident: &syn::Ident,
+        post: B,
+    ) where
         A: FnOnce(&mut TokenAccumulator),
         B: FnOnce(&mut TokenAccumulator);
 
@@ -151,7 +159,7 @@ pub trait ExpansionOutput: SubstParseContext {
     fn push_syn_lit(&mut self, v: &syn::Lit);
 
     /// [`syn::Type`]
-    fn push_syn_type(&mut self, v: &syn::Type);
+    fn push_syn_type(&mut self, te_span: Span, v: &syn::Type);
 
     /// Some other substitution which generates tokens
     ///
@@ -300,8 +308,13 @@ impl ExpansionOutput for TokenAccumulator {
     ) {
         self.write_tokens(ident)
     }
-    fn push_idpath<A, B>(&mut self, pre: A, ident: &syn::Ident, post: B)
-    where
+    fn push_idpath<A, B>(
+        &mut self,
+        _te_span: Span,
+        pre: A,
+        ident: &syn::Ident,
+        post: B,
+    ) where
         A: FnOnce(&mut TokenAccumulator),
         B: FnOnce(&mut TokenAccumulator),
     {
@@ -312,7 +325,7 @@ impl ExpansionOutput for TokenAccumulator {
     fn push_syn_lit(&mut self, lit: &syn::Lit) {
         self.write_tokens(lit);
     }
-    fn push_syn_type(&mut self, ty: &syn::Type) {
+    fn push_syn_type(&mut self, _te_span: Span, ty: &syn::Type) {
         self.write_tokens(ty);
     }
     fn push_other_subst<S, F>(
