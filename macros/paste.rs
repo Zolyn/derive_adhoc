@@ -275,14 +275,24 @@ impl ItemsData {
         let nontrivial = self
             .items
             .iter()
-            .positions(|it| !matches!(it.item, Item::Plain { .. }))
+            .enumerate()
+            .filter_map(|(pos, it)| match it.item {
+                Item::Plain { .. } => None,
+                Item::IdPath { te_span, .. } | Item::Path { te_span, .. } => {
+                    Some((pos, te_span))
+                }
+            })
             .at_most_one()
-            .map_err(|mut eoe| {
-                self.items[eoe.next().unwrap()]
-                    .item
-                    .span()
-                    .error("multiple nontrivial entries in ${paste ...}")
-            })?;
+            .map_err(|several| {
+                // Report one error for each nontrivial expansion
+                let mut several = several.map(|(_pos, span)| {
+                    span.error("multiple nontrivial entries in ${paste ...}")
+                });
+                let mut collect = several.next().unwrap();
+                collect.extend(several);
+                collect
+            })?
+            .map(|(pos, _)| pos);
 
         fn plain_strs(
             items: &[ItemEntry],
