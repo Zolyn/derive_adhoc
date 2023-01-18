@@ -4,10 +4,13 @@ use crate::framework::*;
 
 /// Accumulator for things to be pasted
 #[derive(Debug)]
-pub struct Items {
+pub struct Items<C = ()>
+where
+    C: CaseContext,
+{
     data: ItemsData,
     /// The case change requested by the surrounding syntactic context.
-    case: Option<ChangeCase>,
+    case: C::ChangeCase,
 }
 
 /// Accumulator for things to be pasted
@@ -46,6 +49,27 @@ enum Item {
     Path(syn::TypePath),
 }
 
+/// Kind of lexical context in which we are pasting identifiers
+///
+/// Depends on whether we are trying to change the case.
+///
+/// There are two implementors:
+///  * `()` for `${paste }`
+///  * `WithinCase` for `${case }` (TODO)
+pub trait CaseContext: Sized + Default + Debug {
+    /// The type representing what case change to perform, as parsed.
+    type ChangeCase: Debug + Copy + Sized;
+    /// Whether and how, in fact, to change the case, when expanding.
+    fn push_case(case: Self::ChangeCase) -> Option<ChangeCase>;
+}
+
+impl CaseContext for () {
+    type ChangeCase = ();
+    fn push_case((): Self::ChangeCase) -> Option<ChangeCase> {
+        None
+    }
+}
+
 impl Spanned for Item {
     fn span(&self) -> Span {
         match self {
@@ -56,11 +80,11 @@ impl Spanned for Item {
     }
 }
 
-impl Items {
-    pub fn new(span: Span) -> Items {
+impl Items<()> {
+    pub fn new(span: Span) -> Items<()> {
         Items {
             data: ItemsData::new(span),
-            case: None,
+            case: (),
         }
     }
 }
@@ -75,12 +99,10 @@ impl ItemsData {
     }
 }
 
-impl Items {
+impl<C: CaseContext> Items<C> {
     fn push_item(&mut self, item: Item) {
-        self.data.items.push(ItemEntry {
-            item,
-            case: self.case,
-        });
+        let case = C::push_case(self.case);
+        self.data.items.push(ItemEntry { item, case });
     }
     fn push_lit_pair<V: Display, S: Spanned>(&mut self, v: &V, s: &S) {
         self.push_item(Item::Plain {
@@ -204,7 +226,7 @@ impl ItemsData {
     }
 }
 
-impl SubstParseContext for Items {
+impl<C: CaseContext> SubstParseContext for Items<C> {
     type NoPaste = Void;
     type NoBool = ();
     type BoolOnly = Void;
@@ -218,7 +240,7 @@ impl SubstParseContext for Items {
     }
 }
 
-impl ExpansionOutput for Items {
+impl<C: CaseContext> ExpansionOutput for Items<C> {
     fn push_display<S: Display + Spanned>(&mut self, plain: &S) {
         self.push_lit_pair(plain, plain);
     }
