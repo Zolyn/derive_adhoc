@@ -81,12 +81,15 @@ pub struct WithinField<'c> {
 pub trait SubstParseContext {
     /// Uninhabited iff this lexical context is within `${paste }`
     type NoPaste: Debug + Copy + Sized;
+    /// Uninhabited iff this lexical context is within `${case }`
+    type NoCase: Debug + Copy + Sized;
     /// Uninhabited iff this lexical context is within a condition.
     type NoBool: Debug + Copy + Sized;
     /// Uninhabited unless this lexical context is within a condition.
     type BoolOnly: Debug + Copy + Sized;
 
     fn no_paste(span: &impl Spanned) -> syn::Result<Self::NoPaste>;
+    fn no_case(span: &impl Spanned) -> syn::Result<Self::NoCase>;
     fn no_bool(span: &impl Spanned) -> syn::Result<Self::NoBool>;
 
     fn bool_only(span: &impl Spanned) -> syn::Result<Self::BoolOnly> {
@@ -251,10 +254,14 @@ impl TokenAccumulator {
 impl SubstParseContext for TokenAccumulator {
     type NoPaste = ();
     type NoBool = ();
+    type NoCase = ();
     fn no_bool(_: &impl Spanned) -> syn::Result<()> {
         Ok(())
     }
     fn no_paste(_: &impl Spanned) -> syn::Result<()> {
+        Ok(())
+    }
+    fn no_case(_: &impl Spanned) -> syn::Result<()> {
         Ok(())
     }
 

@@ -59,14 +59,23 @@ enum Item {
 pub trait CaseContext: Sized + Default + Debug {
     /// The type representing what case change to perform, as parsed.
     type ChangeCase: Debug + Copy + Sized;
+    /// Uninhabited iff this lexical context is within `${case }`
+    ///
+    /// `<Items as SubstParseContext>::NoCase` delegates to this
+    type NoCase: Debug + Copy + Sized;
     /// Whether and how, in fact, to change the case, when expanding.
     fn push_case(case: Self::ChangeCase) -> Option<ChangeCase>;
+    fn no_case(span: &impl Spanned) -> syn::Result<Self::NoCase>;
 }
 
 impl CaseContext for () {
     type ChangeCase = ();
+    type NoCase = ();
     fn push_case((): Self::ChangeCase) -> Option<ChangeCase> {
         None
+    }
+    fn no_case(_span: &impl Spanned) -> syn::Result<()> {
+        Ok(())
     }
 }
 
@@ -230,13 +239,17 @@ impl<C: CaseContext> SubstParseContext for Items<C> {
     type NoPaste = Void;
     type NoBool = ();
     type BoolOnly = Void;
+    type NoCase = C::NoCase;
 
     fn no_bool(_: &impl Spanned) -> syn::Result<()> {
         Ok(())
     }
+    fn no_case(span: &impl Spanned) -> syn::Result<Self::NoCase> {
+        C::no_case(span)
+    }
 
     fn no_paste(span: &impl Spanned) -> syn::Result<Void> {
-        Err(span.error("not allowed in within ${paste ...}"))
+        Err(span.error("not allowed in within ${paste ...} (or ${case })"))
     }
 }
 

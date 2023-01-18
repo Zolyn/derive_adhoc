@@ -20,9 +20,13 @@ fn is_found(r: Result<(), Found>) -> bool {
 
 impl SubstParseContext for BooleanContext {
     type NoPaste = ();
+    type NoCase = ();
     type NoBool = Void;
     type BoolOnly = ();
     fn no_paste(_: &impl Spanned) -> syn::Result<()> {
+        Ok(())
+    }
+    fn no_case(_: &impl Spanned) -> syn::Result<()> {
         Ok(())
     }
     fn bool_only(_: &impl Spanned) -> syn::Result<()> {
