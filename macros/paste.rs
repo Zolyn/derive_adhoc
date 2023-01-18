@@ -57,7 +57,7 @@ pub struct WithinCaseContext;
 /// This macro defines both.  Specifically:
 ///  * The fieldless enum `ChangeCase`.
 ///  * Its `FromStr` implementation, which accepts the `$keyword`s.
-///  * Its `apply()` method, which actually performs the conversion. (TODO)
+///  * Its `apply()` method, which actually performs the conversion.
 ///
 /// `$heck` is the name of the `As` conversion struct in the heck
 /// API.  It will become the variant name in `ChangeCase`.
@@ -82,6 +82,16 @@ macro_rules! define_cases { {
               )*
                 _ => return Err(()),
             })
+        }
+    }
+
+    impl ChangeCase {
+        fn apply(self, input: &str) -> String {
+            match self {
+              $(
+                ChangeCase::$heck => heck::$heck(input).to_string(),
+              )*
+            }
         }
     }
 } }
@@ -283,9 +293,12 @@ impl ItemsData {
             span: Span,
             items: impl Iterator<Item = (&'i str, Option<ChangeCase>)>,
         ) -> syn::Result<syn::Ident> {
-            let items = items.map(|(s, case)| match case {
-                None => s,
-                Some(_case) => todo!(), // TODO case,
+            let items = items.map(|(s, case)| {
+                if let Some(case) = case {
+                    case.apply(s).into()
+                } else {
+                    Cow::Borrowed(s)
+                }
             });
             let ident = items.collect::<String>();
             catch_unwind(|| format_ident!("{}", ident, span = span)).map_err(
