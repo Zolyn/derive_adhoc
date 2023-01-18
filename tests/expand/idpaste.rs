@@ -29,6 +29,7 @@ struct TopName<F> {
 derive_adhoc! {
     TopName:
 
+    #[allow(non_snake_case)]
     struct ${paste Pre $ttype Post} {
         $( ${pascal_case $fname}: $ftype )
     }

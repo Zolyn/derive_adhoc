@@ -11,6 +11,7 @@ struct PreTypeNamesPost {
 struct TopName<F> {
     top_name_field: F,
 }
+#[allow(non_snake_case)]
 struct PreTopNamePost<F> {
     TopNameField: F,
 }
