@@ -94,7 +94,7 @@ impl<O: SubstParseContext> TemplateElement<O> {
         match self {
             TE::Ident(_) => {}
             TE::Literal(_) => {}
-            TE::Punct(_) => {}
+            TE::Punct(..) => {}
             TE::Repeat(_) => {}
             TE::Group { template, .. } => template.analyse_repeat(visitor)?,
             TE::Subst(exp) => exp.analyse_repeat(visitor)?,

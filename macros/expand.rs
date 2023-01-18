@@ -61,11 +61,12 @@ impl Expand<TokenAccumulator> for TemplateElement<TokenAccumulator> {
         match self {
             TE::Ident(tt) => out.write_tokens(tt.clone()),
             TE::Literal(tt) => out.write_tokens(tt.clone()),
-            TE::Punct(tt) => out.write_tokens(tt.clone()),
+            TE::Punct(tt, _) => out.write_tokens(tt.clone()),
             TE::Group {
                 delim_span,
                 delimiter,
                 template,
+                no_paste: _,
             } => {
                 use proc_macro2::Group;
                 let mut content = TokenAccumulator::new();
