@@ -138,7 +138,7 @@ pub trait ExpansionOutput: SubstParseContext {
     /// impl is wrong for our purposes.
     fn push_tt_literal(&mut self, literal: &Literal);
 
-    /// [`syn::Lit`]
+    /// [`syn::Lit`](enum@syn::Lit)
     ///
     /// This is its own method because `syn::Lit` is not `Display`,
     /// and we don't want to unconditionally turn it into a string
