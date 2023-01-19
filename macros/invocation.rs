@@ -22,14 +22,18 @@ impl Parse for TemplateInvocation {
     }
 }
 
-// This is derive_adhoc!
-//
-// It parses
-//    StructName:
-//    SOME_TOKENS
-// and expand it to an invocation of
-//    derive_adhoc_apply_StructName
-// as per NOTES.txt.
+/// This is `derive_adhoc!`
+///
+/// It parses
+/// ```rust,ignore
+///    StructName:
+///    SOME_TOKENS
+/// ```
+/// and expand it to an invocation of
+/// ```rust,ignore
+///    derive_adhoc_apply_StructName
+/// ```
+/// as per NOTES.txt.
 pub fn derive_adhoc_func_macro(
     input: TokenStream,
 ) -> Result<TokenStream, syn::Error> {

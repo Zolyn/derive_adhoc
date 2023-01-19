@@ -45,6 +45,7 @@ fn escape_dollars(input: TokenStream) -> TokenStream {
     out
 }
 
+/// This is `define_derive_adhoc!`
 pub fn define_derive_adhoc_func_macro(
     input: TokenStream,
 ) -> Result<TokenStream, syn::Error> {

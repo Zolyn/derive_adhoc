@@ -19,7 +19,7 @@ impl Parse for PrecannedInvocationsAttr {
     }
 }
 
-// This is #[derive(Adhoc)]
+/// This is #[derive(Adhoc)]
 pub fn derive_adhoc_derive_macro(
     input: TokenStream,
 ) -> Result<TokenStream, syn::Error> {
