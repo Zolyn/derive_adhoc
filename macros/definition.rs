@@ -10,6 +10,9 @@ struct TemplateDefinition {
 
 impl Parse for TemplateDefinition {
     fn parse(input: ParseStream) -> syn::Result<Self> {
+        // This rejects Rust keywords, which is good because
+        // for example `#[derive_adhoc(pub)]` ought not to mean to apply
+        // a template called `pub`.  See ticket #1.
         let templ_name = input.parse()?;
         let _equals: syn::Token![=] = input.parse()?;
         let template = input.parse()?;
