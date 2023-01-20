@@ -208,12 +208,6 @@ impl ExpansionOutput for Items {
             span,
         });
     }
-    fn push_tt_literal(&mut self, literal: &Literal) {
-        match syn::parse2(TokenTree::Literal(literal.clone()).into()) {
-            Ok(lit) => self.push_syn_lit(&lit),
-            Err(err) => self.record_error(err),
-        }
-    }
     fn push_syn_lit(&mut self, lit: &syn::Lit) {
         use syn::Lit as L;
         match lit {
@@ -278,7 +272,7 @@ impl Expand<Items> for TemplateElement<Items> {
     fn expand(&self, ctx: &Context, out: &mut Items) -> syn::Result<()> {
         match self {
             TE::Ident(ident) => out.push_ident(&ident),
-            TE::Literal(lit) => out.push_tt_literal(&lit),
+            TE::Literal(lit) => out.push_syn_lit(&lit),
             TE::Subst(e) => e.expand(ctx, out)?,
             TE::Repeat(e) => e.expand(ctx, out),
             TE::Punct(_, no_paste) | TE::Group { no_paste, .. } => {

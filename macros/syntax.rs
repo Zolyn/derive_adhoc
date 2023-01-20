@@ -25,7 +25,7 @@ pub struct Template<O: SubstParseContext> {
 #[derive(Debug)]
 pub enum TemplateElement<O: SubstParseContext> {
     Ident(Ident),
-    Literal(Literal),
+    Literal(syn::Lit),
     Punct(Punct, O::NoPaste),
     Group {
         /// Sadly Group's constructors let us only set *both* delimiters
@@ -251,7 +251,7 @@ impl<O: SubstParseContext> Parse for TemplateElement<O> {
                 }
             }
             TT::Ident(tt) => TE::Ident(tt),
-            TT::Literal(tt) => TE::Literal(tt),
+            tt @ TT::Literal(_) => TE::Literal(syn::parse2(tt.into())?),
             TT::Punct(tok) if tok.as_char() != '$' => {
                 let span = tok.span();
                 TE::Punct(tok, O::no_paste(&span)?)

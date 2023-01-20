@@ -132,12 +132,6 @@ pub trait ExpansionOutput: SubstParseContext {
         A: FnOnce(&mut TokenAccumulator),
         B: FnOnce(&mut TokenAccumulator);
 
-    /// [`proc_macro2::Literal`]
-    ///
-    /// This is a separate method because the `Display`
-    /// impl is wrong for our purposes.
-    fn push_tt_literal(&mut self, literal: &Literal);
-
     /// [`syn::Lit`](enum@syn::Lit)
     ///
     /// This is its own method because `syn::Lit` is not `Display`,
@@ -285,9 +279,6 @@ impl ExpansionOutput for TokenAccumulator {
         pre(self);
         self.write_tokens(ident);
         post(self);
-    }
-    fn push_tt_literal(&mut self, literal: &Literal) {
-        self.write_tokens(literal);
     }
     fn push_syn_lit(&mut self, lit: &syn::Lit) {
         self.write_tokens(lit);
