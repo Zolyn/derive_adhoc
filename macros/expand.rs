@@ -277,7 +277,7 @@ impl SubstAttr {
         self.path.search(pattrs, &mut |av: AttrValue| {
             if found.is_some() {
                 return Err(error_loc().error(
-                    "tried to expand just attribute value, but it was specified multiple times"
+ "tried to expand just attribute value, but it was specified multiple times"
                 ));
             }
             found = Some(av);
@@ -286,7 +286,7 @@ impl SubstAttr {
 
         let found = found.ok_or_else(|| {
             error_loc().error(
-                "attribute value expanded, but no value in data structure definition"
+ "attribute value expanded, but no value in data structure definition"
             )
         })?;
 
