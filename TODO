@@ -1,16 +1,6 @@
 TEMPLATE FEATURES PLANNED
 =========================
 
-   Variant (or value) body and delimiter
-	${vbody ... }		{ ... }		struct [variant] or union
-				( ... )		tuple struct/variant
-				nothing		unit struct/variant
-
-   Field specifier
-	$fspec			$fname :	in struct [variant] or union
-				nothing		in tuple variant/struct
-
-
 FEATURES WITH SYNTAX AND/OR SEMANTICS TBD
 =========================================
 

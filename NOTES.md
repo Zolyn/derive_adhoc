@@ -174,6 +174,40 @@ We need to think properly about the following:
 
 # Future template features
 
+## Tuple vs unit vs struct (variant) agility
+
+Precise design TBD.
+
+`${vconstructor}` or `${vbody}` should perhaps not implicity
+establish iteration over fields, so that other fields can be added?
+(Would break with unit structs/variants.)
+
+Expansion prefix char `v` may come to mean both `value` and `variant`.
+
+ * Full constructor with delimiters
+```text
+        ${vconstructor ... }    Struct { ... }  struct [variant] or union
+                                Struct( ... )   tuple struct/variant
+                                Struct          unit struct/variant
+        // What if the struct name is a path?  Do we need expansions
+        // which just produce the name, or just the full path, or what?
+```
+
+ * Variant (or value) body and delimiter
+```text
+        ${vbody ... }           { ... }         struct [variant] or union
+                                ( ... )         tuple struct/variant
+                                nothing         unit struct/variant
+```
+
+  * Field specifier
+```text
+
+        $fspec                  $fname :        in struct [variant] or union
+                                nothing         in tuple variant/struct
+```
+
+
 ## String concatenation `${string ...}`
 		
 Argument can contain any expansions (will be expanded into tokens and
