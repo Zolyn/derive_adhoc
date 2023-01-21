@@ -403,15 +403,26 @@ impl<O: SubstParseContext> Parse for Subst<O> {
 
         // keyword!{ KEYWORD [ {BLOCK WITH BINDINGS} ] [ CONSTRUCTOR-ARGS ] }
         // expands to   if ... { return ... }
+        // KEYWORD can be "KEYWORD_STRING": CONSTRUCTOR
         macro_rules! keyword {
-            { $kw:ident $( $ca:tt )? } => { keyword!{ @ $kw { } $( $ca )? } };
-            { $kw:ident { $( $bindings:tt )* } $ca:tt } => {
-                keyword!{ @ $kw { $( $bindings )* } $ca }
+            { $kw:ident $( $rest:tt )* } => {
+                keyword!{ @ 1 stringify!($kw), $kw, $($rest)* }
             };
-            { @ $kw:ident { $( $bindings:tt )* } $( $constr_args:tt )? } => {
-                if kw == stringify!($kw) {
+            { $kw:literal: $constr:ident $( $rest:tt )* } => {
+                keyword!{ @ 1 $kw, $constr, $($rest)* }
+            };
+            { @ 1 $kw:expr, $constr:ident, $( $ca:tt )? } => {
+                keyword!{ @ 2 $kw, $constr, { } $( $ca )? }
+            };
+            { @ 1 $kw:expr, $constr:ident, { $( $bindings:tt )* } $ca:tt } => {
+                keyword!{ @ 2 $kw, $constr, { $( $bindings )* } $ca }
+            };
+            { @ 2 $kw:expr, $constr:ident,
+              { $( $bindings:tt )* } $( $constr_args:tt )?
+            } => {
+                if kw == $kw {
                     $( $bindings )*
-                    return from_sd(SD::$kw $( $constr_args )*);
+                    return from_sd(SD::$constr $( $constr_args )*);
                 }
             };
         }
@@ -452,24 +463,15 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         }
         keyword! { when(input.parse()?, no_bool?, no_nonterminal?) }
 
-        if kw == "false" {
-            return from_sd(SD::False(bool_only?));
-        }
-        if kw == "true" {
-            return from_sd(SD::True(bool_only?));
-        }
-        if kw == "if" {
-            return from_sd(SD::If(parse_if(input)?, no_bool?));
-        }
-        if kw == "select1" {
-            return from_sd(SD::select1(parse_if(input)?, no_bool?));
-        }
-        if kw == "for" {
-            return from_sd(SD::For(
-                RepeatedTemplate::parse_for(input)?,
-                no_bool?,
-            ));
-        }
+        keyword! { "false": False(bool_only?) }
+        keyword! { "true": True(bool_only?) }
+        keyword! { "if": If(parse_if(input)?, no_bool?) }
+        keyword! { select1(parse_if(input)?, no_bool?) }
+
+        keyword! { "for": For(
+            RepeatedTemplate::parse_for(input)?,
+            no_bool?,
+        )}
 
         keyword! {
             all {
