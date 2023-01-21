@@ -24,12 +24,15 @@ pub struct Template<O: SubstParseContext> {
 
 #[derive(Debug)]
 pub enum TemplateElement<O: SubstParseContext> {
-    Pass(TokenTree),
+    Ident(Ident),
+    Literal(syn::Lit),
+    Punct(Punct, O::NoPaste),
     Group {
         /// Sadly Group's constructors let us only set *both* delimiters
         delim_span: Span,
         delimiter: Delimiter,
         template: Template<O>,
+        no_paste: O::NoPaste,
     },
     Subst(Subst<O>),
     Repeat(RepeatedTemplate<O>),
@@ -244,15 +247,22 @@ impl<O: SubstParseContext> Parse for TemplateElement<O> {
                     delim_span,
                     delimiter,
                     template,
+                    no_paste: O::no_paste(&delim_span)?,
                 }
             }
-            tt @ TT::Ident(_) | tt @ TT::Literal(_) => TE::Pass(tt),
-            TT::Punct(tok) if tok.as_char() != '$' => TE::Pass(TT::Punct(tok)),
+            TT::Ident(tt) => TE::Ident(tt),
+            tt @ TT::Literal(_) => TE::Literal(syn::parse2(tt.into())?),
+            TT::Punct(tok) if tok.as_char() != '$' => {
+                let span = tok.span();
+                TE::Punct(tok, O::no_paste(&span)?)
+            }
             TT::Punct(_dollar) => {
                 let la = input.lookahead1();
                 if la.peek(Token![$]) {
                     // $$
-                    TE::Pass(input.parse()?)
+                    let dollar: Punct = input.parse()?;
+                    let span = dollar.span();
+                    TE::Punct(dollar, O::no_paste(&span)?)
                 } else if la.peek(token::Brace) {
                     let exp;
                     struct Only<O: SubstParseContext>(Subst<O>);
@@ -556,7 +566,7 @@ impl<O: SubstParseContext> RepeatedTemplate<O> {
         for elem in template.elements.drain(..) {
             let not_special = match elem {
                 _ if !beginning => elem,
-                TE::Pass(_) => elem,
+                TE::Ident(_) | TE::Literal(_) | TE::Punct(..) => elem,
 
                 TE::Subst(subst) => match subst.sd {
                     SD::when(when, _) => {
