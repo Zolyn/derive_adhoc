@@ -1,48 +1,130 @@
-### Implementation approach
+# **Internal notes document (`NOTES.md`)**
 
-#### 1. `#[derive(Adhoc)]` proc macro for saving struct definitions
+## Implementation approach - truly ad-hoc macros
 
-When applied to the `struct Config`, generates this:
+Context: a macro A cannot simply access the expansion of another macro B.
+So we must sometimes define macros that apply other macros
+(whose name is supplied as an argument)
+to what is conceptually their output.
 
-```
-    macro_rules! derive_adhoc_apply_Config {
+### 1. `#[derive(Adhoc)]` proc macro for saving struct definitions
+
+Implemented in [capture::derive_adhoc_derive_macro].
+
+When applied to (e.g.) `pub struct StructName`, generates this
+
+```rust,ignore
+    macro_rules! derive_adhoc_apply_StructName {
         { $($template:tt)* } => {
             derive_adhoc_expand!{
-                { pub struct Config { /* original struct definition */ } }
+                { pub struct StructName { /* original struct definition */ } }
                 $($template)*
             }
         }
     }
 ```
 
-#### 2. `derive_adhoc!` macro for applying to a template
+### 2. `derive_adhoc!` function-like macro for applying to a template
 
-When applied in the example above, generates this:
+Implemented in [invocation::derive_adhoc_func_macro].
 
-```
-    derive_adhoc_apply_ChannelsParams!{
-        pub struct ChannelsParamsUpdates { $( /* etc. */ )* }
+When applied like this
+```rust,ignore
+    derive_adhoc!{
+       StructName:
+       TEMPLATE...
     }
 ```
 
-#### 3. function-like proc macro to do the actual expansion
+Expands to
+```rust,ignore
+    derive_adhoc_apply_StructName! {
+       TEMPLATE...
+    }
+```
+
+### 3. Function-like proc macro to do the actual expansion
+
+Implemented in [expand::derive_adhoc_expand_func_macro].
 
 The result of expanding the above is this:
 
-```
+```rust,ignore
     derive_adhoc_expand!{
-        { pub struct Config { /* original struct definition */ } }
-        pub struct ChannelsParamsUpdates { $( /* etc. */ )* }
+        { pub struct StructName { /* original struct definition */ } }
+        TEMPLATE...
     }
 ```
 
-`derive_adhoc_expand` parses `pub struct Config`,
+`derive_adhoc_expand` parses `pub struct StructName`,
 and implements a bespoke template expander,
 whose template syntax resembles the expansion syntax from `macro_rules`.
 
 
-Cross-crate API stability
-=========================
+## Implementation approach - reusable template macros
+
+## 1. `define_derive_adhoc!` macro for defining a reuseable template
+
+Implemented in [definition::define_derive_adhoc_func_macro].
+
+When used like this
+```rust,ignore
+    define_derive_adhoc! {
+        MyMacro =
+        TEMPLATE...
+    }
+```
+Expands to
+```rust,ignore
+    macro_rules! derive_adhoc_call_MyDebug {
+        { $dollar : tt $($driver : tt) * } => {
+            derive_adhoc_expand! {
+                { $($driver)* }
+                TEMPLATE...
+            }
+        }
+    }
+```
+
+Except, every `$` in the template is replaced with `$dollar`.  This is
+because a `macro_rules!` template is not capable of generating a
+literal in the expansion `$`.  (With the still-unstable
+[`decl_macro`](https://github.com/rust-lang/rust/issues/83527)
+feature, `$$` does this.)  So the proc macro code passes in a `$` for
+the `macro_rules` macro to emit when it needs to expand to a dollar.
+
+## 2. `#[derive_adhoc(Template)]`, implemented in `#[derive(Adhoc)]`
+
+Template reuse is also implemented in [capture::derive_adhoc_derive_macro].
+
+This
+
+```rust,ignore
+    #[derive(Adhoc)]
+    #[derive_adhoc(Template)]
+    pub struct StructName { ... }
+```
+
+Generates (in addition to the `derive_adhoc_apply_StructName` definition)
+
+```rust,ignore
+    derive_adhoc_call_Template! {
+        $
+        #[derive_adhoc(Template)]
+        struct StructName { ... }
+    }
+```
+
+The literal `$` is there to work around a limitation in `macro_rules!`,
+see above.
+
+## 3. Actual expansion
+
+The call to `derive_adhoc_call_Template!`
+is expanded according to the `macro_rules!` definition,
+resulting in a call to `derive_adhoc_expand`.
+
+## Cross-crate API stability
 
 We want people to be able to export derive-adhoc reuseable macros,
 and also to export the "struct captures".
@@ -85,7 +167,7 @@ We need to think properly about the following:
 
  * The macro encapsulating the struct body that #[derive(Adhoc)]
    generates ought to work like this
-	define_derive_adhoc!{ [pub] MACNAME = TEMPLATE }
+   `define_derive_adhoc!{ [pub] MACNAME = TEMPLATE }`
    and
-        https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/issues/1
+   <https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/issues/1>
 

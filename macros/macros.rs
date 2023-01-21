@@ -1,4 +1,6 @@
 //! Macros for `derive_adhoc`
+//!
+//! Import `derive_adhoc` instead.
 //
 // This is the actual proc-macro crate.
 //
@@ -24,6 +26,9 @@ mod expand;
 mod paste;
 mod repeat;
 mod syntax;
+
+#[doc=include_str!("../NOTES.md")]
+mod notes { }
 
 /// Template expansion engine, internal
 ///
