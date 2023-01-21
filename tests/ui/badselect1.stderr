@@ -1,0 +1,34 @@
+error: multiple conditions matched (true condition)
+  --> ui/badselect1.rs:30:15
+   |
+30 |               fmeta(left) { $fname: $ftype, } else if
+   |               ^^^^^
+
+error: multiple conditions matched (true condition)
+  --> ui/badselect1.rs:31:15
+   |
+31 |               fmeta(right) { }
+   |               ^^^^^
+
+error: no conditions matched, and no else clause
+  --> ui/badselect1.rs:38:15
+   |
+38 |             ${select1
+   |               ^^^^^^^
+
+error[E0433]: failed to resolve: use of undeclared type `Left`
+  --> ui/badselect1.rs:48:26
+   |
+48 |         format!("{:?}", &Left::default()),
+   |                          ^^^^ use of undeclared type `Left`
+   |
+help: there is an enum variant `core::fmt::Alignment::Left` and 4 others; try using the variant's enum
+   |
+48 |         format!("{:?}", &core::fmt::Alignment()),
+   |                          ~~~~~~~~~~~~~~~~~~~~
+48 |         format!("{:?}", &core::fmt::rt::v1::Alignment()),
+   |                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+48 |         format!("{:?}", &std::fmt::Alignment()),
+   |                          ~~~~~~~~~~~~~~~~~~~
+48 |         format!("{:?}", &std::fmt::rt::v1::Alignment()),
+   |                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~
