@@ -5,14 +5,16 @@
 use crate::prelude::*;
 use proc_macro_crate::{crate_name, FoundCrate};
 
-pub trait SpannedExt: Spanned {
+pub trait SpannedExt {
     /// Convenience method to make an error
+    fn error<M: Display>(&self, m: M) -> syn::Error;
+}
+
+impl<T: Spanned> SpannedExt for T {
     fn error<M: Display>(&self, m: M) -> syn::Error {
         syn::Error::new(self.span(), m)
     }
 }
-
-impl<T: Spanned> SpannedExt for T {}
 
 //---------- ToTokensPunctComposable ----------
 
