@@ -166,12 +166,9 @@ pub trait ExpansionOutput: SubstParseContext {
     /// Can fail, if the actual concrete value is not right
     fn push_attr_value(
         &mut self,
-        _tspan: Span,
+        tspan: Span,
         lit: &syn::Lit,
-    ) -> syn::Result<()> {
-        self.push_syn_lit(lit);
-        Ok(())
-    }
+    ) -> syn::Result<()>;
 
     /// Some other substitution which generates tokens
     ///
@@ -343,6 +340,15 @@ impl ExpansionOutput for TokenAccumulator {
     }
     fn push_syn_type(&mut self, _te_span: Span, ty: &syn::Type) {
         self.write_tokens(ty);
+    }
+    fn push_attr_value(
+        &mut self,
+        tspan: Span,
+        lit: &syn::Lit,
+    ) -> syn::Result<()> {
+        let tokens: TokenStream = attrvalue_lit_as(lit, tspan, &"tokens")?;
+        self.write_tokens(tokens);
+        Ok(())
     }
     fn push_other_subst<S, F>(
         &mut self,

@@ -484,6 +484,14 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
             ),
         }
     }
+    fn push_attr_value(
+        &mut self,
+        _tspan: Span,
+        lit: &syn::Lit,
+    ) -> syn::Result<()> {
+        self.push_syn_lit(lit);
+        Ok(())
+    }
     fn push_other_subst<S, F>(
         &mut self,
         no_paste: &Void,
