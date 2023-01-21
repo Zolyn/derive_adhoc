@@ -257,18 +257,22 @@ impl SubstAttr {
 impl<'l> AttrValue<'l> {
     fn expand<O>(
         &self,
-        span: Span,
+        tspan: Span,
         as_: &SubstAttrAs,
         out: &mut O,
     ) -> syn::Result<()>
     where
         O: ExpansionOutput,
     {
+        fn spans(tspan: Span, vspan: Span) -> [(Span, &'static str); 2] {
+            [(vspan, "attribute value"), (tspan, "template")]
+        }
+
         let lit = match self {
-            AttrValue::Unit(_) => return Err(span.error(
+            AttrValue::Unit(vspan) => return Err(spans(tspan, *vspan).error(
  "tried to expand attribute which is just a unit, not a literal"
             )),
-            AttrValue::Deeper(_) => return Err(span.error(
+            AttrValue::Deeper(vspan) => return Err(spans(tspan, *vspan).error(
  "tried to expand attribute which is nested list, not a value",
             )),
             AttrValue::Lit(lit) => lit,
@@ -276,7 +280,7 @@ impl<'l> AttrValue<'l> {
 
         fn lit_as<T>(
             lit: &syn::Lit,
-            span: Span,
+            tspan: Span,
             as_: &SubstAttrAs,
         ) -> syn::Result<T>
         where
@@ -287,7 +291,7 @@ impl<'l> AttrValue<'l> {
                 // having checked derive_builder, it doesn't handle
                 // Lit::Verbatim so I guess we don't need to either.
                 _ => {
-                    return Err(span.error(format!(
+                    return Err(spans(tspan, lit.span()).error(format!(
                         "expected string literal, for conversion to {}",
                         as_,
                     )))
@@ -301,7 +305,7 @@ impl<'l> AttrValue<'l> {
         use SubstAttrAs as SAS;
         match as_ {
             SAS::lit => out.push_syn_lit(lit),
-            SAS::ty => out.push_syn_type(span, &lit_as(lit, span, as_)?),
+            SAS::ty => out.push_syn_type(tspan, &lit_as(lit, tspan, as_)?),
         }
         Ok(())
     }
