@@ -59,7 +59,7 @@ pub fn define_derive_adhoc_func_macro(
 
     let template = escape_dollars(template);
 
-    let mac_name = format_ident!("derive_adhoc_call_{}", &templ_name);
+    let mac_name = format_ident!("derive_adhoc_template_{}", &templ_name);
 
     let expand_macro = expand_macro_name()?;
 

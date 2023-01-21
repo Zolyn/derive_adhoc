@@ -97,10 +97,10 @@ pub fn derive_adhoc(
 /// Then, `MyMacro` can be used with
 /// `#[derive(Adhoc)] #[derive_adhoc(MyMacro)]`.
 ///
-/// ## Captured template macro `derive_adhoc_call_MyMacro`
+/// ## Captured template macro `derive_adhoc_template_MyMacro`
 ///
 /// The template is captured as a `macro_rules` macro
-/// named `derive_adhoc_call_MyMacro`.
+/// named `derive_adhoc_template_MyMacro`.
 /// This macro must be in scope when you try to use it
 /// with `#[derive_adhoc(MyMacro)]`.
 ///
