@@ -29,7 +29,25 @@ error: multiple conditions matched (true condition)
 31 |               fmeta(right) { }
    |               ^^^^^
 
-error: no conditions matched, and no else clause
+error: no conditions matched, and no else clause (in this field)
+  --> ui/badselect1.rs:14:5
+   |
+14 | /     #[adhoc(left)]
+15 | |     a: usize,
+   | |____________^
+...
+23 | / derive_adhoc!{
+24 | |     Both:
+25 | |
+26 | |     #[derive(Default, Debug)]
+...  |
+43 | |     }
+44 | | }
+   | |_- in this macro invocation
+   |
+   = note: this error originates in the macro `derive_adhoc_driver_Both` which comes from the expansion of the macro `derive_adhoc` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: no conditions matched, and no else clause (select1 expansion)
   --> ui/badselect1.rs:38:15
    |
 38 |             ${select1

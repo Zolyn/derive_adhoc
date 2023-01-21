@@ -80,7 +80,7 @@ where
             .map(|(_cspan, consequence)| consequence)
             .or(self.otherwise.as_deref())
             .ok_or_else(|| {
-                self.kw_span
+                [ctx.error_loc(), (self.kw_span, "select1 expansion")]
                     .error("no conditions matched, and no else clause")
             })?;
         found.expand(ctx, out);
