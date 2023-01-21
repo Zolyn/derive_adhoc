@@ -7,12 +7,12 @@ use proc_macro_crate::{crate_name, FoundCrate};
 
 pub trait MakeError {
     /// Convenience method to make an error
-    fn error<M: Display>(&self, m: M) -> syn::Error;
+    fn error<M: AsRef<str>>(&self, m: M) -> syn::Error;
 }
 
 impl<T: Spanned> MakeError for T {
-    fn error<M: Display>(&self, m: M) -> syn::Error {
-        syn::Error::new(self.span(), m)
+    fn error<M: AsRef<str>>(&self, m: M) -> syn::Error {
+        syn::Error::new(self.span(), m.as_ref())
     }
 }
 
@@ -26,10 +26,10 @@ impl<T: Spanned> MakeError for T {
 ///
 /// Panics if passed an empty slice.
 impl MakeError for [(Span, &str)] {
-    fn error<M: Display>(&self, m: M) -> syn::Error {
+    fn error<M: AsRef<str>>(&self, m: M) -> syn::Error {
         let mut locs = self.into_iter().cloned();
         let mk = |(span, frag): (Span, _)| {
-            span.error(format!("{} ({})", m, frag))
+            span.error(format!("{} ({})", m.as_ref(), frag))
         };
         let first = locs.next().expect("at least one span needed!");
         let mut build = mk(first);
