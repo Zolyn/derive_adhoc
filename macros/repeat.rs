@@ -264,6 +264,19 @@ impl<'w> WithinRepeatLevel<'w> for WithinField<'w> {
 }
 
 impl<'c> Context<'c> {
+    /// Returns an [`ErrorLoc`] for the current part of the driver
+    pub fn error_loc(&self) -> (Span, &'static str) {
+        if let Some(field) = &self.field {
+            (field.field.span(), "in this field")
+        } else if let Some(variant) =
+            &self.variant.and_then(|variant| variant.variant.as_ref())
+        {
+            (variant.span(), "in this variant")
+        } else {
+            (self.top.span(), "in this data structure")
+        }
+    }
+
     /// Obtains the relevant `Within`(s), and calls `call` for each one
     ///
     /// If there is a current `W`, simply calls `call`.

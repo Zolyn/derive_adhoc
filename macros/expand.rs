@@ -66,7 +66,11 @@ where
             match &mut found {
                 Ok(None) => found = Ok(Some((cspan, consequence))),
                 Ok(Some((span1, _))) => {
-                    found = Err(vec![err(*span1), err(cspan)])
+                    found = Err(vec![
+                        ctx.error_loc(),
+                        err(*span1),
+                        err(cspan),
+                    ])
                 }
                 Err(several) => several.push(err(cspan)),
             }
