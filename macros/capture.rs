@@ -28,7 +28,7 @@ pub fn derive_adhoc_derive_macro(
     // a bit like syn::DeriveInput.
     let input: syn::DeriveInput = syn::parse2(input)?;
 
-    let mac_name = format_ident!("derive_adhoc_apply_{}", &input.ident);
+    let mac_name = format_ident!("derive_adhoc_driver_{}", &input.ident);
 
     let precanned_paths: Vec<syn::Path> = input
         .attrs

@@ -72,7 +72,7 @@ pub fn derive_adhoc_expand(
 ///
 /// The definition of `DataStructureType` must have been decorated
 /// with [`#[derive(Adhoc)]`](crate::Adhoc),
-/// and the resulting `derive_adhoc_apply_TYPE` macro must be
+/// and the resulting `derive_adhoc_driver_TYPE` macro must be
 /// available in scope.
 #[proc_macro]
 pub fn derive_adhoc(
@@ -107,7 +107,7 @@ pub fn derive_adhoc(
 /// The rules for scoping and ordering of `macro_rules` macros
 /// are subtle.
 /// For more information, see the
-/// [documentation for `#[derive(Adhoc)]`](derive.Adhoc.html#captured-data-structure-definition-derive_adhoc_apply_type).
+/// [documentation for `#[derive(Adhoc)]`](derive.Adhoc.html#captured-data-structure-definition-derive_adhoc_driver_type).
 #[proc_macro]
 pub fn define_derive_adhoc(
     input: proc_macro::TokenStream,
@@ -130,10 +130,10 @@ pub fn define_derive_adhoc(
 ///     defined with `define_derive_adhoc!`.
 ///     Each such `MyMacro` is invoked on the data structure.
 ///
-/// ## Captured data structure definition `derive_adhoc_apply_TYPE`
+/// ## Captured data structure definition `derive_adhoc_driver_TYPE`
 ///
 /// The data structure is captured by defining
-/// a `macro_rules` macro called `derive_adhoc_apply_TYPE`,
+/// a `macro_rules` macro called `derive_adhoc_driver_TYPE`,
 /// where `TYPE` is the name of the type
 /// that `#[derive(Adhoc)]` is applied to.
 ///
@@ -168,7 +168,7 @@ pub fn define_derive_adhoc(
 // It should parse the struct name out of its input.
 //
 // The expansion should be
-//   macro_rules! derive_adhoc_apply_ChannelsParams ...
+//   macro_rules! derive_adhoc_driver_ChannelsParams ...
 // as per NOTES.txt
 //
 // For the MVP it does not need to have any attributes, but
