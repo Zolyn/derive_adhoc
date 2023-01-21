@@ -296,6 +296,37 @@ impl SubstAttr {
     }
 }
 
+fn attrvalue_spans(tspan: Span, vspan: Span) -> [ErrorLoc; 2] {
+    [(vspan, "attribute value"), (tspan, "template")]
+}
+
+/// Convert a literal found in a meta item into `T`
+///
+/// `into_what` is used only for error reporting
+pub fn attrvalue_lit_as<T>(
+    lit: &syn::Lit,
+    tspan: Span,
+    into_what: &dyn Display,
+) -> syn::Result<T>
+where
+    T: Parse + ToTokens,
+{
+    let s: &syn::LitStr = match lit {
+        syn::Lit::Str(s) => s,
+        // having checked derive_builder, it doesn't handle
+        // Lit::Verbatim so I guess we don't need to either.
+        _ => {
+            return Err(attrvalue_spans(tspan, lit.span()).error(format!(
+                "expected string literal, for conversion to {}",
+                into_what,
+            )))
+        }
+    };
+
+    let thing: T = s.parse()?;
+    Ok(thing)
+}
+
 impl<'l> AttrValue<'l> {
     fn expand<O>(
         &self,
@@ -306,48 +337,22 @@ impl<'l> AttrValue<'l> {
     where
         O: ExpansionOutput,
     {
-        fn spans(tspan: Span, vspan: Span) -> [ErrorLoc; 2] {
-            [(vspan, "attribute value"), (tspan, "template")]
-        }
+        let spans = |vspan| attrvalue_spans(tspan, vspan);
 
         let lit = match self {
-            AttrValue::Unit(vspan) => return Err(spans(tspan, *vspan).error(
+            AttrValue::Unit(vspan) => return Err(spans(*vspan).error(
  "tried to expand attribute which is just a unit, not a literal"
             )),
-            AttrValue::Deeper(vspan) => return Err(spans(tspan, *vspan).error(
+            AttrValue::Deeper(vspan) => return Err(spans(*vspan).error(
  "tried to expand attribute which is nested list, not a value",
             )),
             AttrValue::Lit(lit) => lit,
         };
 
-        fn lit_as<T>(
-            lit: &syn::Lit,
-            tspan: Span,
-            as_: &SubstAttrAs,
-        ) -> syn::Result<T>
-        where
-            T: Parse + ToTokens,
-        {
-            let s: &syn::LitStr = match lit {
-                syn::Lit::Str(s) => s,
-                // having checked derive_builder, it doesn't handle
-                // Lit::Verbatim so I guess we don't need to either.
-                _ => {
-                    return Err(spans(tspan, lit.span()).error(format!(
-                        "expected string literal, for conversion to {}",
-                        as_,
-                    )))
-                }
-            };
-
-            let thing: T = s.parse()?;
-            Ok(thing)
-        }
-
         use SubstAttrAs as SAS;
         match as_ {
             SAS::lit => out.push_syn_lit(lit),
-            SAS::ty => out.push_syn_type(tspan, &lit_as(lit, tspan, as_)?),
+            SAS::ty => out.push_syn_type(tspan, &attrvalue_lit_as(lit, tspan, as_)?),
         }
         Ok(())
     }
