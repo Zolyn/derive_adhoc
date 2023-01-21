@@ -137,6 +137,7 @@ pub enum SubstDetails<O: SubstParseContext> {
     For(RepeatedTemplate<O>, O::NoBool),
     // Conditional substitution.
     If(SubstIf<O>, O::NoBool),
+    select1(SubstIf<O>, O::NoBool),
 }
 
 #[derive(Debug)]
@@ -148,6 +149,7 @@ pub struct SubstIf<O: SubstParseContext> {
     pub tests: Vec<(Subst<BooleanContext>, Template<O>)>,
     /// A final element to expand if all tests fail.
     pub otherwise: Option<Box<Template<O>>>,
+    pub kw_span: Span,
 }
 
 #[derive(Debug, Clone)]
@@ -420,6 +422,9 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         let bool_only = O::bool_only(&kw);
         let no_nonterminal = O::no_nonterminal(&kw);
 
+        let parse_if =
+            |input| SubstIf::parse(input, kw.span(), no_nonterminal.clone()?);
+
         keyword! { tname(no_bool?) }
         keyword! { ttype(no_bool?) }
         keyword! { vname(no_bool?) }
@@ -454,10 +459,10 @@ impl<O: SubstParseContext> Parse for Subst<O> {
             return from_sd(SD::True(bool_only?));
         }
         if kw == "if" {
-            return from_sd(SD::If(
-                SubstIf::parse(input, no_nonterminal?)?,
-                no_bool?,
-            ));
+            return from_sd(SD::If(parse_if(input)?, no_bool?));
+        }
+        if kw == "select1" {
+            return from_sd(SD::select1(parse_if(input)?, no_bool?));
         }
         if kw == "for" {
             return from_sd(SD::For(
@@ -504,6 +509,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
 impl<O: SubstParseContext> SubstIf<O> {
     fn parse(
         input: ParseStream,
+        kw_span: Span,
         no_nonterminal: O::NoNonterminal,
     ) -> syn::Result<Self> {
         let mut tests = Vec::new();
@@ -543,7 +549,11 @@ impl<O: SubstParseContext> SubstIf<O> {
         // TODO: Q: What ensures that there are no unhandled
         // tokens left for us?
 
-        Ok(SubstIf { tests, otherwise })
+        Ok(SubstIf {
+            kw_span,
+            tests,
+            otherwise,
+        })
     }
 }
 

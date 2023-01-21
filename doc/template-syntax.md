@@ -194,6 +194,14 @@ derive-adhoc treats them as having a single (unnamed) variant.
  * **`${if COND1 { ... } else if COND2 { ... } else { ... }}`**:
    Conditionals.  The else clause is, of course, optional.
 
+ * **`${select1 COND1 { ... } else if COND2 { ... } else { ... }}`**:
+   Conditionals which insist on expanding exactly one of the branches.
+   Syntax is identical to that of `${if }`.
+   *All* of the `COND` are always evaluated.
+   Exactly one of them must be true;
+   or, none of them, bot only if an `else` is supplied -
+   otherwise it is an error.
+
  * **`${for fields { ... }}`**:
    Expands the contents once per field.
 

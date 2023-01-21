@@ -138,7 +138,7 @@ impl<O: SubstParseContext> Subst<O> {
                 cond.analyse_repeat(visitor)?;
                 None
             }
-            SD::If(conds, ..) => {
+            SD::If(conds, ..) | SD::select1(conds, ..) => {
                 conds.analyse_repeat(visitor)?;
                 None
             }

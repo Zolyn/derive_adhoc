@@ -48,6 +48,44 @@ where
     }
 }
 
+impl<O> SubstIf<O>
+where
+    Template<O>: ExpandInfallible<O>,
+    O: ExpansionOutput,
+{
+    fn expand_select1(&self, ctx: &Context, out: &mut O) -> syn::Result<()> {
+        let mut found: Result<
+            Option<(Span, &Template<O>)>,
+            Vec<(Span, &'static str)>,
+        > = Ok(None);
+
+        for (condition, consequence) in &self.tests {
+            if !condition.eval_bool(ctx)? {
+                continue;
+            }
+            let cspan = condition.span();
+            let err = |span| (span, "true condition");
+            match &mut found {
+                Ok(None) => found = Ok(Some((cspan, consequence))),
+                Ok(Some((span1, _))) => {
+                    found = Err(vec![err(*span1), err(cspan)])
+                }
+                Err(several) => several.push(err(cspan)),
+            }
+        }
+        let found = found
+            .map_err(|several| several.error("multiple conditions matched"))?
+            .map(|(_cspan, consequence)| consequence)
+            .or(self.otherwise.as_deref())
+            .ok_or_else(|| {
+                self.kw_span
+                    .error("no conditions matched, and no else clause")
+            })?;
+        found.expand(ctx, out);
+        Ok(())
+    }
+}
+
 impl<O> ExpandInfallible<O> for Template<O>
 where
     TemplateElement<O>: Expand<O>,
@@ -215,6 +253,7 @@ where
             | SD::any(_, bo)
             | SD::all(_, bo) => out.expand_bool_only(bo),
             SD::For(repeat, _) => repeat.expand(ctx, out),
+            SD::select1(conds, ..) => conds.expand_select1(ctx, out)?,
         };
         Ok(())
     }
