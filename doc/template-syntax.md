@@ -1,4 +1,4 @@
-# Template syntax reference
+# **Template syntax reference**
 
 Within the macro template,
 expansions (and control structures) are introduced with `$`.
