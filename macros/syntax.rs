@@ -488,10 +488,10 @@ impl<O: SubstParseContext> Parse for Subst<O> {
             (inner.parse()?, bool_only?)
         }
 
-        if kw == "snake_case" {
+        if let Ok(case) = kw.to_string().parse() {
             return from_sd(SD::ChangeCase(
                 Box::new(Subst::parse_entire(input)?),
-                paste::ChangeCase::AsSnakeCase,
+                case,
                 no_case?,
                 no_bool?,
             ));

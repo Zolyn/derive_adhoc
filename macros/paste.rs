@@ -21,11 +21,6 @@ pub struct ItemsData {
     errors: Vec<syn::Error>,
 }
 
-#[derive(Debug, Clone, Copy)]
-pub enum ChangeCase {
-    AsSnakeCase,
-}
-
 #[derive(Debug)]
 struct ItemEntry {
     item: Item,
@@ -54,6 +49,51 @@ enum Item {
 
 #[derive(Debug, Default)]
 pub struct WithinCaseContext;
+
+/// Define cases using heck
+///
+/// heck doesn't provide standard names for case conversions,
+/// or an enum to represent a case conversion.
+/// This macro defines both.  Specifically:
+///  * The fieldless enum `ChangeCase`.
+///  * Its `FromStr` implementation, which accepts the `$keyword`s.
+///  * Its `apply()` method, which actually performs the conversion. (TODO)
+///
+/// `$heck` is the name of the `As` conversion struct in the heck
+/// API.  It will become the variant name in `ChangeCase`.
+///
+/// `$keyword` are the keywords we recognise for this case conversion.
+macro_rules! define_cases { {
+    $(
+        $heck:ident $( $keyword:literal )*,
+    )*
+} => {
+    #[derive(Debug, Clone, Copy)]
+    pub enum ChangeCase {
+        $( $heck, )*
+    }
+
+    impl FromStr for ChangeCase {
+        type Err = ();
+        fn from_str(s: &str) -> Result<Self, ()> {
+            Ok(match s {
+              $(
+                $( $keyword )|* => ChangeCase::$heck,
+              )*
+                _ => return Err(()),
+            })
+        }
+    }
+} }
+
+define_cases! {
+    // heck API       our keyword (and aliases)  our example(s)
+    AsUpperCamelCase    "pascal_case"              "PascalCase"
+                        "upper_camel_case"         "UpperCamelCase"    ,
+    AsLowerCamelCase    "lower_camel_case"         "lowerCamelCase"    ,
+    AsSnakeCase         "snake_case",
+    AsShoutySnakeCase   "shouty_snake_case"        "SHOUTY_SNAKE_CASE" ,
+}
 
 /// Kind of lexical context in which we are pasting identifiers
 ///

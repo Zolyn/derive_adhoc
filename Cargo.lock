@@ -13,6 +13,7 @@ dependencies = [
 name = "derive-adhoc-macros"
 version = "0.0.1"
 dependencies = [
+ "heck",
  "itertools",
  "proc-macro-crate",
  "proc-macro2",

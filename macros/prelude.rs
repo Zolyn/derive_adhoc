@@ -7,6 +7,7 @@ pub use std::iter;
 pub use std::marker::PhantomData;
 pub use std::mem;
 pub use std::panic::{catch_unwind, AssertUnwindSafe};
+pub use std::str::FromStr;
 pub use std::thread::panicking;
 
 pub use itertools::{chain, izip, Itertools};
