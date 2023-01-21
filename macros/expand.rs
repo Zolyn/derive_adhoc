@@ -9,12 +9,22 @@
 use crate::framework::*;
 
 pub enum AttrValue<'l> {
-    Unit,
-    Deeper,
+    Unit(Span),
+    Deeper(Span),
     Lit(&'l syn::Lit),
 }
 
 pub use AttrValue as AV;
+
+impl Spanned for AttrValue<'_> {
+    fn span(&self) -> Span {
+        match self {
+            AV::Unit(span) => *span,
+            AV::Deeper(span) => *span,
+            AV::Lit(lit) => lit.span(),
+        }
+    }
+}
 
 impl<O> Expand<O> for SubstIf<O>
 where
@@ -255,10 +265,10 @@ impl<'l> AttrValue<'l> {
         O: ExpansionOutput,
     {
         let lit = match self {
-            AttrValue::Unit => return Err(span.error(
+            AttrValue::Unit(_) => return Err(span.error(
  "tried to expand attribute which is just a unit, not a literal"
             )),
-            AttrValue::Deeper => return Err(span.error(
+            AttrValue::Deeper(_) => return Err(span.error(
  "tried to expand attribute which is nested list, not a value",
             )),
             AttrValue::Lit(lit) => lit,

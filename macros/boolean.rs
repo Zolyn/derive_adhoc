@@ -136,9 +136,10 @@ impl SubstAttrPath {
             return Ok(());
         }
 
+        let vspan = pattr.span();
         match (&self.deeper, pattr) {
-            (None, sM::Path(_)) => f(AV::Unit)?,
-            (None, sM::List(_)) => f(AV::Deeper)?,
+            (None, sM::Path(_)) => f(AV::Unit(vspan))?,
+            (None, sM::List(_)) => f(AV::Deeper(vspan))?,
             (None, sM::NameValue(nv)) => f(AV::Lit(&nv.lit))?,
             (Some(_), sM::NameValue(_)) => {}
             (Some(_), sM::Path(_)) => {} // self is deeper than pattr
