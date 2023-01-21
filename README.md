@@ -1,13 +1,17 @@
 # derive_adhoc: An ergonomic replacement for (some) proc macros
 
-**WARNING**
-
-As of 14 July 2022, this is still quite a work-in-progress: you probably
-shouldn't use it yet unless you like playing with sharp edges.
-
 `derive-adhoc` allows you to write macros which are driven
 by Rust data structures, just like proc macro derive macros,
 but without having to wrestle with the proc macro system.
+
+**Stability warning**
+
+We do plan to make a `1.x` version of this library,
+but right now we are still gaining experience with the template syntax.
+So the template syntax is still subject to change.
+
+derive-adhoc has seen limited, if any, real-world use.
+So there may well be sharp edges.
 
 ## Overview
 
