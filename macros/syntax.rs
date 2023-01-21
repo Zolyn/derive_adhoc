@@ -339,6 +339,14 @@ impl Parse for SubstAttrPath {
 }
 
 impl<O: SubstParseContext> Subst<O> {
+    /// Parses everything including a `$` (which we insist on)
+    #[allow(dead_code)] // TODO
+    fn parse_entire(input: ParseStream) -> syn::Result<Self> {
+        let _dollar: Token![$] = input.parse()?;
+        let la = input.lookahead1();
+        Self::parse_after_dollar(la, input)
+    }
+
     /// Parses everything after the `$`, possibly including a pair of `{ }`
     fn parse_after_dollar(
         la: Lookahead1,
