@@ -114,7 +114,7 @@ pub enum SubstDetails<O: SubstParseContext> {
     twheres(O::NoPaste, O::NoBool),
 
     // expansion manipulation
-    paste(Template<paste::Items>, O::NoPaste, O::NoBool),
+    paste(Template<paste::Items>, O::NoPaste, O::NoCase, O::NoBool),
 
     // special
     when(Box<Subst<BooleanContext>>, O::NoBool, O::NoNonterminal),
@@ -389,6 +389,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         }
 
         let no_paste = O::no_paste(&kw);
+        let no_case = O::no_case(&kw);
         let no_bool = O::no_bool(&kw);
         let bool_only = O::bool_only(&kw);
         let no_nonterminal = O::no_nonterminal(&kw);
@@ -412,7 +413,12 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         keyword! { vattrs(input.parse()?, no_paste?, no_bool?) }
         keyword! { fattrs(input.parse()?, no_paste?, no_bool?) }
 
-        keyword! { paste(Template::parse(input, ())?, no_paste?, no_bool?) }
+        keyword! {
+            paste {
+                let template = Template::parse(input, ())?;
+            }
+            (template, no_paste?, no_case?, no_bool?)
+        }
         keyword! { when(input.parse()?, no_bool?, no_nonterminal?) }
 
         if kw == "false" {
