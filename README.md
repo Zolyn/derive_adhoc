@@ -45,7 +45,7 @@ define_derive_adhoc! {
 
     impl $ttype {
         fn list_variants() -> Vec<&'static str> {
-            vec! [ $( stringify!( $vname ) , ) ]
+            vec![ $( stringify!( $vname ) , ) ]
         }
     }
 }

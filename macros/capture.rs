@@ -28,7 +28,7 @@ pub fn derive_adhoc_derive_macro(
     // a bit like syn::DeriveInput.
     let input: syn::DeriveInput = syn::parse2(input)?;
 
-    let mac_name = format_ident!("derive_adhoc_apply_{}", &input.ident);
+    let mac_name = format_ident!("derive_adhoc_driver_{}", &input.ident);
 
     let precanned_paths: Vec<syn::Path> = input
         .attrs
@@ -70,7 +70,7 @@ pub fn derive_adhoc_derive_macro(
                 .error("cannot derive_adhoc the empty path!"));
         }
         let last = path.segments.last_mut().expect("became empty!");
-        last.ident = format_ident!("derive_adhoc_call_{}", last.ident);
+        last.ident = format_ident!("derive_adhoc_template_{}", last.ident);
 
         output.extend(quote! {
             #path !{

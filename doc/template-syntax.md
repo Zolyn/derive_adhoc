@@ -1,4 +1,4 @@
-# Template syntax reference
+# **Template syntax reference**
 
 Within the macro template,
 expansions (and control structures) are introduced with `$`.
@@ -238,7 +238,7 @@ a paste fragment, before concatenation.
 is not supported.)
 
 This table shows the supported case styles.
-Note that changing the case can add and remove punctuation.
+Note that changing the case can add and remove underscores.
 The precise details are as for [`heck`],
 which is used to implement the actual case changing.
 
