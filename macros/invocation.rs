@@ -61,5 +61,9 @@ pub fn derive_adhoc_func_macro(
 
     let output = quote! { #mac_name !{ #template } };
 
+    // eprintln!("---------- derive_adhoc! output start ----------");
+    // eprintln!("{}", &output);
+    // eprintln!("---------- derive_adhoc! output end ----------");
+
     Ok(output)
 }

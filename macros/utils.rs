@@ -1,15 +1,20 @@
 //! Utilities for proc macro implementation
 
+//---------- SpannedExt ----------
+
 use crate::prelude::*;
 use proc_macro_crate::{crate_name, FoundCrate};
 
 pub trait SpannedExt: Spanned {
+    /// Convenience method to make an error
     fn error<M: Display>(&self, m: M) -> syn::Error {
         syn::Error::new(self.span(), m)
     }
 }
 
 impl<T: Spanned> SpannedExt for T {}
+
+//---------- ToTokensPunctComposable ----------
 
 /// Convert to a token stream in a way that composes nicely
 pub trait ToTokensPunctComposable {
@@ -46,6 +51,15 @@ where
     }
 }
 
+//---------- ErrorAccumulator ----------
+
+/// Contains zero or more `syn::Error`
+///
+/// # Panics
+///
+/// Panics if dropped.
+///
+/// You must call one of the consuming methods, eg `finish`
 #[derive(Debug, Default)]
 pub struct ErrorAccumulator {
     bad: Option<syn::Error>,
@@ -53,6 +67,7 @@ pub struct ErrorAccumulator {
 }
 
 impl ErrorAccumulator {
+    /// Run `f`, accumulate any error, and return an `Ok`
     pub fn handle_in<T, F>(&mut self, f: F) -> Option<T>
     where
         F: FnOnce() -> syn::Result<T>,
@@ -60,6 +75,7 @@ impl ErrorAccumulator {
         self.handle(f())
     }
 
+    /// Handle a `Result`: accumulate any error, and returni an `Ok`
     pub fn handle<T>(&mut self, result: syn::Result<T>) -> Option<T> {
         match result {
             Ok(y) => Some(y),
@@ -70,6 +86,7 @@ impl ErrorAccumulator {
         }
     }
 
+    /// Accumulate an error
     pub fn push(&mut self, err: syn::Error) {
         if let Some(bad) = &mut self.bad {
             bad.combine(err)
@@ -78,11 +95,13 @@ impl ErrorAccumulator {
         }
     }
 
+    /// If there were any errors, return a single error that combines them
     #[allow(dead_code)]
     pub fn finish(self) -> syn::Result<()> {
         self.finish_with(())
     }
 
+    /// If there were any errors, return `Err`, otherwise `Ok(success)`
     pub fn finish_with<T>(self, success: T) -> syn::Result<T> {
         match self.into_inner() {
             None => Ok(success),
@@ -90,6 +109,7 @@ impl ErrorAccumulator {
         }
     }
 
+    /// If there any errors, return a single error that combines them
     pub fn into_inner(mut self) -> Option<syn::Error> {
         self.defused = true;
         self.bad.take()
@@ -101,6 +121,8 @@ impl Drop for ErrorAccumulator {
         assert!(panicking() || self.defused);
     }
 }
+
+//---------- expand_macro_name ----------
 
 /// Return a full path to the location of `derive_adhoc_expand`.
 pub fn expand_macro_name() -> Result<TokenStream, syn::Error> {
