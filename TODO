@@ -10,20 +10,6 @@ TEMPLATE FEATURES PLANNED
       Expansion is a single string literal.
       FTAOD  ${string ${string "y"}}  =>  r#""y""#
 
-   Case conversion
-   Can be applied to names (only) within token or string concatenation:
-      		$expansion:CASE
-	Cases
-      		lower upper snake camel		like in paste!
-		pascal				like convert_case
-		others may be added later
-	Expansions
-		Anything is allowed, $KEYWORD or ${...}
-   So, eg,
-      fn ${paste zingy_ $tname:snake _builder}();
-   expands to
-      fn zingy_foo_builder();
-
    Variant (or value) body and delimiter
 	${vbody ... }		{ ... }		struct [variant] or union
 				( ... )		tuple struct/variant
@@ -58,24 +44,11 @@ FEATURES WITH SYNTAX AND/OR SEMANTICS TBD
 OTHER TODO LIST ITEMS
 =====================
 
-Proper docs
-Sort out NOTES.md
-
 A public writeup blog post
 
 
 Bugs
 
- * Make things work if you have a normal crate that imports things
-   in a normal way.
-
  * Ideally we would check the case of reuseable derive names.
    These should be in Pascal case.
    But we only want to *lint* for this, not fail, and that's hard.
-
-
-DEFERRED TODO LIST ITEMS
-========================
-
-Possibly, tests of compilation failures (but these are fragile
-if done in the obvious way with trybuild).
