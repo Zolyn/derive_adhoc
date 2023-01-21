@@ -331,7 +331,7 @@ impl<'l> AttrValue<'l> {
     fn expand<O>(
         &self,
         tspan: Span,
-        as_: &SubstAttrAs,
+        as_: &Option<SubstAttrAs>,
         out: &mut O,
     ) -> syn::Result<()>
     where
@@ -351,8 +351,11 @@ impl<'l> AttrValue<'l> {
 
         use SubstAttrAs as SAS;
         match as_ {
-            SAS::lit => out.push_syn_lit(lit),
-            SAS::ty => out.push_syn_type(tspan, &attrvalue_lit_as(lit, tspan, as_)?),
+            Some(SAS::lit) => out.push_syn_lit(lit),
+            Some(as_ @ SAS::ty) => {
+                out.push_syn_type(tspan, &attrvalue_lit_as(lit, tspan, as_)?)
+            }
+            None => out.push_attr_value(tspan, lit)?,
         }
         Ok(())
     }

@@ -155,7 +155,7 @@ pub struct SubstIf<O: SubstParseContext> {
 #[derive(Debug, Clone)]
 pub struct SubstAttr {
     pub path: SubstAttrPath,
-    pub as_: SubstAttrAs,
+    pub as_: Option<SubstAttrAs>,
     pub as_span: Span,
 }
 
@@ -312,11 +312,11 @@ impl Parse for SubstAttr {
             let _: Token![as] = input.parse()?;
             let kw = input.call(syn::Ident::parse_any)?;
             as_span = kw.span();
-            as_ = SubstAttrAs::iter().find(|as_| kw == as_).ok_or_else(
+            as_ = Some(SubstAttrAs::iter().find(|as_| kw == as_).ok_or_else(
                 || kw.error("unknown derive-adhoc 'as' syntax type keyword"),
-            )?;
+            )?);
         } else {
-            as_ = SubstAttrAs::lit;
+            as_ = None;
             as_span = path.span();
         }
 

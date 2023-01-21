@@ -161,6 +161,18 @@ pub trait ExpansionOutput: SubstParseContext {
     /// [`syn::Type`]
     fn push_syn_type(&mut self, te_span: Span, v: &syn::Type);
 
+    /// Meta item value without `as` clause
+    ///
+    /// Can fail, if the actual concrete value is not right
+    fn push_attr_value(
+        &mut self,
+        _tspan: Span,
+        lit: &syn::Lit,
+    ) -> syn::Result<()> {
+        self.push_syn_lit(lit);
+        Ok(())
+    }
+
     /// Some other substitution which generates tokens
     ///
     /// Not supported within `${paste }`.
