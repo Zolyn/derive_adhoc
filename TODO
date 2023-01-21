@@ -5,10 +5,3 @@ OTHER TODO LIST ITEMS
 =====================
 
 A public writeup blog post
-
-
-Bugs
-
- * Ideally we would check the case of reuseable derive names.
-   These should be in Pascal case.
-   But we only want to *lint* for this, not fail, and that's hard.
