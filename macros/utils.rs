@@ -16,6 +16,30 @@ impl<T: Spanned> SpannedExt for T {
     }
 }
 
+/// Generates multiple copies of the error, for multiple places
+///
+/// Each entry in the array must have a string indicating to the user
+/// what kind of location this is.
+/// For example, `(tspan, "template")`.
+///
+/// # Panics
+///
+/// Panics if passed an empty slice.
+impl SpannedExt for [(Span, &str)] {
+    fn error<M: Display>(&self, m: M) -> syn::Error {
+        let mut locs = self.into_iter().cloned();
+        let mk = |(span, frag): (Span, _)| {
+            span.error(format!("{} ({})", m, frag))
+        };
+        let first = locs.next().expect("at least one span needed!");
+        let mut build = mk(first);
+        for rest in locs {
+            build.combine(mk(rest))
+        }
+        build
+    }
+}
+
 //---------- ToTokensPunctComposable ----------
 
 /// Convert to a token stream in a way that composes nicely
