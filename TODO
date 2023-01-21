@@ -66,17 +66,6 @@ A public writeup blog post
 
 Bugs
 
- * Make results of define_derive_adhoc not exported.
-   Make the macro encapsulating the struct body that #[derive(Adhoc)]
-   generates not be #[macro_export] for now.
-
-   (In the future we will change these.  It will be like this
-	define_derive_adhoc!{ [pub] MACNAME = TEMPLATE }
-   and
-        https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/issues/1
-   but see "Cross-crate API stability" in NOTES.md.)
-
-
  * Make things work if you have a normal crate that imports things
    in a normal way.
 

@@ -82,3 +82,10 @@ We need to think properly about the following:
  * `derive_adhoc_expand!` should perhaps take an argument saying what
    the driver is.  Right now it gets the driver in `{ }` so actually
    wouldn't be ambiguous, and maybe we could just punt.
+
+ * The macro encapsulating the struct body that #[derive(Adhoc)]
+   generates ought to work like this
+	define_derive_adhoc!{ [pub] MACNAME = TEMPLATE }
+   and
+        https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/issues/1
+

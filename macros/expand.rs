@@ -374,13 +374,13 @@ impl<O: ExpansionOutput> RepeatedTemplate<O> {
     }
 }
 
-// This implements the actual template engine
-//
-// In my design, the input contains, firstly, literally the definition
-// that #[derive(Adhoc)] was applied to (see NOTES.txt).
-// Using the literal input, rather than some pre-parsed version, is
-// slower, but means that we aren't inventing a nontrivial data format which
-// potentially crosses crate boundaries with semver implications.
+/// `derive_adhoc_expand!` -- implements the actual template engine
+///
+/// In my design, the input contains, firstly, literally the definition
+/// that #[derive(Adhoc)] was applied to (see NOTES.txt).
+/// Using the literal input, rather than some pre-parsed version, is
+/// slower, but means that we aren't inventing a nontrivial data format which
+/// potentially crosses crate boundaries with semver implications.
 pub fn derive_adhoc_expand_func_macro(
     input: TokenStream,
 ) -> syn::Result<TokenStream> {

@@ -19,7 +19,7 @@ impl Parse for PrecannedInvocationsAttr {
     }
 }
 
-// This is #[derive(Adhoc)]
+/// This is #[derive(Adhoc)]
 pub fn derive_adhoc_derive_macro(
     input: TokenStream,
 ) -> Result<TokenStream, syn::Error> {
@@ -29,10 +29,6 @@ pub fn derive_adhoc_derive_macro(
     let input: syn::DeriveInput = syn::parse2(input)?;
 
     let mac_name = format_ident!("derive_adhoc_apply_{}", &input.ident);
-    let export = match &input.vis {
-        syn::Visibility::Public(_) => Some(quote! { #[macro_export] }),
-        _ => None,
-    };
 
     let precanned_paths: Vec<syn::Path> = input
         .attrs
@@ -53,7 +49,6 @@ pub fn derive_adhoc_derive_macro(
 
     let mut output = quote! {
         #[allow(unused_macros)]
-        #export
         macro_rules! #mac_name {
             {
                 $($template:tt)*
