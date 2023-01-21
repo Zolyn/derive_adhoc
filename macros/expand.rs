@@ -54,10 +54,8 @@ where
     O: ExpansionOutput,
 {
     fn expand_select1(&self, ctx: &Context, out: &mut O) -> syn::Result<()> {
-        let mut found: Result<
-            Option<(Span, &Template<O>)>,
-            Vec<ErrorLoc>,
-        > = Ok(None);
+        let mut found: Result<Option<(Span, &Template<O>)>, Vec<ErrorLoc>> =
+            Ok(None);
 
         for (condition, consequence) in &self.tests {
             if !condition.eval_bool(ctx)? {
