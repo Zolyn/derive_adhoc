@@ -295,7 +295,7 @@ impl<'c> Context<'c> {
         let r = W::current(self).ok_or_else(|| {
             syn::Error::new(
                 why.span(),
-                format_args!(
+                format!(
                     "must be within a {} (so, in a repeat group)",
                     W::level_display_name(),
                 ),

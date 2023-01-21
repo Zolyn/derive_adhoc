@@ -9,12 +9,22 @@
 use crate::framework::*;
 
 pub enum AttrValue<'l> {
-    Unit,
-    Deeper,
+    Unit(Span),
+    Deeper(Span),
     Lit(&'l syn::Lit),
 }
 
 pub use AttrValue as AV;
+
+impl Spanned for AttrValue<'_> {
+    fn span(&self) -> Span {
+        match self {
+            AV::Unit(span) => *span,
+            AV::Deeper(span) => *span,
+            AV::Lit(lit) => lit.span(),
+        }
+    }
+}
 
 impl<O> Expand<O> for SubstIf<O>
 where
@@ -247,18 +257,22 @@ impl SubstAttr {
 impl<'l> AttrValue<'l> {
     fn expand<O>(
         &self,
-        span: Span,
+        tspan: Span,
         as_: &SubstAttrAs,
         out: &mut O,
     ) -> syn::Result<()>
     where
         O: ExpansionOutput,
     {
+        fn spans(tspan: Span, vspan: Span) -> [(Span, &'static str); 2] {
+            [(vspan, "attribute value"), (tspan, "template")]
+        }
+
         let lit = match self {
-            AttrValue::Unit => return Err(span.error(
+            AttrValue::Unit(vspan) => return Err(spans(tspan, *vspan).error(
  "tried to expand attribute which is just a unit, not a literal"
             )),
-            AttrValue::Deeper => return Err(span.error(
+            AttrValue::Deeper(vspan) => return Err(spans(tspan, *vspan).error(
  "tried to expand attribute which is nested list, not a value",
             )),
             AttrValue::Lit(lit) => lit,
@@ -266,7 +280,7 @@ impl<'l> AttrValue<'l> {
 
         fn lit_as<T>(
             lit: &syn::Lit,
-            span: Span,
+            tspan: Span,
             as_: &SubstAttrAs,
         ) -> syn::Result<T>
         where
@@ -277,7 +291,7 @@ impl<'l> AttrValue<'l> {
                 // having checked derive_builder, it doesn't handle
                 // Lit::Verbatim so I guess we don't need to either.
                 _ => {
-                    return Err(span.error(format!(
+                    return Err(spans(tspan, lit.span()).error(format!(
                         "expected string literal, for conversion to {}",
                         as_,
                     )))
@@ -291,7 +305,7 @@ impl<'l> AttrValue<'l> {
         use SubstAttrAs as SAS;
         match as_ {
             SAS::lit => out.push_syn_lit(lit),
-            SAS::ty => out.push_syn_type(span, &lit_as(lit, span, as_)?),
+            SAS::ty => out.push_syn_type(tspan, &lit_as(lit, tspan, as_)?),
         }
         Ok(())
     }

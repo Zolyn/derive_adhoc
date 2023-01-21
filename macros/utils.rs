@@ -1,18 +1,44 @@
 //! Utilities for proc macro implementation
 
-//---------- SpannedExt ----------
+//---------- MakeErrorExt ----------
 
 use crate::prelude::*;
 use proc_macro_crate::{crate_name, FoundCrate};
 
-pub trait SpannedExt: Spanned {
+pub trait MakeError {
     /// Convenience method to make an error
-    fn error<M: Display>(&self, m: M) -> syn::Error {
-        syn::Error::new(self.span(), m)
+    fn error<M: AsRef<str>>(&self, m: M) -> syn::Error;
+}
+
+impl<T: Spanned> MakeError for T {
+    fn error<M: AsRef<str>>(&self, m: M) -> syn::Error {
+        syn::Error::new(self.span(), m.as_ref())
     }
 }
 
-impl<T: Spanned> SpannedExt for T {}
+/// Generates multiple copies of the error, for multiple places
+///
+/// Each entry in the array must have a string indicating to the user
+/// what kind of location this is.
+/// For example, `(tspan, "template")`.
+///
+/// # Panics
+///
+/// Panics if passed an empty slice.
+impl MakeError for [(Span, &str)] {
+    fn error<M: AsRef<str>>(&self, m: M) -> syn::Error {
+        let mut locs = self.into_iter().cloned();
+        let mk = |(span, frag): (Span, _)| {
+            span.error(format!("{} ({})", m.as_ref(), frag))
+        };
+        let first = locs.next().expect("at least one span needed!");
+        let mut build = mk(first);
+        for rest in locs {
+            build.combine(mk(rest))
+        }
+        build
+    }
+}
 
 //---------- ToTokensPunctComposable ----------
 
