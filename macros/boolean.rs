@@ -93,7 +93,7 @@ impl Subst<BooleanContext> {
             | SD::tgnames(_, no_bool)
             | SD::twheres(_, no_bool)
             | SD::paste(_, _, no_bool)
-            | SD::when(_, no_bool)
+            | SD::when(_, no_bool, _)
             | SD::For(_, no_bool)
             | SD::If(_, no_bool) => void::unreachable(*no_bool),
         };

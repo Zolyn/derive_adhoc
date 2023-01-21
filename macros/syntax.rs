@@ -117,7 +117,7 @@ pub enum SubstDetails<O: SubstParseContext> {
     paste(Template<paste::Items>, O::NoPaste, O::NoBool),
 
     // special
-    when(Box<Subst<BooleanContext>>, O::NoBool),
+    when(Box<Subst<BooleanContext>>, O::NoBool, O::NoNonterminal),
 
     // expressions
     False(O::BoolOnly),
@@ -413,7 +413,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         keyword! { fattrs(input.parse()?, no_paste?, no_bool?) }
 
         keyword! { paste(Template::parse(input, ())?, no_paste?, no_bool?) }
-        keyword! { when(input.parse()?, no_bool?) }
+        keyword! { when(input.parse()?, no_bool?, no_nonterminal?) }
 
         if kw == "false" {
             return from_sd(SD::False(bool_only?));
@@ -589,7 +589,7 @@ impl<O: SubstParseContext> RepeatedTemplate<O> {
                 TE::Ident(_) | TE::Literal(_) | TE::Punct(..) => elem,
 
                 TE::Subst(subst) => match subst.sd {
-                    SD::when(when, _) => {
+                    SD::when(when, ..) => {
                         whens.push(when);
                         continue;
                     }
