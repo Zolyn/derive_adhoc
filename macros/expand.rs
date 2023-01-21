@@ -264,7 +264,7 @@ where
 impl SubstAttr {
     fn expand<O>(
         &self,
-        _ctx: &Context,
+        ctx: &Context,
         out: &mut O,
         pattrs: &PreprocessedAttrs,
     ) -> syn::Result<()>
@@ -272,10 +272,11 @@ impl SubstAttr {
         O: ExpansionOutput,
     {
         let mut found = None;
+        let error_loc = || [(self.span(), "expansion"), ctx.error_loc()];
 
         self.path.search(pattrs, &mut |av: AttrValue| {
             if found.is_some() {
-                return Err(self.error(
+                return Err(error_loc().error(
                     "tried to expand just attribute value, but it was specified multiple times"
                 ));
             }
@@ -284,7 +285,7 @@ impl SubstAttr {
         })?;
 
         let found = found.ok_or_else(|| {
-            self.error(
+            error_loc().error(
                 "attribute value expanded, but no value in data structure definition"
             )
         })?;
