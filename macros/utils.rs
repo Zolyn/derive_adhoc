@@ -1,16 +1,16 @@
 //! Utilities for proc macro implementation
 
-//---------- SpannedExt ----------
+//---------- MakeErrorExt ----------
 
 use crate::prelude::*;
 use proc_macro_crate::{crate_name, FoundCrate};
 
-pub trait SpannedExt {
+pub trait MakeError {
     /// Convenience method to make an error
     fn error<M: Display>(&self, m: M) -> syn::Error;
 }
 
-impl<T: Spanned> SpannedExt for T {
+impl<T: Spanned> MakeError for T {
     fn error<M: Display>(&self, m: M) -> syn::Error {
         syn::Error::new(self.span(), m)
     }
@@ -25,7 +25,7 @@ impl<T: Spanned> SpannedExt for T {
 /// # Panics
 ///
 /// Panics if passed an empty slice.
-impl SpannedExt for [(Span, &str)] {
+impl MakeError for [(Span, &str)] {
     fn error<M: Display>(&self, m: M) -> syn::Error {
         let mut locs = self.into_iter().cloned();
         let mk = |(span, frag): (Span, _)| {
