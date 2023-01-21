@@ -16,16 +16,19 @@ impl<T: Spanned> MakeError for T {
     }
 }
 
-/// Generates multiple copies of the error, for multiple places
+/// Error location: span and what role that span plays
 ///
-/// Each entry in the array must have a string indicating to the user
+/// Includes string indicating to the user
 /// what kind of location this is.
 /// For example, `(tspan, "template")`.
+pub type ErrorLoc = (Span, &'static str);
+
+/// Generates multiple copies of the error, for multiple places
 ///
 /// # Panics
 ///
 /// Panics if passed an empty slice.
-impl MakeError for [(Span, &str)] {
+impl MakeError for [ErrorLoc] {
     fn error<M: AsRef<str>>(&self, m: M) -> syn::Error {
         let mut locs = self.into_iter().cloned();
         let mk = |(span, frag): (Span, _)| {

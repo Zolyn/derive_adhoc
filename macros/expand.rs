@@ -56,7 +56,7 @@ where
     fn expand_select1(&self, ctx: &Context, out: &mut O) -> syn::Result<()> {
         let mut found: Result<
             Option<(Span, &Template<O>)>,
-            Vec<(Span, &'static str)>,
+            Vec<ErrorLoc>,
         > = Ok(None);
 
         for (condition, consequence) in &self.tests {
@@ -303,7 +303,7 @@ impl<'l> AttrValue<'l> {
     where
         O: ExpansionOutput,
     {
-        fn spans(tspan: Span, vspan: Span) -> [(Span, &'static str); 2] {
+        fn spans(tspan: Span, vspan: Span) -> [ErrorLoc; 2] {
             [(vspan, "attribute value"), (tspan, "template")]
         }
 
