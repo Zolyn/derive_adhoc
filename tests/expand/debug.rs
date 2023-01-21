@@ -27,19 +27,33 @@ define_derive_adhoc! {
         fn fmt(&self, f: &mut Formatter<'_>)
                  -> Result<(), fmt::Error>
         {
-            f.debug_struct(stringify!($tname))
+            #[allow(unused_mut)]
+            let mut ds = f.debug_struct(stringify!($tname));
                 $(
                     ${if fmeta(debug(skip)) {
+                    } else if fmeta(debug(call)) {
+       ${fmeta(debug(call))} (&mut ds, stringify!($fname), &self.$fname)?;
                     } else if fmeta(debug(into)) {
-              .field(stringify!($fname),
+              ds.field(stringify!($fname),
        &< ${fmeta(debug(into)) as ty} as From<&$ftype> >::from(&self.$fname)
-              )
+              );
                     } else {
-              .field(stringify!($fname), &self.$fname)
+              ds.field(stringify!($fname), &self.$fname);
                     }}
                 )
-                .finish()
+                ds.finish()
         }
+    }
+}
+
+mod custom {
+    use super::*;
+
+    pub fn fmt(ds: &mut fmt::DebugStruct, name: &'static str, value: &char)
+               -> fmt::Result
+    {
+        ds.field(name, &(*value as u32));
+        Ok(())
     }
 }
 
@@ -63,6 +77,8 @@ struct DataType {
     bar: Vec<String>,
     #[adhoc(debug(skip))]
     opaque: Opaque,
+    #[adhoc(debug(call="custom::fmt"))]
+    custom: char,
 }
 
 fn main() {
@@ -70,10 +86,11 @@ fn main() {
         foo: 42,
         bar: ["a", "bar"].iter().map(|s| s.to_string()).collect(),
         opaque: Opaque,
+        custom: 'y',
     };
 
     assert_eq!(
         DebugExt::to_debug(&dt),
-        "DataType { foo: 42, bar: PrettyVec([\"a\", \"bar\"]) }",
+        "DataType { foo: 42, bar: PrettyVec([\"a\", \"bar\"]), custom: 121 }",
     );
 }
