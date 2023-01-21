@@ -181,6 +181,11 @@ derive-adhoc treats them as having a single (unnamed) variant.
    `${Xmeta}` must reference a (supplied) `#[adhoc]` meta item,
    whose value must be a literal.
 
+ * **`${CASE_CHANGE ...}`**:
+   Expands the content, and changes its case
+   (eg. uppercase to lowercase, etc.
+   See [Case changing](#case-changing).
+
  * **`${when CONDITION}`**:
    Allowed only within repetitions, and only at the toplevel,
    before other expansions.
@@ -215,3 +220,31 @@ They are found within `${if }` and `${when }`.
 
  * **`false`, `true`, `not(CONDITION)`, 
    `any(COND1,COND2,...)`, `all(COND1,COND2,...)`**.
+
+## Case changing
+
+`${CASE_CHANGE ...}` makes an identifier
+with a different case to the input which produces it.
+This is useful to make identifiers with the natural spelling
+for their kind,
+out of identifiers originally for something else.
+
+The content must be a single (terminal) expansion item
+which would be valid within `${paste }`.
+If the content's expansion is a path, only the final segment is changed.
+`${CASE_CHANGE }` may appear within `${paste }` to change the case of
+a paste fragment, before concatenation.
+(Concatenating before changing case, `${CASE_CHANGE ${paste ...}}`,
+is not supported.)
+
+This table shows the supported case styles.
+Note that changing the case can add and remove punctuation.
+The precise details are as for [`heck`],
+which is used to implement the actual case changing.
+
+| `CASE_CHANGE`        | `CASE_CHANGE` aliases            | Name in [`heck`] (also an alias)  | Example of results    |
+|----------------------|----------------------------------|-----------------------------------|-----------------------|
+| `pascal_case`        | `PascalCase` `upper_camel_case`  | `UpperCamelCase`                  | `PascalCase`          |
+| `snake_case`         |                                  | `SnakeCase`                       | `snake_case`          |
+| `shouty_snake_case`  | `SHOUTY_SNAKE_CASE`              | `ShoutySnakeCase`                 | `SHOUTY_SNAKE_CASE`   |
+| `lower_camel_case`   | `lowerCamelCase`                 | `LowerCamelCase`                  | `lowerCamelCase`      |

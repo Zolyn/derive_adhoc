@@ -129,6 +129,10 @@ impl<O: SubstParseContext> Subst<O> {
                 body.analyse_repeat(visitor)?;
                 None
             }
+            SD::ChangeCase(body, ..) => {
+                body.analyse_repeat(visitor)?;
+                None
+            }
             SD::when(..) => None, // out-of-place when, ignore it
             SD::not(cond, _) => {
                 cond.analyse_repeat(visitor)?;

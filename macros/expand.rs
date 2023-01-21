@@ -112,6 +112,7 @@ where
         match &self.sd {
             SD::tname(_) => out.push_ident(&ctx.top.ident),
             SD::ttype(_) => out.push_idpath(
+                self.kw.span(),
                 |_| {},
                 &ctx.top.ident,
                 |out| {
@@ -144,7 +145,7 @@ where
             }
             SD::ftype(_) => {
                 let f = ctx.field(self)?;
-                out.push_syn_type(&f.field.ty);
+                out.push_syn_type(self.kw.span(), &f.field.ty);
             }
             SD::tmeta(wa) => do_meta(wa, out, ctx.tattrs)?,
             SD::vmeta(wa) => do_meta(wa, out, ctx.variant(wa)?.pattrs)?,
@@ -187,6 +188,9 @@ where
 
             SD::paste(content, np, ..) => {
                 out.expand_paste(np, ctx, self.span(), content)?
+            }
+            SD::ChangeCase(content, case, nc, ..) => {
+                out.expand_case(nc, *case, ctx, self.span(), content)?
             }
 
             SD::when(..) => out.write_error(
@@ -287,7 +291,7 @@ impl<'l> AttrValue<'l> {
         use SubstAttrAs as SAS;
         match as_ {
             SAS::lit => out.push_syn_lit(lit),
-            SAS::ty => out.push_syn_type(&lit_as(lit, span, as_)?),
+            SAS::ty => out.push_syn_type(span, &lit_as(lit, span, as_)?),
         }
         Ok(())
     }

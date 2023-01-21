@@ -20,6 +20,7 @@ pub struct SubstInput {
 #[derive(Debug)]
 pub struct Template<O: SubstParseContext> {
     pub elements: Vec<TemplateElement<O>>,
+    pub no_nonterminal: O::NoNonterminal,
 }
 
 #[derive(Debug)]
@@ -113,10 +114,16 @@ pub enum SubstDetails<O: SubstParseContext> {
     twheres(O::NoPaste, O::NoBool),
 
     // expansion manipulation
-    paste(Template<paste::Items>, O::NoPaste, O::NoBool),
+    paste(Template<paste::Items>, O::NoPaste, O::NoCase, O::NoBool),
+    ChangeCase(
+        Box<Subst<paste::Items<paste::WithinCaseContext>>>,
+        paste::ChangeCase,
+        O::NoCase,
+        O::NoBool,
+    ),
 
     // special
-    when(Box<Subst<BooleanContext>>, O::NoBool),
+    when(Box<Subst<BooleanContext>>, O::NoBool, O::NoNonterminal),
 
     // expressions
     False(O::BoolOnly),
@@ -178,7 +185,7 @@ impl Parse for SubstInput {
         let driver;
         let brace_token = braced!(driver in input);
         let driver = driver.parse()?;
-        let template = input.parse()?;
+        let template = Template::parse(input, ())?;
         Ok(SubstInput {
             brace_token,
             driver,
@@ -220,8 +227,11 @@ impl Spanned for SubstAttrPath {
     }
 }
 
-impl<O: SubstParseContext> Parse for Template<O> {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
+impl<O: SubstParseContext> Template<O> {
+    fn parse(
+        input: ParseStream,
+        no_nonterminal: O::NoNonterminal,
+    ) -> syn::Result<Self> {
         // eprintln!("@@@@@@@@@@ PARSE {}", &input);
         let mut good = vec![];
         let mut errors = ErrorAccumulator::default();
@@ -232,7 +242,10 @@ impl<O: SubstParseContext> Parse for Template<O> {
                 Ok(())
             });
         }
-        errors.finish_with(Template { elements: good })
+        errors.finish_with(Template {
+            elements: good,
+            no_nonterminal,
+        })
     }
 }
 
@@ -242,7 +255,11 @@ impl<O: SubstParseContext> Parse for TemplateElement<O> {
             TT::Group(group) => {
                 let delim_span = group.span_open();
                 let delimiter = group.delimiter();
-                let template: Template<O> = syn::parse2(group.stream())?;
+                let no_nonterminal = O::no_nonterminal(&delim_span)?;
+                let t_parser = |input: ParseStream| {
+                    Template::parse(input, no_nonterminal)
+                };
+                let template = t_parser.parse2(group.stream())?;
                 TE::Group {
                     delim_span,
                     delimiter,
@@ -263,33 +280,10 @@ impl<O: SubstParseContext> Parse for TemplateElement<O> {
                     let dollar: Punct = input.parse()?;
                     let span = dollar.span();
                     TE::Punct(dollar, O::no_paste(&span)?)
-                } else if la.peek(token::Brace) {
-                    let exp;
-                    struct Only<O: SubstParseContext>(Subst<O>);
-                    impl<O: SubstParseContext> Parse for Only<O> {
-                        fn parse(input: ParseStream) -> syn::Result<Self> {
-                            let subst = input.parse()?;
-                            let unwanted: Option<TT> = input.parse()?;
-                            if let Some(unwanted) = unwanted {
-                                return Err(unwanted.error(
-                                    "unexpected arguments to expansion keyword"
-                                ));
-                            }
-                            Ok(Only(subst))
-                        }
-                    }
-                    let _brace = braced!(exp in input);
-                    let exp = exp.parse()?;
-                    let Only(exp) = exp;
-                    TE::Subst(exp)
                 } else if la.peek(token::Paren) {
                     RepeatedTemplate::parse_in_parens(input)?
-                } else if la.peek(syn::Ident::peek_any) {
-                    let exp: TokenTree = input.parse()?; // get it as TT
-                    let exp = syn::parse2(exp.to_token_stream())?;
-                    TE::Subst(exp)
                 } else {
-                    return Err(la.error());
+                    TE::Subst(Subst::parse_after_dollar(la, input)?)
                 }
             }
         })
@@ -350,6 +344,49 @@ impl Parse for SubstAttrPath {
     }
 }
 
+impl<O: SubstParseContext> Subst<O> {
+    /// Parses everything including a `$` (which we insist on)
+    fn parse_entire(input: ParseStream) -> syn::Result<Self> {
+        let _dollar: Token![$] = input.parse()?;
+        let la = input.lookahead1();
+        Self::parse_after_dollar(la, input)
+    }
+
+    /// Parses everything after the `$`, possibly including a pair of `{ }`
+    fn parse_after_dollar(
+        la: Lookahead1,
+        input: ParseStream,
+    ) -> syn::Result<Self> {
+        if la.peek(token::Brace) {
+            let exp;
+            struct Only<O: SubstParseContext>(Subst<O>);
+            impl<O: SubstParseContext> Parse for Only<O> {
+                fn parse(input: ParseStream) -> syn::Result<Self> {
+                    let subst = input.parse()?;
+                    let unwanted: Option<TT> = input.parse()?;
+                    if let Some(unwanted) = unwanted {
+                        return Err(unwanted.error(
+                            "unexpected arguments to expansion keyword",
+                        ));
+                    }
+                    Ok(Only(subst))
+                }
+            }
+            let _brace = braced!(exp in input);
+            let exp = exp.parse()?;
+            let Only(exp) = exp;
+            Ok(exp)
+        } else if la.peek(syn::Ident::peek_any) {
+            let exp: TokenTree = input.parse()?; // get it as TT
+            let exp = syn::parse2(exp.to_token_stream())?;
+            Ok(exp)
+        } else {
+            return Err(la.error());
+        }
+    }
+}
+
+/// Parses only the content (ie, after the `$` and inside any `{ }`)
 impl<O: SubstParseContext> Parse for Subst<O> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let kw = input.call(syn::Ident::parse_any)?;
@@ -378,8 +415,10 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         }
 
         let no_paste = O::no_paste(&kw);
+        let no_case = O::no_case(&kw);
         let no_bool = O::no_bool(&kw);
         let bool_only = O::bool_only(&kw);
+        let no_nonterminal = O::no_nonterminal(&kw);
 
         keyword! { tname(no_bool?) }
         keyword! { ttype(no_bool?) }
@@ -400,8 +439,13 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         keyword! { vattrs(input.parse()?, no_paste?, no_bool?) }
         keyword! { fattrs(input.parse()?, no_paste?, no_bool?) }
 
-        keyword! { paste(input.parse()?, no_paste?, no_bool?) }
-        keyword! { when(input.parse()?, no_bool?) }
+        keyword! {
+            paste {
+                let template = Template::parse(input, ())?;
+            }
+            (template, no_paste?, no_case?, no_bool?)
+        }
+        keyword! { when(input.parse()?, no_bool?, no_nonterminal?) }
 
         if kw == "false" {
             return from_sd(SD::False(bool_only?));
@@ -410,7 +454,10 @@ impl<O: SubstParseContext> Parse for Subst<O> {
             return from_sd(SD::True(bool_only?));
         }
         if kw == "if" {
-            return from_sd(SD::If(input.parse()?, no_bool?));
+            return from_sd(SD::If(
+                SubstIf::parse(input, no_nonterminal?)?,
+                no_bool?,
+            ));
         }
         if kw == "for" {
             return from_sd(SD::For(
@@ -441,12 +488,24 @@ impl<O: SubstParseContext> Parse for Subst<O> {
             (inner.parse()?, bool_only?)
         }
 
+        if let Ok(case) = kw.to_string().parse() {
+            return from_sd(SD::ChangeCase(
+                Box::new(Subst::parse_entire(input)?),
+                case,
+                no_case?,
+                no_bool?,
+            ));
+        }
+
         Err(kw.error("unknown derive-adhoc keyword"))
     }
 }
 
-impl<O: SubstParseContext> Parse for SubstIf<O> {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
+impl<O: SubstParseContext> SubstIf<O> {
+    fn parse(
+        input: ParseStream,
+        no_nonterminal: O::NoNonterminal,
+    ) -> syn::Result<Self> {
         let mut tests = Vec::new();
         let mut otherwise = None;
 
@@ -454,7 +513,7 @@ impl<O: SubstParseContext> Parse for SubstIf<O> {
             let condition = input.parse()?;
             let content;
             let _br = braced![ content in input ];
-            let consequence = content.parse()?;
+            let consequence = Template::parse(&content, no_nonterminal)?;
             tests.push((condition, consequence));
 
             // (I'd like to use a lookahead here too, but it doesn't
@@ -473,7 +532,8 @@ impl<O: SubstParseContext> Parse for SubstIf<O> {
             } else if lookahead.peek(token::Brace) {
                 let content;
                 let _br = braced![ content in input ];
-                otherwise = Some(content.parse()?);
+                otherwise =
+                    Some(Template::parse(&content, no_nonterminal)?.into());
                 break; // no more input allowed.
             } else {
                 return Err(lookahead.error());
@@ -557,7 +617,8 @@ impl<O: SubstParseContext> RepeatedTemplate<O> {
         span: Span,
         over: Option<RepeatOver>,
     ) -> Result<RepeatedTemplate<O>, syn::Error> {
-        let mut template: Template<O> = input.parse()?;
+        let no_nonterminal = O::no_nonterminal(&span)?;
+        let mut template = Template::parse(input, no_nonterminal)?;
 
         // split `when` (and [todo] `for`) off
         let mut whens = vec![];
@@ -569,7 +630,7 @@ impl<O: SubstParseContext> RepeatedTemplate<O> {
                 TE::Ident(_) | TE::Literal(_) | TE::Punct(..) => elem,
 
                 TE::Subst(subst) => match subst.sd {
-                    SD::when(when, _) => {
+                    SD::when(when, ..) => {
                         whens.push(when);
                         continue;
                     }

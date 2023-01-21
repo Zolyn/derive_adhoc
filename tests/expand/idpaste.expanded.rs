@@ -9,10 +9,11 @@ struct PreTypeNamesPost {
     error: std::slice::RChunksMut<'static, ()>,
 }
 struct TopName<F> {
-    f: F,
+    top_name_field: F,
 }
+#[allow(non_snake_case)]
 struct PreTopNamePost<F> {
-    f: F,
+    TopNameField: F,
 }
 struct ExpandName {
     #[adhoc(prefix = "attr", suffix = 24)]

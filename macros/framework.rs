@@ -81,13 +81,24 @@ pub struct WithinField<'c> {
 pub trait SubstParseContext {
     /// Uninhabited iff this lexical context is within `${paste }`
     type NoPaste: Debug + Copy + Sized;
+    /// Uninhabited iff this lexical context is within `${case }`
+    type NoCase: Debug + Copy + Sized;
     /// Uninhabited iff this lexical context is within a condition.
     type NoBool: Debug + Copy + Sized;
+    /// Uninhabited unless lexical context allows other than a single subst
+    ///
+    /// Used for `${case }`; could be used in other places where we
+    /// accept the `${...}` syntax for an expansion, but want to
+    /// reject repetitions, `${if }`, and so on.
+    type NoNonterminal: Debug + Copy + Sized;
     /// Uninhabited unless this lexical context is within a condition.
     type BoolOnly: Debug + Copy + Sized;
 
     fn no_paste(span: &impl Spanned) -> syn::Result<Self::NoPaste>;
+    fn no_case(span: &impl Spanned) -> syn::Result<Self::NoCase>;
     fn no_bool(span: &impl Spanned) -> syn::Result<Self::NoBool>;
+    fn no_nonterminal(span: &impl Spanned)
+        -> syn::Result<Self::NoNonterminal>;
 
     fn bool_only(span: &impl Spanned) -> syn::Result<Self::BoolOnly> {
         Err(span.error(
@@ -127,8 +138,16 @@ pub trait ExpansionOutput: SubstParseContext {
     /// Consisting of some prefix tokens (perhaps a scoping path),
     /// the actual identifer,
     /// and some suffix tokens (perhaps generics).
-    fn push_idpath<A, B>(&mut self, pre: A, ident: &syn::Ident, post: B)
-    where
+    ///
+    /// `template_entry_span` is the span of the part of the template
+    /// which expanded into this identifier path.
+    fn push_idpath<A, B>(
+        &mut self,
+        template_entry_span: Span,
+        pre: A,
+        ident: &syn::Ident,
+        post: B,
+    ) where
         A: FnOnce(&mut TokenAccumulator),
         B: FnOnce(&mut TokenAccumulator);
 
@@ -140,7 +159,7 @@ pub trait ExpansionOutput: SubstParseContext {
     fn push_syn_lit(&mut self, v: &syn::Lit);
 
     /// [`syn::Type`]
-    fn push_syn_type(&mut self, v: &syn::Type);
+    fn push_syn_type(&mut self, te_span: Span, v: &syn::Type);
 
     /// Some other substitution which generates tokens
     ///
@@ -178,6 +197,16 @@ pub trait ExpansionOutput: SubstParseContext {
         ctx: &Context,
         span: Span,
         paste_body: &Template<paste::Items>,
+    ) -> syn::Result<()>;
+
+    /// Expand a `${case }`
+    fn expand_case(
+        &mut self,
+        np: &Self::NoCase,
+        case: paste::ChangeCase,
+        ctx: &Context,
+        span: Span,
+        paste_body: &Subst<paste::Items<paste::WithinCaseContext>>,
     ) -> syn::Result<()>;
 
     /// Note that an error occurred
@@ -251,10 +280,18 @@ impl TokenAccumulator {
 impl SubstParseContext for TokenAccumulator {
     type NoPaste = ();
     type NoBool = ();
+    type NoCase = ();
+    type NoNonterminal = ();
     fn no_bool(_: &impl Spanned) -> syn::Result<()> {
         Ok(())
     }
     fn no_paste(_: &impl Spanned) -> syn::Result<()> {
+        Ok(())
+    }
+    fn no_case(_: &impl Spanned) -> syn::Result<()> {
+        Ok(())
+    }
+    fn no_nonterminal(_: &impl Spanned) -> syn::Result<()> {
         Ok(())
     }
 
@@ -271,8 +308,13 @@ impl ExpansionOutput for TokenAccumulator {
     ) {
         self.write_tokens(ident)
     }
-    fn push_idpath<A, B>(&mut self, pre: A, ident: &syn::Ident, post: B)
-    where
+    fn push_idpath<A, B>(
+        &mut self,
+        _te_span: Span,
+        pre: A,
+        ident: &syn::Ident,
+        post: B,
+    ) where
         A: FnOnce(&mut TokenAccumulator),
         B: FnOnce(&mut TokenAccumulator),
     {
@@ -283,7 +325,7 @@ impl ExpansionOutput for TokenAccumulator {
     fn push_syn_lit(&mut self, lit: &syn::Lit) {
         self.write_tokens(lit);
     }
-    fn push_syn_type(&mut self, ty: &syn::Type) {
+    fn push_syn_type(&mut self, _te_span: Span, ty: &syn::Type) {
         self.write_tokens(ty);
     }
     fn push_other_subst<S, F>(
@@ -308,6 +350,18 @@ impl ExpansionOutput for TokenAccumulator {
     ) -> syn::Result<()> {
         let mut items = paste::Items::new(span);
         paste_body.expand(ctx, &mut items);
+        items.assemble(self)
+    }
+    fn expand_case(
+        &mut self,
+        _no_case: &(),
+        case: paste::ChangeCase,
+        ctx: &Context,
+        span: Span,
+        paste_body: &Subst<paste::Items<paste::WithinCaseContext>>,
+    ) -> syn::Result<()> {
+        let mut items = paste::Items::new_case(span, case);
+        paste_body.expand(ctx, &mut items)?;
         items.assemble(self)
     }
     fn expand_bool_only(&mut self, bool_only: &Self::BoolOnly) -> ! {
