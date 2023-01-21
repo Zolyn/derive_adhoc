@@ -390,7 +390,7 @@ impl<O: SubstParseContext> Subst<O> {
 
 /// Parses only the content (ie, after the `$` and inside any `{ }`)
 impl<O: SubstParseContext> Parse for Subst<O> {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
+    fn parse<'i>(input: ParseStream<'i>) -> syn::Result<Self> {
         let kw = input.call(syn::Ident::parse_any)?;
         let output_marker = PhantomData;
         let from_sd = |sd| {
@@ -436,6 +436,12 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         let parse_if =
             |input| SubstIf::parse(input, kw.span(), no_nonterminal.clone()?);
 
+        let in_parens = |input: ParseStream<'i>| {
+            let inner;
+            let _paren = parenthesized!(inner in input);
+            Ok(inner)
+        };
+
         keyword! { tname(no_bool?) }
         keyword! { ttype(no_bool?) }
         keyword! { vname(no_bool?) }
@@ -473,27 +479,12 @@ impl<O: SubstParseContext> Parse for Subst<O> {
             no_bool?,
         )}
 
-        keyword! {
-            all {
-                let inner;
-                let _paren = parenthesized!(inner in input);
-            }
-            (Punctuated::parse_terminated(&inner)?, bool_only?)
-        }
-        keyword! {
-            any {
-                let inner;
-                let _paren = parenthesized!(inner in input);
-            }
-            (Punctuated::parse_terminated(&inner)?, bool_only?)
-        }
-        keyword! {
-            not {
-                let inner;
-                let _paren = parenthesized!(inner in input);
-            }
-            (inner.parse()?, bool_only?)
-        }
+        let any_all_contents = |input: ParseStream<'i>| {
+            Punctuated::parse_terminated(&in_parens(input)?)
+        };
+        keyword! { any(any_all_contents(input)?, bool_only?) }
+        keyword! { all(any_all_contents(input)?, bool_only?) }
+        keyword! { not(in_parens(input)?.parse()?, bool_only?) }
 
         if let Ok(case) = kw.to_string().parse() {
             return from_sd(SD::ChangeCase(
