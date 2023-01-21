@@ -28,7 +28,7 @@ mod repeat;
 mod syntax;
 
 #[doc=include_str!("../NOTES.md")]
-mod notes { }
+mod notes {}
 
 /// Template expansion engine, internal
 ///
