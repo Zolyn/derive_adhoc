@@ -48,6 +48,46 @@ where
     }
 }
 
+impl<O> SubstIf<O>
+where
+    Template<O>: ExpandInfallible<O>,
+    O: ExpansionOutput,
+{
+    fn expand_select1(&self, ctx: &Context, out: &mut O) -> syn::Result<()> {
+        let mut found: Result<Option<(Span, &Template<O>)>, Vec<ErrorLoc>> =
+            Ok(None);
+
+        for (condition, consequence) in &self.tests {
+            if !condition.eval_bool(ctx)? {
+                continue;
+            }
+            let cspan = condition.span();
+            let error_loc = |span| (span, "true condition");
+            match &mut found {
+                Ok(None) => found = Ok(Some((cspan, consequence))),
+                Ok(Some((span1, _))) => {
+                    found = Err(vec![
+                        ctx.error_loc(),
+                        error_loc(*span1),
+                        error_loc(cspan),
+                    ])
+                }
+                Err(several) => several.push(error_loc(cspan)),
+            }
+        }
+        let found = found
+            .map_err(|several| several.error("multiple conditions matched"))?
+            .map(|(_cspan, consequence)| consequence)
+            .or(self.otherwise.as_deref())
+            .ok_or_else(|| {
+                [ctx.error_loc(), (self.kw_span, "select1 expansion")]
+                    .error("no conditions matched, and no else clause")
+            })?;
+        found.expand(ctx, out);
+        Ok(())
+    }
+}
+
 impl<O> ExpandInfallible<O> for Template<O>
 where
     TemplateElement<O>: Expand<O>,
@@ -215,6 +255,7 @@ where
             | SD::any(_, bo)
             | SD::all(_, bo) => out.expand_bool_only(bo),
             SD::For(repeat, _) => repeat.expand(ctx, out),
+            SD::select1(conds, ..) => conds.expand_select1(ctx, out)?,
         };
         Ok(())
     }
@@ -223,7 +264,7 @@ where
 impl SubstAttr {
     fn expand<O>(
         &self,
-        _ctx: &Context,
+        ctx: &Context,
         out: &mut O,
         pattrs: &PreprocessedAttrs,
     ) -> syn::Result<()>
@@ -231,11 +272,12 @@ impl SubstAttr {
         O: ExpansionOutput,
     {
         let mut found = None;
+        let error_loc = || [(self.span(), "expansion"), ctx.error_loc()];
 
         self.path.search(pattrs, &mut |av: AttrValue| {
             if found.is_some() {
-                return Err(self.error(
-                    "tried to expand just attribute value, but it was specified multiple times"
+                return Err(error_loc().error(
+ "tried to expand just attribute value, but it was specified multiple times"
                 ));
             }
             found = Some(av);
@@ -243,8 +285,8 @@ impl SubstAttr {
         })?;
 
         let found = found.ok_or_else(|| {
-            self.error(
-                "attribute value expanded, but no value in data structure definition"
+            error_loc().error(
+ "attribute value expanded, but no value in data structure definition"
             )
         })?;
 
@@ -264,7 +306,7 @@ impl<'l> AttrValue<'l> {
     where
         O: ExpansionOutput,
     {
-        fn spans(tspan: Span, vspan: Span) -> [(Span, &'static str); 2] {
+        fn spans(tspan: Span, vspan: Span) -> [ErrorLoc; 2] {
             [(vspan, "attribute value"), (tspan, "template")]
         }
 

@@ -96,7 +96,8 @@ impl Subst<BooleanContext> {
             | SD::ChangeCase(_, _, _, no_bool)
             | SD::when(_, no_bool, _)
             | SD::For(_, no_bool)
-            | SD::If(_, no_bool) => void::unreachable(*no_bool),
+            | SD::If(_, no_bool)
+            | SD::select1(_, no_bool) => void::unreachable(*no_bool),
         };
         Ok(r)
     }

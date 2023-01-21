@@ -137,6 +137,7 @@ pub enum SubstDetails<O: SubstParseContext> {
     For(RepeatedTemplate<O>, O::NoBool),
     // Conditional substitution.
     If(SubstIf<O>, O::NoBool),
+    select1(SubstIf<O>, O::NoBool),
 }
 
 #[derive(Debug)]
@@ -148,6 +149,7 @@ pub struct SubstIf<O: SubstParseContext> {
     pub tests: Vec<(Subst<BooleanContext>, Template<O>)>,
     /// A final element to expand if all tests fail.
     pub otherwise: Option<Box<Template<O>>>,
+    pub kw_span: Span,
 }
 
 #[derive(Debug, Clone)]
@@ -388,7 +390,7 @@ impl<O: SubstParseContext> Subst<O> {
 
 /// Parses only the content (ie, after the `$` and inside any `{ }`)
 impl<O: SubstParseContext> Parse for Subst<O> {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
+    fn parse<'i>(input: ParseStream<'i>) -> syn::Result<Self> {
         let kw = input.call(syn::Ident::parse_any)?;
         let output_marker = PhantomData;
         let from_sd = |sd| {
@@ -401,15 +403,26 @@ impl<O: SubstParseContext> Parse for Subst<O> {
 
         // keyword!{ KEYWORD [ {BLOCK WITH BINDINGS} ] [ CONSTRUCTOR-ARGS ] }
         // expands to   if ... { return ... }
+        // KEYWORD can be "KEYWORD_STRING": CONSTRUCTOR
         macro_rules! keyword {
-            { $kw:ident $( $ca:tt )? } => { keyword!{ @ $kw { } $( $ca )? } };
-            { $kw:ident { $( $bindings:tt )* } $ca:tt } => {
-                keyword!{ @ $kw { $( $bindings )* } $ca }
+            { $kw:ident $( $rest:tt )* } => {
+                keyword!{ @ 1 stringify!($kw), $kw, $($rest)* }
             };
-            { @ $kw:ident { $( $bindings:tt )* } $( $constr_args:tt )? } => {
-                if kw == stringify!($kw) {
+            { $kw:literal: $constr:ident $( $rest:tt )* } => {
+                keyword!{ @ 1 $kw, $constr, $($rest)* }
+            };
+            { @ 1 $kw:expr, $constr:ident, $( $ca:tt )? } => {
+                keyword!{ @ 2 $kw, $constr, { } $( $ca )? }
+            };
+            { @ 1 $kw:expr, $constr:ident, { $( $bindings:tt )* } $ca:tt } => {
+                keyword!{ @ 2 $kw, $constr, { $( $bindings )* } $ca }
+            };
+            { @ 2 $kw:expr, $constr:ident,
+              { $( $bindings:tt )* } $( $constr_args:tt )?
+            } => {
+                if kw == $kw {
                     $( $bindings )*
-                    return from_sd(SD::$kw $( $constr_args )*);
+                    return from_sd(SD::$constr $( $constr_args )*);
                 }
             };
         }
@@ -419,6 +432,15 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         let no_bool = O::no_bool(&kw);
         let bool_only = O::bool_only(&kw);
         let no_nonterminal = O::no_nonterminal(&kw);
+
+        let parse_if =
+            |input| SubstIf::parse(input, kw.span(), no_nonterminal.clone()?);
+
+        let in_parens = |input: ParseStream<'i>| {
+            let inner;
+            let _paren = parenthesized!(inner in input);
+            Ok(inner)
+        };
 
         keyword! { tname(no_bool?) }
         keyword! { ttype(no_bool?) }
@@ -447,46 +469,22 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         }
         keyword! { when(input.parse()?, no_bool?, no_nonterminal?) }
 
-        if kw == "false" {
-            return from_sd(SD::False(bool_only?));
-        }
-        if kw == "true" {
-            return from_sd(SD::True(bool_only?));
-        }
-        if kw == "if" {
-            return from_sd(SD::If(
-                SubstIf::parse(input, no_nonterminal?)?,
-                no_bool?,
-            ));
-        }
-        if kw == "for" {
-            return from_sd(SD::For(
-                RepeatedTemplate::parse_for(input)?,
-                no_bool?,
-            ));
-        }
+        keyword! { "false": False(bool_only?) }
+        keyword! { "true": True(bool_only?) }
+        keyword! { "if": If(parse_if(input)?, no_bool?) }
+        keyword! { select1(parse_if(input)?, no_bool?) }
 
-        keyword! {
-            all {
-                let inner;
-                let _paren = parenthesized!(inner in input);
-            }
-            (Punctuated::parse_terminated(&inner)?, bool_only?)
-        }
-        keyword! {
-            any {
-                let inner;
-                let _paren = parenthesized!(inner in input);
-            }
-            (Punctuated::parse_terminated(&inner)?, bool_only?)
-        }
-        keyword! {
-            not {
-                let inner;
-                let _paren = parenthesized!(inner in input);
-            }
-            (inner.parse()?, bool_only?)
-        }
+        keyword! { "for": For(
+            RepeatedTemplate::parse_for(input)?,
+            no_bool?,
+        )}
+
+        let any_all_contents = |input: ParseStream<'i>| {
+            Punctuated::parse_terminated(&in_parens(input)?)
+        };
+        keyword! { any(any_all_contents(input)?, bool_only?) }
+        keyword! { all(any_all_contents(input)?, bool_only?) }
+        keyword! { not(in_parens(input)?.parse()?, bool_only?) }
 
         if let Ok(case) = kw.to_string().parse() {
             return from_sd(SD::ChangeCase(
@@ -504,6 +502,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
 impl<O: SubstParseContext> SubstIf<O> {
     fn parse(
         input: ParseStream,
+        kw_span: Span,
         no_nonterminal: O::NoNonterminal,
     ) -> syn::Result<Self> {
         let mut tests = Vec::new();
@@ -522,6 +521,18 @@ impl<O: SubstParseContext> SubstIf<O> {
                 // no more conditions if there is not an "else"
                 break;
             }
+
+            let lookahead1 = input.lookahead1();
+            if lookahead1.peek(syn::Ident) {
+                // this is another expansion keyword, then
+                // skipped `else if`
+                continue;
+            } else if lookahead1.peek(Token![else]) {
+                // else clause
+            } else {
+                return Err(lookahead1.error());
+            }
+
             let _else: Token![else] = input.parse()?;
 
             let lookahead = input.lookahead1();
@@ -543,7 +554,11 @@ impl<O: SubstParseContext> SubstIf<O> {
         // TODO: Q: What ensures that there are no unhandled
         // tokens left for us?
 
-        Ok(SubstIf { tests, otherwise })
+        Ok(SubstIf {
+            kw_span,
+            tests,
+            otherwise,
+        })
     }
 }
 
