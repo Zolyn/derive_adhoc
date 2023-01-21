@@ -221,6 +221,26 @@ to use `stringify!` from `std`, which works well with derive-adhoc.
 Would we support case conversion ?
 
 
+## Splitting off fields and handling subsets of the generics
+
+Syntax and semantics TBD.  Some notes:
+
+```text
+   For things that need to split off fields        struct Foo as above {
+   and talk only about subsets of the generics         field: Box<T>,
+      generic parameter uses (for fields)
+      		$fgens					T,
+		$fgens_omitted				'l, C
+      For explicit iteration, within ${for tgens ...} or $( ... )
+		$tgname					'l   	T   	C
+		$tgbounds ???
+
+   Something for being able to handle structs/unions/enums
+   equally in template, whatever that means.  We need to expand
+   something to struct/union/enum, and possibly the brackets and
+   commas in enum { ..., ..., }, and so on.
+```
+
 
 # Future plans wrt macro namespace questions
 
