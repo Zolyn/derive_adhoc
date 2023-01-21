@@ -1,15 +1,6 @@
 TEMPLATE FEATURES PLANNED
 =========================
 
-   String concatenation
-		${string ...}
-      Argument can contain any expansions,
-      which will be expanded into tokens and stringified,
-      and string literals (in " ").
-      No un-quoted literal text is allowed.
-      Expansion is a single string literal.
-      FTAOD  ${string ${string "y"}}  =>  r#""y""#
-
    Variant (or value) body and delimiter
 	${vbody ... }		{ ... }		struct [variant] or union
 				( ... )		tuple struct/variant

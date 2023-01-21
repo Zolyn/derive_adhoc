@@ -172,6 +172,19 @@ We need to think properly about the following:
    <https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/issues/1>
 
 
+# Future template features
+
+## String concatenation `${string ...}`
+		
+Argument can contain any expansions (will be expanded into tokens and
+stringified), and string literals (in `" "`).  No un-quoted literal
+text is allowed.  Expansion is a single string literal.  FTAOD
+`${string ${string "y"}}` expands to `r#""y""#`
+
+Do we need this?  Perhaps we should just expect people
+to use `stringify!` from `std`, which works well with derive-adhoc.
+
+
 # Future plans wrt macro namespace questions
 
 ## Deriving from things other than data structures
