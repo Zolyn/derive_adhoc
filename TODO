@@ -17,11 +17,6 @@ FEATURES WITH SYNTAX AND/OR SEMANTICS TBD
    equally in template, whatever that means.  We need to expand
    something to struct/union/enum, and possibly the brackets and
    commas in enum { ..., ..., }, and so on.
-
-   Case conversion of general strings (ie non-name expansions
-   within ${string }).
-
-
 OTHER TODO LIST ITEMS
 =====================
 

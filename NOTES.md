@@ -218,6 +218,9 @@ text is allowed.  Expansion is a single string literal.  FTAOD
 Do we need this?  Perhaps we should just expect people
 to use `stringify!` from `std`, which works well with derive-adhoc.
 
+Would we support case conversion ?
+
+
 
 # Future plans wrt macro namespace questions
 
