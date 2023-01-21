@@ -26,7 +26,7 @@ derive_adhoc!{
     struct Left {
         $(
             ${select1
-              fmeta(left) { $fname: $ftype, } else if
+              fmeta(left) { $fname: $ftype, }
               fmeta(right) { }
             }
         )
@@ -35,7 +35,7 @@ derive_adhoc!{
     struct Right {
         $(
             ${select1
-              fmeta(left) { } else if
+              fmeta(left) { }
               fmeta(right) { $fname: $ftype, }
             }
         )

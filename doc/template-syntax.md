@@ -193,6 +193,9 @@ derive-adhoc treats them as having a single (unnamed) variant.
 
  * **`${if COND1 { ... } else if COND2 { ... } else { ... }}`**:
    Conditionals.  The else clause is, of course, optional.
+   The `else if` between arms is also optional,
+   but `else` in the fallback clause is mandatory.
+   So you can write `${if COND1 { ... } COND2 { ... } else { ... }`.
 
  * **`${select1 COND1 { ... } else if COND2 { ... } else { ... }}`**:
    Conditionals which insist on expanding exactly one of the branches.

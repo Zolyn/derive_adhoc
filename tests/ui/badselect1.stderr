@@ -1,7 +1,7 @@
 error: multiple conditions matched (true condition)
   --> ui/badselect1.rs:30:15
    |
-30 |               fmeta(left) { $fname: $ftype, } else if
+30 |               fmeta(left) { $fname: $ftype, }
    |               ^^^^^
 
 error: multiple conditions matched (true condition)

@@ -528,6 +528,18 @@ impl<O: SubstParseContext> SubstIf<O> {
                 // no more conditions if there is not an "else"
                 break;
             }
+
+            let lookahead1 = input.lookahead1();
+            if lookahead1.peek(syn::Ident) {
+                // this is another expansion keyword, then
+                // skipped `else if`
+                continue;
+            } else if lookahead1.peek(Token![else]) {
+                // else clause
+            } else {
+                return Err(lookahead1.error());
+            }
+
             let _else: Token![else] = input.parse()?;
 
             let lookahead = input.lookahead1();
