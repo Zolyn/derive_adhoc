@@ -85,12 +85,20 @@ pub trait SubstParseContext {
     type NoCase: Debug + Copy + Sized;
     /// Uninhabited iff this lexical context is within a condition.
     type NoBool: Debug + Copy + Sized;
+    /// Uninhabited unless lexical context allows other than a single subst
+    ///
+    /// Used for `${case }`; could be used in other places where we
+    /// accept the `${...}` syntax for an expansion, but want to
+    /// reject repetitions, `${if }`, and so on.
+    type NoNonterminal: Debug + Copy + Sized;
     /// Uninhabited unless this lexical context is within a condition.
     type BoolOnly: Debug + Copy + Sized;
 
     fn no_paste(span: &impl Spanned) -> syn::Result<Self::NoPaste>;
     fn no_case(span: &impl Spanned) -> syn::Result<Self::NoCase>;
     fn no_bool(span: &impl Spanned) -> syn::Result<Self::NoBool>;
+    fn no_nonterminal(span: &impl Spanned)
+        -> syn::Result<Self::NoNonterminal>;
 
     fn bool_only(span: &impl Spanned) -> syn::Result<Self::BoolOnly> {
         Err(span.error(
@@ -255,6 +263,7 @@ impl SubstParseContext for TokenAccumulator {
     type NoPaste = ();
     type NoBool = ();
     type NoCase = ();
+    type NoNonterminal = ();
     fn no_bool(_: &impl Spanned) -> syn::Result<()> {
         Ok(())
     }
@@ -262,6 +271,9 @@ impl SubstParseContext for TokenAccumulator {
         Ok(())
     }
     fn no_case(_: &impl Spanned) -> syn::Result<()> {
+        Ok(())
+    }
+    fn no_nonterminal(_: &impl Spanned) -> syn::Result<()> {
         Ok(())
     }
 

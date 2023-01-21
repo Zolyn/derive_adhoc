@@ -16,7 +16,7 @@ pub use quote::{format_ident, quote, quote_spanned, ToTokens};
 pub use strum::IntoEnumIterator as _;
 pub use strum::{AsRefStr, Display, EnumIter, EnumString};
 pub use syn::ext::IdentExt;
-pub use syn::parse::{Parse, ParseStream};
+pub use syn::parse::{Parse, ParseStream, Parser};
 pub use syn::punctuated::Punctuated;
 pub use syn::spanned::Spanned;
 pub use syn::Token;

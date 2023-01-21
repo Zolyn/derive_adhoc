@@ -63,18 +63,28 @@ pub trait CaseContext: Sized + Default + Debug {
     ///
     /// `<Items as SubstParseContext>::NoCase` delegates to this
     type NoCase: Debug + Copy + Sized;
+    /// Uninhabited unless lexical context allows other than a single subst
+    ///
+    /// `<Items as SubstParseContext>::NoNonterminal` delegates to this
+    type NoNonterminal: Debug + Copy + Sized;
     /// Whether and how, in fact, to change the case, when expanding.
     fn push_case(case: Self::ChangeCase) -> Option<ChangeCase>;
     fn no_case(span: &impl Spanned) -> syn::Result<Self::NoCase>;
+    fn no_nonterminal(span: &impl Spanned)
+        -> syn::Result<Self::NoNonterminal>;
 }
 
 impl CaseContext for () {
     type ChangeCase = ();
     type NoCase = ();
+    type NoNonterminal = ();
     fn push_case((): Self::ChangeCase) -> Option<ChangeCase> {
         None
     }
     fn no_case(_span: &impl Spanned) -> syn::Result<()> {
+        Ok(())
+    }
+    fn no_nonterminal(_span: &impl Spanned) -> syn::Result<()> {
         Ok(())
     }
 }
@@ -239,6 +249,7 @@ impl<C: CaseContext> SubstParseContext for Items<C> {
     type NoPaste = Void;
     type NoBool = ();
     type BoolOnly = Void;
+    type NoNonterminal = C::NoNonterminal;
     type NoCase = C::NoCase;
 
     fn no_bool(_: &impl Spanned) -> syn::Result<()> {
@@ -246,6 +257,9 @@ impl<C: CaseContext> SubstParseContext for Items<C> {
     }
     fn no_case(span: &impl Spanned) -> syn::Result<Self::NoCase> {
         C::no_case(span)
+    }
+    fn no_nonterminal(span: &impl Spanned) -> syn::Result<C::NoNonterminal> {
+        C::no_nonterminal(span)
     }
 
     fn no_paste(span: &impl Spanned) -> syn::Result<Void> {

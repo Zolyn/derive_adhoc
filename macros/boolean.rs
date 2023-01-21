@@ -22,11 +22,15 @@ impl SubstParseContext for BooleanContext {
     type NoPaste = ();
     type NoCase = ();
     type NoBool = Void;
+    type NoNonterminal = ();
     type BoolOnly = ();
     fn no_paste(_: &impl Spanned) -> syn::Result<()> {
         Ok(())
     }
     fn no_case(_: &impl Spanned) -> syn::Result<()> {
+        Ok(())
+    }
+    fn no_nonterminal(_: &impl Spanned) -> syn::Result<()> {
         Ok(())
     }
     fn bool_only(_: &impl Spanned) -> syn::Result<()> {
