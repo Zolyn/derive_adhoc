@@ -115,6 +115,12 @@ pub enum SubstDetails<O: SubstParseContext> {
 
     // expansion manipulation
     paste(Template<paste::Items>, O::NoPaste, O::NoCase, O::NoBool),
+    ChangeCase(
+        Box<Subst<paste::Items<paste::WithinCaseContext>>>,
+        paste::ChangeCase,
+        O::NoCase,
+        O::NoBool,
+    ),
 
     // special
     when(Box<Subst<BooleanContext>>, O::NoBool, O::NoNonterminal),
@@ -340,7 +346,6 @@ impl Parse for SubstAttrPath {
 
 impl<O: SubstParseContext> Subst<O> {
     /// Parses everything including a `$` (which we insist on)
-    #[allow(dead_code)] // TODO
     fn parse_entire(input: ParseStream) -> syn::Result<Self> {
         let _dollar: Token![$] = input.parse()?;
         let la = input.lookahead1();
@@ -481,6 +486,15 @@ impl<O: SubstParseContext> Parse for Subst<O> {
                 let _paren = parenthesized!(inner in input);
             }
             (inner.parse()?, bool_only?)
+        }
+
+        if kw == "snake_case" {
+            return from_sd(SD::ChangeCase(
+                Box::new(Subst::parse_entire(input)?),
+                paste::ChangeCase::AsSnakeCase,
+                no_case?,
+                no_bool?,
+            ));
         }
 
         Err(kw.error("unknown derive-adhoc keyword"))

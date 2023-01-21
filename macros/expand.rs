@@ -188,6 +188,9 @@ where
             SD::paste(content, np, ..) => {
                 out.expand_paste(np, ctx, self.span(), content)?
             }
+            SD::ChangeCase(content, case, nc, ..) => {
+                out.expand_case(nc, *case, ctx, self.span(), content)?
+            }
 
             SD::when(..) => out.write_error(
                 self,

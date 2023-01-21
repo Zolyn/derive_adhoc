@@ -21,7 +21,10 @@ pub struct ItemsData {
     errors: Vec<syn::Error>,
 }
 
-pub type ChangeCase = Void; // TODO case
+#[derive(Debug, Clone, Copy)]
+pub enum ChangeCase {
+    AsSnakeCase,
+}
 
 #[derive(Debug)]
 struct ItemEntry {
@@ -49,13 +52,16 @@ enum Item {
     Path(syn::TypePath),
 }
 
+#[derive(Debug, Default)]
+pub struct WithinCaseContext;
+
 /// Kind of lexical context in which we are pasting identifiers
 ///
 /// Depends on whether we are trying to change the case.
 ///
 /// There are two implementors:
 ///  * `()` for `${paste }`
-///  * `WithinCase` for `${case }` (TODO)
+///  * `WithinCase` for `${case }`
 pub trait CaseContext: Sized + Default + Debug {
     /// The type representing what case change to perform, as parsed.
     type ChangeCase: Debug + Copy + Sized;
@@ -72,6 +78,24 @@ pub trait CaseContext: Sized + Default + Debug {
     fn no_case(span: &impl Spanned) -> syn::Result<Self::NoCase>;
     fn no_nonterminal(span: &impl Spanned)
         -> syn::Result<Self::NoNonterminal>;
+    /// Expand a `${case }`
+    ///
+    /// `<Items as SubstParseContext>::expand_case` delegates to this
+    ///
+    /// `content` is a function which "expands" the contents of the
+    /// `${paste }` using the content's `.expand()` method on the
+    /// `Items`, so that the `push_*` methods on `Items` accumulate
+    /// the identifier fragments to be pasted.
+    ///
+    /// The implementation for `WithinCase` is unreachable, because we
+    /// lexically forbid nested `${case }`, since chained case
+    /// conversions are a bad idea that we don't want to implement.
+    fn expand_case<R>(
+        outer: &mut Items<Self>,
+        no_case: &Self::NoCase,
+        case: ChangeCase,
+        content: impl FnOnce(&mut Items<WithinCaseContext>) -> R,
+    ) -> R;
 }
 
 impl CaseContext for () {
@@ -86,6 +110,46 @@ impl CaseContext for () {
     }
     fn no_nonterminal(_span: &impl Spanned) -> syn::Result<()> {
         Ok(())
+    }
+    fn expand_case<R>(
+        Items {
+            data: outer,
+            case: (),
+        }: &mut Items,
+        _no_case: &(),
+        case: ChangeCase,
+        f: impl FnOnce(&mut Items<WithinCaseContext>) -> R,
+    ) -> R {
+        let placeholder = ItemsData::new(outer.span);
+        let inner = mem::replace(outer, placeholder);
+        let mut inner = Items { data: inner, case };
+        let r = catch_unwind(AssertUnwindSafe(|| f(&mut inner))).unwrap();
+        *outer = inner.data;
+        r
+    }
+}
+
+impl CaseContext for WithinCaseContext {
+    type ChangeCase = ChangeCase;
+    type NoCase = Void;
+    type NoNonterminal = Void;
+    fn push_case(case: Self::ChangeCase) -> Option<ChangeCase> {
+        Some(case)
+    }
+    fn no_case(span: &impl Spanned) -> syn::Result<Void> {
+        Err(span.error("${case } may not be nested"))
+    }
+    fn no_nonterminal(span: &impl Spanned) -> syn::Result<Void> {
+        Err(span
+            .error("${case } may contain only a single expansion (or token)"))
+    }
+    fn expand_case<R>(
+        _: &mut Items<Self>,
+        no_case: &Void,
+        _case: ChangeCase,
+        _f: impl FnOnce(&mut Items<WithinCaseContext>) -> R,
+    ) -> R {
+        void::unreachable(*no_case)
     }
 }
 
@@ -104,6 +168,15 @@ impl Items<()> {
         Items {
             data: ItemsData::new(span),
             case: (),
+        }
+    }
+}
+
+impl Items<WithinCaseContext> {
+    pub fn new_case(span: Span, case: ChangeCase) -> Self {
+        Items {
+            data: ItemsData::new(span),
+            case,
         }
     }
 }
@@ -172,7 +245,7 @@ impl ItemsData {
         ) -> syn::Result<syn::Ident> {
             let items = items.map(|(s, case)| match case {
                 None => s,
-                Some(case) => void::unreachable(case),
+                Some(_case) => todo!(), // TODO case,
             });
             let ident = items.collect::<String>();
             catch_unwind(|| format_ident!("{}", ident, span = span)).map_err(
@@ -361,6 +434,18 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
     ) -> syn::Result<()> {
         void::unreachable(*no_paste)
     }
+    // We forbid ${pate } inside itself, because when we do case
+    // conversion this will get very fiddly to implement.
+    fn expand_case(
+        &mut self,
+        no_case: &Self::NoCase,
+        case: paste::ChangeCase,
+        ctx: &Context,
+        _span: Span,
+        content: &Subst<paste::Items<WithinCaseContext>>,
+    ) -> syn::Result<()> {
+        C::expand_case(self, no_case, case, |out| content.expand(ctx, out))
+    }
     fn expand_bool_only(&mut self, bool_only: &Self::BoolOnly) -> ! {
         void::unreachable(*bool_only)
     }
@@ -370,8 +455,8 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
     }
 }
 
-impl Expand<Items> for TemplateElement<Items> {
-    fn expand(&self, ctx: &Context, out: &mut Items) -> syn::Result<()> {
+impl<C: CaseContext> Expand<Items<C>> for TemplateElement<Items<C>> {
+    fn expand(&self, ctx: &Context, out: &mut Items<C>) -> syn::Result<()> {
         match self {
             TE::Ident(ident) => out.push_ident(&ident),
             TE::Literal(lit) => out.push_syn_lit(&lit),

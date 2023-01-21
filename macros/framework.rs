@@ -191,6 +191,16 @@ pub trait ExpansionOutput: SubstParseContext {
         paste_body: &Template<paste::Items>,
     ) -> syn::Result<()>;
 
+    /// Expand a `${case }`
+    fn expand_case(
+        &mut self,
+        np: &Self::NoCase,
+        case: paste::ChangeCase,
+        ctx: &Context,
+        span: Span,
+        paste_body: &Subst<paste::Items<paste::WithinCaseContext>>,
+    ) -> syn::Result<()>;
+
     /// Note that an error occurred
     ///
     /// This must arrange to
@@ -327,6 +337,18 @@ impl ExpansionOutput for TokenAccumulator {
     ) -> syn::Result<()> {
         let mut items = paste::Items::new(span);
         paste_body.expand(ctx, &mut items);
+        items.assemble(self)
+    }
+    fn expand_case(
+        &mut self,
+        _no_case: &(),
+        case: paste::ChangeCase,
+        ctx: &Context,
+        span: Span,
+        paste_body: &Subst<paste::Items<paste::WithinCaseContext>>,
+    ) -> syn::Result<()> {
+        let mut items = paste::Items::new_case(span, case);
+        paste_body.expand(ctx, &mut items)?;
         items.assemble(self)
     }
     fn expand_bool_only(&mut self, bool_only: &Self::BoolOnly) -> ! {
