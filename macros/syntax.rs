@@ -274,33 +274,10 @@ impl<O: SubstParseContext> Parse for TemplateElement<O> {
                     let dollar: Punct = input.parse()?;
                     let span = dollar.span();
                     TE::Punct(dollar, O::no_paste(&span)?)
-                } else if la.peek(token::Brace) {
-                    let exp;
-                    struct Only<O: SubstParseContext>(Subst<O>);
-                    impl<O: SubstParseContext> Parse for Only<O> {
-                        fn parse(input: ParseStream) -> syn::Result<Self> {
-                            let subst = input.parse()?;
-                            let unwanted: Option<TT> = input.parse()?;
-                            if let Some(unwanted) = unwanted {
-                                return Err(unwanted.error(
-                                    "unexpected arguments to expansion keyword"
-                                ));
-                            }
-                            Ok(Only(subst))
-                        }
-                    }
-                    let _brace = braced!(exp in input);
-                    let exp = exp.parse()?;
-                    let Only(exp) = exp;
-                    TE::Subst(exp)
                 } else if la.peek(token::Paren) {
                     RepeatedTemplate::parse_in_parens(input)?
-                } else if la.peek(syn::Ident::peek_any) {
-                    let exp: TokenTree = input.parse()?; // get it as TT
-                    let exp = syn::parse2(exp.to_token_stream())?;
-                    TE::Subst(exp)
                 } else {
-                    return Err(la.error());
+                    TE::Subst(Subst::parse_after_dollar(la, input)?)
                 }
             }
         })
@@ -361,6 +338,42 @@ impl Parse for SubstAttrPath {
     }
 }
 
+impl<O: SubstParseContext> Subst<O> {
+    /// Parses everything after the `$`, possibly including a pair of `{ }`
+    fn parse_after_dollar(
+        la: Lookahead1,
+        input: ParseStream,
+    ) -> syn::Result<Self> {
+        if la.peek(token::Brace) {
+            let exp;
+            struct Only<O: SubstParseContext>(Subst<O>);
+            impl<O: SubstParseContext> Parse for Only<O> {
+                fn parse(input: ParseStream) -> syn::Result<Self> {
+                    let subst = input.parse()?;
+                    let unwanted: Option<TT> = input.parse()?;
+                    if let Some(unwanted) = unwanted {
+                        return Err(unwanted.error(
+                            "unexpected arguments to expansion keyword",
+                        ));
+                    }
+                    Ok(Only(subst))
+                }
+            }
+            let _brace = braced!(exp in input);
+            let exp = exp.parse()?;
+            let Only(exp) = exp;
+            Ok(exp)
+        } else if la.peek(syn::Ident::peek_any) {
+            let exp: TokenTree = input.parse()?; // get it as TT
+            let exp = syn::parse2(exp.to_token_stream())?;
+            Ok(exp)
+        } else {
+            return Err(la.error());
+        }
+    }
+}
+
+/// Parses only the content (ie, after the `$` and inside any `{ }`)
 impl<O: SubstParseContext> Parse for Subst<O> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let kw = input.call(syn::Ident::parse_any)?;
