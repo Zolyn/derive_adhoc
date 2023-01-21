@@ -62,17 +62,17 @@ where
                 continue;
             }
             let cspan = condition.span();
-            let err = |span| (span, "true condition");
+            let error_loc = |span| (span, "true condition");
             match &mut found {
                 Ok(None) => found = Ok(Some((cspan, consequence))),
                 Ok(Some((span1, _))) => {
                     found = Err(vec![
                         ctx.error_loc(),
-                        err(*span1),
-                        err(cspan),
+                        error_loc(*span1),
+                        error_loc(cspan),
                     ])
                 }
-                Err(several) => several.push(err(cspan)),
+                Err(several) => several.push(error_loc(cspan)),
             }
         }
         let found = found
