@@ -118,7 +118,9 @@ derive-adhoc treats them as having a single (unnamed) variant.
 
     + **`${Xmeta(NAME)}`**:
       Looks for `#[adhoc(NAME=LIT)]`, and expands to `LIT`.
-      `LIT` can only be a literal, and is expanded as such.
+      `LIT` can only be a literal, which is parsed as Rust tokens,
+      which become the result of the expansion.
+      (Within `${paste }` and `${case }`, the literal is used directly.)
 
     + **`${Xmeta(SUB(NAME))}`**:
       Looks for `#[adhoc(SUB(NAME=LIT))]`, and expands to `LIT`.
