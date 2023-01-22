@@ -1,5 +1,6 @@
-use derive_adhoc::{derive_adhoc, Adhoc};
 use std::fmt::Debug;
+use derive_adhoc::{derive_adhoc, Adhoc};
+use derive_adhoc_tests::*;
 struct Both {
     #[adhoc(left)]
     a: usize,
@@ -80,18 +81,7 @@ impl ::core::fmt::Debug for Right {
     }
 }
 fn main() {
-    match (
-        &{
-            let res = ::alloc::fmt::format(
-                ::core::fmt::Arguments::new_v1(
-                    &[""],
-                    &[::core::fmt::ArgumentV1::new_debug(&&Left::default())],
-                ),
-            );
-            res
-        },
-        &"Left { a: 0 }",
-    ) {
+    match (&Left::default().to_debug(), &"Left { a: 0 }") {
         (left_val, right_val) => {
             if !(*left_val == *right_val) {
                 let kind = ::core::panicking::AssertKind::Eq;

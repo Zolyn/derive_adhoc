@@ -2,7 +2,9 @@
 //!
 //! Internal, unpublished crate.
 
-#![cfg(test)]
+use std::fmt::Debug;
+
+use easy_ext::ext;
 
 // This package has the following tests:
 //
@@ -16,4 +18,12 @@
 //
 // The test modules listed here, containing #[test] tests:
 
+#[cfg(test)]
 mod list_names;
+
+#[ext(DebugExt)]
+pub impl<T: Debug> T {
+    fn to_debug(&self) -> String {
+        format!("{:?}", self)
+    }
+}

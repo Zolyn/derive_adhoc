@@ -1,6 +1,7 @@
 use std::fmt::{self, Debug, Formatter};
 use derive_adhoc::define_derive_adhoc;
 use derive_adhoc::{derive_adhoc, Adhoc};
+use derive_adhoc_tests::*;
 struct PrettyVec<T>(Vec<T>);
 #[automatically_derived]
 impl<T: ::core::fmt::Debug> ::core::fmt::Debug for PrettyVec<T> {
@@ -43,16 +44,8 @@ fn main() {
         opaque: Opaque,
     };
     match (
-        &{
-            let res = ::alloc::fmt::format(
-                ::core::fmt::Arguments::new_v1(
-                    &["dt = "],
-                    &[::core::fmt::ArgumentV1::new_debug(&&dt)],
-                ),
-            );
-            res
-        },
-        &"dt = DataType { foo: 42, bar: PrettyVec([\"a\", \"bar\"]) }",
+        &DebugExt::to_debug(&dt),
+        &"DataType { foo: 42, bar: PrettyVec([\"a\", \"bar\"]) }",
     ) {
         (left_val, right_val) => {
             if !(*left_val == *right_val) {

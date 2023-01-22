@@ -8,6 +8,8 @@ use std::fmt::{self, Debug, Formatter};
 use derive_adhoc::define_derive_adhoc;
 use derive_adhoc::{derive_adhoc, Adhoc};
 
+use derive_adhoc_tests::*;
+
 define_derive_adhoc! {
     MyDebug =
 
@@ -71,7 +73,7 @@ fn main() {
     };
 
     assert_eq!(
-        format!("dt = {:?}", &dt),
-        "dt = DataType { foo: 42, bar: PrettyVec([\"a\", \"bar\"]) }",
+        DebugExt::to_debug(&dt),
+        "DataType { foo: 42, bar: PrettyVec([\"a\", \"bar\"]) }",
     );
 }
