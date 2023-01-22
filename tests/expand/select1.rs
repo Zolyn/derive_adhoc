@@ -33,7 +33,6 @@ derive_adhoc!{
             }
         )
     }
-    #[derive(Default, Debug)]
     struct Right {
         $(
             ${select1
