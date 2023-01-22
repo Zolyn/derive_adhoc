@@ -5,9 +5,11 @@
 //#![feature(trace_macros)]
 //trace_macros!(true);
 
+use std::fmt::Debug;
+
 use derive_adhoc::{derive_adhoc, Adhoc};
 
-use std::fmt::Debug;
+use derive_adhoc_tests::*;
 
 #[derive(Adhoc, Default, Debug)]
 struct Both {
@@ -31,7 +33,6 @@ derive_adhoc!{
             }
         )
     }
-    #[derive(Default, Debug)]
     struct Right {
         $(
             ${select1
@@ -44,7 +45,7 @@ derive_adhoc!{
 
 fn main() {
     assert_eq!(
-        format!("{:?}", &Left::default()),
+        Left::default().to_debug(),
         "Left { a: 0 }",
     )
 }

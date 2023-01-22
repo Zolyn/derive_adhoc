@@ -1,6 +1,7 @@
 use std::fmt::{self, Debug, Formatter};
 use derive_adhoc::define_derive_adhoc;
 use derive_adhoc::{derive_adhoc, Adhoc};
+use derive_adhoc_tests::*;
 struct PrettyVec<T>(Vec<T>);
 #[automatically_derived]
 impl<T: ::core::fmt::Debug> ::core::fmt::Debug for PrettyVec<T> {
@@ -42,12 +43,20 @@ fn main() {
         bar: ["a", "bar"].iter().map(|s| s.to_string()).collect(),
         opaque: Opaque,
     };
-    {
-        ::std::io::_print(
-            ::core::fmt::Arguments::new_v1(
-                &["dt = ", "\n"],
-                &[::core::fmt::ArgumentV1::new_debug(&&dt)],
-            ),
-        );
+    match (
+        &DebugExt::to_debug(&dt),
+        &"DataType { foo: 42, bar: PrettyVec([\"a\", \"bar\"]) }",
+    ) {
+        (left_val, right_val) => {
+            if !(*left_val == *right_val) {
+                let kind = ::core::panicking::AssertKind::Eq;
+                ::core::panicking::assert_failed(
+                    kind,
+                    &*left_val,
+                    &*right_val,
+                    ::core::option::Option::None,
+                );
+            }
+        }
     };
 }
