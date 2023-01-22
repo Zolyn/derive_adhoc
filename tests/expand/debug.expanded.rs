@@ -42,12 +42,28 @@ fn main() {
         bar: ["a", "bar"].iter().map(|s| s.to_string()).collect(),
         opaque: Opaque,
     };
-    {
-        ::std::io::_print(
-            ::core::fmt::Arguments::new_v1(
-                &["dt = ", "\n"],
-                &[::core::fmt::ArgumentV1::new_debug(&&dt)],
-            ),
-        );
+    match (
+        &{
+            let res = ::alloc::fmt::format(
+                ::core::fmt::Arguments::new_v1(
+                    &["dt = "],
+                    &[::core::fmt::ArgumentV1::new_debug(&&dt)],
+                ),
+            );
+            res
+        },
+        &"dt = DataType { foo: 42, bar: PrettyVec([\"a\", \"bar\"]) }",
+    ) {
+        (left_val, right_val) => {
+            if !(*left_val == *right_val) {
+                let kind = ::core::panicking::AssertKind::Eq;
+                ::core::panicking::assert_failed(
+                    kind,
+                    &*left_val,
+                    &*right_val,
+                    ::core::option::Option::None,
+                );
+            }
+        }
     };
 }

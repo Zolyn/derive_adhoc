@@ -70,5 +70,8 @@ fn main() {
         opaque: Opaque,
     };
 
-    println!("dt = {:?}", &dt);
+    assert_eq!(
+        format!("dt = {:?}", &dt),
+        "dt = DataType { foo: 42, bar: PrettyVec([\"a\", \"bar\"]) }",
+    );
 }
