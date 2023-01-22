@@ -34,7 +34,7 @@ mod notes {}
 ///
 /// Normally you do not need to mention this macro.
 ///
-/// `derive-adhoc` does its work by
+/// derive-adhoc does its work by
 /// (defining and then) invoking various interrelated macros
 /// including `macro_rules` macros and proc macros.
 /// These ultimately end up calling this macro,
