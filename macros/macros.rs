@@ -95,7 +95,8 @@ pub fn derive_adhoc(
 /// ```
 ///
 /// Then, `MyMacro` can be used with
-/// `#[derive(Adhoc)] #[derive_adhoc(MyMacro)]`.
+/// [`#[derive(Adhoc)]`](Adhoc)
+/// `#[derive_adhoc(MyMacro)]`.
 ///
 /// ## Captured template macro `derive_adhoc_template_MyMacro`
 ///
@@ -123,11 +124,11 @@ pub fn define_derive_adhoc(
 /// This macro does two things:
 ///
 ///  1. It captures the data structure definition,
-///     so that it can be used with calls to `derive_adhoc!`.
+///     so that it can be used with calls to [`derive_adhoc!`].
 ///
 ///  2. If `#[derive_adhoc(MyMacro)]` attributes are also specified,
 ///     they are taken to refer to reuseable templates
-///     defined with `define_derive_adhoc!`.
+///     defined with [`define_derive_adhoc!`].
 ///     Each such `MyMacro` is invoked on the data structure.
 ///
 /// ## Captured data structure definition `derive_adhoc_driver_TYPE`
