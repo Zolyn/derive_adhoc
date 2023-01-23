@@ -55,7 +55,7 @@ All the expansions directly within `$(...)`
 must have the same repetition level.
 
 With both `${for }` and `$( ... )`,
-if the repetition level is "depeer" than the level
+if the repetition level is "deeper" than the level
 of the surrounding template,
 the surrounding levels are also repeated over,
 effectively "flattening".
