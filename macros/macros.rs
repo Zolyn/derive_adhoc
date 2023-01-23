@@ -41,7 +41,7 @@ mod notes {}
 /// which takes a template and a data structure,
 /// and expands the template for that data structure.
 ///
-/// Its input syntax is not currently stable or documented.
+/// This macro's behvaiour is not currently stable or documented.
 /// If you invoke it yourself, you get to keep all the pieces.
 #[proc_macro]
 pub fn derive_adhoc_expand(
