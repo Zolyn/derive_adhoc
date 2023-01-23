@@ -1,6 +1,6 @@
 //! Macros for `derive_adhoc`
 //!
-//! Import `derive_adhoc` instead.
+//! **Import `derive_adhoc` instead.**
 //
 // This is the actual proc-macro crate.
 //
