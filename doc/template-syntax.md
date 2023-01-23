@@ -77,7 +77,7 @@ derive-adhoc treats them as having a single (unnamed) variant.
 
  * **`$ftype`, `$ttype`**:
    The type of the field, or the toplevel type.
-   This contains all necessary generics (as names).
+   This contains all necessary generics (as names, without any bunds etc.).
    For the toplevel type it contains a path prefix iff
    the driver type argument to
    `derive_adhoc!{ }`
@@ -166,10 +166,12 @@ derive-adhoc treats them as having a single (unnamed) variant.
    The contents may only contain identifer fragments, strings (`"..."`),
    and (certain) expansions.
    Supported expansions are `${Xtype}`, `${Xname}`, `${Xmeta}`,
+   `${CASE_CHANGE}`,
    as well as conditionals and repetitions.
 
    The contents can contain at most one occurrence of
-   a more complex type expansion `${Xtype}`,
+   a more complex type expansion `${Xtype}`
+   (or `${}Xmeta as ty)`),
    which must refer to a path (perhaps with generics).
    Then the pasting will be applied to the final path element identifier,
    and the path prefix and generics reproduced unaltered.
@@ -180,16 +182,14 @@ derive-adhoc treats them as having a single (unnamed) variant.
    generates
    `crate::config::ZingyFooBuilder<'a,T,C>`.
 
-   `${Xmeta}` must reference a (supplied) `#[adhoc]` meta item,
-   whose value must be a literal.
-
  * **`${CASE_CHANGE ...}`**:
    Expands the content, and changes its case
    (eg. uppercase to lowercase, etc.
    See [Case changing](#case-changing).
 
  * **`${when CONDITION}`**:
-   Allowed only within repetitions, and only at the toplevel,
+   Allowed only within repetitions, and only at the toplevel
+   of the repetition,
    before other expansions.
    Skips this repetition if the `CONDITION` is not true.
 
@@ -207,13 +207,13 @@ derive-adhoc treats them as having a single (unnamed) variant.
    or, none of them, bot only if an `else` is supplied -
    otherwise it is an error.
 
- * **`${for fields { ... }}`**:
-   Expands the contents once per field.
+ * **`${for fields { ... }}`, `${for variants { ... }}`**:
+   Expands the contents once per field, or once per variant.
 
 ## Conditions
 
 Conditions all start with a `KEYWORD`.
-They are found within `${if }` and `${when }`.
+They are found within `${if }`, `${when }`, and `${select1 }`.
 
  * **`fmeta(NAME)`, `vmeta(NAME)`, `tmeta(NAME)`**:
    Looks for `#[adhoc(NAME)]`.
