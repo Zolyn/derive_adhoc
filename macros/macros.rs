@@ -1,6 +1,6 @@
 //! Macros for `derive_adhoc`
 //!
-//! Import `derive_adhoc` instead.
+//! **Import `derive_adhoc` instead.**
 //
 // This is the actual proc-macro crate.
 //
@@ -34,14 +34,14 @@ mod notes {}
 ///
 /// Normally you do not need to mention this macro.
 ///
-/// `derive-adhoc` does its work by
+/// derive-adhoc does its work by
 /// (defining and then) invoking various interrelated macros
 /// including `macro_rules` macros and proc macros.
 /// These ultimately end up calling this macro,
 /// which takes a template and a data structure,
 /// and expands the template for that data structure.
 ///
-/// Its input syntax is not currently stable or documented.
+/// This macro's behvaiour is not currently stable or documented.
 /// If you invoke it yourself, you get to keep all the pieces.
 #[proc_macro]
 pub fn derive_adhoc_expand(
@@ -95,7 +95,8 @@ pub fn derive_adhoc(
 /// ```
 ///
 /// Then, `MyMacro` can be used with
-/// `#[derive(Adhoc)] #[derive_adhoc(MyMacro)]`.
+/// [`#[derive(Adhoc)]`](Adhoc)
+/// `#[derive_adhoc(MyMacro)]`.
 ///
 /// ## Captured template macro `derive_adhoc_template_MyMacro`
 ///
@@ -123,11 +124,11 @@ pub fn define_derive_adhoc(
 /// This macro does two things:
 ///
 ///  1. It captures the data structure definition,
-///     so that it can be used with calls to `derive_adhoc!`.
+///     so that it can be used with calls to [`derive_adhoc!`].
 ///
 ///  2. If `#[derive_adhoc(MyMacro)]` attributes are also specified,
 ///     they are taken to refer to reuseable templates
-///     defined with `define_derive_adhoc!`.
+///     defined with [`define_derive_adhoc!`].
 ///     Each such `MyMacro` is invoked on the data structure.
 ///
 /// ## Captured data structure definition `derive_adhoc_driver_TYPE`

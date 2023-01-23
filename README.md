@@ -1,4 +1,4 @@
-# derive_adhoc: An ergonomic replacement for (some) proc macros
+# derive-adhoc: An ergonomic replacement for (some) proc macros
 
 `derive-adhoc` allows you to write macros which are driven
 by Rust data structures, just like proc macro derive macros,
