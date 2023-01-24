@@ -198,6 +198,8 @@ impl CaseContext for WithinCaseContext {
         Err(span
             .error("${case } may contain only a single expansion (or token)"))
     }
+    // We forbid ${pate } inside itself, because when we do case
+    // conversion this will get very fiddly to implement.
     fn expand_case<R>(
         _: &mut Items<Self>,
         not_in_case: &Void,
@@ -519,8 +521,6 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
     ) -> syn::Result<()> {
         void::unreachable(*not_in_paste)
     }
-    // We forbid ${pate } inside itself, because when we do case
-    // conversion this will get very fiddly to implement.
     fn expand_case(
         &mut self,
         not_in_case: &Self::NotInCase,
