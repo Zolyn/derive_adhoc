@@ -74,9 +74,9 @@ pub struct WithinField<'c> {
 /// So the "default" value (for context that don't have an opnion)
 /// is inhabitedness `()`.
 ///
-/// Each type has an associated constructure,
+/// Each type has an associated constructur,
 /// used during parsing.
-/// So this generates a parse error are parse time,
+/// So this generates a parse error at parse time,
 /// if a construct appears in the wrong place.
 pub trait SubstParseContext {
     /// Uninhabited iff this lexical context is within `${paste }`
