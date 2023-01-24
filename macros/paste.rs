@@ -3,6 +3,10 @@
 use crate::framework::*;
 
 /// Accumulator for things to be pasted
+///
+/// Implements [`ExpansionOutput`] and [`SubstParseContext`]:
+/// i.e., it corresponds to the lexical context for a `${paste }`,
+/// and collects the identifier fragments being pasted.
 #[derive(Debug)]
 pub struct Items<C = ()>
 where
@@ -14,6 +18,9 @@ where
 }
 
 /// Accumulator for things to be pasted
+///
+/// This contains the actual fragments to be pasted.
+/// Any case changing is done during assembly.
 #[derive(Debug)]
 pub struct ItemsData {
     span: Span,
