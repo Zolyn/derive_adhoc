@@ -19,25 +19,25 @@ fn is_found(r: Result<(), Found>) -> bool {
 }
 
 impl SubstParseContext for BooleanContext {
-    type NoPaste = ();
-    type NoCase = ();
-    type NoBool = Void;
-    type NoNonterminal = ();
+    type NotInPaste = ();
+    type NotInCase = ();
+    type NotInBool = Void;
+    type AllowNonterminal = ();
     type BoolOnly = ();
-    fn no_paste(_: &impl Spanned) -> syn::Result<()> {
+    fn not_in_paste(_: &impl Spanned) -> syn::Result<()> {
         Ok(())
     }
-    fn no_case(_: &impl Spanned) -> syn::Result<()> {
+    fn not_in_case(_: &impl Spanned) -> syn::Result<()> {
         Ok(())
     }
-    fn no_nonterminal(_: &impl Spanned) -> syn::Result<()> {
+    fn allow_nonterminal(_: &impl Spanned) -> syn::Result<()> {
         Ok(())
     }
     fn bool_only(_: &impl Spanned) -> syn::Result<()> {
         Ok(())
     }
 
-    fn no_bool(span: &impl Spanned) -> syn::Result<Void> {
+    fn not_in_bool(span: &impl Spanned) -> syn::Result<Void> {
         Err(span.error(
             "derive-adhoc keyword is an expansion - not valid as a condition",
         ))
@@ -81,23 +81,23 @@ impl Subst<BooleanContext> {
                 })
                 .unwrap_or(Ok(true))?,
 
-            SD::tname(no_bool)
-            | SD::ttype(no_bool)
-            | SD::vname(no_bool)
-            | SD::fname(no_bool)
-            | SD::ftype(no_bool)
-            | SD::tattrs(_, _, no_bool)
-            | SD::vattrs(_, _, no_bool)
-            | SD::fattrs(_, _, no_bool)
-            | SD::tgens(_, no_bool)
-            | SD::tgnames(_, no_bool)
-            | SD::twheres(_, no_bool)
-            | SD::paste(_, _, _, no_bool)
-            | SD::ChangeCase(_, _, _, no_bool)
-            | SD::when(_, no_bool, _)
-            | SD::For(_, no_bool)
-            | SD::If(_, no_bool)
-            | SD::select1(_, no_bool) => void::unreachable(*no_bool),
+            SD::tname(not_in_bool)
+            | SD::ttype(not_in_bool)
+            | SD::vname(not_in_bool)
+            | SD::fname(not_in_bool)
+            | SD::ftype(not_in_bool)
+            | SD::tattrs(_, _, not_in_bool)
+            | SD::vattrs(_, _, not_in_bool)
+            | SD::fattrs(_, _, not_in_bool)
+            | SD::tgens(_, not_in_bool)
+            | SD::tgnames(_, not_in_bool)
+            | SD::twheres(_, not_in_bool)
+            | SD::paste(_, _, _, not_in_bool)
+            | SD::ChangeCase(_, _, _, not_in_bool)
+            | SD::when(_, not_in_bool, _)
+            | SD::For(_, not_in_bool)
+            | SD::If(_, not_in_bool)
+            | SD::select1(_, not_in_bool) => void::unreachable(*not_in_bool),
         };
         Ok(r)
     }
