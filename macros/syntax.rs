@@ -20,20 +20,20 @@ pub struct SubstInput {
 #[derive(Debug)]
 pub struct Template<O: SubstParseContext> {
     pub elements: Vec<TemplateElement<O>>,
-    pub no_nonterminal: O::NoNonterminal,
+    pub allow_nonterminal: O::AllowNonterminal,
 }
 
 #[derive(Debug)]
 pub enum TemplateElement<O: SubstParseContext> {
     Ident(Ident),
     Literal(syn::Lit),
-    Punct(Punct, O::NoPaste),
+    Punct(Punct, O::NotInPaste),
     Group {
         /// Sadly Group's constructors let us only set *both* delimiters
         delim_span: Span,
         delimiter: Delimiter,
         template: Template<O>,
-        no_paste: O::NoPaste,
+        not_in_paste: O::NotInPaste,
     },
     Subst(Subst<O>),
     Repeat(RepeatedTemplate<O>),
@@ -94,36 +94,45 @@ pub struct Subst<O: SubstParseContext> {
 // and right now that is a bit funny.
 pub enum SubstDetails<O: SubstParseContext> {
     // variables
-    tname(O::NoBool),
-    ttype(O::NoBool),
-    vname(O::NoBool),
-    fname(O::NoBool),
-    ftype(O::NoBool),
+    tname(O::NotInBool),
+    ttype(O::NotInBool),
+    vname(O::NotInBool),
+    fname(O::NotInBool),
+    ftype(O::NotInBool),
 
     // attributes
     tmeta(SubstAttr),
     vmeta(SubstAttr),
     fmeta(SubstAttr),
-    tattrs(RawAttr, O::NoPaste, O::NoBool),
-    vattrs(RawAttr, O::NoPaste, O::NoBool),
-    fattrs(RawAttr, O::NoPaste, O::NoBool),
+    tattrs(RawAttr, O::NotInPaste, O::NotInBool),
+    vattrs(RawAttr, O::NotInPaste, O::NotInBool),
+    fattrs(RawAttr, O::NotInPaste, O::NotInBool),
 
     // generics
-    tgens(O::NoPaste, O::NoBool),
-    tgnames(O::NoPaste, O::NoBool),
-    twheres(O::NoPaste, O::NoBool),
+    tgens(O::NotInPaste, O::NotInBool),
+    tgnames(O::NotInPaste, O::NotInBool),
+    twheres(O::NotInPaste, O::NotInBool),
 
     // expansion manipulation
-    paste(Template<paste::Items>, O::NoPaste, O::NoCase, O::NoBool),
+    paste(
+        Template<paste::Items>,
+        O::NotInPaste,
+        O::NotInCase,
+        O::NotInBool,
+    ),
     ChangeCase(
         Box<Subst<paste::Items<paste::WithinCaseContext>>>,
         paste::ChangeCase,
-        O::NoCase,
-        O::NoBool,
+        O::NotInCase,
+        O::NotInBool,
     ),
 
     // special
-    when(Box<Subst<BooleanContext>>, O::NoBool, O::NoNonterminal),
+    when(
+        Box<Subst<BooleanContext>>,
+        O::NotInBool,
+        O::AllowNonterminal,
+    ),
 
     // expressions
     False(O::BoolOnly),
@@ -134,10 +143,10 @@ pub enum SubstDetails<O: SubstParseContext> {
     is_enum(O::BoolOnly),
 
     // Explicit iteration
-    For(RepeatedTemplate<O>, O::NoBool),
+    For(RepeatedTemplate<O>, O::NotInBool),
     // Conditional substitution.
-    If(SubstIf<O>, O::NoBool),
-    select1(SubstIf<O>, O::NoBool),
+    If(SubstIf<O>, O::NotInBool),
+    select1(SubstIf<O>, O::NotInBool),
 }
 
 #[derive(Debug)]
@@ -232,7 +241,7 @@ impl Spanned for SubstAttrPath {
 impl<O: SubstParseContext> Template<O> {
     fn parse(
         input: ParseStream,
-        no_nonterminal: O::NoNonterminal,
+        allow_nonterminal: O::AllowNonterminal,
     ) -> syn::Result<Self> {
         // eprintln!("@@@@@@@@@@ PARSE {}", &input);
         let mut good = vec![];
@@ -246,7 +255,7 @@ impl<O: SubstParseContext> Template<O> {
         }
         errors.finish_with(Template {
             elements: good,
-            no_nonterminal,
+            allow_nonterminal,
         })
     }
 }
@@ -257,23 +266,23 @@ impl<O: SubstParseContext> Parse for TemplateElement<O> {
             TT::Group(group) => {
                 let delim_span = group.span_open();
                 let delimiter = group.delimiter();
-                let no_nonterminal = O::no_nonterminal(&delim_span)?;
+                let allow_nonterminal = O::allow_nonterminal(&delim_span)?;
                 let t_parser = |input: ParseStream| {
-                    Template::parse(input, no_nonterminal)
+                    Template::parse(input, allow_nonterminal)
                 };
                 let template = t_parser.parse2(group.stream())?;
                 TE::Group {
                     delim_span,
                     delimiter,
                     template,
-                    no_paste: O::no_paste(&delim_span)?,
+                    not_in_paste: O::not_in_paste(&delim_span)?,
                 }
             }
             TT::Ident(tt) => TE::Ident(tt),
             tt @ TT::Literal(_) => TE::Literal(syn::parse2(tt.into())?),
             TT::Punct(tok) if tok.as_char() != '$' => {
                 let span = tok.span();
-                TE::Punct(tok, O::no_paste(&span)?)
+                TE::Punct(tok, O::not_in_paste(&span)?)
             }
             TT::Punct(_dollar) => {
                 let la = input.lookahead1();
@@ -281,7 +290,7 @@ impl<O: SubstParseContext> Parse for TemplateElement<O> {
                     // $$
                     let dollar: Punct = input.parse()?;
                     let span = dollar.span();
-                    TE::Punct(dollar, O::no_paste(&span)?)
+                    TE::Punct(dollar, O::not_in_paste(&span)?)
                 } else if la.peek(token::Paren) {
                     RepeatedTemplate::parse_in_parens(input)?
                 } else {
@@ -427,14 +436,15 @@ impl<O: SubstParseContext> Parse for Subst<O> {
             };
         }
 
-        let no_paste = O::no_paste(&kw);
-        let no_case = O::no_case(&kw);
-        let no_bool = O::no_bool(&kw);
+        let not_in_paste = O::not_in_paste(&kw);
+        let not_in_case = O::not_in_case(&kw);
+        let not_in_bool = O::not_in_bool(&kw);
         let bool_only = O::bool_only(&kw);
-        let no_nonterminal = O::no_nonterminal(&kw);
+        let allow_nonterminal = O::allow_nonterminal(&kw);
 
-        let parse_if =
-            |input| SubstIf::parse(input, kw.span(), no_nonterminal.clone()?);
+        let parse_if = |input| {
+            SubstIf::parse(input, kw.span(), allow_nonterminal.clone()?)
+        };
 
         let in_parens = |input: ParseStream<'i>| {
             let inner;
@@ -442,41 +452,41 @@ impl<O: SubstParseContext> Parse for Subst<O> {
             Ok(inner)
         };
 
-        keyword! { tname(no_bool?) }
-        keyword! { ttype(no_bool?) }
-        keyword! { vname(no_bool?) }
-        keyword! { fname(no_bool?) }
-        keyword! { ftype(no_bool?) }
+        keyword! { tname(not_in_bool?) }
+        keyword! { ttype(not_in_bool?) }
+        keyword! { vname(not_in_bool?) }
+        keyword! { fname(not_in_bool?) }
+        keyword! { ftype(not_in_bool?) }
         keyword! { is_enum(bool_only?) }
 
-        keyword! { tgens(no_paste?, no_bool?) }
-        keyword! { tgnames(no_paste?, no_bool?) }
-        keyword! { twheres(no_paste?, no_bool?) }
+        keyword! { tgens(not_in_paste?, not_in_bool?) }
+        keyword! { tgnames(not_in_paste?, not_in_bool?) }
+        keyword! { twheres(not_in_paste?, not_in_bool?) }
 
         keyword! { tmeta(input.parse()?) }
         keyword! { vmeta(input.parse()?) }
         keyword! { fmeta(input.parse()?) }
 
-        keyword! { tattrs(input.parse()?, no_paste?, no_bool?) }
-        keyword! { vattrs(input.parse()?, no_paste?, no_bool?) }
-        keyword! { fattrs(input.parse()?, no_paste?, no_bool?) }
+        keyword! { tattrs(input.parse()?, not_in_paste?, not_in_bool?) }
+        keyword! { vattrs(input.parse()?, not_in_paste?, not_in_bool?) }
+        keyword! { fattrs(input.parse()?, not_in_paste?, not_in_bool?) }
 
         keyword! {
             paste {
                 let template = Template::parse(input, ())?;
             }
-            (template, no_paste?, no_case?, no_bool?)
+            (template, not_in_paste?, not_in_case?, not_in_bool?)
         }
-        keyword! { when(input.parse()?, no_bool?, no_nonterminal?) }
+        keyword! { when(input.parse()?, not_in_bool?, allow_nonterminal?) }
 
         keyword! { "false": False(bool_only?) }
         keyword! { "true": True(bool_only?) }
-        keyword! { "if": If(parse_if(input)?, no_bool?) }
-        keyword! { select1(parse_if(input)?, no_bool?) }
+        keyword! { "if": If(parse_if(input)?, not_in_bool?) }
+        keyword! { select1(parse_if(input)?, not_in_bool?) }
 
         keyword! { "for": For(
             RepeatedTemplate::parse_for(input)?,
-            no_bool?,
+            not_in_bool?,
         )}
 
         let any_all_contents = |input: ParseStream<'i>| {
@@ -490,8 +500,8 @@ impl<O: SubstParseContext> Parse for Subst<O> {
             return from_sd(SD::ChangeCase(
                 Box::new(Subst::parse_entire(input)?),
                 case,
-                no_case?,
-                no_bool?,
+                not_in_case?,
+                not_in_bool?,
             ));
         }
 
@@ -503,7 +513,7 @@ impl<O: SubstParseContext> SubstIf<O> {
     fn parse(
         input: ParseStream,
         kw_span: Span,
-        no_nonterminal: O::NoNonterminal,
+        not_in_nonterminal: O::AllowNonterminal,
     ) -> syn::Result<Self> {
         let mut tests = Vec::new();
         let mut otherwise = None;
@@ -512,7 +522,7 @@ impl<O: SubstParseContext> SubstIf<O> {
             let condition = input.parse()?;
             let content;
             let _br = braced![ content in input ];
-            let consequence = Template::parse(&content, no_nonterminal)?;
+            let consequence = Template::parse(&content, not_in_nonterminal)?;
             tests.push((condition, consequence));
 
             // (I'd like to use a lookahead here too, but it doesn't
@@ -543,8 +553,9 @@ impl<O: SubstParseContext> SubstIf<O> {
             } else if lookahead.peek(token::Brace) {
                 let content;
                 let _br = braced![ content in input ];
-                otherwise =
-                    Some(Template::parse(&content, no_nonterminal)?.into());
+                otherwise = Some(
+                    Template::parse(&content, not_in_nonterminal)?.into(),
+                );
                 break; // no more input allowed.
             } else {
                 return Err(lookahead.error());
@@ -632,8 +643,8 @@ impl<O: SubstParseContext> RepeatedTemplate<O> {
         span: Span,
         over: Option<RepeatOver>,
     ) -> Result<RepeatedTemplate<O>, syn::Error> {
-        let no_nonterminal = O::no_nonterminal(&span)?;
-        let mut template = Template::parse(input, no_nonterminal)?;
+        let allow_nonterminal = O::allow_nonterminal(&span)?;
+        let mut template = Template::parse(input, allow_nonterminal)?;
 
         // split `when` (and [todo] `for`) off
         let mut whens = vec![];

@@ -80,25 +80,26 @@ pub struct WithinField<'c> {
 /// if a construct appears in the wrong place.
 pub trait SubstParseContext {
     /// Uninhabited iff this lexical context is within `${paste }`
-    type NoPaste: Debug + Copy + Sized;
+    type NotInPaste: Debug + Copy + Sized;
     /// Uninhabited iff this lexical context is within `${case }`
-    type NoCase: Debug + Copy + Sized;
+    type NotInCase: Debug + Copy + Sized;
     /// Uninhabited iff this lexical context is within a condition.
-    type NoBool: Debug + Copy + Sized;
+    type NotInBool: Debug + Copy + Sized;
     /// Uninhabited unless lexical context allows other than a single subst
     ///
     /// Used for `${case }`; could be used in other places where we
     /// accept the `${...}` syntax for an expansion, but want to
     /// reject repetitions, `${if }`, and so on.
-    type NoNonterminal: Debug + Copy + Sized;
+    type AllowNonterminal: Debug + Copy + Sized;
     /// Uninhabited unless this lexical context is within a condition.
     type BoolOnly: Debug + Copy + Sized;
 
-    fn no_paste(span: &impl Spanned) -> syn::Result<Self::NoPaste>;
-    fn no_case(span: &impl Spanned) -> syn::Result<Self::NoCase>;
-    fn no_bool(span: &impl Spanned) -> syn::Result<Self::NoBool>;
-    fn no_nonterminal(span: &impl Spanned)
-        -> syn::Result<Self::NoNonterminal>;
+    fn not_in_paste(span: &impl Spanned) -> syn::Result<Self::NotInPaste>;
+    fn not_in_case(span: &impl Spanned) -> syn::Result<Self::NotInCase>;
+    fn not_in_bool(span: &impl Spanned) -> syn::Result<Self::NotInBool>;
+    fn allow_nonterminal(
+        span: &impl Spanned,
+    ) -> syn::Result<Self::AllowNonterminal>;
 
     fn bool_only(span: &impl Spanned) -> syn::Result<Self::BoolOnly> {
         Err(span.error(
@@ -173,14 +174,14 @@ pub trait ExpansionOutput: SubstParseContext {
     /// Some other substitution which generates tokens
     ///
     /// Not supported within `${paste }`.
-    /// The `NoPaste` parameter makes this method unreachable
+    /// The `NotInPaste` parameter makes this method unreachable
     /// when expanding within `${paste }`;
     /// or to put it another way,
     /// it ensures that such an attempt would have been rejected
     /// during template parsing.
     fn push_other_subst<S, F>(
         &mut self,
-        np: &Self::NoPaste,
+        np: &Self::NotInPaste,
         _: &S,
         f: F,
     ) -> syn::Result<()>
@@ -202,7 +203,7 @@ pub trait ExpansionOutput: SubstParseContext {
     /// Expand a `${paste }`
     fn expand_paste(
         &mut self,
-        np: &Self::NoPaste,
+        np: &Self::NotInPaste,
         ctx: &Context,
         span: Span,
         paste_body: &Template<paste::Items>,
@@ -211,7 +212,7 @@ pub trait ExpansionOutput: SubstParseContext {
     /// Expand a `${case }`
     fn expand_case(
         &mut self,
-        np: &Self::NoCase,
+        np: &Self::NotInCase,
         case: paste::ChangeCase,
         ctx: &Context,
         span: Span,
@@ -291,20 +292,20 @@ impl TokenAccumulator {
 }
 
 impl SubstParseContext for TokenAccumulator {
-    type NoPaste = ();
-    type NoBool = ();
-    type NoCase = ();
-    type NoNonterminal = ();
-    fn no_bool(_: &impl Spanned) -> syn::Result<()> {
+    type NotInPaste = ();
+    type NotInBool = ();
+    type NotInCase = ();
+    type AllowNonterminal = ();
+    fn not_in_bool(_: &impl Spanned) -> syn::Result<()> {
         Ok(())
     }
-    fn no_paste(_: &impl Spanned) -> syn::Result<()> {
+    fn not_in_paste(_: &impl Spanned) -> syn::Result<()> {
         Ok(())
     }
-    fn no_case(_: &impl Spanned) -> syn::Result<()> {
+    fn not_in_case(_: &impl Spanned) -> syn::Result<()> {
         Ok(())
     }
-    fn no_nonterminal(_: &impl Spanned) -> syn::Result<()> {
+    fn allow_nonterminal(_: &impl Spanned) -> syn::Result<()> {
         Ok(())
     }
 
@@ -352,7 +353,7 @@ impl ExpansionOutput for TokenAccumulator {
     }
     fn push_other_subst<S, F>(
         &mut self,
-        _no_paste: &(),
+        _not_in_paste: &(),
         _: &S,
         f: F,
     ) -> syn::Result<()>
@@ -365,7 +366,7 @@ impl ExpansionOutput for TokenAccumulator {
 
     fn expand_paste(
         &mut self,
-        _no_paste: &(),
+        _not_in_paste: &(),
         ctx: &Context,
         span: Span,
         paste_body: &Template<paste::Items>,
@@ -376,7 +377,7 @@ impl ExpansionOutput for TokenAccumulator {
     }
     fn expand_case(
         &mut self,
-        _no_case: &(),
+        _not_in_case: &(),
         case: paste::ChangeCase,
         ctx: &Context,
         span: Span,

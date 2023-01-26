@@ -116,7 +116,7 @@ impl Expand<TokenAccumulator> for TemplateElement<TokenAccumulator> {
                 delim_span,
                 delimiter,
                 template,
-                no_paste: _,
+                not_in_paste: _,
             } => {
                 use proc_macro2::Group;
                 let mut content = TokenAccumulator::new();
