@@ -114,7 +114,12 @@ pub enum SubstDetails<O: SubstParseContext> {
     twheres(O::NotInPaste, O::NotInBool),
 
     // expansion manipulation
-    paste(Template<paste::Items>, O::NotInPaste, O::NotInCase, O::NotInBool),
+    paste(
+        Template<paste::Items>,
+        O::NotInPaste,
+        O::NotInCase,
+        O::NotInBool,
+    ),
     ChangeCase(
         Box<Subst<paste::Items<paste::WithinCaseContext>>>,
         paste::ChangeCase,
@@ -123,7 +128,11 @@ pub enum SubstDetails<O: SubstParseContext> {
     ),
 
     // special
-    when(Box<Subst<BooleanContext>>, O::NotInBool, O::AllowNonterminal),
+    when(
+        Box<Subst<BooleanContext>>,
+        O::NotInBool,
+        O::AllowNonterminal,
+    ),
 
     // expressions
     False(O::BoolOnly),
@@ -433,8 +442,9 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         let bool_only = O::bool_only(&kw);
         let allow_nonterminal = O::allow_nonterminal(&kw);
 
-        let parse_if =
-            |input| SubstIf::parse(input, kw.span(), allow_nonterminal.clone()?);
+        let parse_if = |input| {
+            SubstIf::parse(input, kw.span(), allow_nonterminal.clone()?)
+        };
 
         let in_parens = |input: ParseStream<'i>| {
             let inner;
@@ -543,8 +553,9 @@ impl<O: SubstParseContext> SubstIf<O> {
             } else if lookahead.peek(token::Brace) {
                 let content;
                 let _br = braced![ content in input ];
-                otherwise =
-                    Some(Template::parse(&content, not_in_nonterminal)?.into());
+                otherwise = Some(
+                    Template::parse(&content, not_in_nonterminal)?.into(),
+                );
                 break; // no more input allowed.
             } else {
                 return Err(lookahead.error());

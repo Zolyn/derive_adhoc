@@ -130,8 +130,9 @@ pub trait CaseContext: Sized + Default + Debug {
     /// Whether and how, in fact, to change the case, when expanding.
     fn push_case(case: Self::ChangeCase) -> Option<ChangeCase>;
     fn not_in_case(span: &impl Spanned) -> syn::Result<Self::NotInCase>;
-    fn allow_nonterminal(span: &impl Spanned)
-        -> syn::Result<Self::AllowNonterminal>;
+    fn allow_nonterminal(
+        span: &impl Spanned,
+    ) -> syn::Result<Self::AllowNonterminal>;
     /// Expand a `${case }`
     ///
     /// `<Items as SubstParseContext>::expand_case` delegates to this
@@ -399,7 +400,9 @@ impl<C: CaseContext> SubstParseContext for Items<C> {
     fn not_in_case(span: &impl Spanned) -> syn::Result<Self::NotInCase> {
         C::not_in_case(span)
     }
-    fn allow_nonterminal(span: &impl Spanned) -> syn::Result<C::AllowNonterminal> {
+    fn allow_nonterminal(
+        span: &impl Spanned,
+    ) -> syn::Result<C::AllowNonterminal> {
         C::allow_nonterminal(span)
     }
 

@@ -97,8 +97,9 @@ pub trait SubstParseContext {
     fn not_in_paste(span: &impl Spanned) -> syn::Result<Self::NotInPaste>;
     fn not_in_case(span: &impl Spanned) -> syn::Result<Self::NotInCase>;
     fn not_in_bool(span: &impl Spanned) -> syn::Result<Self::NotInBool>;
-    fn allow_nonterminal(span: &impl Spanned)
-        -> syn::Result<Self::AllowNonterminal>;
+    fn allow_nonterminal(
+        span: &impl Spanned,
+    ) -> syn::Result<Self::AllowNonterminal>;
 
     fn bool_only(span: &impl Spanned) -> syn::Result<Self::BoolOnly> {
         Err(span.error(
