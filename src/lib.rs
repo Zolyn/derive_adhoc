@@ -21,3 +21,6 @@ pub use derive_adhoc_macros::{define_derive_adhoc, derive_adhoc, Adhoc};
 
 #[doc=include_str!("../doc/template-syntax.md")]
 pub mod doc_template_syntax {}
+
+#[doc=include_str!("../doc/implementation.md")]
+pub mod doc_implementation {}
