@@ -16,11 +16,6 @@ define_derive_adhoc! {
     }
 }
 
-// XXXX In the original version of the syntax, I had thought that we might
-//   have `$v___` work for structs, and treat structs as if they had
-//   only a single variant.
-//       If we decide not to do that, we will need a different kind of
-//   RepeatOver for $vpat, since structs _should_ have $vpat.
 define_derive_adhoc! {
     ListVariants =
 

@@ -217,6 +217,8 @@ Expansion prefix char `v` may come to mean both `value` and `variant`.
                                 nothing         in tuple variant/struct
 ```
 
+In the this the syntax, we have `$v___` work for structs -
+treating structs as if they had only a single variant.
 
 ## String concatenation `${string ...}`
 		
