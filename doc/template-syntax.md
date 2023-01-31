@@ -91,18 +91,18 @@ derive-adhoc treats them as having a single (unnamed) variant.
      The generic arguments, with bounds,
      as written in the toplevel type definition.
 
-     Example: `'l:'a, T:X, const C=1,` .
+     Example: `'l:'a, T:X, const C=1,`
 
    * **`$tgnames`**:
      The generic argument names, without bounds,
      as might be used in a field type or inherent impl.
 
-     Example: `'l, T, C,` .
+     Example: `'l, T, C,`
 
    * **`$twheres`**:
      The where clauses, as written in the toplevel type definition.
 
-     Example: `T: 'a,` .
+     Example: `T: 'a,`
 
    If not empty, will always have a trailing comma.
 
