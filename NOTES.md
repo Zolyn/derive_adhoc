@@ -96,6 +96,16 @@ Expansion prefix char `v` may come to mean both `value` and `variant`.
 In the this the syntax, we have `$v___` work for structs -
 treating structs as if they had only a single variant.
 
+### Deconstructing/matching and then accessing the resulting bindings
+
+```text
+ $vpat : A pattern to match and deconstruct the variant.  On a non-enum
+         struct, this matches and deconstructs the struct.
+
+ $fpname: The identifier of a field within a pattern made by $vpat.  This is
+          _0, _1, if this is a tuple struct or tuple variant.
+```
+
 ## String concatenation `${string ...}`
 		
 Argument can contain any expansions (will be expanded into tokens and

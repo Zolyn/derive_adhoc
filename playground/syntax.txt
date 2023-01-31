@@ -61,16 +61,9 @@ Non-magical expansions:
  $vname : The name of the variant.  This fails to expand on a non-enum
  struct.
 
- $vpat : A pattern to match and deconstruct the variant.  On a non-enum
- struct, this matches and deconstructs the struct.
-
  // on fields
  $ftype : the type of a field of the object.
 
  $fname: The identifier of a field of the object.  This is 0,1,.. if this
      is a tuple struct.
-
- $fpname: The identifier of a field within a pattern made by $vpat.  This is
- _0, _1, if this is a tuple struct or tuple variant.
-
 
