@@ -251,6 +251,30 @@ Syntax and semantics TBD.  Some notes:
    commas in enum { ..., ..., }, and so on.
 ```
 
+## Restricting a macro to only structs (to avoid later consequential errors)
+
+This syntax:
+
+```text
+define_derive_adhoc! {
+    MyHash for struct =
+    //     ^^^^^^^^^^
+    impl<$tgens> Hash for $ttype
+```
+
+has been suggested to restrict a template to use only on structs
+(not enums, etc.)
+
+An alternative would be something like:
+
+```text
+define_derive_adhoc! {
+    MyHash =
+    ${assert is_struct}
+    impl<$tgens> Hash for $ttype
+```
+
+which would fit into the existing template syntax.
 
 # Future plans wrt macro namespace questions
 
