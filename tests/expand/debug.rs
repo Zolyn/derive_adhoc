@@ -1,7 +1,8 @@
-// Here's an example of an attribute that overrides the default behavior
-// for an attribute.
-
-// Read "hash.rs" first for more discussion.
+//! More complex example with multiple, complex, attributes etc.
+//!
+//! Includes an example of an attribute containing Rust syntax.
+//!
+//! Read "clone.rs" and "hash.rs" first for simpler examples.
 
 use std::fmt::{self, Debug, Formatter};
 

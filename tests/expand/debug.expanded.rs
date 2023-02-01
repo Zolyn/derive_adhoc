@@ -1,3 +1,8 @@
+//! More complex example with multiple, complex, attributes etc.
+//!
+//! Includes an example of an attribute containing Rust syntax.
+//!
+//! Read "clone.rs" and "hash.rs" first for simpler examples.
 use std::fmt::{self, Debug, Formatter};
 use derive_adhoc::define_derive_adhoc;
 use derive_adhoc::{derive_adhoc, Adhoc};

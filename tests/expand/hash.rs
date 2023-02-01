@@ -1,9 +1,6 @@
-// Here's a simple syntax for the Hash attribute.  I'm using it to
-// imagine what parameters look like, and how a "skip" attribute might
-// look, and how a "hash_with" attrbite might look.
-
-//#![feature(trace_macros)]
-//trace_macros!(true);
+//! Simple example, including use of an #[adhoc(...)] attribute
+//!
+//! Also demonstrates use of field type trait bounds.
 
 use derive_adhoc::define_derive_adhoc;
 use derive_adhoc::{derive_adhoc, Adhoc};

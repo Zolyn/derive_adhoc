@@ -1,4 +1,6 @@
-//! Test name macros and several scopes of iteration.
+//! Examples / test cases for identifier pasting.
+//!
+//! Refer to `idpaste.expanded.rs` to see what this generates.
 #![allow(dead_code)]
 use derive_adhoc::{derive_adhoc, Adhoc};
 type FieldType = ();

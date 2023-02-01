@@ -1,9 +1,4 @@
-// Here's a simple syntax for the Hash attribute.  I'm using it to
-// imagine what parameters look like, and how a "skip" attribute might
-// look, and how a "hash_with" attrbite might look.
-
-//#![feature(trace_macros)]
-//trace_macros!(true);
+//! Test case / example for `${select }`
 
 use std::fmt::Debug;
 

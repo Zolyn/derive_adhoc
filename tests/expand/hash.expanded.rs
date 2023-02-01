@@ -1,3 +1,6 @@
+//! Simple example, including use of an #[adhoc(...)] attribute
+//!
+//! Also demonstrates use of field type trait bounds.
 use derive_adhoc::define_derive_adhoc;
 use derive_adhoc::{derive_adhoc, Adhoc};
 use std::fmt::Debug;
