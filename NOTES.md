@@ -1,129 +1,5 @@
 # **Internal notes document (`NOTES.md`)**
 
-## Implementation approach - truly ad-hoc macros
-
-Context: a macro A cannot simply access the expansion of another macro B.
-So we must sometimes define macros that apply other macros
-(whose name is supplied as an argument)
-to what is conceptually their output.
-
-### 1. `#[derive(Adhoc)]` proc macro for saving struct definitions
-
-Implemented in [capture::derive_adhoc_derive_macro].
-
-When applied to (e.g.) `pub struct StructName`, generates this
-
-```rust,ignore
-    macro_rules! derive_adhoc_driver_StructName {
-        { $($template:tt)* } => {
-            derive_adhoc_expand!{
-                { pub struct StructName { /* original struct definition */ } }
-                $($template)*
-            }
-        }
-    }
-```
-
-### 2. `derive_adhoc!` function-like macro for applying to a template
-
-Implemented in [invocation::derive_adhoc_func_macro].
-
-When applied like this
-```rust,ignore
-    derive_adhoc!{
-       StructName:
-       TEMPLATE...
-    }
-```
-
-Expands to
-```rust,ignore
-    derive_adhoc_driver_StructName! {
-       TEMPLATE...
-    }
-```
-
-### 3. Function-like proc macro to do the actual expansion
-
-Implemented in [expand::derive_adhoc_expand_func_macro].
-
-The result of expanding the above is this:
-
-```rust,ignore
-    derive_adhoc_expand!{
-        { pub struct StructName { /* original struct definition */ } }
-        TEMPLATE...
-    }
-```
-
-`derive_adhoc_expand` parses `pub struct StructName`,
-and implements a bespoke template expander,
-whose template syntax resembles the expansion syntax from `macro_rules`.
-
-
-## Implementation approach - reusable template macros
-
-## 1. `define_derive_adhoc!` macro for defining a reuseable template
-
-Implemented in [definition::define_derive_adhoc_func_macro].
-
-When used like this
-```rust,ignore
-    define_derive_adhoc! {
-        MyMacro =
-        TEMPLATE...
-    }
-```
-Expands to
-```rust,ignore
-    macro_rules! derive_adhoc_template_MyDebug {
-        { $dollar : tt $($driver : tt) * } => {
-            derive_adhoc_expand! {
-                { $($driver)* }
-                TEMPLATE...
-            }
-        }
-    }
-```
-
-Except, every `$` in the template is replaced with `$dollar`.  This is
-because a `macro_rules!` template is not capable of generating a
-literal in the expansion `$`.  (With the still-unstable
-[`decl_macro`](https://github.com/rust-lang/rust/issues/83527)
-feature, `$$` does this.)  So the proc macro code passes in a `$` for
-the `macro_rules` macro to emit when it needs to expand to a dollar.
-
-## 2. `#[derive_adhoc(Template)]`, implemented in `#[derive(Adhoc)]`
-
-Template reuse is also implemented in [capture::derive_adhoc_derive_macro].
-
-This
-
-```rust,ignore
-    #[derive(Adhoc)]
-    #[derive_adhoc(Template)]
-    pub struct StructName { ... }
-```
-
-Generates (in addition to the `derive_adhoc_driver_StructName` definition)
-
-```rust,ignore
-    derive_adhoc_template_Template! {
-        $
-        #[derive_adhoc(Template)]
-        struct StructName { ... }
-    }
-```
-
-The literal `$` is there to work around a limitation in `macro_rules!`,
-see above.
-
-## 3. Actual expansion
-
-The call to `derive_adhoc_template_Template!`
-is expanded according to the `macro_rules!` definition,
-resulting in a call to `derive_adhoc_expand`.
-
 ## Cross-crate API stability
 
 We want people to be able to export derive-adhoc reuseable macros,
@@ -217,6 +93,18 @@ Expansion prefix char `v` may come to mean both `value` and `variant`.
                                 nothing         in tuple variant/struct
 ```
 
+In the this the syntax, we have `$v___` work for structs -
+treating structs as if they had only a single variant.
+
+### Deconstructing/matching and then accessing the resulting bindings
+
+```text
+ $vpat : A pattern to match and deconstruct the variant.  On a non-enum
+         struct, this matches and deconstructs the struct.
+
+ $fpname: The identifier of a field within a pattern made by $vpat.  This is
+          _0, _1, if this is a tuple struct or tuple variant.
+```
 
 ## String concatenation `${string ...}`
 		
@@ -251,6 +139,30 @@ Syntax and semantics TBD.  Some notes:
    commas in enum { ..., ..., }, and so on.
 ```
 
+## Restricting a macro to only structs (to avoid later consequential errors)
+
+This syntax:
+
+```text
+define_derive_adhoc! {
+    MyHash for struct =
+    //     ^^^^^^^^^^
+    impl<$tgens> Hash for $ttype
+```
+
+has been suggested to restrict a template to use only on structs
+(not enums, etc.)
+
+An alternative would be something like:
+
+```text
+define_derive_adhoc! {
+    MyHash =
+    ${assert is_struct}
+    impl<$tgens> Hash for $ttype
+```
+
+which would fit into the existing template syntax.
 
 # Future plans wrt macro namespace questions
 

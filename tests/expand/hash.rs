@@ -12,7 +12,7 @@ use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 
 define_derive_adhoc! {
-    MyHash /*for struct*/ =  // [1]
+    MyHash =
 
     impl<$tgens> Hash for $ttype
     where $twheres
@@ -47,8 +47,6 @@ where
 #[derive(Adhoc)]
 #[derive_adhoc(MyHash)]
 struct IntPair(usize, usize);
-
-// [1] The "for struct" syntax here means that only structs are supported.
 
 fn main() {
     let v = DataType {

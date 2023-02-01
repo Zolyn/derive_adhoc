@@ -1,3 +1,4 @@
+//! THIS IS A NON-WORKING CONCEPT, FOR FUTURE DEVELOPMENT
 
 #[derive(Adhoc)]
 enum Extremity {

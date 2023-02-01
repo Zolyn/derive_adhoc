@@ -1,3 +1,5 @@
+//! THIS IS A NON-WORKING CONCEPT, FOR FUTURE DEVELOPMENT
+
 /// This example explores a function that exposes the internals
 /// of a struct or enum by cloning them into a new type where all
 /// members are public.
