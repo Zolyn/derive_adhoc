@@ -1,3 +1,5 @@
+//! THIS IS A NON-WORKING CONCEPT, FOR FUTURE DEVELOPMENT
+
 // This builds on hash.rs, but also works on enums.
 
 
