@@ -22,7 +22,7 @@ define_derive_adhoc! {
         } else {
             $ftype: Debug,
         }}
-      ) // [1]
+      )
     {
         fn fmt(&self, f: &mut Formatter<'_>)
                  -> Result<(), fmt::Error>
