@@ -26,7 +26,7 @@ define_derive_adhoc!{
     }
 }
 
-// If we were to `#[derive(Clone)]`, ContainsArc<io::Error> wouldn't
+// If we were to `#[derive(Clone)]`, DecoratedError<io::Error> wouldn't
 // be Clone, because io::Error isn't.
 #[derive(Adhoc)]
 #[derive_adhoc(MyClone)]
