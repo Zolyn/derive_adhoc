@@ -7,13 +7,13 @@ They don't form part of the public interface.
 
 ## Introduction
 
-Everyone knows that proc macro invocations
+It is widely understood that proc macro invocations
 cannot communicate with each other.
 (Some people have tried sneaking round the back with disk files etc.
 but this can break due to incremental and concurrent compilation.)
 
 But, a proc macro can *define a `macro_rules` macro*.
-Then, a later proc macros can invoke that macro.
+Then, later proc macros can invoke that macro.
 The expansion can even invoke further macros.
 In this way, a proc macro invocation *can* communicate with
 subsequent proc macro invocations.
