@@ -3,6 +3,9 @@
 use derive_adhoc::{derive_adhoc, Adhoc};
 type FieldType = ();
 struct TypeNames {
+    /// We use std::slice::Chunks here because that way we can test
+    /// identifier pasting with a whole path.  The macro `TypeNames`
+    /// will generate a field with type `RChunksMut.
     error: std::slice::Chunks<'static, ()>,
 }
 struct PreTypeNamesPost {
