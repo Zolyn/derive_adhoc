@@ -27,7 +27,7 @@ define_derive_adhoc!{
 }
 
 // If we were to `#[derive(Clone)]`, DecoratedError<io::Error> wouldn't
-// be Clone, because io::Error isn't.
+// be Clone, because io::Error isn't, even though the Arc means we can clone.
 #[derive(Adhoc)]
 #[derive_adhoc(MyClone)]
 struct DecoratedError<E> {
