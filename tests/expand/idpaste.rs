@@ -1,4 +1,6 @@
-//! Test name macros and several scopes of iteration.
+//! Examples / test cases for identifier pasting.
+//!
+//! Refer to `idpaste.expanded.rs` to see what this generates.
 
 #![allow(dead_code)]
 
@@ -8,6 +10,9 @@ type FieldType = ();
 
 #[derive(Adhoc)]
 struct TypeNames {
+    /// We use std::slice::Chunks here because that way we can test
+    /// identifier pasting with a whole path.  The macro `TypeNames`
+    /// will generate a field with type `RChunksMut.
     error: std::slice::Chunks<'static, ()>,
 }
 

@@ -1,3 +1,4 @@
+//! Test case / example for `${select }`
 use std::fmt::Debug;
 use derive_adhoc::{derive_adhoc, Adhoc};
 use derive_adhoc_tests::*;

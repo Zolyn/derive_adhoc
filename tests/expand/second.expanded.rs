@@ -1,3 +1,4 @@
+//! Example including attribute filtering
 use derive_adhoc::{derive_adhoc, Adhoc};
 /// Some docs
 pub struct ChannelsParams {
