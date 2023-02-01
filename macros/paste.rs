@@ -3,6 +3,10 @@
 use crate::framework::*;
 
 /// Accumulator for things to be pasted
+///
+/// Implements [`ExpansionOutput`] and [`SubstParseContext`]:
+/// i.e., it corresponds to the lexical context for a `${paste }`,
+/// and collects the identifier fragments being pasted.
 #[derive(Debug)]
 pub struct Items<C = ()>
 where
@@ -14,6 +18,9 @@ where
 }
 
 /// Accumulator for things to be pasted
+///
+/// This contains the actual fragments to be pasted.
+/// Any case changing is done during assembly.
 #[derive(Debug)]
 pub struct ItemsData {
     span: Span,
@@ -198,6 +205,8 @@ impl CaseContext for WithinCaseContext {
         Err(span
             .error("${case } may contain only a single expansion (or token)"))
     }
+    // We forbid ${pate } inside itself, because when we do case
+    // conversion this will get very fiddly to implement.
     fn expand_case<R>(
         _: &mut Items<Self>,
         not_in_case: &Void,
@@ -519,8 +528,6 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
     ) -> syn::Result<()> {
         void::unreachable(*not_in_paste)
     }
-    // We forbid ${pate } inside itself, because when we do case
-    // conversion this will get very fiddly to implement.
     fn expand_case(
         &mut self,
         not_in_case: &Self::NotInCase,
