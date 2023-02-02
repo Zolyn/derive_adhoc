@@ -19,7 +19,7 @@ dependencies = [
 
 [[package]]
 name = "derive-adhoc"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "derive-adhoc-macros",
  "heck",
@@ -27,7 +27,7 @@ dependencies = [
 
 [[package]]
 name = "derive-adhoc-macros"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "heck",
  "itertools",
@@ -41,7 +41,7 @@ dependencies = [
 
 [[package]]
 name = "derive-adhoc-tests"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "derive-adhoc",
  "easy-ext",
