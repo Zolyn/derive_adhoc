@@ -1,6 +1,6 @@
 [package]
 name = "derive-adhoc-tests"
-version = "0.0.1"
+version = "0.1.0"
 edition = "2018"
 license="MIT"
 authors=["Ian Jackson <ijackson@chiark.greenend.org.uk>",
@@ -11,7 +11,7 @@ repository = "https://gitlab.torproject.org/Diziet/rust-derive-adhoc"
 publish = false
 
 [dependencies]
-derive-adhoc = { path = "..", version = "0.0.1" }
+derive-adhoc = { path = "..", version = "0.1.0" }
 easy-ext = "1"
 glob = "0.3"
 
