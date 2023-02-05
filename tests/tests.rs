@@ -21,6 +21,9 @@ use easy_ext::ext;
 #[cfg(test)]
 mod list_names;
 
+#[cfg(test)]
+mod modules;
+
 #[ext(DebugExt)]
 pub impl<T: Debug> T {
     fn to_debug(&self) -> String {
