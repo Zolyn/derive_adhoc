@@ -59,14 +59,14 @@ pub fn define_derive_adhoc_func_macro(
 
     let template = escape_dollars(template);
 
-    let mac_name = format_ident!("derive_adhoc_template_{}", &templ_name);
+    let templ_mac_name = format_ident!("derive_adhoc_template_{}", &templ_name);
 
     let expand_macro = expand_macro_name()?;
 
     // the macro must recent a dollar as its first argument because
     // it is hard to find a dollar otherwise!
     let output = quote! {
-        macro_rules! #mac_name {
+        macro_rules! #templ_mac_name {
             {
                 $dollar:tt
                 $( $driver:tt )*
@@ -81,12 +81,12 @@ pub fn define_derive_adhoc_func_macro(
 
     // eprintln!(
     //     "---------- derive_adhoc_define start for {} ----------",
-    //     mac_name
+    //     templ_mac_name
     // );
     // eprintln!("{}", &output);
     // eprintln!(
     //     "---------- derive_adhoc_define end for {} ----------",
-    //     mac_name
+    //     templ_mac_name
     // );
 
     Ok(output)
