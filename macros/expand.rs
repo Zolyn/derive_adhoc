@@ -8,6 +8,14 @@
 
 use crate::framework::*;
 
+/// Input to `derive_adhoc_expand!`
+#[derive(Debug)]
+pub struct SubstInput {
+    pub brace_token: token::Brace,
+    pub driver: syn::DeriveInput,
+    pub template: Template<TokenAccumulator>,
+}
+
 pub enum AttrValue<'l> {
     Unit(Span),
     Deeper(Span),

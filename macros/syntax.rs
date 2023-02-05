@@ -11,13 +11,6 @@ pub use SubstDetails as SD;
 pub use TemplateElement as TE;
 
 #[derive(Debug)]
-pub struct SubstInput {
-    pub brace_token: token::Brace,
-    pub driver: syn::DeriveInput,
-    pub template: Template<TokenAccumulator>,
-}
-
-#[derive(Debug)]
 pub struct Template<O: SubstParseContext> {
     pub elements: Vec<TemplateElement<O>>,
     pub allow_nonterminal: O::AllowNonterminal,
