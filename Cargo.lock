@@ -177,6 +177,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "pub-a"
+version = "0.0.1"
+dependencies = [
+ "derive-adhoc",
+]
+
+[[package]]
+name = "pub-b"
+version = "0.0.1"
+dependencies = [
+ "derive-adhoc",
+ "pub-a",
+]
+
+[[package]]
 name = "quote"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"

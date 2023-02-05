@@ -1,0 +1,16 @@
+[package]
+name = "pub-b"
+version = "0.0.1"
+edition = "2018"
+license="MIT"
+authors=["Ian Jackson <ijackson@chiark.greenend.org.uk>",
+         "and the contributors to Rust derive-adhoc"]
+description="pub testing crates - part B, uses bizarre version"
+publish = false
+
+[dependencies]
+pub-a = { path = "../pub-a", version = "0.0.1" }
+derive-adhoc = { path = "../../..", version = "0.1.0" }
+	
+[lib]
+path = "pub-b.rs"
