@@ -2,20 +2,30 @@
 
 use crate::prelude::*;
 
-// (CannedName, CannedName, ...)
-struct PrecannedInvocationsAttr {
-    paths: Punctuated<syn::Path, token::Comma>,
+/// Contents of an entry in a `#[derive_adhoc(..)]` attribute
+enum InvocationEntry {
+    Precanned(syn::Path),
 }
 
-impl Parse for PrecannedInvocationsAttr {
+// (CannedName, CannedName, ...)
+struct InvocationAttr {
+    entries: Punctuated<InvocationEntry, token::Comma>,
+}
+
+impl Parse for InvocationEntry {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        Ok(InvocationEntry::Precanned(syn::Path::parse_mod_style(
+            input,
+        )?))
+    }
+}
+
+impl Parse for InvocationAttr {
     fn parse(outer: ParseStream) -> syn::Result<Self> {
         let input;
         let _paren = parenthesized!(input in outer);
-        let paths = Punctuated::parse_terminated_with(
-            &input,
-            syn::Path::parse_mod_style,
-        )?;
-        Ok(PrecannedInvocationsAttr { paths })
+        let entries = Punctuated::parse_terminated(&input)?;
+        Ok(InvocationAttr { entries })
     }
 }
 
@@ -39,11 +49,15 @@ pub fn derive_adhoc_derive_macro(
                 return Ok(None);
             }
             let tokens = attr.tokens.clone();
-            let PrecannedInvocationsAttr { paths } = syn::parse2(tokens)?;
-            Ok(Some(paths))
+            let InvocationAttr { entries } = syn::parse2(tokens)?;
+            Ok(Some(entries))
         })
         .flatten_ok()
         .flatten_ok()
+        .filter_map(|entry| match entry {
+            Err(e) => Some(Err(e)),
+            Ok(InvocationEntry::Precanned(path)) => Some(Ok(path)),
+        })
         .collect::<syn::Result<Vec<_>>>()?;
 
     let expand_macro = expand_macro_name()?;
