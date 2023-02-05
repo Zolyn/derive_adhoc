@@ -457,56 +457,11 @@ pub fn derive_adhoc_expand_func_macro(
 ) -> syn::Result<TokenStream> {
     let input: SubstInput = syn::parse2(input)?;
 
-    let tattrs = preprocess_attrs(&input.driver.attrs)?;
-
-    let pvariants_one = |fields| {
-        let pattrs = vec![];
-        let pfields = preprocess_fields(fields)?;
-        let pvariant = PreprocessedVariant {
-            fields,
-            pattrs,
-            pfields,
-        };
-        syn::Result::Ok(vec![pvariant])
-    };
-
-    let union_fields;
-
-    let pvariants = match &input.driver.data {
-        syn::Data::Struct(ds) => pvariants_one(&ds.fields)?,
-        syn::Data::Union(du) => {
-            union_fields = syn::Fields::Named(du.fields.clone());
-            pvariants_one(&union_fields)?
-        }
-        syn::Data::Enum(de) => de
-            .variants
-            .iter()
-            .map(|variant| {
-                let fields = &variant.fields;
-                let pattrs = preprocess_attrs(&variant.attrs)?;
-                let pfields = preprocess_fields(&variant.fields)?;
-                Ok(PreprocessedVariant {
-                    fields,
-                    pattrs,
-                    pfields,
-                })
-            })
-            .collect::<Result<Vec<_>, syn::Error>>()?,
-    };
-
-    // maybe we should be using syn::buffer::TokenBuffer ?
-    // or Vec<TokenTree>, which we parse into a tree of our own full
-    // of [TokenTree] ?
-    let ctx = Context {
-        top: &input.driver,
-        tattrs: &tattrs,
-        field: None,
-        variant: None,
-        pvariants: &pvariants,
-    };
-    let mut output = TokenAccumulator::new();
-    input.template.expand(&ctx, &mut output);
-    let output = output.tokens()?;
+    let output = Context::call(&input.driver, |ctx| {
+        let mut output = TokenAccumulator::new();
+        input.template.expand(&ctx, &mut output);
+        output.tokens()
+    })?;
 
     // obviously nothing should print to stderr
     //    dbg!(&&output);
