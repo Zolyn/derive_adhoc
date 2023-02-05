@@ -157,6 +157,10 @@ impl Drop for ErrorAccumulator {
 pub fn expand_macro_name() -> Result<TokenStream, syn::Error> {
     let name = crate_name("derive-adhoc-macros")
         .or_else(|_| crate_name("derive-adhoc"));
+
+    #[cfg(feature = "bizarre")]
+    let name = name.or_else(|_| crate_name("bizarre-derive-adhoc"));
+
     match name {
         Ok(FoundCrate::Itself) => Ok(quote!( crate::derive_adhoc_expand )),
         Ok(FoundCrate::Name(name)) => {

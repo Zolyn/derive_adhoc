@@ -10,7 +10,7 @@ publish = false
 
 [dependencies]
 pub-a = { path = "../pub-a", version = "0.0.1" }
-derive-adhoc = { path = "../../..", version = "0.1.0" }
+derive-adhoc = { package = "bizarre-derive-adhoc", path = "../bizarre-facade", version = "0.0.666" }
 	
 [lib]
 path = "pub-b.rs"

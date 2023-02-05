@@ -1,0 +1,20 @@
+[package]
+name = "bizarre-derive-adhoc"
+version = "0.0.666"
+edition = "2018"
+license="MIT"
+authors=["Ian Jackson <ijackson@chiark.greenend.org.uk>",
+         "and the contributors to Rust derive-adhoc"]
+description="Bizarrely incompatible copy of derive-adhoc, for testing"
+
+publish = false
+
+[dependencies]
+derive-adhoc-macros = { package = "bizarre-derive-adhoc-macros", path = "../bizarre-macros", version = "0.0.666" }
+heck = "0.4"
+
+[lib]
+doctest = false
+doc = false
+path = "../../../src/lib.rs"
+#path = "bizarre-facade.rs"

@@ -18,6 +18,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "bizarre-derive-adhoc"
+version = "0.0.666"
+dependencies = [
+ "bizarre-derive-adhoc-macros",
+ "heck",
+]
+
+[[package]]
+name = "bizarre-derive-adhoc-macros"
+version = "0.0.666"
+dependencies = [
+ "heck",
+ "itertools",
+ "proc-macro-crate",
+ "proc-macro2",
+ "quote",
+ "strum",
+ "syn",
+ "void",
+]
+
+[[package]]
 name = "derive-adhoc"
 version = "0.1.0"
 dependencies = [
@@ -187,7 +209,7 @@ dependencies = [
 name = "pub-b"
 version = "0.0.1"
 dependencies = [
- "derive-adhoc",
+ "bizarre-derive-adhoc",
  "pub-a",
 ]
 

@@ -586,6 +586,15 @@ impl<O: SubstParseContext> Parse for Subst<O> {
             })
         };
 
+        #[cfg(feature = "bizarre")]
+        let kw = {
+            let s = kw.to_string();
+            let s = s
+                .strip_suffix("_bizarre")
+                .ok_or_else(|| kw.error("bizarre mode but not _bizarre"))?;
+            syn::Ident::new(s, kw.span())
+        };
+
         // keyword!{ KEYWORD [ {BLOCK WITH BINDINGS} ] [ CONSTRUCTOR-ARGS ] }
         // expands to   if ... { return ... }
         // KEYWORD can be "KEYWORD_STRING": CONSTRUCTOR

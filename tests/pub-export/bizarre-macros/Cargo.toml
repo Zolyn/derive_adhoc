@@ -1,0 +1,30 @@
+[package]
+name = "bizarre-derive-adhoc-macros"
+version = "0.0.666"
+edition = "2018"
+authors=["Ian Jackson <ijackson@chiark.greenend.org.uk>",
+         "and the contributors to Rust derive-adhoc"]
+license = "MIT"
+description="Bizarrely incompatible copy of derive-adhoc-macros, for testing"
+
+publish = false
+
+[dependencies]
+heck = "0.4"
+itertools = "0.10"
+proc-macro-crate = "1.1.3"
+proc-macro2 = "1"
+quote = "1"
+strum = { version = "0.24", features = ["derive"] }
+syn = "1"
+void = "1"
+
+[features]
+bizarre = []
+default = ["bizarre"]
+
+[lib]
+doc = false
+doctest = false
+path = "../../../macros/macros.rs"
+proc-macro = true

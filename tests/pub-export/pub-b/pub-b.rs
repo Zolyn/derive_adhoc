@@ -35,11 +35,11 @@ pub mod adhoc_template {
         // it might contain a path.  This is not in fact ever true.
         pub_a::ADriver:
 
-        impl<$tgens> NumFields for $ttype {
+        impl<$tgens_bizarre> NumFields for $ttype_bizarre {
             fn num_fields() -> usize {
-                $( let _: $ftype; )
+                $( let _: $ftype_bizarre; )
 
-                0 + ${for fields { 1 }}
+                0 + ${for_bizarre fields { 1 }}
             }
         }
     }
