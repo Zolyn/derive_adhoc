@@ -73,7 +73,7 @@ pub fn define_derive_adhoc_func_macro(
             } => {
                 #expand_macro! {
                     { $( $driver )* }
-                    # template
+                    { # template }
                 }
             }
         }

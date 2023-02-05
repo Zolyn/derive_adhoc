@@ -187,12 +187,15 @@ struct AdhocAttrList {
 impl Parse for SubstInput {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let driver;
-        let brace_token = braced!(driver in input);
+        let driver_brace = braced!(driver in input);
         let driver = driver.parse()?;
-        let template = Template::parse(input, ())?;
+        let template;
+        let template_brace = braced!(template in input);
+        let template = Template::parse(&template, ())?;
         Ok(SubstInput {
-            brace_token,
+            driver_brace,
             driver,
+            template_brace,
             template,
         })
     }

@@ -55,7 +55,7 @@ pub fn derive_adhoc_derive_macro(
             } => {
                 #expand_macro!{
                     { #input }
-                    $($template)*
+                    { $($template)* }
                 }
             }
         }

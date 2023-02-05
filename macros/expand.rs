@@ -11,8 +11,9 @@ use crate::framework::*;
 /// Input to `derive_adhoc_expand!`
 #[derive(Debug)]
 pub struct SubstInput {
-    pub brace_token: token::Brace,
+    pub driver_brace: token::Brace,
     pub driver: syn::DeriveInput,
+    pub template_brace: token::Brace,
     pub template: Template<TokenAccumulator>,
 }
 
