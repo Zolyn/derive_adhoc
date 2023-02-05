@@ -43,7 +43,7 @@ When applied to (e.g.) `pub struct StructName`, generates this
                 { pub struct StructName { /* original struct definition */ } }
                 { }
                 { $($template)* }
-                { $($tpassthrough:tt)* }
+                { $($tpassthrough)* }
             }
         }
     }
@@ -68,6 +68,7 @@ Expands to
 ```rust,ignore
     derive_adhoc_driver_StructName! {
        { TEMPLATE... }
+       crate;
     }
 ```
 
@@ -82,7 +83,7 @@ The result of expanding the above is this:
         { pub struct StructName { /* original struct definition */ } }
         { }
         { TEMPLATE... }
-        { }
+        { crate; }
     }
 ```
 
@@ -110,9 +111,9 @@ Expands to
         { $dollar:tt { $($driver:tt)* } $($dpassthrough:tt)* } => {
             derive_adhoc_expand! {
                 { $($driver)* }
-                { $($dpassthrough:tt)* }
+                { $($dpassthrough)* }
                 { TEMPLATE... }
-                { }
+                { $crate; }
             }
         }
     }

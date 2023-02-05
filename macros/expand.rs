@@ -14,6 +14,7 @@ pub struct DeriveAdhocExpandInput {
     pub driver_brace: token::Brace,
     pub driver: syn::DeriveInput,
     pub template_brace: token::Brace,
+    pub template_crate: syn::Path,
     pub template: Template<TokenAccumulator>,
 }
 
@@ -42,13 +43,18 @@ impl Parse for DeriveAdhocExpandInput {
         let template;
         let template_brace = braced!(template in input);
         let template = Template::parse(&template, ())?;
-        let _template_ignore: TokenTree = input.parse()?;
+        let template_passed;
+        let _ = braced!(template_passed in input);
+        let template_crate = template_passed.parse()?;
+        let _: Token![;] = template_passed.parse()?;
+        let _: TokenStream = template_passed.parse()?;
         let _: TokenStream = input.parse()?;
         Ok(DeriveAdhocExpandInput {
             driver_brace,
             driver,
             template_brace,
             template,
+            template_crate,
         })
     }
 }
@@ -630,7 +636,9 @@ impl ToTokens for Fname<'_> {
 pub fn derive_adhoc_expand_func_macro(
     input: TokenStream,
 ) -> syn::Result<TokenStream> {
+    // eprintln!("derive_adhoc_expand! {}", &input);
     let input: DeriveAdhocExpandInput = syn::parse2(input)?;
+    // eprintln!("derive_adhoc_expand! crate = {:?}", &input.template_crate);
 
     let output = Context::call(&input.driver, |ctx| {
         let mut output = TokenAccumulator::new();

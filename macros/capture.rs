@@ -59,7 +59,7 @@ pub fn derive_adhoc_derive_macro(
                     { #driver }
                     { }
                     { $($template)* }
-                    { $($tpassthrough:tt)* }
+                    { $($tpassthrough)* }
                 }
             }
         }
