@@ -28,7 +28,8 @@ pub fn derive_adhoc_derive_macro(
     // a bit like syn::DeriveInput.
     let input: syn::DeriveInput = syn::parse2(input)?;
 
-    let mac_name = format_ident!("derive_adhoc_driver_{}", &input.ident);
+    let driver_mac_name =
+        format_ident!("derive_adhoc_driver_{}", &input.ident);
 
     let precanned_paths: Vec<syn::Path> = input
         .attrs
@@ -49,13 +50,13 @@ pub fn derive_adhoc_derive_macro(
 
     let mut output = quote! {
         #[allow(unused_macros)]
-        macro_rules! #mac_name {
+        macro_rules! #driver_mac_name {
             {
                 $($template:tt)*
             } => {
                 #expand_macro!{
                     { #input }
-                    $($template)*
+                    { $($template)* }
                 }
             }
         }

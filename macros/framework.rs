@@ -267,6 +267,64 @@ pub trait ExpandInfallible<O> {
 #[derive(Debug)]
 pub struct TokenAccumulator(Result<TokenStream, syn::Error>);
 
+impl<'c> Context<'c> {
+    /// Calls `f` with a top-level [`Context`] for a [`syn::DeriveInput`]
+    ///
+    /// `Context` has multiple levels of references to values created
+    /// here, so we can't easily provide `Context::new()`.
+    pub fn call<T>(
+        driver: &syn::DeriveInput,
+        f: impl FnOnce(Context) -> syn::Result<T>,
+    ) -> Result<T, syn::Error> {
+        let tattrs = preprocess_attrs(&driver.attrs)?;
+
+        let pvariants_one = |fields| {
+            let pattrs = vec![];
+            let pfields = preprocess_fields(fields)?;
+            let pvariant = PreprocessedVariant {
+                fields,
+                pattrs,
+                pfields,
+            };
+            syn::Result::Ok(vec![pvariant])
+        };
+
+        let union_fields;
+
+        let pvariants = match &driver.data {
+            syn::Data::Struct(ds) => pvariants_one(&ds.fields)?,
+            syn::Data::Union(du) => {
+                union_fields = syn::Fields::Named(du.fields.clone());
+                pvariants_one(&union_fields)?
+            }
+            syn::Data::Enum(de) => de
+                .variants
+                .iter()
+                .map(|variant| {
+                    let fields = &variant.fields;
+                    let pattrs = preprocess_attrs(&variant.attrs)?;
+                    let pfields = preprocess_fields(&variant.fields)?;
+                    Ok(PreprocessedVariant {
+                        fields,
+                        pattrs,
+                        pfields,
+                    })
+                })
+                .collect::<Result<Vec<_>, syn::Error>>()?,
+        };
+
+        let ctx = Context {
+            top: &driver,
+            tattrs: &tattrs,
+            field: None,
+            variant: None,
+            pvariants: &pvariants,
+        };
+
+        f(ctx)
+    }
+}
+
 impl Default for TokenAccumulator {
     fn default() -> Self {
         TokenAccumulator(Ok(TokenStream::new()))

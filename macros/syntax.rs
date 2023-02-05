@@ -11,13 +11,6 @@ pub use SubstDetails as SD;
 pub use TemplateElement as TE;
 
 #[derive(Debug)]
-pub struct SubstInput {
-    pub brace_token: token::Brace,
-    pub driver: syn::DeriveInput,
-    pub template: Template<TokenAccumulator>,
-}
-
-#[derive(Debug)]
 pub struct Template<O: SubstParseContext> {
     pub elements: Vec<TemplateElement<O>>,
     pub allow_nonterminal: O::AllowNonterminal,
@@ -194,12 +187,15 @@ struct AdhocAttrList {
 impl Parse for SubstInput {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let driver;
-        let brace_token = braced!(driver in input);
+        let driver_brace = braced!(driver in input);
         let driver = driver.parse()?;
-        let template = Template::parse(input, ())?;
+        let template;
+        let template_brace = braced!(template in input);
+        let template = Template::parse(&template, ())?;
         Ok(SubstInput {
-            brace_token,
+            driver_brace,
             driver,
+            template_brace,
             template,
         })
     }

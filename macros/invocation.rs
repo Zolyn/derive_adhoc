@@ -47,7 +47,7 @@ pub fn derive_adhoc_func_macro(
     // eprintln!("{}\n{}", &driver.to_token_stream(), &template);
     // eprintln!("---------- derive_adhoc got end ----------");
 
-    let mac_name = {
+    let driver_mac_name = {
         let mut name = driver;
         let last = name.segments.last_mut().ok_or_else(|| {
             syn::Error::new(
@@ -59,7 +59,7 @@ pub fn derive_adhoc_func_macro(
         name
     };
 
-    let output = quote! { #mac_name !{ #template } };
+    let output = quote! { #driver_mac_name !{ #template } };
 
     // eprintln!("---------- derive_adhoc! output start ----------");
     // eprintln!("{}", &output);
