@@ -91,6 +91,8 @@ The result of expanding the above is this:
 and implements a bespoke template expander,
 whose template syntax resembles the expansion syntax from `macro_rules`.
 
+`crate` is just used as the expansion for `${crate}`.
+(For an ad-hoc template, the local crate is correct.)
 
 ## Implementation approach - reusable template macros
 
@@ -119,7 +121,7 @@ Expands to
     }
 ```
 
-Except, every `$` in the template is replaced with `$dollar`.  This is
+Except, every `$` in the TEMPLATE is replaced with `$dollar`.  This is
 because a `macro_rules!` template is not capable of generating a
 literal in the expansion `$`.  (With the still-unstable
 [`decl_macro`](https://github.com/rust-lang/rust/issues/83527)

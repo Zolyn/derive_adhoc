@@ -151,6 +151,8 @@ pub enum SubstDetails<O: SubstParseContext> {
     // Conditional substitution.
     If(SubstIf<O>, O::NotInBool),
     select1(SubstIf<O>, O::NotInBool),
+
+    Crate(O::NotInPaste, O::NotInBool), // `${crate }`.  TODO DOCS
 }
 
 #[derive(Debug)]
@@ -663,6 +665,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         keyword! { "true": True(bool_only?) }
         keyword! { "if": If(parse_if(input)?, not_in_bool?) }
         keyword! { select1(parse_if(input)?, not_in_bool?) }
+        keyword! { "crate": Crate(not_in_paste?, not_in_bool?) }
 
         keyword! { "for": For(
             RepeatedTemplate::parse_for(input)?,

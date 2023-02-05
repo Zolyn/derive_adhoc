@@ -405,6 +405,10 @@ where
             | SD::all(_, bo) => out.expand_bool_only(bo),
             SD::For(repeat, _) => repeat.expand(ctx, out),
             SD::select1(conds, ..) => conds.expand_select1(ctx, out)?,
+
+            SD::Crate(np, ..) => {
+                out.push_other_tokens(np, &ctx.template_crate)?
+            }
         };
         Ok(())
     }
@@ -640,7 +644,7 @@ pub fn derive_adhoc_expand_func_macro(
     let input: DeriveAdhocExpandInput = syn::parse2(input)?;
     // eprintln!("derive_adhoc_expand! crate = {:?}", &input.template_crate);
 
-    let output = Context::call(&input.driver, |ctx| {
+    let output = Context::call(&input.driver, &input.template_crate, |ctx| {
         let mut output = TokenAccumulator::new();
         input.template.expand(&ctx, &mut output);
         output.tokens()
