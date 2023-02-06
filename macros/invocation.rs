@@ -59,7 +59,7 @@ pub fn derive_adhoc_func_macro(
         name
     };
 
-    let output = quote! { #driver_mac_name !{ #template } };
+    let output = quote! { #driver_mac_name !{ { #template } } };
 
     // eprintln!("---------- derive_adhoc! output start ----------");
     // eprintln!("{}", &output);

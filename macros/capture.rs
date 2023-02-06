@@ -52,7 +52,7 @@ pub fn derive_adhoc_derive_macro(
         #[allow(unused_macros)]
         macro_rules! #driver_mac_name {
             {
-                $($template:tt)*
+                { $($template:tt)* }
             } => {
                 #expand_macro!{
                     { #input }
