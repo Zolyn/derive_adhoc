@@ -10,7 +10,7 @@ use crate::framework::*;
 
 /// Input to `derive_adhoc_expand!`
 #[derive(Debug)]
-pub struct SubstInput {
+pub struct DeriveAdhocExpandInput {
     pub driver_brace: token::Brace,
     pub driver: syn::DeriveInput,
     pub template_brace: token::Brace,
@@ -33,7 +33,7 @@ pub enum Fname<'r> {
 
 pub use AttrValue as AV;
 
-impl Parse for SubstInput {
+impl Parse for DeriveAdhocExpandInput {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let driver;
         let driver_brace = braced!(driver in input);
@@ -41,7 +41,7 @@ impl Parse for SubstInput {
         let template;
         let template_brace = braced!(template in input);
         let template = Template::parse(&template, ())?;
-        Ok(SubstInput {
+        Ok(DeriveAdhocExpandInput {
             driver_brace,
             driver,
             template_brace,
@@ -627,7 +627,7 @@ impl ToTokens for Fname<'_> {
 pub fn derive_adhoc_expand_func_macro(
     input: TokenStream,
 ) -> syn::Result<TokenStream> {
-    let input: SubstInput = syn::parse2(input)?;
+    let input: DeriveAdhocExpandInput = syn::parse2(input)?;
 
     let output = Context::call(&input.driver, |ctx| {
         let mut output = TokenAccumulator::new();
