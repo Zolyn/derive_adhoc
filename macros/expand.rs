@@ -33,6 +33,23 @@ pub enum Fname<'r> {
 
 pub use AttrValue as AV;
 
+impl Parse for SubstInput {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let driver;
+        let driver_brace = braced!(driver in input);
+        let driver = driver.parse()?;
+        let template;
+        let template_brace = braced!(template in input);
+        let template = Template::parse(&template, ())?;
+        Ok(SubstInput {
+            driver_brace,
+            driver,
+            template_brace,
+            template,
+        })
+    }
+}
+
 impl Spanned for AttrValue<'_> {
     fn span(&self) -> Span {
         match self {

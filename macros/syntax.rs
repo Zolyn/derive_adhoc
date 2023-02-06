@@ -209,23 +209,6 @@ pub struct SubstVPat<O: SubstParseContext> {
     pub fprefix: Option<Template<paste::Items>>,
 }
 
-impl Parse for SubstInput {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let driver;
-        let driver_brace = braced!(driver in input);
-        let driver = driver.parse()?;
-        let template;
-        let template_brace = braced!(template in input);
-        let template = Template::parse(&template, ())?;
-        Ok(SubstInput {
-            driver_brace,
-            driver,
-            template_brace,
-            template,
-        })
-    }
-}
-
 #[derive(Debug, Clone)]
 pub enum RawAttr {
     Include {
@@ -260,7 +243,7 @@ impl Spanned for SubstAttrPath {
 }
 
 impl<O: SubstParseContext> Template<O> {
-    fn parse(
+    pub fn parse(
         input: ParseStream,
         allow_nonterminal: O::AllowNonterminal,
     ) -> syn::Result<Self> {
