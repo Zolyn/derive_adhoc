@@ -53,10 +53,13 @@ pub fn derive_adhoc_derive_macro(
         macro_rules! #driver_mac_name {
             {
                 { $($template:tt)* }
+                $($tpassthrough:tt)*
             } => {
                 #expand_macro!{
                     { #driver }
+                    { }
                     { $($template)* }
+                    { $($tpassthrough:tt)* }
                 }
             }
         }

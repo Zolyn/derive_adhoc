@@ -71,10 +71,13 @@ pub fn define_derive_adhoc_func_macro(
             {
                 $dollar:tt
                 { $($driver:tt)* }
+                $($dpassthrough:tt)*
             } => {
                 #expand_macro! {
                     { $( $driver )* }
+                    { $($dpassthrough:tt)* }
                     { # template }
+                    { }
                 }
             }
         }

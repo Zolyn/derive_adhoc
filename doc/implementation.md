@@ -38,14 +38,19 @@ When applied to (e.g.) `pub struct StructName`, generates this
 
 ```rust,ignore
     macro_rules! derive_adhoc_driver_StructName {
-        { { $($template:tt)* } } => {
+        { { $($template:tt)* } $($tpassthrough:tt)* } => {
             derive_adhoc_expand!{
                 { pub struct StructName { /* original struct definition */ } }
+                { }
                 { $($template)* }
+                { $($tpassthrough:tt)* }
             }
         }
     }
 ```
+
+(The extra `{ }` parts after the driver and template
+include space for future expansion.)
 
 ### 2. `derive_adhoc!` function-like proc macro for applying to a template
 
@@ -75,7 +80,9 @@ The result of expanding the above is this:
 ```rust,ignore
     derive_adhoc_expand!{
         { pub struct StructName { /* original struct definition */ } }
+        { }
         { TEMPLATE... }
+        { }
     }
 ```
 
@@ -100,10 +107,12 @@ When used like this
 Expands to
 ```rust,ignore
     macro_rules! derive_adhoc_template_MyDebug {
-        { $dollar:tt { $($driver:tt)* } } => {
+        { $dollar:tt { $($driver:tt)* } $($dpassthrough:tt)* } => {
             derive_adhoc_expand! {
                 { $($driver)* }
+                { $($dpassthrough:tt)* }
                 { TEMPLATE... }
+                { }
             }
         }
     }
@@ -115,6 +124,9 @@ literal in the expansion `$`.  (With the still-unstable
 [`decl_macro`](https://github.com/rust-lang/rust/issues/83527)
 feature, `$$` does this.)  So the proc macro code passes in a `$` for
 the `macro_rules` macro to emit when it needs to expand to a dollar.
+
+(Again, the extra `{ }` parts after the driver and template
+include space for future expansion.)
 
 ## 2. `#[derive_adhoc(Template)]`, implemented in `#[derive(Adhoc)]`
 
@@ -148,4 +160,3 @@ see above.
 The call to `derive_adhoc_template_Template!`
 is expanded according to the `macro_rules!` definition,
 resulting in a call to `derive_adhoc_expand`.
-

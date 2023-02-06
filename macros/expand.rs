@@ -38,9 +38,12 @@ impl Parse for DeriveAdhocExpandInput {
         let driver;
         let driver_brace = braced!(driver in input);
         let driver = driver.parse()?;
+        let _driver_ignore: TokenTree = input.parse()?;
         let template;
         let template_brace = braced!(template in input);
         let template = Template::parse(&template, ())?;
+        let _template_ignore: TokenTree = input.parse()?;
+        let _: TokenStream = input.parse()?;
         Ok(DeriveAdhocExpandInput {
             driver_brace,
             driver,
