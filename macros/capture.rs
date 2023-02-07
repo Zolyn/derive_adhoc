@@ -21,17 +21,17 @@ impl Parse for PrecannedInvocationsAttr {
 
 /// This is #[derive(Adhoc)]
 pub fn derive_adhoc_derive_macro(
-    input: TokenStream,
+    driver: TokenStream,
 ) -> Result<TokenStream, syn::Error> {
     // TODO optimisation: parse this in a way that doesn't actually
     // parse the input data, with some custom CaptureInput which is
     // a bit like syn::DeriveInput.
-    let input: syn::DeriveInput = syn::parse2(input)?;
+    let driver: syn::DeriveInput = syn::parse2(driver)?;
 
     let driver_mac_name =
-        format_ident!("derive_adhoc_driver_{}", &input.ident);
+        format_ident!("derive_adhoc_driver_{}", &driver.ident);
 
-    let precanned_paths: Vec<syn::Path> = input
+    let precanned_paths: Vec<syn::Path> = driver
         .attrs
         .iter()
         .map(|attr| {
@@ -55,7 +55,7 @@ pub fn derive_adhoc_derive_macro(
                 { $($template:tt)* }
             } => {
                 #expand_macro!{
-                    { #input }
+                    { #driver }
                     { $($template)* }
                 }
             }
@@ -76,7 +76,7 @@ pub fn derive_adhoc_derive_macro(
         output.extend(quote! {
             #templ_path !{
                 $
-                { #input }
+                { #driver }
             }
         });
     }
