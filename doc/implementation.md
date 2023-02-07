@@ -100,7 +100,7 @@ When used like this
 Expands to
 ```rust,ignore
     macro_rules! derive_adhoc_template_MyDebug {
-        { $dollar:tt $($driver:tt)* } => {
+        { $dollar:tt { $($driver:tt)* } } => {
             derive_adhoc_expand! {
                 { $($driver)* }
                 { TEMPLATE... }
@@ -133,8 +133,10 @@ Generates (in addition to the `derive_adhoc_driver_StructName` definition)
 ```rust,ignore
     derive_adhoc_template_Template! {
         $
-        #[derive_adhoc(Template)]
-        struct StructName { ... }
+        {
+            #[derive_adhoc(Template)]
+            struct StructName { ... }
+        }
     }
 ```
 

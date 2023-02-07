@@ -76,7 +76,7 @@ pub fn derive_adhoc_derive_macro(
         output.extend(quote! {
             #path !{
                 $
-                #input
+                { #input }
             }
         });
     }
