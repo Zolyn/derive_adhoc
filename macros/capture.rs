@@ -62,19 +62,19 @@ pub fn derive_adhoc_derive_macro(
         }
     };
 
-    for mut path in precanned_paths {
-        if path.segments.is_empty() {
-            return Err(path
+    for mut templ_path in precanned_paths {
+        if templ_path.segments.is_empty() {
+            return Err(templ_path
                 .leading_colon
                 .as_ref()
                 .expect("path with no tokens!")
                 .error("cannot derive_adhoc the empty path!"));
         }
-        let last = path.segments.last_mut().expect("became empty!");
+        let last = templ_path.segments.last_mut().expect("became empty!");
         last.ident = format_ident!("derive_adhoc_template_{}", last.ident);
 
         output.extend(quote! {
-            #path !{
+            #templ_path !{
                 $
                 { #input }
             }
