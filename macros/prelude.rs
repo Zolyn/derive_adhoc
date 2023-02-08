@@ -1,6 +1,7 @@
 //! private prelude for proc macro stuff
 
 pub use std::borrow::Cow;
+pub use std::cell::RefCell;
 pub use std::convert::{TryFrom, TryInto};
 pub use std::default::Default;
 pub use std::fmt::{self, Debug, Display};

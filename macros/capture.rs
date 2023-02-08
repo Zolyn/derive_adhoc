@@ -5,6 +5,7 @@ use crate::prelude::*;
 /// Contents of an entry in a `#[derive_adhoc(..)]` attribute
 enum InvocationEntry {
     Precanned(syn::Path),
+    Pub(syn::VisPublic),
 }
 
 // (CannedName, CannedName, ...)
@@ -14,9 +15,21 @@ struct InvocationAttr {
 
 impl Parse for InvocationEntry {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        Ok(InvocationEntry::Precanned(syn::Path::parse_mod_style(
-            input,
-        )?))
+        let entry = if input.lookahead1().peek(Token![pub]) {
+            // TODO DOCS
+            let vis = match input.parse()? {
+                syn::Visibility::Public(vis) => vis,
+                other => {
+                    return Err(other
+                        .error("only `pub`, nor no visibility, is allowed"))
+                }
+            };
+            InvocationEntry::Pub(vis)
+        } else {
+            let path = syn::Path::parse_mod_style(input)?;
+            InvocationEntry::Precanned(path)
+        };
+        Ok(entry)
     }
 }
 
@@ -41,6 +54,8 @@ pub fn derive_adhoc_derive_macro(
     let driver_mac_name =
         format_ident!("derive_adhoc_driver_{}", &driver.ident);
 
+    let mut vis_pub = None;
+
     let precanned_paths: Vec<syn::Path> = driver
         .attrs
         .iter()
@@ -57,13 +72,33 @@ pub fn derive_adhoc_derive_macro(
         .filter_map(|entry| match entry {
             Err(e) => Some(Err(e)),
             Ok(InvocationEntry::Precanned(path)) => Some(Ok(path)),
+            Ok(InvocationEntry::Pub(vis)) => {
+                let this_span = vis.span();
+                if let Some(prev) = mem::replace(&mut vis_pub, Some(vis)) {
+                    return Some(Err([
+                        (prev.span(), "first `pub`"),
+                        (this_span, "second `pub`"),
+                    ]
+                    .error("`pub` specified multiple times")));
+                };
+                None
+            }
         })
         .collect::<syn::Result<Vec<_>>>()?;
 
     let expand_macro = expand_macro_name()?;
 
+    let macro_export = vis_pub
+        .map(|vis_pub| {
+            let macro_export =
+                quote_spanned!(vis_pub.span()=> #[macro_export]);
+            Ok::<_, syn::Error>(macro_export)
+        })
+        .transpose()?;
+
     let mut output = quote! {
         #[allow(unused_macros)]
+        #macro_export
         macro_rules! #driver_mac_name {
             {
                 { $($template:tt)* }
