@@ -19,6 +19,10 @@ members = [
 	"tests/pub-export/pub-b",
 ]
 
+# After editing this file, you will probably need to run
+#   maint/update-bizarre
+# to update the "bizarre" testing versions in tests/pub-export/bizarre-*
+
 [dependencies]
 derive-adhoc-macros = { path = "macros", version = "0.1.0" }
 heck = "0.4"
