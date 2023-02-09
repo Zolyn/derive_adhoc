@@ -586,6 +586,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
             })
         };
 
+        // See `tests/pub-export/pub-b/pub-b.rs`
         #[cfg(feature = "bizarre")]
         let kw = {
             let s = kw.to_string();

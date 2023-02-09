@@ -158,6 +158,8 @@ pub fn expand_macro_name() -> Result<TokenStream, syn::Error> {
     let name = crate_name("derive-adhoc-macros")
         .or_else(|_| crate_name("derive-adhoc"));
 
+    // See `tests/pub-export/pub-b/pub-b.rs`.  (The bizarre version
+    // has a different crate name, which we must handle heree.)
     #[cfg(feature = "bizarre")]
     let name = name.or_else(|_| crate_name("bizarre-derive-adhoc"));
 

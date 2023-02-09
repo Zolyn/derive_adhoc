@@ -3,6 +3,28 @@
 //! Our test has two crates.  This is the higher-layer one, which
 //! invokes a reuseable template from pub-a, and invokes an ad-hoc
 //! template of its own on a driver from pub-a.
+//!
+//! This uses the bizarre-* testing versions:
+//!
+//! The bizarre-* crates are versions of the derive-adhoc (library/facade)
+//! and derive-adhoc-macros (proc macro) crates, specially mutated for
+//! testing.  The only functional difference is that the "bizarre" versions
+//! require every expansion keyword to end with "_bizarre".  So, for example,
+//! `$ttype` becomes `$ttype_bizarre`.
+//!
+//! This allows us to simultaneously test a situation where we have two
+//! incompatible versions of the template language: it proves that each
+//! crate can write in the syntax for *its* version of derive-adhoc,
+//! and even export a template to another crate, which is using a *different*
+//! version.  That is what we do here.
+//!
+//! The two bizarre-* crates use the very same source code.
+//! There is a single cargo feature `bizarre` which is enabled only
+//! in bizarre-derive-adhoc-macros (and normally not even available),
+//! which controls the behaviour.
+//!
+//! The Cargo.toml files for the bizarre-* crates are maintained by
+//! `maint/update-bizarre`.
 
 pub mod adhoc_template {
     use derive_adhoc::derive_adhoc;
