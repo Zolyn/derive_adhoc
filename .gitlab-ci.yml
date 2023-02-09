@@ -10,6 +10,7 @@ cargo-check:
   stage: test
   script:
     - rustc --version && cargo --version  # Print version info for debugging
+    - maint/update-bizarre --check
     - rustup component add rustfmt
     - cargo check --locked --workspace --verbose --all-features
     - cargo fmt --verbose --check
