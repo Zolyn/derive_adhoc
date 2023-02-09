@@ -9,6 +9,8 @@ description="Bizarrely incompatible copy of derive-adhoc, for testing"
 
 publish = false
 
+autotests = false
+
 [dependencies]
 derive-adhoc-macros = { package = "bizarre-derive-adhoc-macros", path = "../bizarre-macros", version = "0.0.666" }
 heck = "0.4"
