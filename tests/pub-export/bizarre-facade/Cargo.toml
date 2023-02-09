@@ -16,7 +16,6 @@ derive-adhoc-macros = { package = "bizarre-derive-adhoc-macros", path = "../biza
 heck = "0.4"
 
 [lib]
-doctest = false
-doc = false
 path = "../../../src/lib.rs"
-#path = "bizarre-facade.rs"
+doc = false
+doctest = false

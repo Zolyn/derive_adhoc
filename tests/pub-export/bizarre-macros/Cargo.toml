@@ -24,7 +24,7 @@ bizarre = []
 default = ["bizarre"]
 
 [lib]
+path = "../../../macros/macros.rs"
 doc = false
 doctest = false
-path = "../../../macros/macros.rs"
 proc-macro = true
