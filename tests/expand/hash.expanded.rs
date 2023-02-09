@@ -17,7 +17,6 @@ where
 {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.foo.hash(state);
-        self.bar.hash(state);
     }
 }
 #[derive_adhoc(MyHash)]
