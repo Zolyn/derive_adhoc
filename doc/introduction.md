@@ -36,6 +36,16 @@ on which you're applying your template.)
 Later on, you can apply `NamePrinter` to your own type, as in:
 
 ```
+# use derive_adhoc::define_derive_adhoc;
+# define_derive_adhoc! {
+#    NamePrinter =
+#
+#    impl $ttype {
+#        pub fn print_name() {
+#            println!("The name of this type is {}", stringify!($ttype));
+#        }
+#    }
+# }
 use derive_adhoc::Adhoc;
 
 #[derive(Clone, Debug, Adhoc)]
@@ -139,6 +149,13 @@ struct GiftBasket {
 
 We'd probably write something like this:
 ```
+# struct GiftBasket {
+#   n_apples: u8,
+#   n_oranges: u8,
+#   given_from: Option<String>,
+#   given_to: String,
+# }
+
 impl Clone for GiftBasket {
     fn clone(&self) -> Self {
         Self {
@@ -178,6 +195,8 @@ And here's how that pseudocode translates into
 a `derive_adhoc` template:
 
 ```
+use derive_adhoc::define_derive_adhoc;
+
 define_derive_adhoc! {
     MyClone =
 
@@ -295,6 +314,7 @@ But here's a structure where our current `MyClone` implementation
 will fall flat:
 
 ```
+# use std::fmt::Debug;
 struct MyItems<T:Clone, U>
     where U: Clone + Debug
 {
@@ -304,12 +324,12 @@ struct MyItems<T:Clone, U>
 ```
 
 When we go to expand the template, it will generate something like:
-```
+```rust,ignore
 impl Clone for MyItems { ... }
 ```
 
 That isn't valid!  We need to use the generic parameters, like so:
-```
+```rust,ignore
 impl<T:Clone, U> Clone for MyItems<T,U> 
     where U: Clone+Debug
 { ... }
@@ -318,6 +338,7 @@ impl<T:Clone, U> Clone for MyItems<T,U>
 We can expand our `MyClone` definition to look that way:
 
 ```
+# use derive_adhoc::define_derive_adhoc;
 define_derive_adhoc! {
     MyClone =
 
@@ -374,12 +395,13 @@ it will apply only when the fields of a struct are `Clone`.
 
 For example, suppose have a struct like this:
 ```
+# use std::sync::Arc;
 struct Indirect<T>(Arc<T>, u16);
 ```
 If you try to derive `Clone` on it,
 the compiler will generate code something like this:
 
-```
+```rust,ignore
 impl<T: Clone> Clone for Indirect<T> { ... }
 ```
 
@@ -392,6 +414,7 @@ that derives `Clone` only for the cases
 where the _actual_ required constraints are met:
 
 ```
+# use derive_adhoc::define_derive_adhoc;
 define_derive_adhoc! {
     MyClone =
 
