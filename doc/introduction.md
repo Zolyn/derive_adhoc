@@ -180,7 +180,7 @@ to any simple struct struct with named fields,
 you might come up with a pseudocode template
 like this one:
 
-```rust,ignore
+```text,ignore
 impl Clone for ⟪Your struct⟫ {
     fn clone(&self) -> Self {
         Self {
@@ -486,5 +486,5 @@ where
 > ## Transforming names and strings
 
 
-[reference][crate::doc_template_syntax]
-[README][crate]
+[reference]: crate::doc_template_syntax
+[README]: crate
