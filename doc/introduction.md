@@ -1,12 +1,14 @@
 # `derive_adhoc` and how to make it pay
 
-> Here I want to put an introduction about what derive_adhoc does.
-> For now I'll just link to the [README].
-
+> Here I want to put an introduction about what derive_adhoc does.  For
+> now I'll just link to the [README].
+>
+> This is a work in progress.
 
 There are two parts to using `derive_adhoc`:
-specifying _templates_ that you can use to derive new features for your code,
-and then _applying_ those templates to your code.
+specifying _templates_ that you can use to derive new features for your
+structs and enums
+and then _applying_ those templates to your types.
 
 To define a template, you use `define_derive_adhoc!`, as in
 
@@ -57,13 +59,16 @@ a thing with a funny name.
 -->
 
 
-## A shorter form
+## If you're only deriving once...
 
 If you want, you can apply a template to an existing type
 without having to name that template.
+You might want to do this if you have a template
+that you only want to apply to a single struct,
+and so you don't want to bother naming it.
 
 Supposing that you wanted to apply the template above to `MyStruct`
-without actually naming the template,
+and `MyStruct` alone,
 you could have said:
 
 ```
@@ -193,7 +198,7 @@ pieces of syntax here, though: `$( ... )` and `$fname`.
 
 In `derive_adhoc` templates, `$( ... )`  denotes repetition:
 it repeats what is inside it
-an "appropriate" number of types.
+an "appropriate" number of times.
 (We'll give a definition of "appropriate" later on.)
 Since we want to clone every field in our struct,
 we are repating the `field: self.field.clone() ,`
@@ -367,27 +372,24 @@ Now, for the first time, we will make MyClone do something
 that Rust's `#[derive(Clone]` does not:
 it will apply only when the fields of a struct are `Clone`.
 
-For example, suppose have a couple of structs like this:
+For example, suppose have a struct like this:
 ```
-struct Direct<T>(T, T, String);
 struct Indirect<T>(Arc<T>, u16);
 ```
-If you try to derive `Clone` on them,
-the compiler will refuse for two reasons.
+If you try to derive `Clone` on it,
+the compiler will generate code something like this:
 
-<!-- check this claim! -->
+```
+impl<T: Clone> Clone for Indirect<T> { ... }
+```
 
-1. T might not implement Clone,
-   so `Direct<T>` might not be cloneable.
-2. Even though `Arc<T>` implements `Clone` for every T,
-   the compiler is not currently smart enough
-   to realize that,
-   so it cannot derive `Clone` for `Indirect<T>`.
+But that `T: Clone` constraint isn't necessary: `Arc<T>` always
+implements `Clone`, so your struct could be clone unconditionally.
 
 But using `derive_adhoc`,
-you can define a `CloneIfPossible` template,
-so that you derive `Clone` only for the cases
-where the required constraints are met:
+you can define a template
+that derives `Clone` only for the cases
+where the _actual_ required constraints are met:
 
 ```
 define_derive_adhoc! {
@@ -430,7 +432,7 @@ where
 
 > This time,
 > `derive_adhoc` has exactly _one_ piece cleverness at work.
-> It always makes sure that eother `$twheres` is empty,
+> It makes sure that either `$twheres` is empty,
 > or that it ends with a comma.
 > That way, your template won't expand to something like
 > `where U: Debug + Clone T: Clone`
@@ -448,7 +450,7 @@ where
 >
 >  ## Making MyClone apply to `enum`s
 >
-> 
+>
 >
 > # More advanced techniques
 >
