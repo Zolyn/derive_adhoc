@@ -1,4 +1,10 @@
 //! THIS IS A NON-WORKING CONCEPT, FOR FUTURE DEVELOPMENT
+//!
+//! LARGELY OBSOLETE/OUTDATED EXAMPLE
+//!
+//! This example is largely superseded by clone-full.rs / ref-version.rs.
+//! We're retaining it for now for discussion,
+//! and also because unlike those, it states the expansions.
 
 // This builds on hash.rs, but also works on enums.
 
