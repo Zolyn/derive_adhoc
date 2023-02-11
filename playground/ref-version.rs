@@ -40,7 +40,10 @@ define_derive_adhoc!{
     // ${fspec BLAH}            in unit [variant]     cannot occur
     // ${fspec BLAH}            in tuple [variant]    nothing
     // ${fspec BLAH}            in struct [variant]   BLAH
-    $tvis $tkeyword $[$tname Reference]<'reference, $tgens> ${tvariants $(
+    $tvis $tkeyword $[$tname Reference]<'reference, $tgens>
+    ${tvariants $(
+    // Or maybe:
+    ${t_body_define_variants $(
         ${vdefine $vname $(
             // One of these, but which?
             $fvis ${fspec $fname:} &'r $ttype,
