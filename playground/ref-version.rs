@@ -42,7 +42,9 @@ define_derive_adhoc!{
     // ${fspec BLAH}            in struct [variant]   BLAH
     $tvis $tkeyword $[$tname Reference]<'reference, $tgens> ${tvariants $(
         ${vdefine $vname $(
+            // One of these, but which?
             $fvis ${fspec $fname:} &'r $ttype,
+            $fvis ${fdefine $fname: &'r $ttype},
         $) }
     ) }
 
