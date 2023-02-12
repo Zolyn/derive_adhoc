@@ -210,23 +210,17 @@ where
             SD::vmeta(wa) => do_meta(wa, out, ctx.variant(wa)?.pattrs)?,
             SD::fmeta(wa) => do_meta(wa, out, &ctx.field(wa)?.pfield.pattrs)?,
 
-            SD::tattrs(ra, np, ..) => {
-                out.push_other_subst(np, |out| {
-                    ra.expand(ctx, out, &ctx.top.attrs)
-                })?
-            }
-            SD::vattrs(ra, np, ..) => {
-                out.push_other_subst(np, |out| {
-                    let variant = ctx.variant(self)?.variant;
-                    let attrs = variant.as_ref().map(|v| &*v.attrs);
-                    ra.expand(ctx, out, attrs.unwrap_or_default())
-                })?
-            }
-            SD::fattrs(ra, np, ..) => {
-                out.push_other_subst(np, |out| {
-                    ra.expand(ctx, out, &ctx.field(self)?.field.attrs)
-                })?
-            }
+            SD::tattrs(ra, np, ..) => out.push_other_subst(np, |out| {
+                ra.expand(ctx, out, &ctx.top.attrs)
+            })?,
+            SD::vattrs(ra, np, ..) => out.push_other_subst(np, |out| {
+                let variant = ctx.variant(self)?.variant;
+                let attrs = variant.as_ref().map(|v| &*v.attrs);
+                ra.expand(ctx, out, attrs.unwrap_or_default())
+            })?,
+            SD::fattrs(ra, np, ..) => out.push_other_subst(np, |out| {
+                ra.expand(ctx, out, &ctx.field(self)?.field.attrs)
+            })?,
 
             SD::tgens(np, ..) => out.push_other_subst(np, |out| {
                 out.write_tokens(&ctx.top.generics.params);
