@@ -145,6 +145,29 @@ impl Expand<TokenAccumulator> for TemplateElement<TokenAccumulator> {
     }
 }
 
+impl<O> SubstDetails<O>
+where
+    O: ExpansionOutput,
+    TemplateElement<O>: Expand<O>,
+{
+    fn expand(
+        self,
+        ctx: &Context,
+        out: &mut O,
+        kw_span: Span,
+    ) -> syn::Result<()> {
+        // TODO: swap out the bodies, and the which-calls-which of
+        // this and <Subst as Expand>::expand.
+        // Then this wouldn't need to consume `self`
+        Subst {
+            kw_span,
+            sd: self,
+            output_marker: PhantomData,
+        }
+        .expand(ctx, out)
+    }
+}
+
 impl<O> Expand<O> for Subst<O>
 where
     O: ExpansionOutput,

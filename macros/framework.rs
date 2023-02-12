@@ -232,6 +232,21 @@ pub trait ExpansionOutput: SubstParseContext {
     ) {
         self.record_error(span.error(message));
     }
+
+    /// Convenience method for writing a `ToTokens`
+    ///
+    /// Dispatches to [`push_other_subst`](ExpansionOutput::push_other_subst)
+    /// Not supported within `${paste }`.
+    fn push_other_tokens(
+        &mut self,
+        np: &Self::NotInPaste,
+        tokens: impl ToTokens,
+    ) -> syn::Result<()> {
+        self.push_other_subst(np, |out| {
+            out.write_tokens(tokens);
+            Ok(())
+        })
+    }
 }
 
 /// Convenience trait providing `item.expand()`

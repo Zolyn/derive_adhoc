@@ -255,6 +255,33 @@ impl<O: SubstParseContext> Template<O> {
             allow_nonterminal,
         })
     }
+
+    /// Parses one of
+    ///     identifier
+    ///     literal
+    ///     $EXPN
+    ///     ${EXPN..}
+    ///     { TEMPLATE }
+    fn parse_single_or_braced(input: ParseStream) -> syn::Result<Self> {
+        let la = input.lookahead1();
+        if la.peek(token::Brace) {
+            let inner;
+            let brace = braced!(inner in input);
+            Template::parse(&inner, O::allow_nonterminal(&brace.span)?)
+        } else if la.peek(Ident::peek_any)
+            || la.peek(Token![$])
+            || la.peek(syn::Lit)
+        {
+            let span = input.span();
+            let element = input.parse()?;
+            Ok(Template {
+                elements: vec![element],
+                allow_nonterminal: O::allow_nonterminal(&span)?,
+            })
+        } else {
+            Err(la.error())
+        }
+    }
 }
 
 impl<O: SubstParseContext> Parse for TemplateElement<O> {
