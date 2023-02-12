@@ -53,7 +53,24 @@ define_derive_adhoc!{
         fn from(ref_to_owned: &'r $ttype) -> Self {
             match ref_to_owned { $(
                 $vpat => $vconstr { $(
+                // Tentatively rejected alternatives
+                // (see vpat in partial-ord.rs)
+                $vpat => Self ${vspec $vname} { $(
+                $vpat => Self $[:: $vname] { $(
+                $vpat => Self ${if is_enum {:: $vname}} { $(
                     $fname: &ref_to_owned.$fpatname,
+                ) }
+            ) }
+        }
+    }
+
+    impl<'r> ${paste $tname Reference}<'reference, $tgens> 
+    where $( $ftype: Clone, )
+    {
+        fn cloned(&self) -> $ttype {
+            match self { $(
+                ${vpat self=Self} => $vconstr { $(
+                    $fname: self.$fpatname.clone(),
                 ) }
             ) }
         }

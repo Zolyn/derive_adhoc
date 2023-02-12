@@ -12,6 +12,15 @@ use std::cmp::Ordering::{self, *};
 define_derive_adhoc!{
     VeryPartialOrd =
 
+    // ${vpat    fprefix=f_ self=$tname vname=$vname}
+    // ${vconstr fprefix=f_ self=$ttype vname=$vname}
+    //    each is a single template element, or in {...}
+    //    defaults shown
+    //    vname not expanded in structs
+    // expands to something like
+    //    SELF ${if is_enum {:: VNAME}} { $(
+    //        $fname: ${paste FPREFIX $fname}
+    //    ) }
     impl<$tgens> PartialOrd for $ttype
     where $( $ftype: PartialOrd ),
           $twheres
@@ -19,12 +28,15 @@ define_derive_adhoc!{
         fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
             match (self, other) {
               $(
+                (${vpat fprefix=self_}, ${vpat fprefix=other_}) => {
+                // Tentatively rejected alternatives
                 (${vpat self_}, ${vpat other_}) => {
+                (${vpat .self_}, ${vpat .other_}) => {
                     let ord = Equal;
                   $(
                     let ord = ord.then(PartialOrd::partial_cmp(
-                        ${fpatname self_},
-                        ${fpatname other_},
+                        ${paste self_ $fname}, ${paste other_ $fname},
+                        ${fpatname self_}, ${fpatname other_},
                     )?);
                   )
 	            Some(ord)
