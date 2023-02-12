@@ -171,7 +171,7 @@ where
         match &self.sd {
             SD::tname(_) => out.push_ident(&ctx.top.ident),
             SD::ttype(_) => out.push_idpath(
-                self.kw.span(),
+                self.kw_span,
                 |_| {},
                 &ctx.top.ident,
                 |out| {
@@ -198,13 +198,13 @@ where
                 } else {
                     out.push_ident(&syn::Index {
                         index: f.index,
-                        span: self.kw.span(),
+                        span: self.kw_span,
                     });
                 }
             }
             SD::ftype(_) => {
                 let f = ctx.field(self)?;
-                out.push_syn_type(self.kw.span(), &f.field.ty);
+                out.push_syn_type(self.kw_span, &f.field.ty);
             }
             SD::tmeta(wa) => do_meta(wa, out, ctx.tattrs)?,
             SD::vmeta(wa) => do_meta(wa, out, ctx.variant(wa)?.pattrs)?,
