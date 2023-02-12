@@ -313,6 +313,11 @@ where
                 let f = ctx.field(self)?;
                 out.push_syn_type(self.kw_span, &f.field.ty);
             }
+            SD::fpatname(_) => {
+                let f = ctx.field(self)?;
+                let fpatname = format_ident!("f_{}", f.fname(self.kw_span));
+                out.push_ident(&fpatname);
+            }
             SD::tmeta(wa) => do_meta(wa, out, ctx.tattrs)?,
             SD::vmeta(wa) => do_meta(wa, out, ctx.variant(wa)?.pattrs)?,
             SD::fmeta(wa) => do_meta(wa, out, &ctx.field(wa)?.pfield.pattrs)?,

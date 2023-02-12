@@ -93,6 +93,8 @@ pub enum SubstDetails<O: SubstParseContext> {
     vname(O::NotInBool),
     fname(O::NotInBool),
     ftype(O::NotInBool),
+    // TODO DOCS, move from clone-full.rs and/or partial-ord.rs
+    fpatname(O::NotInBool),
 
     // attributes
     tmeta(SubstAttr),
@@ -647,6 +649,8 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         keyword! { vname(not_in_bool?) }
         keyword! { fname(not_in_bool?) }
         keyword! { ftype(not_in_bool?) }
+        keyword! { fpatname(not_in_bool?) }
+
         keyword! { is_enum(bool_only?) }
 
         keyword! { tgens(not_in_paste?, not_in_bool?) }
