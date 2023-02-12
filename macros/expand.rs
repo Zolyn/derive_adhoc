@@ -23,6 +23,11 @@ pub enum AttrValue<'l> {
     Lit(&'l syn::Lit),
 }
 
+pub enum Fname<'r> {
+    Name(&'r syn::Ident),
+    Index(syn::Index),
+}
+
 pub use AttrValue as AV;
 
 impl Spanned for AttrValue<'_> {
@@ -147,7 +152,7 @@ where
 
         let in_braces = {
             let mut out = TokenAccumulator::default();
-            WithinField::for_each(ctx, |ctx, _field| {
+            WithinField::for_each(ctx, |ctx, field| {
                 SD::fname::<TokenAccumulator>(())
                     .expand(ctx, &mut out, kw_span)?;
                 out.push_other_tokens(&(), Token![:](kw_span))?;
@@ -161,8 +166,7 @@ where
                 } else {
                     paste.push_fixed_string("f_".into(), kw_span);
                 }
-                SD::fname::<paste::Items>(Default::default())
-                    .expand(ctx, &mut paste, kw_span)?;
+                paste.push_ident(&field.fname(kw_span));
 
                 out.push_other_subst(&(), |out| paste.assemble(out))?;
                 Ok::<_, syn::Error>(())
@@ -302,16 +306,8 @@ where
             SD::ttypedef(_) => do_ttype(out, None, &do_tgens),
             SD::vname(_) => out.push_ident(&ctx.syn_variant(self)?.ident),
             SD::fname(_) => {
-                let f = ctx.field(self)?;
-                if let Some(fname) = &f.field.ident {
-                    // todo is this the right span to emit?
-                    out.push_ident(fname);
-                } else {
-                    out.push_ident(&syn::Index {
-                        index: f.index,
-                        span: self.kw_span,
-                    });
-                }
+                let fname = ctx.field(self)?.fname(self.kw_span);
+                out.push_ident(&fname);
             }
             SD::ftype(_) => {
                 let f = ctx.field(self)?;
@@ -561,6 +557,23 @@ impl<O: ExpansionOutput> RepeatedTemplate<O> {
             }
         }
         self.template.expand(ctx, out)
+    }
+}
+
+impl quote::IdentFragment for Fname<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Fname::Name(v) => quote::IdentFragment::fmt(v, f),
+            Fname::Index(v) => quote::IdentFragment::fmt(v, f),
+        }
+    }
+}
+impl ToTokens for Fname<'_> {
+    fn to_tokens(&self, out: &mut TokenStream) {
+        match self {
+            Fname::Name(v) => v.to_tokens(out),
+            Fname::Index(v) => v.to_tokens(out),
+        }
     }
 }
 
