@@ -106,6 +106,21 @@ treating structs as if they had only a single variant.
           _0, _1, if this is a tuple struct or tuple variant.
 ```
 
+## Abbreviated syntax for `${paste ...}`
+
+Options include
+
+ * `$<...>` eg `$tkeyword $<$tname Reference><'reference, $tgens>`
+ * `$[...]` eg `$tkeyword $[$tname Reference]<'reference, $tgens>`
+ * `$[<...>]` eg `$tkeyword $[<$tname Reference>]<'reference, $tgens>`
+
+The `paste` crate uses `[< >]` - but there, `$` is for `macro_rules!`.
+I'm pretty sure we don't want to invent expansions that don't start
+with `$`, or it will really complicate quoting.
+
+Some discussion so far
+  https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/merge_requests/37#note_2877531
+		
 ## String concatenation `${string ...}`
 		
 Argument can contain any expansions (will be expanded into tokens and

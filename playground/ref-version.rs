@@ -19,14 +19,6 @@ define_derive_adhoc!{
     //   more rarely used.
     //   https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/merge_requests/37#note_2877533
     //
-    // $[...]                                         ${paste ...}
-    // //  Q: should this be $< > ?  That would lead to $<...><...>
-    // //  Or to put it another way, which do we prefer?
-    // //      $tkeyword $[$tname Reference]<'reference, $tgens> ...
-    // //      $tkeyword $<$tname Reference><'reference, $tgens> ...
-    // // clonelike.rs has this as [< >] (without the $) but I think
-    // // that's wrong - we should introduce all our expansions with $.
-    //
     // $tvis                                          toplevel visibility
     // $fvis                    for enum              always nothing
     // $fvis                    otherwise             field visibility
@@ -45,7 +37,7 @@ define_derive_adhoc!{
     // ${fspec BLAH}            in unit [variant]     cannot occur
     // ${fspec BLAH}            in tuple [variant]    nothing
     // ${fspec BLAH}            in struct [variant]   BLAH
-    $tvis $tkeyword $[$tname Reference]<'reference, $tgens>
+    $tvis $tkeyword ${paste $tname Reference}<'reference, $tgens>
     ${tvariants $(
     // Or maybe:
     ${t_body_define_variants $(
@@ -56,7 +48,8 @@ define_derive_adhoc!{
         $) }
     ) }
 
-    impl<'r> From<&'r $ttype> for $[$tname Reference]<'reference, $tgens> {
+    impl<'r> From<&'r $ttype>
+    for ${paste $tname Reference}<'reference, $tgens> {
         fn from(ref_to_owned: &'r $ttype) -> Self {
             match ref_to_owned { $(
                 $vpat => $vconstr { $(
