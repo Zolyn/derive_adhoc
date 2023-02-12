@@ -33,18 +33,34 @@ define_derive_adhoc!{
     // ${vdefine VANME BLAH)}   for unit variant      VNAME
     // ${vdefine VANME BLAH)}   for tuple variant     VNAME ( BLAH )
     // ${vdefine VANME BLAH)}   for struct variant    VNAME { BLAH }
+    //    * BLAH will pretty much always have to be $( ... )
+    //      since it will want to enumerate the fields.
+    //    * ${vdefine} cannot be emulated with ${if } without
+    //      recapitulating the contents.  An alternative would be
+    //        ${apply_possible_wrapping {WRAPPING} {CONTENTS}}
+    //        ${apply_possible_wrapping {} X} => X
+    //        ${apply_possible_wrapping {{}} X} => {X}
+    //      omg wtf hope we don't have to go there?
+    //      Or a local sub-macro feature
+    //        ${define_subtemplate NAME EXPANSION}
+    //        ${expand_subtemplate NAME}
     //
-    // ${fspec BLAH}            in unit [variant]     cannot occur
-    // ${fspec BLAH}            in tuple [variant]    nothing
-    // ${fspec BLAH}            in struct [variant]   BLAH
+    // ${fdefine BLAH}            in unit [variant]     cannot occur
+    // ${fdefine BLAH}            in tuple [variant]    nothing
+    // ${fdefine BLAH}            in struct [variant]   BLAH:
+    //    $fdefine can be emulated with
+    //    ${if v_is_named {$fname:}}
+    //
+    // ${Xdefine BLAH} expands to either nothing, or BLAH-plus-framing
     $tvis $tkeyword ${paste $tname Reference}<'reference, $tgens>
     ${tvariants $(
     // Or maybe:
     ${t_body_define_variants $(
         ${vdefine $vname $(
-            // One of these, but which?
-            $fvis ${fspec $fname:} &'r $ttype,
-            $fvis ${fdefine $fname: &'r $ttype},
+            $fvis ${fdefine $fname } &'r $ttype,
+            // Tentatively rejected alternatives
+            $fvis ${fdefine $fname:} &'r $ttype,
+            $fvis ${fdefine $fname:  &'r $ttype},
         $) }
     ) }
 
