@@ -97,6 +97,88 @@ where
     }
 }
 
+impl<O: ExpansionOutput> SubstVType<O>
+where
+    TemplateElement<O>: Expand<O>,
+    O: ExpansionOutput,
+{
+    fn expand(
+        &self,
+        ctx: &Context,
+        out: &mut O,
+        kw_span: Span,
+        self_def: SubstDetails<O>,
+    ) -> syn::Result<()> {
+        let expand_spec_or_sd =
+            |out: &mut _, spec: &Option<Template<O>>, sd: SubstDetails<O>| {
+                if let Some(spec) = spec {
+                    spec.expand(ctx, out);
+                    Ok(())
+                } else {
+                    sd.expand(ctx, out, kw_span)
+                }
+            };
+
+        expand_spec_or_sd(out, &self.self_, self_def)?;
+
+        if ctx.is_enum() {
+            out.push_other_tokens(&self.not_in_paste, &Token![::](kw_span))?;
+            expand_spec_or_sd(out, &self.vname, SD::vname(self.not_in_bool))?;
+        }
+        Ok(())
+    }
+}
+
+impl<O: ExpansionOutput> SubstVPat<O>
+where
+    TemplateElement<O>: Expand<O>,
+    O: ExpansionOutput,
+{
+    // $vpat      for struct    $tname         { $( $fname: $fpatname ) }
+    // $vpat      for enum      $tname::$vname { $( $fname: $fpatname ) }
+    fn expand(
+        &self,
+        ctx: &Context,
+        out: &mut O,
+        kw_span: Span,
+    ) -> syn::Result<()> {
+        let self_def = SD::tname(self.vtype.not_in_bool);
+        SubstVType::expand(&self.vtype, ctx, out, kw_span, self_def)?;
+
+        let in_braces = {
+            let mut out = TokenAccumulator::default();
+            WithinField::for_each(ctx, |ctx, _field| {
+                SD::fname::<TokenAccumulator>(())
+                    .expand(ctx, &mut out, kw_span)?;
+                out.push_other_tokens(&(), Token![:](kw_span))?;
+
+                // Do the expansion with the paste machinery, since
+                // that has a ready-made notion of what fprefix= might
+                // allow, and how to use it.
+                let mut paste = paste::Items::new(kw_span);
+                if let Some(fprefix) = &self.fprefix {
+                    fprefix.expand(ctx, &mut paste);
+                } else {
+                    paste.push_fixed_string("f_".into(), kw_span);
+                }
+                SD::fname::<paste::Items>(Default::default())
+                    .expand(ctx, &mut paste, kw_span)?;
+
+                out.push_other_subst(&(), |out| paste.assemble(out))?;
+                Ok::<_, syn::Error>(())
+            })?;
+            let out = out.tokens()?;
+
+            out
+        };
+        let mut in_braces =
+            proc_macro2::Group::new(Delimiter::Brace, in_braces);
+        in_braces.set_span(kw_span);
+        out.push_other_tokens(&self.vtype.not_in_paste, in_braces)?;
+        Ok(())
+    }
+}
+
 impl<O> ExpandInfallible<O> for Template<O>
 where
     TemplateElement<O>: Expand<O>,
@@ -267,6 +349,11 @@ where
                 }
                 Ok(())
             })?,
+
+            SD::vpat(v) => v.expand(ctx, out, self.span())?,
+            SD::vtype(v) => {
+                v.expand(ctx, out, self.span(), SD::ttype(v.not_in_bool))?
+            }
 
             SD::paste(content, np, ..) => {
                 out.expand_paste(np, ctx, self.span(), content)?

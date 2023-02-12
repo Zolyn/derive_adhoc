@@ -107,6 +107,14 @@ pub enum SubstDetails<O: SubstParseContext> {
     tgnames(O::NotInPaste, O::NotInBool),
     twheres(O::NotInPaste, O::NotInBool),
 
+    // patterns
+    // (The tuple nesting means we can have a single value to
+    // pass to `do_vpat` in the parser in syntax.rs.)
+    // TODO DOCS, move from clone-full.rs and/or partial-ord.rs
+    vpat(SubstVPat<O>),
+    // TODO DOCS, move from clone-full.rs and/or partial-ord.rs
+    vtype(SubstVType<O>),
+
     // expansion manipulation
     paste(
         Template<paste::Items>,
@@ -183,6 +191,20 @@ pub struct SubstAttrPath {
 #[derive(Debug, Clone)]
 struct AdhocAttrList {
     meta: Punctuated<syn::Meta, token::Comma>,
+}
+
+#[derive(Debug)]
+pub struct SubstVType<O: SubstParseContext> {
+    pub self_: Option<Template<O>>,
+    pub vname: Option<Template<O>>,
+    pub not_in_paste: O::NotInPaste,
+    pub not_in_bool: O::NotInBool,
+}
+
+#[derive(Debug)]
+pub struct SubstVPat<O: SubstParseContext> {
+    pub vtype: SubstVType<O>,
+    pub fprefix: Option<Template<paste::Items>>,
 }
 
 impl Parse for SubstInput {
@@ -379,6 +401,149 @@ impl Parse for SubstAttrPath {
     }
 }
 
+/// Parse `Self` using named subkeyword arguments within the `${...}`
+///
+/// Provides [`parse()`](ParseUsingSubkeywords::parse) in terms of:
+///  * An implementation of
+///    [`new_default()`](ParseUsingSubkeywords::new_default)
+///    (which must generally be manually provided)
+///  * An implementation of [`ParseOneSubkeyword`],
+///    usually made with `impl_parse_subkeywords!`.
+pub trait ParseUsingSubkeywords: Sized + ParseOneSubkeyword {
+    /// Parse the body of `Self`, processing names subkeyword arguments
+    ///
+    /// `kw_span` is for the top-level keyword introducing `Self`.
+    fn parse(input: ParseStream, kw_span: Span) -> syn::Result<Self> {
+        let mut out = Self::new_default(kw_span)?;
+        while !input.is_empty() {
+            let subkw = input.call(Ident::parse_any)?;
+            let _: Token![=] = input.parse()?;
+            out.process_one_keyword(&subkw, input).unwrap_or_else(|| {
+                Err(subkw.error("unknown $vpat/$vconstr argument sub-keyword"))
+            })?;
+        }
+        Ok(out)
+    }
+
+    /// Make a new `Self` with default values for all parameters
+    ///
+    /// This is used when the keyword is invoked without being enclosed
+    /// in `${...}`, and as the starting point when it *is* enclosed.
+    ///
+    /// `kw_span` is to be used if to construct any `SubstParseContext`
+    /// lexical context tokens (eg, `NotInPaste`) in `Self`.
+    fn new_default(kw_span: Span) -> syn::Result<Self>;
+}
+
+pub trait ParseOneSubkeyword: Sized {
+    /// Process the value for a keyword `subkw`.
+    ///
+    /// `input` is inside the `{ }`, just after the `=`.
+    ///
+    /// Generally implemented by `impl_parse_subkeywords!`,
+    /// which generates code involving a a call to [`subkw_parse_store`].
+    fn process_one_keyword(
+        &mut self,
+        kw: &syn::Ident,
+        input: ParseStream,
+    ) -> Option<syn::Result<()>>;
+}
+
+/// Helper for `impl_parse_subkeywords!`; parse and store subkw argument
+///
+/// Parses and stores a template element argument to a subkeyword,
+/// using [`Template::parse_single_or_braced`].
+///
+/// Detects repeated specification of the same keyword, as an error.
+///
+/// `KO` is the lexical parsing context, and determines what
+/// kind of values the template author can supply.
+fn subkw_parse_store<KO>(
+    subkw: &syn::Ident,
+    input: ParseStream,
+    dest: &mut Option<Template<KO>>,
+) -> syn::Result<()>
+where
+    KO: SubstParseContext,
+{
+    if let Some(_) = &dest {
+        // TODO preserve previous keyword so we can report it?
+        return Err(
+            subkw.error("same argument sub-keyword specified more than once")
+        );
+    }
+    *dest = Some(input.call(|input| Template::parse_single_or_braced(input))?);
+    Ok(())
+}
+
+/// Implements `ParseOneSubkeyword` for the use of `ParseUsingSubkeywords`
+///
+/// Input syntax is `TYPE: (SUBKEYWORD-SPEC), (SUBKEYWORD-SPEC), ...`
+/// where each SUBKEYWORD-SPEC is one of:
+///  * `(field)`: recognises `"field"` and stores in `self.field`.
+///  * `("subkw": .field)`: recognises `"subkw"`
+///  * `(..substruct)`: calls `self.substruct.process_one_keyword`,
+///     thereby incorporating the sub-structure's subkeywords
+///
+/// The implementation is always `impl<O: SubstParseContext> ... for TYPE<O>`.
+macro_rules! impl_parse_one_subkeyword { {
+    $ty:ident: $( ( $($spec:tt)+ ) ),* $(,)?
+} => {
+    impl<O: SubstParseContext> ParseOneSubkeyword for $ty<O> {
+        fn process_one_keyword(&mut self, got: &syn::Ident, ps: ParseStream)
+                               -> Option<syn::Result<()>> {
+            $( impl_parse_one_subkeyword!{ @ (self, got, ps) @ $($spec)+ } )*
+            None
+        }
+    }
+// Internal input syntax    @ (self,got,ps) @ SUBKEYWORD-SPEC
+// (we must pass (self,got,ps) explicitly for annoying hygiene reasons)
+}; { @ $bind:tt @ $exp:ident } => {
+    impl_parse_one_subkeyword! { @@ $bind @ stringify!($exp), . $exp }
+}; { @ $bind:tt @ $exp:literal: . $($field:tt)+ } => {
+    impl_parse_one_subkeyword! { @@ $bind @ $exp, . $($field)+ }
+}; { @ ($self:expr, $got:expr, $ps:expr) @ .. $($substruct:tt)+ } => {
+    if let Some(r) = $self.$($substruct)+.process_one_keyword($got, $ps) {
+        return Some(r);
+    }
+// Internal input syntax    @@ (self,got,ps) @ SUBKW, .FIELD-ACCESSORS
+}; { @@ ($self:expr, $got:expr, $ps:expr) @ $exp:expr, .$($field:tt)+ } => {
+    if $got == $exp {
+        return Some(subkw_parse_store($got, $ps, &mut $self.$($field)+));
+    }
+} }
+
+impl_parse_one_subkeyword! {
+    SubstVType:
+    ("self": .self_),
+    (vname),
+}
+
+impl_parse_one_subkeyword! {
+    SubstVPat:
+    (..vtype),
+    (fprefix),
+}
+
+impl<O: SubstParseContext> ParseUsingSubkeywords for SubstVType<O> {
+    fn new_default(tspan: Span) -> syn::Result<Self> {
+        Ok(SubstVType {
+            self_: None,
+            vname: None,
+            not_in_paste: O::not_in_paste(&tspan)?,
+            not_in_bool: O::not_in_bool(&tspan)?,
+        })
+    }
+}
+impl<O: SubstParseContext> ParseUsingSubkeywords for SubstVPat<O> {
+    fn new_default(tspan: Span) -> syn::Result<Self> {
+        Ok(SubstVPat {
+            vtype: SubstVType::new_default(tspan)?,
+            fprefix: None,
+        })
+    }
+}
+
 impl<O: SubstParseContext> Subst<O> {
     /// Parses everything including a `$` (which we insist on)
     fn parse_entire(input: ParseStream) -> syn::Result<Self> {
@@ -495,6 +660,9 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         keyword! { tattrs(input.parse()?, not_in_paste?, not_in_bool?) }
         keyword! { vattrs(input.parse()?, not_in_paste?, not_in_bool?) }
         keyword! { fattrs(input.parse()?, not_in_paste?, not_in_bool?) }
+
+        keyword! { vtype(SubstVType::parse(input, kw.span())?) }
+        keyword! { vpat(SubstVPat::parse(input, kw.span())?) }
 
         keyword! {
             paste {

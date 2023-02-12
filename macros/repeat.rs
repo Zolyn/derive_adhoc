@@ -125,6 +125,8 @@ impl<O: SubstParseContext> Subst<O> {
             SD::tgens(..) => None,
             SD::tgnames(..) => None,
             SD::twheres(..) => None,
+            SD::vpat(..) => Some(RO::Variants),
+            SD::vtype(..) => Some(RO::Variants),
             SD::is_enum(..) => None,
             SD::paste(body, ..) => {
                 body.analyse_repeat(visitor)?;
