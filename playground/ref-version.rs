@@ -50,6 +50,15 @@ define_derive_adhoc!{
     // ${fdefine BLAH}            in struct [variant]   BLAH:
     //    $fdefine can be emulated with
     //    ${if v_is_named {$fname:}}
+    // which implies boolean tests:
+    //    v_is_unit   // only unit syntax, not all with 0 fields, is this right
+    //    v_is_tuple
+    //    v_is_named  // named fields struct, "struct" variant ?
+    // Or possibly like this
+    //    vstyle_unit
+    //    vstyle_tuple
+    //    vstyle_struct
+    // ?
     //
     // ${Xdefine BLAH} expands to either nothing, or BLAH-plus-framing
     $tvis $tkeyword ${paste $tname Reference}<'reference, $tgens>
