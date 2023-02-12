@@ -42,7 +42,7 @@ pub struct RepeatedTemplate<O: SubstParseContext> {
 
 #[derive(Debug)]
 pub struct Subst<O: SubstParseContext> {
-    pub kw: Ident,
+    pub kw_span: Span,
     pub sd: SubstDetails<O>,
     pub output_marker: PhantomData<O>,
 }
@@ -218,7 +218,7 @@ pub struct RawAttrEntry {
 
 impl<O: SubstParseContext> Spanned for Subst<O> {
     fn span(&self) -> Span {
-        self.kw.span()
+        self.kw_span
     }
 }
 
@@ -401,7 +401,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         let from_sd = |sd| {
             Ok(Subst {
                 sd,
-                kw: kw.clone(),
+                kw_span: kw.span(),
                 output_marker,
             })
         };

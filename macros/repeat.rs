@@ -155,7 +155,7 @@ impl<O: SubstParseContext> Subst<O> {
         if let Some(over) = over {
             let over = RepeatOverInference {
                 over,
-                span: self.kw.span(),
+                span: self.kw_span,
             };
             visitor.set_over(over)?;
         }

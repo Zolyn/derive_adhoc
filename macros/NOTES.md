@@ -119,7 +119,7 @@ I'm pretty sure we don't want to invent expansions that don't start
 with `$`, or it will really complicate quoting.
 
 Some discussion so far
-  https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/merge_requests/37#note_2877531
+<https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/merge_requests/37#note_2877531>
 		
 ## String concatenation `${string ...}`
 		
