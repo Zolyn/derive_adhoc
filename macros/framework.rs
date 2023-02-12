@@ -179,14 +179,12 @@ pub trait ExpansionOutput: SubstParseContext {
     /// or to put it another way,
     /// it ensures that such an attempt would have been rejected
     /// during template parsing.
-    fn push_other_subst<S, F>(
+    fn push_other_subst<F>(
         &mut self,
         np: &Self::NotInPaste,
-        _: &S,
         f: F,
     ) -> syn::Result<()>
     where
-        S: Spanned,
         F: FnOnce(&mut TokenAccumulator) -> syn::Result<()>;
 
     /// A substitution which can only be used within a boolean.
@@ -413,14 +411,12 @@ impl ExpansionOutput for TokenAccumulator {
         self.write_tokens(tokens);
         Ok(())
     }
-    fn push_other_subst<S, F>(
+    fn push_other_subst<F>(
         &mut self,
         _not_in_paste: &(),
-        _: &S,
         f: F,
     ) -> syn::Result<()>
     where
-        S: Spanned,
         F: FnOnce(&mut TokenAccumulator) -> syn::Result<()>,
     {
         f(self)

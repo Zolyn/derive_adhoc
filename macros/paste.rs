@@ -504,14 +504,12 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
         self.push_syn_lit(lit);
         Ok(())
     }
-    fn push_other_subst<S, F>(
+    fn push_other_subst<F>(
         &mut self,
         not_in_paste: &Void,
-        _: &S,
         _: F,
     ) -> syn::Result<()>
     where
-        S: Spanned,
         F: FnOnce(&mut TokenAccumulator) -> syn::Result<()>,
     {
         void::unreachable(*not_in_paste)
