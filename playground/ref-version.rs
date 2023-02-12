@@ -14,6 +14,11 @@ define_derive_adhoc!{
     // New expansions:
     //
     // $tkeyword                                      struct / enum / union
+    //   TODO should this be $tkwd?
+    //   We abbreviate many other things but this one is going to be
+    //   more rarely used.
+    //   https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/merge_requests/37#note_2877533
+    //
     // $[...]                                         ${paste ...}
     // //  Q: should this be $< > ?  That would lead to $<...><...>
     // //  Or to put it another way, which do we prefer?
