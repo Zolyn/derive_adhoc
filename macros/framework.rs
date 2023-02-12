@@ -268,6 +268,10 @@ pub trait ExpandInfallible<O> {
 pub struct TokenAccumulator(Result<TokenStream, syn::Error>);
 
 impl<'c> Context<'c> {
+    pub fn is_enum(&self) -> bool {
+        matches!(self.top.data, syn::Data::Enum(_))
+    }
+
     /// Calls `f` with a top-level [`Context`] for a [`syn::DeriveInput`]
     ///
     /// `Context` has multiple levels of references to values created
