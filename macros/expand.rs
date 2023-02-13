@@ -167,10 +167,8 @@ where
                 });
             }
         };
-
-        match &self.sd {
-            SD::tname(_) => out.push_ident(&ctx.top.ident),
-            SD::ttype(_) => out.push_idpath(
+        let do_ttype = |out: &mut O| {
+            out.push_idpath(
                 self.kw_span,
                 |_| {},
                 &ctx.top.ident,
@@ -188,7 +186,12 @@ where
                         }
                     }
                 },
-            ),
+            )
+        };
+
+        match &self.sd {
+            SD::tname(_) => out.push_ident(&ctx.top.ident),
+            SD::ttype(_) => do_ttype(out),
             SD::vname(_) => out.push_ident(&ctx.syn_variant(self)?.ident),
             SD::fname(_) => {
                 let f = ctx.field(self)?;
