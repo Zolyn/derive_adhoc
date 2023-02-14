@@ -38,6 +38,8 @@ derive_adhoc! {
     struct ${paste Pre $ttypedef Post} {
         $( ${pascal_case $fname}: $ftype )
     }
+
+    impl<$tgens> std::panic::RefUnwindSafe for ${paste Pre $ttype Post} {}
 }
 
 #[derive(Adhoc)]
