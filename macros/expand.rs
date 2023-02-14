@@ -167,6 +167,9 @@ where
                 });
             }
         };
+        let do_tgens = |out: &mut TokenAccumulator| {
+            out.write_tokens(&ctx.top.generics.params);
+        };
         let do_ttype = |out: &mut O| {
             out.push_idpath(
                 self.kw_span,
@@ -226,7 +229,7 @@ where
             })?,
 
             SD::tgens(np, ..) => out.push_other_subst(np, |out| {
-                out.write_tokens(&ctx.top.generics.params);
+                do_tgens(out);
                 Ok(())
             })?,
             SD::tgnames(np, ..) => out.push_other_subst(np, |out| {
