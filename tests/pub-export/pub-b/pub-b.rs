@@ -52,9 +52,6 @@ pub mod adhoc_template {
         //
         // The top-level struct name must *also* be in scope, here,
         // as an unqualified name: that's what `$ttype` expands to.
-        //
-        // TODO DOCS Currently the syntax reference says of `$ttype` that
-        // it might contain a path.  This is not in fact ever true.
         pub_a::ADriver:
 
         impl<$tgens_bizarre> NumFields for $ttype_bizarre {
