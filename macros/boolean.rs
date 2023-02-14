@@ -83,6 +83,7 @@ impl Subst<BooleanContext> {
 
             SD::tname(not_in_bool)
             | SD::ttype(not_in_bool)
+            | SD::ttypedef(not_in_bool)
             | SD::vname(not_in_bool)
             | SD::fname(not_in_bool)
             | SD::ftype(not_in_bool)

@@ -170,31 +170,31 @@ where
         let do_tgens = |out: &mut TokenAccumulator| {
             out.write_tokens(&ctx.top.generics.params);
         };
-        let do_ttype = |out: &mut O| {
+        // There are three contexts where the top-level type
+        // name might occur with generics, and two syntaxes:
+        //   referring to the type    $ttype     Type::<G>
+        //   impl'ing for the type    $ttype     Type::<G>
+        //   defining a new type      $ttypedef  Type<G: bounds>
+        let do_ttype = |out: &mut O, colons: Option<()>, do_some_gens| {
+            let _: &dyn Fn(&mut _) = do_some_gens; // specify type
+            let colons = colons.map(|()| Token![::](self.kw_span));
             out.push_idpath(
                 self.kw_span,
                 |_| {},
                 &ctx.top.ident,
                 |out| {
-                    let gens = &ctx.top.generics;
-                    match (&gens.lt_token, &gens.gt_token) {
-                        (None, None) => (),
-                        (Some(lt), Some(gt)) => {
-                            out.write_tokens(lt);
-                            do_tgnames(out);
-                            out.write_tokens(gt);
-                        }
-                        _ => {
-                            panic!("unmatched < > in syn::Generics {:?}", gens)
-                        }
-                    }
+                    out.write_tokens(colons);
+                    out.write_tokens(Token![<](self.kw_span));
+                    do_some_gens(out);
+                    out.write_tokens(Token![>](self.kw_span));
                 },
             )
         };
 
         match &self.sd {
             SD::tname(_) => out.push_ident(&ctx.top.ident),
-            SD::ttype(_) => do_ttype(out),
+            SD::ttype(_) => do_ttype(out, Some(()), &do_tgnames),
+            SD::ttypedef(_) => do_ttype(out, None, &do_tgens),
             SD::vname(_) => out.push_ident(&ctx.syn_variant(self)?.ident),
             SD::fname(_) => {
                 let f = ctx.field(self)?;

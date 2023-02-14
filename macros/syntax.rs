@@ -89,6 +89,7 @@ pub enum SubstDetails<O: SubstParseContext> {
     // variables
     tname(O::NotInBool),
     ttype(O::NotInBool),
+    ttypedef(O::NotInBool),
     vname(O::NotInBool),
     fname(O::NotInBool),
     ftype(O::NotInBool),
@@ -450,6 +451,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
 
         keyword! { tname(not_in_bool?) }
         keyword! { ttype(not_in_bool?) }
+        keyword! { ttypedef(not_in_bool?) }
         keyword! { vname(not_in_bool?) }
         keyword! { fname(not_in_bool?) }
         keyword! { ftype(not_in_bool?) }

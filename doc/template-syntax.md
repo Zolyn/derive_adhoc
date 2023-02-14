@@ -77,11 +77,18 @@ derive-adhoc treats them as having a single (unnamed) variant.
 
  * **`$ftype`, `$ttype`**:
    The type of the field, or the toplevel type.
-   This contains all necessary generics (as names, without any bunds etc.).
+   This contains all necessary generics
+   (as names, without any bunds etc., but within `::<...>`).
    For the toplevel type it doesn't contains a path prefix, even if
    the driver type argument to
    `derive_adhoc!{ }`
    had a path prefix.
+
+ * **`$ttypedef`**:
+   The top-level driver type name in a form suitable for defining
+   a new type with a derived name (eg, using `${paste }`).
+   Contains all the necessary generics, with bounds,
+   within `<...>` but without an introducing `::`.
 
  * **`$tgens`**, **`$tgens`**, **`$twheres`**:
    Generic parameters and bounds, from the toplevel type,

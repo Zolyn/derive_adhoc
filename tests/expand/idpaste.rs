@@ -19,7 +19,7 @@ struct TypeNames {
 derive_adhoc! {
     TypeNames:
 
-    struct ${paste Pre $ttype Post} {
+    struct ${paste Pre $ttypedef Post} {
         $(
             $fname: ${paste R $ftype Mut},
         )
@@ -35,7 +35,7 @@ derive_adhoc! {
     TopName:
 
     #[allow(non_snake_case)]
-    struct ${paste Pre $ttype Post} {
+    struct ${paste Pre $ttypedef Post} {
         $( ${pascal_case $fname}: $ftype )
     }
 }
@@ -51,7 +51,7 @@ struct ExpandName {
 derive_adhoc! {
     ExpandName:
 
-    struct ${paste "Pre" $ttype "Post"} {
+    struct ${paste "Pre" $ttypedef "Post"} {
         $(
             ${paste
               ${if fmeta(prefix) { ${fmeta(prefix)} _ } }
