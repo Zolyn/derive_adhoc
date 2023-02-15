@@ -9,7 +9,9 @@
 
 use std::cmp::Ordering::{self, *};
 
-define_derive_adhoc!{
+use derive_adhoc::{define_derive_adhoc, Adhoc};
+
+define_derive_adhoc! {
     VeryPartialOrd =
 
     // ${vpat    fprefix=f_ self=$tname vname=$vname}
@@ -22,7 +24,7 @@ define_derive_adhoc!{
     //        $fname: ${paste FPREFIX $fname}
     //    ) }
     impl<$tgens> PartialOrd for $ttype
-    where $( $ftype: PartialOrd ),
+    where $( $ftype: PartialOrd, )
           $twheres
     {
         fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
@@ -30,16 +32,16 @@ define_derive_adhoc!{
               $(
                 (${vpat fprefix=self_}, ${vpat fprefix=other_}) => {
                 // Tentatively rejected alternatives
-                (${vpat self_}, ${vpat other_}) => {
-                (${vpat .self_}, ${vpat .other_}) => {
+                //(${vpat self_}, ${vpat other_}) => {
+                //(${vpat .self_}, ${vpat .other_}) => {
                     let ord = Equal;
                   $(
                     let ord = ord.then(PartialOrd::partial_cmp(
                         ${paste self_ $fname}, ${paste other_ $fname},
-                        ${fpatname self_}, ${fpatname other_},
+                        //${fpatname self_}, ${fpatname other_},
                     )?);
                   )
-	            Some(ord)
+                Some(ord) // (misindented by rustfmt)
                 },
               )
                 _ => None,
@@ -48,29 +50,36 @@ define_derive_adhoc!{
     }
 }
 
-#[derive(Adhoc)]
-#[derive_adhoc(PreciseClone)]
-enum Enum<F: Debug, G>
-where G: Debug,
+#[derive(Adhoc, PartialEq)]
+#[derive_adhoc(VeryPartialOrd)]
+enum Enum<F: PartialEq, G>
+where
+    G: PartialEq,
 {
     Unit,
     Tuple(F),
-    Struct { field: F },
+    Struct { field: G },
+}
+
+fn mk_t_struct<F: PartialEq>(field: &str) -> Enum<F, &str> {
+    Enum::Struct { field }
 }
 
 fn main() {
+    // TODO use default type parameters to get rid of all these turbofish
+    // (but currently, that breaks)
     use Enum::*;
-    expect_none(Unit, Tuple(42));
-    expect_none(Tuple(42), Struct { field: String::new() });
-    expect_none(Tuple(Tuple(42)), Tuple(Unit));
+    expect_none(Unit::<_, ()>, Tuple(42));
+    expect_none(Tuple(42), mk_t_struct(""));
+    expect_none(Tuple::<_, ()>(Tuple::<_, ()>(42)), Tuple(Unit));
 
-    expect_some(Unit, Unit, Equal);
-    expect_some(Tuple(0), Tuple(0), Equal);
-    expect_some(Tuple(1), Tuple(2), Greater);
-    expect_some(Tuple(4), Tuple(3), Less);
-    expect_some(Struct { field: "a" }, Struct { field: "a" }, Equal);
-    expect_some(Struct { field: "b" }, Struct { field: "c" }, Greater);
-    expect_some(Struct { field: "e" }, Struct { field: "d" }, Less);
+    expect_some(Unit::<(), ()>, Unit::<(), ()>, Equal);
+    expect_some(Tuple::<_, ()>(0), Tuple(0), Equal);
+    expect_some(Tuple::<_, ()>(1), Tuple(2), Less);
+    expect_some(Tuple::<_, ()>(4), Tuple(3), Greater);
+    expect_some(mk_t_struct::<()>("a"), mk_t_struct("a"), Equal);
+    expect_some(mk_t_struct::<()>("b"), mk_t_struct("c"), Less);
+    expect_some(mk_t_struct::<()>("e"), mk_t_struct("d"), Greater);
 }
 
 /// Versions of assert, basically
