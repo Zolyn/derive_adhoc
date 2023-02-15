@@ -59,6 +59,8 @@ impl Subst<BooleanContext> {
             SD::vmeta(wa) => eval_attr! { wa, WithinVariant, pattrs },
             SD::fmeta(wa) => eval_attr! { wa, WithinField, pfield.pattrs },
             SD::is_enum(..) => ctx.is_enum(),
+            SD::is_struct(..) => matches!(ctx.top.data, syn::Data::Struct(_)),
+            SD::is_union(..) => matches!(ctx.top.data, syn::Data::Union(_)),
 
             SD::False(..) => false,
             SD::True(..) => true,

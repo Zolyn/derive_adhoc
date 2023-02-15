@@ -146,7 +146,9 @@ pub enum SubstDetails<O: SubstParseContext> {
     not(Box<Subst<BooleanContext>>, O::BoolOnly),
     any(Punctuated<Subst<BooleanContext>, token::Comma>, O::BoolOnly),
     all(Punctuated<Subst<BooleanContext>, token::Comma>, O::BoolOnly),
+    is_struct(O::BoolOnly), // TODO DOCS
     is_enum(O::BoolOnly),
+    is_union(O::BoolOnly), // TODO DOCS
 
     // Explicit iteration
     For(RepeatedTemplate<O>, O::NotInBool),
@@ -690,7 +692,9 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         keyword! { "tvis": Vis(SubstVis::T, not_in_paste?) }
         keyword! { "fvis": Vis(SubstVis::F, not_in_paste?) }
 
+        keyword! { is_struct(bool_only?) }
         keyword! { is_enum(bool_only?) }
+        keyword! { is_union(bool_only?) }
 
         keyword! { tgens(not_in_paste?, not_in_bool?) }
         keyword! { tgnames(not_in_paste?, not_in_bool?) }

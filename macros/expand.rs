@@ -401,7 +401,9 @@ where
                 "${when } only allowed in toplevel of $( )",
             ),
             SD::If(conds, ..) => conds.expand(ctx, out)?,
-            SD::is_enum(bo)
+            SD::is_struct(bo)
+            | SD::is_enum(bo)
+            | SD::is_union(bo)
             | SD::False(bo)
             | SD::True(bo)
             | SD::not(_, bo)
