@@ -13,7 +13,9 @@ define_derive_adhoc!{
     //
     // $vpat      for struct    $tname         { $( $fname: $fpatname ) }
     // $vpat      for enum      $tname::$vname { $( $fname: $fpatname ) }
-    // $vconstr                 like $vpat, but with <$tgnames>
+    //
+    // $vtype     for struct    $ttype
+    // $vtype     for enum      $ttype::$vname
     //
     // $fpatname                ${paste f_ $fname}
     // // This is what hash2.rs calls ${pfname}.
@@ -27,9 +29,9 @@ define_derive_adhoc!{
     {
         fn clone(&self) -> Self {
             match self { $(
-                $vpat => $vconstr { $(
-                    $fname: self.$fpatname.clone(),
-                ) }
+                $vpat => $vtype { $(
+                    $fname: $fpatname.clone(),
+                ) },
             ) }
         }
     }
