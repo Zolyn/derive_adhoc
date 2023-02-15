@@ -23,6 +23,11 @@ pub enum AttrValue<'l> {
     Lit(&'l syn::Lit),
 }
 
+pub enum Fname<'r> {
+    Name(&'r syn::Ident),
+    Index(syn::Index),
+}
+
 pub use AttrValue as AV;
 
 impl Spanned for AttrValue<'_> {
@@ -97,6 +102,87 @@ where
     }
 }
 
+impl<O: ExpansionOutput> SubstVType<O>
+where
+    TemplateElement<O>: Expand<O>,
+    O: ExpansionOutput,
+{
+    fn expand(
+        &self,
+        ctx: &Context,
+        out: &mut O,
+        kw_span: Span,
+        self_def: SubstDetails<O>,
+    ) -> syn::Result<()> {
+        let expand_spec_or_sd =
+            |out: &mut _, spec: &Option<Template<O>>, sd: SubstDetails<O>| {
+                if let Some(spec) = spec {
+                    spec.expand(ctx, out);
+                    Ok(())
+                } else {
+                    sd.expand(ctx, out, kw_span)
+                }
+            };
+
+        expand_spec_or_sd(out, &self.self_, self_def)?;
+
+        if ctx.is_enum() {
+            out.push_other_tokens(&self.not_in_paste, &Token![::](kw_span))?;
+            expand_spec_or_sd(out, &self.vname, SD::vname(self.not_in_bool))?;
+        }
+        Ok(())
+    }
+}
+
+impl<O: ExpansionOutput> SubstVPat<O>
+where
+    TemplateElement<O>: Expand<O>,
+    O: ExpansionOutput,
+{
+    // $vpat      for struct    $tname         { $( $fname: $fpatname ) }
+    // $vpat      for enum      $tname::$vname { $( $fname: $fpatname ) }
+    fn expand(
+        &self,
+        ctx: &Context,
+        out: &mut O,
+        kw_span: Span,
+    ) -> syn::Result<()> {
+        let self_def = SD::tname(self.vtype.not_in_bool);
+        SubstVType::expand(&self.vtype, ctx, out, kw_span, self_def)?;
+
+        let in_braces = {
+            let mut out = TokenAccumulator::default();
+            WithinField::for_each(ctx, |ctx, field| {
+                SD::fname::<TokenAccumulator>(())
+                    .expand(ctx, &mut out, kw_span)?;
+                out.push_other_tokens(&(), Token![:](kw_span))?;
+
+                // Do the expansion with the paste machinery, since
+                // that has a ready-made notion of what fprefix= might
+                // allow, and how to use it.
+                let mut paste = paste::Items::new(kw_span);
+                if let Some(fprefix) = &self.fprefix {
+                    fprefix.expand(ctx, &mut paste);
+                } else {
+                    paste.push_fixed_string("f_".into(), kw_span);
+                }
+                paste.push_ident(&field.fname(kw_span));
+
+                out.push_other_subst(&(), |out| paste.assemble(out))?;
+                Ok::<_, syn::Error>(())
+            })?;
+            let out = out.tokens()?;
+
+            out
+        };
+        let mut in_braces =
+            proc_macro2::Group::new(Delimiter::Brace, in_braces);
+        in_braces.set_span(kw_span);
+        out.push_other_tokens(&self.vtype.not_in_paste, in_braces)?;
+        Ok(())
+    }
+}
+
 impl<O> ExpandInfallible<O> for Template<O>
 where
     TemplateElement<O>: Expand<O>,
@@ -142,6 +228,29 @@ impl Expand<TokenAccumulator> for TemplateElement<TokenAccumulator> {
             }
         }
         Ok(())
+    }
+}
+
+impl<O> SubstDetails<O>
+where
+    O: ExpansionOutput,
+    TemplateElement<O>: Expand<O>,
+{
+    fn expand(
+        self,
+        ctx: &Context,
+        out: &mut O,
+        kw_span: Span,
+    ) -> syn::Result<()> {
+        // TODO: swap out the bodies, and the which-calls-which of
+        // this and <Subst as Expand>::expand.
+        // Then this wouldn't need to consume `self`
+        Subst {
+            kw_span,
+            sd: self,
+            output_marker: PhantomData,
+        }
+        .expand(ctx, out)
     }
 }
 
@@ -197,20 +306,17 @@ where
             SD::ttypedef(_) => do_ttype(out, None, &do_tgens),
             SD::vname(_) => out.push_ident(&ctx.syn_variant(self)?.ident),
             SD::fname(_) => {
-                let f = ctx.field(self)?;
-                if let Some(fname) = &f.field.ident {
-                    // todo is this the right span to emit?
-                    out.push_ident(fname);
-                } else {
-                    out.push_ident(&syn::Index {
-                        index: f.index,
-                        span: self.kw_span,
-                    });
-                }
+                let fname = ctx.field(self)?.fname(self.kw_span);
+                out.push_ident(&fname);
             }
             SD::ftype(_) => {
                 let f = ctx.field(self)?;
                 out.push_syn_type(self.kw_span, &f.field.ty);
+            }
+            SD::fpatname(_) => {
+                let f = ctx.field(self)?;
+                let fpatname = format_ident!("f_{}", f.fname(self.kw_span));
+                out.push_ident(&fpatname);
             }
             SD::tmeta(wa) => do_meta(wa, out, ctx.tattrs)?,
             SD::vmeta(wa) => do_meta(wa, out, ctx.variant(wa)?.pattrs)?,
@@ -244,6 +350,11 @@ where
                 }
                 Ok(())
             })?,
+
+            SD::vpat(v) => v.expand(ctx, out, self.span())?,
+            SD::vtype(v) => {
+                v.expand(ctx, out, self.span(), SD::ttype(v.not_in_bool))?
+            }
 
             SD::paste(content, np, ..) => {
                 out.expand_paste(np, ctx, self.span(), content)?
@@ -451,6 +562,23 @@ impl<O: ExpansionOutput> RepeatedTemplate<O> {
             }
         }
         self.template.expand(ctx, out)
+    }
+}
+
+impl quote::IdentFragment for Fname<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Fname::Name(v) => quote::IdentFragment::fmt(v, f),
+            Fname::Index(v) => quote::IdentFragment::fmt(v, f),
+        }
+    }
+}
+impl ToTokens for Fname<'_> {
+    fn to_tokens(&self, out: &mut TokenStream) {
+        match self {
+            Fname::Name(v) => v.to_tokens(out),
+            Fname::Index(v) => v.to_tokens(out),
+        }
     }
 }
 

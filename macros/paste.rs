@@ -266,6 +266,9 @@ impl<C: CaseContext> Items<C> {
             span: s.span(),
         })
     }
+    pub fn push_fixed_string(&mut self, text: String, span: Span) {
+        self.push_item(Item::Plain { text, span });
+    }
 
     /// Combine the accumulated pieces and write them as tokens
     pub fn assemble(self, out: &mut TokenAccumulator) -> syn::Result<()> {

@@ -81,6 +81,9 @@ impl Subst<BooleanContext> {
                 })
                 .unwrap_or(Ok(true))?,
 
+            SD::vtype(v) => void::unreachable(v.not_in_bool),
+            SD::vpat(v) => void::unreachable(v.vtype.not_in_bool),
+
             SD::tname(not_in_bool)
             | SD::ttype(not_in_bool)
             | SD::ttypedef(not_in_bool)
@@ -93,6 +96,7 @@ impl Subst<BooleanContext> {
             | SD::tgens(_, not_in_bool)
             | SD::tgnames(_, not_in_bool)
             | SD::twheres(_, not_in_bool)
+            | SD::fpatname(not_in_bool)
             | SD::paste(_, _, _, not_in_bool)
             | SD::ChangeCase(_, _, _, not_in_bool)
             | SD::when(_, not_in_bool, _)

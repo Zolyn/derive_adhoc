@@ -116,6 +116,7 @@ impl<O: SubstParseContext> Subst<O> {
             SD::ttypedef(..) => None,
             // TODO vtype
             SD::ftype(..) => Some(RO::Fields),
+            SD::fpatname(_) => Some(RO::Fields),
             SD::tmeta(_) => None,
             SD::vmeta(_) => Some(RO::Variants),
             SD::fmeta(_) => Some(RO::Fields),
@@ -125,6 +126,8 @@ impl<O: SubstParseContext> Subst<O> {
             SD::tgens(..) => None,
             SD::tgnames(..) => None,
             SD::twheres(..) => None,
+            SD::vpat(..) => Some(RO::Variants),
+            SD::vtype(..) => Some(RO::Variants),
             SD::is_enum(..) => None,
             SD::paste(body, ..) => {
                 body.analyse_repeat(visitor)?;
@@ -261,6 +264,20 @@ impl<'w> WithinRepeatLevel<'w> for WithinField<'w> {
             }
             Ok(())
         })
+    }
+}
+
+impl<'w> WithinField<'w> {
+    pub fn fname(&self, tspan: Span) -> Fname {
+        if let Some(fname) = &self.field.ident {
+            // todo is this the right span to emit?
+            Fname::Name(fname)
+        } else {
+            Fname::Index(syn::Index {
+                index: self.index,
+                span: tspan,
+            })
+        }
     }
 }
 
