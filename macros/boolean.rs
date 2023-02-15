@@ -81,6 +81,11 @@ impl Subst<BooleanContext> {
                 })
                 .unwrap_or(Ok(true))?,
 
+            SD::Vis(vis, _) => match vis.syn_vis(ctx, self.kw_span)? {
+                syn::Visibility::Public(_) => true,
+                _ => false,
+            },
+
             SD::vtype(v) => void::unreachable(v.not_in_bool),
             SD::vpat(v) => void::unreachable(v.vtype.not_in_bool),
 

@@ -351,6 +351,10 @@ where
             SD::vmeta(wa) => do_meta(wa, out, ctx.variant(wa)?.pattrs)?,
             SD::fmeta(wa) => do_meta(wa, out, &ctx.field(wa)?.pfield.pattrs)?,
 
+            SD::Vis(vis, np) => {
+                out.push_other_tokens(np, vis.syn_vis(ctx, self.kw_span)?)?
+            }
+
             SD::tattrs(ra, np, ..) => out.push_other_subst(np, |out| {
                 ra.expand(ctx, out, &ctx.top.attrs)
             })?,

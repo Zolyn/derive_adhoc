@@ -117,6 +117,8 @@ impl<O: SubstParseContext> Subst<O> {
             // TODO vtype
             SD::ftype(..) => Some(RO::Fields),
             SD::fpatname(_) => Some(RO::Fields),
+            SD::Vis(SubstVis::T, ..) => None,
+            SD::Vis(SubstVis::F, ..) => Some(RO::Fields),
             SD::tmeta(_) => None,
             SD::vmeta(_) => Some(RO::Variants),
             SD::fmeta(_) => Some(RO::Fields),

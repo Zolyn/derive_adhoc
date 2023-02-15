@@ -95,6 +95,8 @@ pub enum SubstDetails<O: SubstParseContext> {
     ftype(O::NotInBool),
     // TODO DOCS, move from clone-full.rs and/or partial-ord.rs
     fpatname(O::NotInBool),
+    // TODO DOCS (also boolean)
+    Vis(SubstVis, O::NotInPaste), // tvis, fvis
 
     // attributes
     tmeta(SubstAttr),
@@ -165,6 +167,13 @@ pub struct SubstIf<O: SubstParseContext> {
     /// A final element to expand if all tests fail.
     pub otherwise: Option<Box<Template<O>>>,
     pub kw_span: Span,
+}
+
+/// Whether this is `${tvis}` or `${fvis}`
+#[derive(Debug)]
+pub enum SubstVis {
+    T,
+    F,
 }
 
 #[derive(Debug, Clone)]
@@ -678,6 +687,9 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         keyword! { ftype(not_in_bool?) }
         keyword! { fpatname(not_in_bool?) }
 
+        keyword! { "tvis": Vis(SubstVis::T, not_in_paste?) }
+        keyword! { "fvis": Vis(SubstVis::F, not_in_paste?) }
+
         keyword! { is_enum(bool_only?) }
 
         keyword! { tgens(not_in_paste?, not_in_bool?) }
@@ -794,6 +806,19 @@ impl<O: SubstParseContext> SubstIf<O> {
             kw_span,
             tests,
             otherwise,
+        })
+    }
+}
+
+impl SubstVis {
+    pub fn syn_vis<'c>(
+        &self,
+        ctx: &'c Context<'c>,
+        tspan: Span,
+    ) -> syn::Result<&'c syn::Visibility> {
+        Ok(match self {
+            SubstVis::T => &ctx.top.vis,
+            SubstVis::F => &ctx.field(&tspan)?.field.vis,
         })
     }
 }
