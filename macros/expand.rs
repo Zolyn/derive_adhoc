@@ -23,6 +23,9 @@ pub enum AttrValue<'l> {
     Lit(&'l syn::Lit),
 }
 
+/// What would `${fname}` expand to?  As type from [`syn`].
+///
+/// Implements [`quote::IdentFragment`] and [`ToTokens`].
 pub enum Fname<'r> {
     Name(&'r syn::Ident),
     Index(syn::Index),
@@ -562,6 +565,21 @@ impl<O: ExpansionOutput> RepeatedTemplate<O> {
             }
         }
         self.template.expand(ctx, out)
+    }
+}
+
+impl<'w> WithinField<'w> {
+    /// What would `${fname}` expand to?
+    pub fn fname(&self, tspan: Span) -> Fname {
+        if let Some(fname) = &self.field.ident {
+            // todo is this the right span to emit?
+            Fname::Name(fname)
+        } else {
+            Fname::Index(syn::Index {
+                index: self.index,
+                span: tspan,
+            })
+        }
     }
 }
 

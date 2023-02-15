@@ -267,20 +267,6 @@ impl<'w> WithinRepeatLevel<'w> for WithinField<'w> {
     }
 }
 
-impl<'w> WithinField<'w> {
-    pub fn fname(&self, tspan: Span) -> Fname {
-        if let Some(fname) = &self.field.ident {
-            // todo is this the right span to emit?
-            Fname::Name(fname)
-        } else {
-            Fname::Index(syn::Index {
-                index: self.index,
-                span: tspan,
-            })
-        }
-    }
-}
-
 impl<'c> Context<'c> {
     /// Returns an [`ErrorLoc`] for the current part of the driver
     pub fn error_loc(&self) -> (Span, &'static str) {
