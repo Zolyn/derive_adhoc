@@ -31,14 +31,10 @@ define_derive_adhoc! {
             match (self, other) {
               $(
                 (${vpat fprefix=self_}, ${vpat fprefix=other_}) => {
-                // Tentatively rejected alternatives
-                //(${vpat self_}, ${vpat other_}) => {
-                //(${vpat .self_}, ${vpat .other_}) => {
                     let ord = Equal;
                   $(
                     let ord = ord.then(PartialOrd::partial_cmp(
                         ${paste self_ $fname}, ${paste other_ $fname},
-                        //${fpatname self_}, ${fpatname other_},
                     )?);
                   )
                 Some(ord) // (misindented by rustfmt)
