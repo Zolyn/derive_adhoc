@@ -177,6 +177,26 @@ impl Drop for ErrorAccumulator {
     }
 }
 
+//---------- TokenAsIdent ----------
+
+/// For use with `ExpansionOutput.push_identfrag_toks`
+///
+/// Will then write out `T` as its tokens.
+/// In identifier pasting, converts the tokens to a string first
+/// (so they had better be keywords).
+pub struct TokenPastesAsIdent<T>(pub T);
+
+impl<T: ToTokens> ToTokens for TokenPastesAsIdent<T> {
+    fn to_tokens(&self, out: &mut TokenStream) {
+        self.0.to_tokens(out)
+    }
+}
+impl<T: ToTokens> quote::IdentFragment for TokenPastesAsIdent<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        Display::fmt(&self.0.to_token_stream(), f)
+    }
+}
+
 //---------- expand_macro_name ----------
 
 /// Return a full path to the location of `derive_adhoc_expand`.

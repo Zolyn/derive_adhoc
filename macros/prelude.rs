@@ -33,7 +33,7 @@ pub use crate::framework::TokenAccumulator;
 pub use crate::utils::{delimit_token_group, braced_group};
 pub use crate::utils::expand_macro_name;
 pub use crate::utils::ErrorAccumulator;
-pub use crate::utils::ToTokensPunctComposable;
+pub use crate::utils::{TokenPastesAsIdent, ToTokensPunctComposable};
 pub use crate::utils::{ErrorLoc, MakeError};
 
 pub use crate::expand::*;

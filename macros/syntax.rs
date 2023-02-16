@@ -97,6 +97,7 @@ pub enum SubstDetails<O: SubstParseContext> {
     fpatname(O::NotInBool),
     // TODO DOCS (also boolean)
     Vis(SubstVis, O::NotInPaste), // tvis, fvis
+    tkeyword(O::NotInBool), // TODO docs, also paste
 
     // attributes
     tmeta(SubstAttr),
@@ -691,6 +692,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         keyword! { fname(not_in_bool?) }
         keyword! { ftype(not_in_bool?) }
         keyword! { fpatname(not_in_bool?) }
+        keyword! { tkeyword(not_in_bool?) }
 
         keyword! { "tvis": Vis(SubstVis::T, not_in_paste?) }
         keyword! { "fvis": Vis(SubstVis::F, not_in_paste?) }

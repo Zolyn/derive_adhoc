@@ -356,6 +356,20 @@ where
             SD::Vis(vis, np) => {
                 out.push_other_tokens(np, vis.syn_vis(ctx, self.kw_span)?)?
             }
+            SD::tkeyword(_) => {
+                fn w<O>(out: &mut O, t: impl ToTokens)
+                where
+                    O: ExpansionOutput,
+                {
+                    out.push_identfrag_toks(&TokenPastesAsIdent(t))
+                }
+                use syn::Data::*;
+                match &ctx.top.data {
+                    Struct(d) => w(out, &d.struct_token),
+                    Enum(d) => w(out, &d.enum_token),
+                    Union(d) => w(out, &d.union_token),
+                };
+            }
 
             SD::tattrs(ra, np, ..) => out.push_other_subst(np, |out| {
                 ra.expand(ctx, out, &ctx.top.attrs)
