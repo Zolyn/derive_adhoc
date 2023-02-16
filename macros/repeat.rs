@@ -133,6 +133,9 @@ impl<O: SubstParseContext> Subst<O> {
             SD::is_struct(..) => None,
             SD::is_enum(..) => None,
             SD::is_union(..) => None,
+            SD::v_is_unit(..) => Some(RO::Variants),
+            SD::v_is_tuple(..) => Some(RO::Variants),
+            SD::v_is_named(..) => Some(RO::Variants),
             SD::paste(body, ..) => {
                 body.analyse_repeat(visitor)?;
                 None

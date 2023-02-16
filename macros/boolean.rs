@@ -53,6 +53,8 @@ impl Subst<BooleanContext> {
                 $wa.path.search_eval_bool(&within . $($pattrs)*)
             }))
         } }
+        let v_fields = || ctx.variant(&self.kw_span).map(|v| &v.fields);
+        use syn::Fields as SF;
 
         let r = match &self.sd {
             SD::tmeta(wa) => is_found(wa.path.search_eval_bool(ctx.tattrs)),
@@ -61,6 +63,9 @@ impl Subst<BooleanContext> {
             SD::is_enum(..) => ctx.is_enum(),
             SD::is_struct(..) => matches!(ctx.top.data, syn::Data::Struct(_)),
             SD::is_union(..) => matches!(ctx.top.data, syn::Data::Union(_)),
+            SD::v_is_unit(..) => matches!(v_fields()?, SF::Unit),
+            SD::v_is_tuple(..) => matches!(v_fields()?, SF::Unnamed(..)),
+            SD::v_is_named(..) => matches!(v_fields()?, SF::Named(..)),
 
             SD::False(..) => false,
             SD::True(..) => true,

@@ -149,6 +149,9 @@ pub enum SubstDetails<O: SubstParseContext> {
     is_struct(O::BoolOnly), // TODO DOCS
     is_enum(O::BoolOnly),
     is_union(O::BoolOnly), // TODO DOCS
+    v_is_unit(O::BoolOnly),  // TODO DOCS
+    v_is_tuple(O::BoolOnly), // TODO DOCS
+    v_is_named(O::BoolOnly), // TODO DOCS
 
     // Explicit iteration
     For(RepeatedTemplate<O>, O::NotInBool),
@@ -695,6 +698,9 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         keyword! { is_struct(bool_only?) }
         keyword! { is_enum(bool_only?) }
         keyword! { is_union(bool_only?) }
+        keyword! { v_is_unit(bool_only?) }
+        keyword! { v_is_tuple(bool_only?) }
+        keyword! { v_is_named(bool_only?) }
 
         keyword! { tgens(not_in_paste?, not_in_bool?) }
         keyword! { tgnames(not_in_paste?, not_in_bool?) }
