@@ -10,11 +10,19 @@ pub fn braced_group(
     brace_span: Span,
     f: impl FnOnce(&mut TokenAccumulator) -> syn::Result<()>,
 ) -> syn::Result<proc_macro2::Group> {
+    delimit_token_group(Delimiter::Brace, brace_span, f)
+}
+
+pub fn delimit_token_group(
+    delim: Delimiter,
+    delim_span: Span,
+    f: impl FnOnce(&mut TokenAccumulator) -> syn::Result<()>,
+) -> syn::Result<proc_macro2::Group> {
     let mut out = TokenAccumulator::default();
     f(&mut out)?;
     let out = out.tokens()?;
-    let mut out = proc_macro2::Group::new(Delimiter::Brace, out);
-    out.set_span(brace_span);
+    let mut out = proc_macro2::Group::new(delim, out);
+    out.set_span(delim_span);
     Ok(out)
 }
 
