@@ -153,8 +153,7 @@ where
         let self_def = SD::tname(self.vtype.not_in_bool);
         SubstVType::expand(&self.vtype, ctx, out, kw_span, self_def)?;
 
-        let in_braces = {
-            let mut out = TokenAccumulator::default();
+        let in_braces = braced_group(kw_span, |mut out| {
             WithinField::for_each(ctx, |ctx, field| {
                 SD::fname::<TokenAccumulator>(())
                     .expand(ctx, &mut out, kw_span)?;
@@ -173,14 +172,8 @@ where
 
                 out.push_other_subst(&(), |out| paste.assemble(out))?;
                 Ok::<_, syn::Error>(())
-            })?;
-            let out = out.tokens()?;
-
-            out
-        };
-        let mut in_braces =
-            proc_macro2::Group::new(Delimiter::Brace, in_braces);
-        in_braces.set_span(kw_span);
+            })
+        })?;
         out.push_other_tokens(&self.vtype.not_in_paste, in_braces)?;
         Ok(())
     }
