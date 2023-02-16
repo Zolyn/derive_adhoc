@@ -405,6 +405,20 @@ where
                 v.expand(ctx, out, self.span(), SD::ttype(v.not_in_bool))?
             }
 
+            SD::tdefvariants(content, np, ..) => out.push_other_subst(np, |out| {
+                if ctx.is_enum() {
+                    out.write_tokens(braced_group(
+                        self.kw_span,
+                        |inside: &mut TokenAccumulator| {
+                            Ok(content.expand(ctx, inside))
+                        }
+                    )?);
+                } else {
+                    content.expand(ctx, out);
+                }
+                Ok(())
+            })?,
+
             SD::paste(content, np, ..) => {
                 out.expand_paste(np, ctx, self.span(), content)?
             }

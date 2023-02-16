@@ -120,6 +120,9 @@ pub enum SubstDetails<O: SubstParseContext> {
     // TODO DOCS, move from clone-full.rs and/or partial-ord.rs
     vtype(SubstVType<O>),
 
+    // TODO DOCS
+    tdefvariants(Template<TokenAccumulator>, O::NotInPaste, O::NotInBool),
+
     // expansion manipulation
     paste(
         Template<paste::Items>,
@@ -718,6 +721,15 @@ impl<O: SubstParseContext> Parse for Subst<O> {
 
         keyword! { vtype(SubstVType::parse(input, kw.span())?) }
         keyword! { vpat(SubstVPat::parse(input, kw.span())?) }
+
+        keyword! { tdefvariants {
+            if input.is_empty() {
+                return Err(kw.error(
+                    "tdefvariants needs to contain the variant definitions"
+                ));
+            }
+            let content = Template::parse(input, Default::default())?;
+        } (content, not_in_paste?, not_in_bool?) }
 
         keyword! {
             paste {
