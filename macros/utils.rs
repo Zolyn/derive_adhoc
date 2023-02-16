@@ -1,5 +1,23 @@
 //! Utilities for proc macro implementation
 
+//---------- misc ----------
+
+/// Construct a braced group from a token expansion
+///
+/// Calls `f` to expand tokens, and returns a braced group containing
+/// its output.
+pub fn braced_group(
+    brace_span: Span,
+    f: impl FnOnce(&mut TokenAccumulator) -> syn::Result<()>,
+) -> syn::Result<proc_macro2::Group> {
+    let mut out = TokenAccumulator::default();
+    f(&mut out)?;
+    let out = out.tokens()?;
+    let mut out = proc_macro2::Group::new(Delimiter::Brace, out);
+    out.set_span(brace_span);
+    Ok(out)
+}
+
 //---------- MakeErrorExt ----------
 
 use crate::prelude::*;
