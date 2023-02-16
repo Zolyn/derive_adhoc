@@ -201,7 +201,7 @@ where
                 } else {
                     paste.push_fixed_string("f_".into(), kw_span);
                 }
-                paste.push_ident(&field.fname(kw_span));
+                paste.push_identfrag_toks(&field.fname(kw_span));
 
                 out.push_other_subst(&(), |out| paste.assemble(out))?;
                 Ok::<_, syn::Error>(())
@@ -330,13 +330,15 @@ where
         };
 
         match &self.sd {
-            SD::tname(_) => out.push_ident(&ctx.top.ident),
+            SD::tname(_) => out.push_identfrag_toks(&ctx.top.ident),
             SD::ttype(_) => do_ttype(out, Some(()), &do_tgnames),
             SD::ttypedef(_) => do_ttype(out, None, &do_tgens),
-            SD::vname(_) => out.push_ident(&ctx.syn_variant(self)?.ident),
+            SD::vname(_) => {
+                out.push_identfrag_toks(&ctx.syn_variant(self)?.ident)
+            }
             SD::fname(_) => {
                 let fname = ctx.field(self)?.fname(self.kw_span);
-                out.push_ident(&fname);
+                out.push_identfrag_toks(&fname);
             }
             SD::ftype(_) => {
                 let f = ctx.field(self)?;
@@ -345,7 +347,7 @@ where
             SD::fpatname(_) => {
                 let f = ctx.field(self)?;
                 let fpatname = format_ident!("f_{}", f.fname(self.kw_span));
-                out.push_ident(&fpatname);
+                out.push_identfrag_toks(&fpatname);
             }
             SD::tmeta(wa) => do_meta(wa, out, ctx.tattrs)?,
             SD::vmeta(wa) => do_meta(wa, out, ctx.variant(wa)?.pattrs)?,
