@@ -125,7 +125,7 @@ pub fn derive_adhoc_derive_macro(
         macro_rules! #driver_mac_name {
             {
                 { $($template:tt)* }
-                { ($ORGDOLLAR:tt) }
+                { ($ORGDOLLAR:tt) $(future:tt)* }
                 $($tpassthrough:tt)*
             } => {
                 #expand_macro!{
@@ -152,6 +152,7 @@ pub fn derive_adhoc_derive_macro(
         output.extend(quote! {
             #templ_path !{
                 { #driver }
+                { }
             }
         });
     }

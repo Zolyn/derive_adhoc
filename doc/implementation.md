@@ -39,7 +39,7 @@ When applied to (e.g.) `pub struct StructName`, generates this
 ```rust,ignore
     macro_rules! derive_adhoc_driver_StructName { {
         { $($template:tt)* }
-        { ($ORGDOLLAR:tt) }
+        { ($ORGDOLLAR:tt) $(future:tt)* }
         $($tpassthrough:tt)* 
      } => {
         derive_adhoc_expand!{
@@ -117,6 +117,7 @@ Expands to
 ```rust,ignore
     macro_rules! derive_adhoc_template_MyDebug { {
         { $($driver:tt)* }
+        { $(future:tt)* }
         $($dpassthrough:tt)*
     } => {
         derive_adhoc_expand! {
@@ -157,6 +158,7 @@ Generates (in addition to the `derive_adhoc_driver_StructName` definition)
 ```rust,ignore
     derive_adhoc_template_Template! {
         { #[derive_adhoc(Template)] struct StructName { ... } }
+        { }
     }
 ```
 
