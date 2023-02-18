@@ -62,6 +62,7 @@ pub fn derive_adhoc_func_macro(
     let output = quote! {
         #driver_mac_name !{
             { #template }
+            { ($) }
             crate;
         }
     };

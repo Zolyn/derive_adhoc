@@ -39,6 +39,7 @@ When applied to (e.g.) `pub struct StructName`, generates this
 ```rust,ignore
     macro_rules! derive_adhoc_driver_StructName { {
         { $($template:tt)* }
+        { ($ORGDOLLAR:tt) }
         $($tpassthrough:tt)* 
      } => {
         derive_adhoc_expand!{
@@ -52,6 +53,9 @@ When applied to (e.g.) `pub struct StructName`, generates this
 
 (The extra `{ }` parts after the driver and template
 include space for future expansion.)
+
+In the `pub struct` part every `$` is replaced with `$ORGDOLLAR`,
+to use the `$` passed in at the invocation site.
 
 ### 2. `derive_adhoc!` function-like proc macro for applying to a template
 
@@ -69,6 +73,7 @@ Expands to
 ```rust,ignore
     derive_adhoc_driver_StructName! {
        { TEMPLATE... }
+       { ($) }
        crate;
     }
 ```
