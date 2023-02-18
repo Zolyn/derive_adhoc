@@ -70,12 +70,14 @@ derive-adhoc treats them as having a single (unnamed) variant.
 
 ## Expansions
 
- * **`$fname`, `$vname`, `$tname`**:
+### `$fname`, `$vname`, `$tname` - names
+
    The name of the field, variant, or toplevel type.
    This is an the identifier (without any path or generics).
    For tuple fields, `$fname` is the field number.
 
- * **`$ftype`, `$ttype`**:
+### `$ftype`, `$ttype` - types
+
    The type of the field, or the toplevel type.
    This contains all necessary generics
    (as names, without any bunds etc., but within `::<...>`).
@@ -84,13 +86,15 @@ derive-adhoc treats them as having a single (unnamed) variant.
    `derive_adhoc!{ }`
    had a path prefix.
 
- * **`$ttypedef`**:
+### `$ttypedef` - type name, for defining a new type
+
    The top-level driver type name in a form suitable for defining
    a new type with a derived name (eg, using `${paste }`).
    Contains all the necessary generics, with bounds,
    within `<...>` but without an introducing `::`.
 
- * **`$tgens`**, **`$tgens`**, **`$twheres`**:
+### `$tgens`, `$tgens`, `$twheres` - generics
+
    Generic parameters and bounds, from the toplevel type,
    in various forms.
 
@@ -120,55 +124,59 @@ derive-adhoc treats them as having a single (unnamed) variant.
    Examples each show the expansion for
    `struct Foo<'l:'a, T:X, const C=1> where T: 'a {...}`.
 
- * <a name="derive_adhoc_syntax_Xmeta">**`${tmeta(...)}` `${vmeta(...)}` `${fmeta(...)}`**:</a>
-   Accesses macro parameters passed via `#[adhoc(...)]` attributes.
+### <a name="derive_adhoc_syntax_Xmeta">`${tmeta(...)}` `${vmeta(...)}` `${fmeta(...)}`</a> - `#[adhoc]` attributes
 
-    + **`${Xmeta(NAME)}`**:
-      Looks for `#[adhoc(NAME=LIT)]`, and expands to `LIT`.
-      `LIT` can only be a literal, which is parsed as Rust tokens,
-      which become the result of the expansion.
-      (Within `${paste }` and `${case }`, the literal is used directly.)
+Accesses macro parameters passed via `#[adhoc(...)]` attributes.
 
-    + **`${Xmeta(SUB(NAME))}`**:
-      Looks for `#[adhoc(SUB(NAME=LIT))]`, and expands to `LIT`.
-      The `#[adhoc()]` is parsed as
-      a set of nested, comma-separated, lists.
-      So this could would find `NAME` 
-      in `#[adhoc(SUB1,SUB(N1,NAME=LIT,N2),SUB2)]`.
-      The path can be arbitrarily deep, e.g.: `${Xmeta(L1(L2(L3(ATTR))))}`.
+ * **`${Xmeta(NAME)}`**:
+   Looks for `#[adhoc(NAME=LIT)]`, and expands to `LIT`.
+   `LIT` can only be a literal, which is parsed as Rust tokens,
+   which become the result of the expansion.
+   (Within `${paste }` and `${case }`, the literal is used directly.)
 
-    + **`${Xmeta(...) as SYNTYPE}`**:
-      Parses `LIT` as Rust code specifying a `SYNTYPE`,
-      and then expands to that.
-      Unless `SYNTYPE` is `lit`, `LIT` must be a *string* literal.
-      `SYNTYPE`s available are:
+ * **`${Xmeta(SUB(NAME))}`**:
+   Looks for `#[adhoc(SUB(NAME=LIT))]`, and expands to `LIT`.
+   The `#[adhoc()]` is parsed as
+   a set of nested, comma-separated, lists.
+   So this could would find `NAME` 
+   in `#[adhoc(SUB1,SUB(N1,NAME=LIT,N2),SUB2)]`.
+   The path can be arbitrarily deep, e.g.: `${Xmeta(L1(L2(L3(ATTR))))}`.
 
-       * **`lit`**: A literal value; expands `LIT` directly;
-         equivalent to not having said `as`.
-       * **`ty`**: A type, possibly with generics etc. (`syn::Type`).
+ * **`${Xmeta(...) as SYNTYPE}`**:
+   Parses `LIT` as Rust code specifying a `SYNTYPE`,
+   and then expands to that.
+   Unless `SYNTYPE` is `lit`, `LIT` must be a *string* literal.
+   `SYNTYPE`s available are:
 
-   When expanding `${Xmeta}`,
-   it is an error if the value was not specified in the driver,
-   and also an error if multiple values were specified.
+    * **`lit`**: A literal value; expands `LIT` directly;
+      equivalent to not having said `as`.
+    * **`ty`**: A type, possibly with generics etc. (`syn::Type`).
 
- * **`${fattrs ...}` `${vattrs ...}` `${tattrs ...}`**:
-   Expands to non-`#[adhoc()]` attributes.
-   The attributes can be filtered:
+When expanding `${Xmeta}`,
+it is an error if the value was not specified in the driver,
+and also an error if multiple values were specified.
 
-    * **`$Xattrs`**: All the attributes.
-    * **`${Xattrs A1, A2, ...}`**, or
-      **`${Xattrs = A, A2, ...}`**:
-      Attributes `#[A1...]` and `#[A2...]` only.
-    * **`${Xattrs ! A1, A2, ...}`**:
-      All attributes *except* those.
+### `${fattrs ...}` `${vattrs ...}` `${tattrs ...}` - other attributes
 
-   With `${Xattrs}`, unlike `${Xmeta}`,
-     * The expansion is all of the attributes, including the `#[...]`;
-     * All attributes, not just `#[adhoc(...)]`,, are included.
-     * The attributes can be filtered by toplevel attribute name,
-       but not deeply manipulated.
+Expands to non-`#[adhoc()]` attributes.
+The attributes can be filtered:
 
- * **`${paste ...}`**:
+  * **`$Xattrs`**: All the attributes.
+  * **`${Xattrs A1, A2, ...}`**, or
+    **`${Xattrs = A, A2, ...}`**:
+    Attributes `#[A1...]` and `#[A2...]` only.
+  * **`${Xattrs ! A1, A2, ...}`**:
+    All attributes *except* those.
+
+With `${Xattrs}`, unlike `${Xmeta}`,
+
+   * The expansion is all of the attributes, including the `#[...]`;
+   * All attributes, not just `#[adhoc(...)]`,, are included.
+   * The attributes can be filtered by toplevel attribute name,
+     but not deeply manipulated.
+
+### `${paste ...}` - identifier pasting
+
    Expand the contents and paste it together into a single identifier.
    The contents may only contain identifer fragments, strings (`"..."`),
    and (certain) expansions.
@@ -189,24 +197,28 @@ derive-adhoc treats them as having a single (unnamed) variant.
    generates
    `crate::config::ZingyFooBuilder<'a,T,C>`.
 
- * **`${CASE_CHANGE ...}`**:
+### `${CASE_CHANGE ...}` - case changing
+
    Expands the content, and changes its case
    (eg. uppercase to lowercase, etc.
    See [Case changing](#case-changing).
 
- * **`${when CONDITION}`**:
+### `${when CONDITION}` - filtering out repetitions by a predicate
+
    Allowed only within repetitions, and only at the toplevel
    of the repetition,
    before other expansions.
    Skips this repetition if the `CONDITION` is not true.
 
- * **`${if COND1 { ... } else if COND2 { ... } else { ... }}`**:
+### `${if COND1 { ... } else if COND2 { ... } else { ... }}` - conditional
+
    Conditionals.  The else clause is, of course, optional.
    The `else if` between arms is also optional,
    but `else` in the fallback clause is mandatory.
    So you can write `${if COND1 { ... } COND2 { ... } else { ... }`.
 
- * **`${select1 COND1 { ... } else if COND2 { ... } else { ... }}`**:
+### `${select1 COND1 { ... } else if COND2 { ... } else { ... }}` - expect precisely one predicate
+
    Conditionals which insist on expanding exactly one of the branches.
    Syntax is identical to that of `${if }`.
    *All* of the `COND` are always evaluated.
@@ -214,7 +226,8 @@ derive-adhoc treats them as having a single (unnamed) variant.
    or, none of them, bot only if an `else` is supplied -
    otherwise it is an error.
 
- * **`${for fields { ... }}`, `${for variants { ... }}`**:
+### `${for fields { ... }}`, `${for variants { ... }}` - explicit repetition
+
    Expands the contents once per field, or once per variant.
 
 ## Conditions
@@ -222,7 +235,8 @@ derive-adhoc treats them as having a single (unnamed) variant.
 Conditions all start with a `KEYWORD`.
 They are found within `${if }`, `${when }`, and `${select1 }`.
 
- * **`fmeta(NAME)`, `vmeta(NAME)`, `tmeta(NAME)`**:
+### `fmeta(NAME)`, `vmeta(NAME)`, `tmeta(NAME)` - `#[adhoc]` attributes
+
    Looks for `#[adhoc(NAME)]`.
 
    True iff there was such an attribute.
@@ -236,10 +250,11 @@ They are found within `${if }`, `${when }`, and `${select1 }`.
    `#[adhoc(SUB(NAME(INNER=...)))]` or `#[adhoc(SUB(NAME))]` or
    `#[adhoc(SUB(NAME=LIT))]` or even `#[adhoc(SUB(NAME()))]`.
 
- * **`is_enum`**: The driver data structure is an enum.
+### `is_enum`
 
- * **`false`, `true`, `not(CONDITION)`, 
-   `any(COND1,COND2,...)`, `all(COND1,COND2,...)`**.
+The driver data structure is an enum.
+
+### `false`, `true`, `not(CONDITION)`, `any(COND1,COND2,...)`, `all(COND1,COND2,...)` -- boolean logic
 
 ## Case changing
 
