@@ -37,16 +37,17 @@ Implemented in `capture.rs::derive_adhoc_derive_macro`.
 When applied to (e.g.) `pub struct StructName`, generates this
 
 ```rust,ignore
-    macro_rules! derive_adhoc_driver_StructName {
-        { { $($template:tt)* } $($tpassthrough:tt)* } => {
-            derive_adhoc_expand!{
-                { pub struct StructName { /* original struct definition */ } }
-                { }
-                { $($template)* }
-                { $($tpassthrough)* }
-            }
+    macro_rules! derive_adhoc_driver_StructName { {
+        { $($template:tt)* }
+        $($tpassthrough:tt)* 
+     } => {
+        derive_adhoc_expand!{
+            { pub struct StructName { /* original struct definition */ } }
+            { }
+            { $($template)* }
+            { $($tpassthrough)* }
         }
-    }
+    } }
 ```
 
 (The extra `{ }` parts after the driver and template
@@ -109,16 +110,17 @@ When used like this
 ```
 Expands to
 ```rust,ignore
-    macro_rules! derive_adhoc_template_MyDebug {
-        { { $($driver:tt)* } $($dpassthrough:tt)* } => {
-            derive_adhoc_expand! {
-                { $($driver)* }
-                { $($dpassthrough)* }
-                { TEMPLATE... }
-                { $crate; }
-            }
+    macro_rules! derive_adhoc_template_MyDebug { {
+        { $($driver:tt)* }
+        $($dpassthrough:tt)*
+    } => {
+        derive_adhoc_expand! {
+            { $($driver)* }
+            { $($dpassthrough)* }
+            { TEMPLATE... }
+            { $crate; }
         }
-    }
+    } }
 ```
 
 Except, every `$` in the TEMPLATE is replaced with `$ORIGDOLLAR`.
@@ -149,10 +151,7 @@ Generates (in addition to the `derive_adhoc_driver_StructName` definition)
 
 ```rust,ignore
     derive_adhoc_template_Template! {
-        {
-            #[derive_adhoc(Template)]
-            struct StructName { ... }
-        }
+        { #[derive_adhoc(Template)] struct StructName { ... } }
     }
 ```
 
