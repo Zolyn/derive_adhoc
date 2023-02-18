@@ -293,6 +293,14 @@ impl<O: SubstParseContext> Template<O> {
     }
 }
 
+/// Proof token that [`deescape_orig_dollar`] was called
+///
+/// Demanded by `Subst::parse_after_dollar`.
+///
+/// Do not construct this yourself.
+/// Only `deescape_orig_dollar` is allowed to do that.
+pub struct OrigDollarDeescapedProofToken {}
+
 /// Skip over any `ORIGDOLLAR`
 ///
 /// Call this after seeing a `$`.
@@ -300,7 +308,7 @@ impl<O: SubstParseContext> Template<O> {
 /// [`definition::escape_dollars`](crate::definition::escape_dollars).
 pub fn deescape_orig_dollar(
     input: ParseStream,
-) -> syn::Result<()> {
+) -> syn::Result<OrigDollarDeescapedProofToken> {
     input.step(|cursor| {
         let rest = (|| {
             let (ident, rest) = cursor.ident()?;
@@ -308,7 +316,7 @@ pub fn deescape_orig_dollar(
             Some(rest)
         })()
         .unwrap_or(*cursor);
-        Ok(((), rest))
+        Ok((OrigDollarDeescapedProofToken {}, rest))
     })
 }
 
@@ -337,7 +345,7 @@ impl<O: SubstParseContext> Parse for TemplateElement<O> {
                 TE::Punct(tok, O::not_in_paste(&span)?)
             }
             TT::Punct(_dollar) => {
-                deescape_orig_dollar(input)?;
+                let deescaped = deescape_orig_dollar(input)?;
                 let la = input.lookahead1();
                 if la.peek(Token![$]) {
                     // $$
@@ -347,7 +355,7 @@ impl<O: SubstParseContext> Parse for TemplateElement<O> {
                 } else if la.peek(token::Paren) {
                     RepeatedTemplate::parse_in_parens(input)?
                 } else {
-                    TE::Subst(Subst::parse_after_dollar(la, input)?)
+                    TE::Subst(Subst::parse_after_dollar(la, input, deescaped)?)
                 }
             }
         })
@@ -555,15 +563,18 @@ impl<O: SubstParseContext> Subst<O> {
     /// Parses everything including a `$` (which we insist on)
     fn parse_entire(input: ParseStream) -> syn::Result<Self> {
         let _dollar: Token![$] = input.parse()?;
-        deescape_orig_dollar(input)?;
+        let deescaped = deescape_orig_dollar(input)?;
         let la = input.lookahead1();
-        Self::parse_after_dollar(la, input)
+        Self::parse_after_dollar(la, input, deescaped)
     }
 
     /// Parses everything after the `$`, possibly including a pair of `{ }`
+    ///
+    /// You must have called [`deescape_orig_dollar`].
     fn parse_after_dollar(
         la: Lookahead1,
         input: ParseStream,
+        _deescaped: OrigDollarDeescapedProofToken,
     ) -> syn::Result<Self> {
         if la.peek(token::Brace) {
             let exp;
