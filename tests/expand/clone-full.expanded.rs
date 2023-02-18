@@ -52,10 +52,10 @@ where
 {
     fn clone(&self) -> Self {
         match self {
-            Enum::Unit {} => Enum::<F>::Unit {},
-            Enum::Tuple { 0: f_0 } => Enum::<F>::Tuple { 0: f_0.clone() },
+            Enum::Unit {} => Enum::Unit::<F> {},
+            Enum::Tuple { 0: f_0 } => Enum::Tuple::<F> { 0: f_0.clone() },
             Enum::Struct { field: f_field } => {
-                Enum::<F>::Struct {
+                Enum::Struct::<F> {
                     field: f_field.clone(),
                 }
             }

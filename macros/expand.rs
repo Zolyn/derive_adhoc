@@ -148,10 +148,15 @@ where
         ctx: &Context,
         out: &mut O,
         kw_span: Span,
-        self_def: SubstDetails<O>,
+        self_def: SubstDetails<TokenAccumulator>,
     ) -> syn::Result<()> {
+     // TODO this has anomalous formatting, but that's going to go away later
+     out.push_other_subst(&self.not_in_paste, |out| {
+
         let expand_spec_or_sd =
-            |out: &mut _, spec: &Option<Template<O>>, sd: SubstDetails<O>| {
+            |out: &mut _,
+             spec: &Option<Template<TokenAccumulator>>,
+             sd: SubstDetails<TokenAccumulator>| {
                 if let Some(spec) = spec {
                     spec.expand(ctx, out);
                     Ok(())
@@ -160,13 +165,68 @@ where
                 }
             };
 
-        expand_spec_or_sd(out, &self.self_, self_def)?;
+        if !ctx.is_enum() {
+            return expand_spec_or_sd(out, &self.self_, self_def);
+        }
+        // It's an enum.  We need to write the main type name,
+        // and the variant.  Naively we might expect to just do
+        //    TTYPE::VNAME
+        // but that doesn't work, because if TTYPE has generics, that's
+        //    TNAME::<TGENERICS>::VNAME
+        // and this triggers bizarre (buggy) behaviour in rustc -
+        // see rust-lang/rust/issues/108224.
+        // So we need to emit
+        //    TNAME::VNAME::<TGENERICS>
+        //
+        // The most convenient way to do that seems to be to re-parse
+        // this bit of the expansion as a syn::Path.  That lets
+        // us fish out the generics, for writing out later.
 
-        if ctx.is_enum() {
-            out.push_other_tokens(&self.not_in_paste, &Token![::](kw_span))?;
-            expand_spec_or_sd(out, &self.vname, SD::vname(self.not_in_bool))?;
+        let mut self_ty = TokenAccumulator::new();
+        expand_spec_or_sd(&mut self_ty, &self.self_, self_def)?;
+        let self_ty = self_ty.tokens()?;
+        let mut self_ty: syn::Path =
+            syn::parse2(self_ty).map_err(|mut e| {
+                e.combine(kw_span.error(
+                    "error re-parsing self type path for this expansion",
+                ));
+                e
+            })?;
+
+        let mut generics = mem::take(
+            &mut self_ty
+                .segments
+                .last_mut()
+                .ok_or_else(|| {
+                    kw_span.error(
+                        "self type path for this expansion is empty path!",
+                    )
+                })?
+                .arguments,
+        );
+
+        out.write_tokens(self_ty);
+        out.write_tokens(Token![::](kw_span));
+        expand_spec_or_sd(out, &self.vname, SD::vname(Default::default()))?;
+        match &mut generics {
+            syn::PathArguments::AngleBracketed(content) => {
+                // Normalise `<GENERICS>` to `::<TGENERICS>`.
+                content
+                    .colon2_token
+                    .get_or_insert_with(|| Token![::](kw_span));
+                out.write_tokens(generics);
+            }
+            syn::PathArguments::None => {}
+            syn::PathArguments::Parenthesized(..) => {
+                return Err([
+                    (generics.span(), "generics"),
+                    (kw_span, "template keyword"),
+                ]
+                .error("self type has parenthesised generics, not supported"))
+            }
         }
         Ok(())
+      })
     }
 }
 
@@ -183,7 +243,7 @@ where
         out: &mut O,
         kw_span: Span,
     ) -> syn::Result<()> {
-        let self_def = SD::tname(self.vtype.not_in_bool);
+        let self_def = SD::tname(Default::default());
         SubstVType::expand(&self.vtype, ctx, out, kw_span, self_def)?;
 
         let in_braces = braced_group(kw_span, |mut out| {
@@ -420,7 +480,7 @@ where
 
             SD::vpat(v) => v.expand(ctx, out, self.span())?,
             SD::vtype(v) => {
-                v.expand(ctx, out, self.span(), SD::ttype(v.not_in_bool))?
+                v.expand(ctx, out, self.span(), SD::ttype(Default::default()))?
             }
 
             SD::tdefvariants(content, np, ..) => {

@@ -230,8 +230,8 @@ struct AdhocAttrList {
 
 #[derive(Debug)]
 pub struct SubstVType<O: SubstParseContext> {
-    pub self_: Option<Template<O>>,
-    pub vname: Option<Template<O>>,
+    pub self_: Option<Template<TokenAccumulator>>,
+    pub vname: Option<Template<TokenAccumulator>>,
     pub not_in_paste: O::NotInPaste,
     pub not_in_bool: O::NotInBool,
 }
