@@ -110,7 +110,7 @@ When used like this
 Expands to
 ```rust,ignore
     macro_rules! derive_adhoc_template_MyDebug {
-        { $dollar:tt { $($driver:tt)* } $($dpassthrough:tt)* } => {
+        { { $($driver:tt)* } $($dpassthrough:tt)* } => {
             derive_adhoc_expand! {
                 { $($driver)* }
                 { $($dpassthrough)* }
