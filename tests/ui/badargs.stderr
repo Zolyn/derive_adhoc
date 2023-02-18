@@ -19,9 +19,12 @@ error: unexpected arguments to expansion keyword
    |                   ^^^^
 
 error: unexpected arguments to expansion keyword
-  --> ui/badargs.rs:30:10
+  --> ui/badargs.rs:27:26
    |
+27 |     type Alias = ${ttype $junk};
+   |                          ^
+...
 30 | #[derive(Adhoc)]
-   |          ^^^^^
+   |          ----- in this derive macro expansion
    |
-   = note: this error originates in the derive macro `Adhoc` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `derive_adhoc_template_Broken` which comes from the expansion of the derive macro `Adhoc` (in Nightly builds, run with -Z macro-backtrace for more info)

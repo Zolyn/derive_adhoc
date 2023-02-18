@@ -26,7 +26,7 @@ impl Parse for TemplateDefinition {
     }
 }
 
-// Replaces every $ with ${dollar}
+// Replaces every $ with $ORGDOLLAR
 // SRSLY
 fn escape_dollars(input: TokenStream) -> TokenStream {
     let mut out = TokenStream::new();
@@ -42,7 +42,7 @@ fn escape_dollars(input: TokenStream) -> TokenStream {
                 TT::Group(g)
             }
             TT::Punct(p) if p.as_char() == '$' => {
-                out.extend(quote_spanned! {p.span()=> #p dollar });
+                out.extend(quote_spanned! {p.span()=> #p ORGDOLLAR });
                 continue;
             }
             other => other,

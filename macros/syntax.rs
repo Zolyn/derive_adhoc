@@ -293,6 +293,20 @@ impl<O: SubstParseContext> Template<O> {
     }
 }
 
+fn deescape_orig_dollar(
+    input: ParseStream,
+) -> syn::Result<()> {
+    input.step(|cursor| {
+        let rest = (|| {
+            let (ident, rest) = cursor.ident()?;
+            (ident == "ORGDOLLAR").then(|| ())?;
+            Some(rest)
+        })()
+        .unwrap_or(*cursor);
+        Ok(((), rest))
+    })
+}
+
 impl<O: SubstParseContext> Parse for TemplateElement<O> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(match input.parse()? {
@@ -318,6 +332,7 @@ impl<O: SubstParseContext> Parse for TemplateElement<O> {
                 TE::Punct(tok, O::not_in_paste(&span)?)
             }
             TT::Punct(_dollar) => {
+                deescape_orig_dollar(input)?;
                 let la = input.lookahead1();
                 if la.peek(Token![$]) {
                     // $$
@@ -535,6 +550,7 @@ impl<O: SubstParseContext> Subst<O> {
     /// Parses everything including a `$` (which we insist on)
     fn parse_entire(input: ParseStream) -> syn::Result<Self> {
         let _dollar: Token![$] = input.parse()?;
+        deescape_orig_dollar(input)?;
         let la = input.lookahead1();
         Self::parse_after_dollar(la, input)
     }
