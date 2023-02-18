@@ -127,7 +127,6 @@ pub fn derive_adhoc_derive_macro(
 
         output.extend(quote! {
             #templ_path !{
-                $
                 { #driver }
             }
         });

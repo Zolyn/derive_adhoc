@@ -110,7 +110,7 @@ When used like this
 Expands to
 ```rust,ignore
     macro_rules! derive_adhoc_template_MyDebug {
-        { $dollar:tt { $($driver:tt)* } $($dpassthrough:tt)* } => {
+        { { $($driver:tt)* } $($dpassthrough:tt)* } => {
             derive_adhoc_expand! {
                 { $($driver)* }
                 { $($dpassthrough)* }
@@ -121,12 +121,14 @@ Expands to
     }
 ```
 
-Except, every `$` in the TEMPLATE is replaced with `$dollar`.  This is
-because a `macro_rules!` template is not capable of generating a
-literal in the expansion `$`.  (With the still-unstable
+Except, every `$` in the TEMPLATE is replaced with `$ORIGDOLLAR`.
+This is because a `macro_rules!` template
+is not capable of generating a
+literal in the expansion `$`.
+(With the still-unstable
 [`decl_macro`](https://github.com/rust-lang/rust/issues/83527)
-feature, `$$` does this.)  So the proc macro code passes in a `$` for
-the `macro_rules` macro to emit when it needs to expand to a dollar.
+feature, `$$` does this.)
+The template expansion engine treats `$ORGDOLLAR` as just a single `$`.
 
 (Again, the extra `{ }` parts after the driver and template
 include space for future expansion.)

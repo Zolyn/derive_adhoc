@@ -1,5 +1,5 @@
 
-use derive_adhoc::{derive_adhoc, Adhoc};
+use derive_adhoc::{define_derive_adhoc, derive_adhoc, Adhoc};
 
 #[derive(Adhoc)]
 struct DataType {
@@ -20,6 +20,16 @@ derive_adhoc! {
         f ${fname junk}() { }
     }}
 }
+
+define_derive_adhoc! {
+    Broken =
+
+    type Alias = ${ttype $junk};
+}
+
+#[derive(Adhoc)]
+#[derive_adhoc(Broken)]
+struct ForBroken;
 
 fn main() {
 }
