@@ -17,3 +17,11 @@ error: unexpected arguments to expansion keyword
    |
 20 |         f ${fname junk}() { }
    |                   ^^^^
+
+error: unexpected arguments to expansion keyword
+  --> ui/badargs.rs:30:10
+   |
+30 | #[derive(Adhoc)]
+   |          ^^^^^
+   |
+   = note: this error originates in the derive macro `Adhoc` (in Nightly builds, run with -Z macro-backtrace for more info)
