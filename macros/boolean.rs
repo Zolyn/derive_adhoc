@@ -102,7 +102,8 @@ impl Subst<BooleanContext> {
             | SD::when(_, not_in_bool, _)
             | SD::For(_, not_in_bool)
             | SD::If(_, not_in_bool)
-            | SD::select1(_, not_in_bool) => void::unreachable(*not_in_bool),
+            | SD::select1(_, not_in_bool)
+            | SD::Crate(_, not_in_bool) => void::unreachable(*not_in_bool),
         };
         Ok(r)
     }

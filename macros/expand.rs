@@ -10,10 +10,11 @@ use crate::framework::*;
 
 /// Input to `derive_adhoc_expand!`
 #[derive(Debug)]
-pub struct SubstInput {
+pub struct DeriveAdhocExpandInput {
     pub driver_brace: token::Brace,
     pub driver: syn::DeriveInput,
     pub template_brace: token::Brace,
+    pub template_crate: syn::Path,
     pub template: Template<TokenAccumulator>,
 }
 
@@ -32,6 +33,38 @@ pub enum Fname<'r> {
 }
 
 pub use AttrValue as AV;
+
+impl Parse for DeriveAdhocExpandInput {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let driver;
+        let driver_brace = braced!(driver in input);
+        let driver = driver.parse()?;
+
+        let driver_passed;
+        let _ = braced!(driver_passed in input);
+        let _: TokenStream = driver_passed.parse()?;
+
+        let template;
+        let template_brace = braced!(template in input);
+        let template = Template::parse(&template, ())?;
+
+        let template_passed;
+        let _ = braced!(template_passed in input);
+        let template_crate = template_passed.parse()?;
+        let _: Token![;] = template_passed.parse()?;
+        let _: TokenStream = template_passed.parse()?;
+
+        let _: TokenStream = input.parse()?;
+
+        Ok(DeriveAdhocExpandInput {
+            driver_brace,
+            driver,
+            template_brace,
+            template,
+            template_crate,
+        })
+    }
+}
 
 impl Spanned for AttrValue<'_> {
     fn span(&self) -> Span {
@@ -372,6 +405,10 @@ where
             | SD::all(_, bo) => out.expand_bool_only(bo),
             SD::For(repeat, _) => repeat.expand(ctx, out),
             SD::select1(conds, ..) => conds.expand_select1(ctx, out)?,
+
+            SD::Crate(np, ..) => {
+                out.push_other_tokens(np, &ctx.template_crate)?
+            }
         };
         Ok(())
     }
@@ -603,9 +640,11 @@ impl ToTokens for Fname<'_> {
 pub fn derive_adhoc_expand_func_macro(
     input: TokenStream,
 ) -> syn::Result<TokenStream> {
-    let input: SubstInput = syn::parse2(input)?;
+    // eprintln!("derive_adhoc_expand! {}", &input);
+    let input: DeriveAdhocExpandInput = syn::parse2(input)?;
+    // eprintln!("derive_adhoc_expand! crate = {:?}", &input.template_crate);
 
-    let output = Context::call(&input.driver, |ctx| {
+    let output = Context::call(&input.driver, &input.template_crate, |ctx| {
         let mut output = TokenAccumulator::new();
         input.template.expand(&ctx, &mut output);
         output.tokens()

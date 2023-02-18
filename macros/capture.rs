@@ -2,36 +2,61 @@
 
 use crate::prelude::*;
 
-// (CannedName, CannedName, ...)
-struct PrecannedInvocationsAttr {
-    paths: Punctuated<syn::Path, token::Comma>,
+/// Contents of an entry in a `#[derive_adhoc(..)]` attribute
+enum InvocationEntry {
+    Precanned(syn::Path),
+    Pub(syn::VisPublic),
 }
 
-impl Parse for PrecannedInvocationsAttr {
+// (CannedName, CannedName, ...)
+struct InvocationAttr {
+    entries: Punctuated<InvocationEntry, token::Comma>,
+}
+
+impl Parse for InvocationEntry {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let entry = if input.lookahead1().peek(Token![pub]) {
+            // TODO DOCS
+            let vis = match input.parse()? {
+                syn::Visibility::Public(vis) => vis,
+                other => {
+                    return Err(other
+                        .error("only `pub`, nor no visibility, is allowed"))
+                }
+            };
+            InvocationEntry::Pub(vis)
+        } else {
+            let path = syn::Path::parse_mod_style(input)?;
+            InvocationEntry::Precanned(path)
+        };
+        Ok(entry)
+    }
+}
+
+impl Parse for InvocationAttr {
     fn parse(outer: ParseStream) -> syn::Result<Self> {
         let input;
         let _paren = parenthesized!(input in outer);
-        let paths = Punctuated::parse_terminated_with(
-            &input,
-            syn::Path::parse_mod_style,
-        )?;
-        Ok(PrecannedInvocationsAttr { paths })
+        let entries = Punctuated::parse_terminated(&input)?;
+        Ok(InvocationAttr { entries })
     }
 }
 
 /// This is #[derive(Adhoc)]
 pub fn derive_adhoc_derive_macro(
-    input: TokenStream,
+    driver: TokenStream,
 ) -> Result<TokenStream, syn::Error> {
     // TODO optimisation: parse this in a way that doesn't actually
     // parse the input data, with some custom CaptureInput which is
     // a bit like syn::DeriveInput.
-    let input: syn::DeriveInput = syn::parse2(input)?;
+    let driver: syn::DeriveInput = syn::parse2(driver)?;
 
     let driver_mac_name =
-        format_ident!("derive_adhoc_driver_{}", &input.ident);
+        format_ident!("derive_adhoc_driver_{}", &driver.ident);
 
-    let precanned_paths: Vec<syn::Path> = input
+    let mut vis_pub = None;
+
+    let precanned_paths: Vec<syn::Path> = driver
         .attrs
         .iter()
         .map(|attr| {
@@ -39,44 +64,71 @@ pub fn derive_adhoc_derive_macro(
                 return Ok(None);
             }
             let tokens = attr.tokens.clone();
-            let PrecannedInvocationsAttr { paths } = syn::parse2(tokens)?;
-            Ok(Some(paths))
+            let InvocationAttr { entries } = syn::parse2(tokens)?;
+            Ok(Some(entries))
         })
         .flatten_ok()
         .flatten_ok()
+        .filter_map(|entry| match entry {
+            Err(e) => Some(Err(e)),
+            Ok(InvocationEntry::Precanned(path)) => Some(Ok(path)),
+            Ok(InvocationEntry::Pub(vis)) => {
+                let this_span = vis.span();
+                if let Some(prev) = mem::replace(&mut vis_pub, Some(vis)) {
+                    return Some(Err([
+                        (prev.span(), "first `pub`"),
+                        (this_span, "second `pub`"),
+                    ]
+                    .error("`pub` specified multiple times")));
+                };
+                None
+            }
+        })
         .collect::<syn::Result<Vec<_>>>()?;
 
     let expand_macro = expand_macro_name()?;
 
+    let macro_export = vis_pub
+        .map(|vis_pub| {
+            let macro_export =
+                quote_spanned!(vis_pub.span()=> #[macro_export]);
+            Ok::<_, syn::Error>(macro_export)
+        })
+        .transpose()?;
+
     let mut output = quote! {
         #[allow(unused_macros)]
+        #macro_export
         macro_rules! #driver_mac_name {
             {
-                $($template:tt)*
+                { $($template:tt)* }
+                $($tpassthrough:tt)*
             } => {
                 #expand_macro!{
-                    { #input }
+                    { #driver }
+                    { }
                     { $($template)* }
+                    { $($tpassthrough)* }
                 }
             }
         }
     };
 
-    for mut path in precanned_paths {
-        if path.segments.is_empty() {
-            return Err(path
+    for mut templ_path in precanned_paths {
+        if templ_path.segments.is_empty() {
+            return Err(templ_path
                 .leading_colon
                 .as_ref()
                 .expect("path with no tokens!")
                 .error("cannot derive_adhoc the empty path!"));
         }
-        let last = path.segments.last_mut().expect("became empty!");
+        let last = templ_path.segments.last_mut().expect("became empty!");
         last.ident = format_ident!("derive_adhoc_template_{}", last.ident);
 
         output.extend(quote! {
-            #path !{
+            #templ_path !{
                 $
-                #input
+                { #driver }
             }
         });
     }

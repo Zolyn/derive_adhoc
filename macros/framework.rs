@@ -18,6 +18,7 @@ pub(crate) use crate::paste;
 #[derive(Debug, Clone)]
 pub struct Context<'c> {
     pub top: &'c syn::DeriveInput,
+    pub template_crate: &'c syn::Path,
     pub tattrs: &'c PreprocessedAttrs,
     pub variant: Option<&'c WithinVariant<'c>>,
     pub field: Option<&'c WithinField<'c>>,
@@ -291,6 +292,7 @@ impl<'c> Context<'c> {
     /// here, so we can't easily provide `Context::new()`.
     pub fn call<T>(
         driver: &syn::DeriveInput,
+        template_crate: &syn::Path,
         f: impl FnOnce(Context) -> syn::Result<T>,
     ) -> Result<T, syn::Error> {
         let tattrs = preprocess_attrs(&driver.attrs)?;
@@ -332,6 +334,7 @@ impl<'c> Context<'c> {
 
         let ctx = Context {
             top: &driver,
+            template_crate,
             tattrs: &tattrs,
             field: None,
             variant: None,

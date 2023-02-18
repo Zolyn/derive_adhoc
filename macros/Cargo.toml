@@ -10,6 +10,10 @@ description="Macros that implement the derive_adhoc crate"
 homepage = "https://gitlab.torproject.org/Diziet/rust-derive-adhoc"
 repository = "https://gitlab.torproject.org/Diziet/rust-derive-adhoc"
 
+# After editing this file, you will probably need to run
+#   maint/update-bizarre
+# to update the "bizarre" testing versions in tests/pub-export/bizarre-*
+
 [dependencies]
 heck = "0.4"
 itertools = "0.10"

@@ -151,6 +151,8 @@ pub enum SubstDetails<O: SubstParseContext> {
     // Conditional substitution.
     If(SubstIf<O>, O::NotInBool),
     select1(SubstIf<O>, O::NotInBool),
+
+    Crate(O::NotInPaste, O::NotInBool), // `${crate }`.  TODO DOCS
 }
 
 #[derive(Debug)]
@@ -209,23 +211,6 @@ pub struct SubstVPat<O: SubstParseContext> {
     pub fprefix: Option<Template<paste::Items>>,
 }
 
-impl Parse for SubstInput {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let driver;
-        let driver_brace = braced!(driver in input);
-        let driver = driver.parse()?;
-        let template;
-        let template_brace = braced!(template in input);
-        let template = Template::parse(&template, ())?;
-        Ok(SubstInput {
-            driver_brace,
-            driver,
-            template_brace,
-            template,
-        })
-    }
-}
-
 #[derive(Debug, Clone)]
 pub enum RawAttr {
     Include {
@@ -260,7 +245,7 @@ impl Spanned for SubstAttrPath {
 }
 
 impl<O: SubstParseContext> Template<O> {
-    fn parse(
+    pub fn parse(
         input: ParseStream,
         allow_nonterminal: O::AllowNonterminal,
     ) -> syn::Result<Self> {
@@ -601,6 +586,16 @@ impl<O: SubstParseContext> Parse for Subst<O> {
             })
         };
 
+        // See `tests/pub-export/pub-b/pub-b.rs`
+        #[cfg(feature = "bizarre")]
+        let kw = {
+            let s = kw.to_string();
+            let s = s
+                .strip_suffix("_bizarre")
+                .ok_or_else(|| kw.error("bizarre mode but not _bizarre"))?;
+            syn::Ident::new(s, kw.span())
+        };
+
         // keyword!{ KEYWORD [ {BLOCK WITH BINDINGS} ] [ CONSTRUCTOR-ARGS ] }
         // expands to   if ... { return ... }
         // KEYWORD can be "KEYWORD_STRING": CONSTRUCTOR
@@ -680,6 +675,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         keyword! { "true": True(bool_only?) }
         keyword! { "if": If(parse_if(input)?, not_in_bool?) }
         keyword! { select1(parse_if(input)?, not_in_bool?) }
+        keyword! { "crate": Crate(not_in_paste?, not_in_bool?) }
 
         keyword! { "for": For(
             RepeatedTemplate::parse_for(input)?,

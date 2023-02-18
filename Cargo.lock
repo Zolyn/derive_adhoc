@@ -18,6 +18,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "bizarre-derive-adhoc"
+version = "0.0.666"
+dependencies = [
+ "bizarre-derive-adhoc-macros",
+ "heck",
+]
+
+[[package]]
+name = "bizarre-derive-adhoc-macros"
+version = "0.0.666"
+dependencies = [
+ "heck",
+ "itertools",
+ "proc-macro-crate",
+ "proc-macro2",
+ "quote",
+ "strum",
+ "syn",
+ "void",
+]
+
+[[package]]
 name = "derive-adhoc"
 version = "0.1.0"
 dependencies = [
@@ -174,6 +196,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ef7d57beacfaf2d8aee5937dab7b7f28de3cb8b1828479bb5de2a7106f2bae2"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "pub-a"
+version = "0.0.1"
+dependencies = [
+ "derive-adhoc",
+]
+
+[[package]]
+name = "pub-b"
+version = "0.0.1"
+dependencies = [
+ "bizarre-derive-adhoc",
+ "pub-a",
 ]
 
 [[package]]

@@ -30,8 +30,8 @@ trait NumFields {
 /// containing module(s).  The template is then available *textually after*
 /// its definition.
 ///
-/// (Exporting of the template to other crates is not yet supported by
-/// derive-adhoc.)
+/// (Exporting of a template to other crates is demonstrated in
+/// `tests/pub-export/pub-b/pub-a.rs` and `pub-b.rs`.)
 ///
 /// The remaining principles about use of names in a derive-adhoc template
 /// are basically the same as those for a `macro_rules!` macro.
@@ -112,9 +112,9 @@ mod adhoc_template {
         // When expanding a template for a crate-local struct, pass
         // just the name of the struct to `derive_adhoc!`.
         //
-        // (Exporting of the driver so that other crates can derive
-        // from it is not yet supported by derive-adhoc, so this is
-        // currently the only mode of use.)
+        // (Exporting of the driver so that other crates can derive from it
+        // is supported via `#[derive_adhoc(pub)]` but it brings
+        // namespacing awkwardness and should be used only with crate.)
         //
         // (Passing a path doesn't work for a struct with an unexported
         // derive-adhoc driver, because the name here is turned into
