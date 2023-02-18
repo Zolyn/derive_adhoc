@@ -72,31 +72,31 @@ derive-adhoc treats them as having a single (unnamed) variant.
 
 ### `$fname`, `$vname`, `$tname` - names
 
-   The name of the field, variant, or toplevel type.
-   This is an the identifier (without any path or generics).
-   For tuple fields, `$fname` is the field number.
+The name of the field, variant, or toplevel type.
+This is an the identifier (without any path or generics).
+For tuple fields, `$fname` is the field number.
 
 ### `$ftype`, `$ttype` - types
 
-   The type of the field, or the toplevel type.
-   This contains all necessary generics
-   (as names, without any bunds etc., but within `::<...>`).
-   For the toplevel type it doesn't contains a path prefix, even if
-   the driver type argument to
-   `derive_adhoc!{ }`
-   had a path prefix.
+The type of the field, or the toplevel type.
+This contains all necessary generics
+(as names, without any bunds etc., but within `::<...>`).
+For the toplevel type it doesn't contains a path prefix, even if
+the driver type argument to
+`derive_adhoc!{ }`
+had a path prefix.
 
 ### `$ttypedef` - type name, for defining a new type
 
-   The top-level driver type name in a form suitable for defining
-   a new type with a derived name (eg, using `${paste }`).
-   Contains all the necessary generics, with bounds,
-   within `<...>` but without an introducing `::`.
+The top-level driver type name in a form suitable for defining
+a new type with a derived name (eg, using `${paste }`).
+Contains all the necessary generics, with bounds,
+within `<...>` but without an introducing `::`.
 
 ### `$tgens`, `$tgens`, `$twheres` - generics
 
-   Generic parameters and bounds, from the toplevel type,
-   in various forms.
+Generic parameters and bounds, from the toplevel type,
+in various forms.
 
    * **`$tgens`**:
      The generic arguments, with bounds,
@@ -115,14 +115,14 @@ derive-adhoc treats them as having a single (unnamed) variant.
 
      Example: `T: 'a,`
 
-   If not empty, will always have a trailing comma.
+If not empty, will always have a trailing comma.
 
-   Bounds appear in `$tgens` or `$twheres`,
-   according to where they appear in the toplevel type,
-   so for full support of generic types the template must expand both.
+Bounds appear in `$tgens` or `$twheres`,
+according to where they appear in the toplevel type,
+so for full support of generic types the template must expand both.
 
-   Examples each show the expansion for
-   `struct Foo<'l:'a, T:X, const C=1> where T: 'a {...}`.
+Examples each show the expansion for
+`struct Foo<'l:'a, T:X, const C=1> where T: 'a {...}`.
 
 ### <a name="derive_adhoc_syntax_Xmeta">`${tmeta(...)}` `${vmeta(...)}` `${fmeta(...)}`</a> - `#[adhoc]` attributes
 
@@ -177,58 +177,58 @@ With `${Xattrs}`, unlike `${Xmeta}`,
 
 ### `${paste ...}` - identifier pasting
 
-   Expand the contents and paste it together into a single identifier.
-   The contents may only contain identifer fragments, strings (`"..."`),
-   and (certain) expansions.
-   Supported expansions are `${Xtype}`, `${Xname}`, `${Xmeta}`,
-   `${CASE_CHANGE}`,
-   as well as conditionals and repetitions.
+Expand the contents and paste it together into a single identifier.
+The contents may only contain identifer fragments, strings (`"..."`),
+and (certain) expansions.
+Supported expansions are `${Xtype}`, `${Xname}`, `${Xmeta}`,
+`${CASE_CHANGE}`,
+as well as conditionals and repetitions.
 
-   The contents can contain at most one occurrence of
-   a more complex type expansion `${Xtype}`
-   (or `${}Xmeta as ty)`),
-   which must refer to a path (perhaps with generics).
-   Then the pasting will be applied to the final path element identifier,
-   and the path prefix and generics reproduced unaltered.
-   For example, with
-   a struct field `field: crate::config::Foo<'a,T,C>`,
-   writing
-   `${paste Zingy $ftype Builder}`
-   generates
-   `crate::config::ZingyFooBuilder<'a,T,C>`.
+The contents can contain at most one occurrence of
+a more complex type expansion `${Xtype}`
+(or `${}Xmeta as ty)`),
+which must refer to a path (perhaps with generics).
+Then the pasting will be applied to the final path element identifier,
+and the path prefix and generics reproduced unaltered.
+For example, with
+a struct field `field: crate::config::Foo<'a,T,C>`,
+writing
+`${paste Zingy $ftype Builder}`
+generates
+`crate::config::ZingyFooBuilder<'a,T,C>`.
 
 ### `${CASE_CHANGE ...}` - case changing
 
-   Expands the content, and changes its case
-   (eg. uppercase to lowercase, etc.
-   See [Case changing](#case-changing).
+Expands the content, and changes its case
+(eg. uppercase to lowercase, etc.
+See [Case changing](#case-changing).
 
 ### `${when CONDITION}` - filtering out repetitions by a predicate
 
-   Allowed only within repetitions, and only at the toplevel
-   of the repetition,
-   before other expansions.
-   Skips this repetition if the `CONDITION` is not true.
+Allowed only within repetitions, and only at the toplevel
+of the repetition,
+before other expansions.
+Skips this repetition if the `CONDITION` is not true.
 
 ### `${if COND1 { ... } else if COND2 { ... } else { ... }}` - conditional
 
-   Conditionals.  The else clause is, of course, optional.
-   The `else if` between arms is also optional,
-   but `else` in the fallback clause is mandatory.
-   So you can write `${if COND1 { ... } COND2 { ... } else { ... }`.
+Conditionals.  The else clause is, of course, optional.
+The `else if` between arms is also optional,
+but `else` in the fallback clause is mandatory.
+So you can write `${if COND1 { ... } COND2 { ... } else { ... }`.
 
 ### `${select1 COND1 { ... } else if COND2 { ... } else { ... }}` - expect precisely one predicate
 
-   Conditionals which insist on expanding exactly one of the branches.
-   Syntax is identical to that of `${if }`.
-   *All* of the `COND` are always evaluated.
-   Exactly one of them must be true;
-   or, none of them, bot only if an `else` is supplied -
-   otherwise it is an error.
+Conditionals which insist on expanding exactly one of the branches.
+Syntax is identical to that of `${if }`.
+*All* of the `COND` are always evaluated.
+Exactly one of them must be true;
+or, none of them, bot only if an `else` is supplied -
+otherwise it is an error.
 
 ### `${for fields { ... }}`, `${for variants { ... }}` - explicit repetition
 
-   Expands the contents once per field, or once per variant.
+Expands the contents once per field, or once per variant.
 
 ## Conditions
 
@@ -237,18 +237,18 @@ They are found within `${if }`, `${when }`, and `${select1 }`.
 
 ### `fmeta(NAME)`, `vmeta(NAME)`, `tmeta(NAME)` - `#[adhoc]` attributes
 
-   Looks for `#[adhoc(NAME)]`.
+Looks for `#[adhoc(NAME)]`.
 
-   True iff there was such an attribute.
-   `Xmeta(SUB(NAME))` works, just as with the `${Xmeta ...}` expansion.
+True iff there was such an attribute.
+`Xmeta(SUB(NAME))` works, just as with the `${Xmeta ...}` expansion.
 
-   The condition is true if there is at least one matching entry,
-   and (unlike `${Xmeta}`)
-   the corresponding driver attribute does not need to be a `=LIT`.
+The condition is true if there is at least one matching entry,
+and (unlike `${Xmeta}`)
+the corresponding driver attribute does not need to be a `=LIT`.
 
-   So `Xmeta(SUB(NAME))` is true if the driver has
-   `#[adhoc(SUB(NAME(INNER=...)))]` or `#[adhoc(SUB(NAME))]` or
-   `#[adhoc(SUB(NAME=LIT))]` or even `#[adhoc(SUB(NAME()))]`.
+So `Xmeta(SUB(NAME))` is true if the driver has
+`#[adhoc(SUB(NAME(INNER=...)))]` or `#[adhoc(SUB(NAME))]` or
+`#[adhoc(SUB(NAME=LIT))]` or even `#[adhoc(SUB(NAME()))]`.
 
 ### `is_enum`
 
