@@ -305,7 +305,7 @@ pub struct OrigDollarDeescapedProofToken {}
 ///
 /// Call this after seeing a `$`.
 /// The `ORIGDOLLAR` (hopefully) came from
-/// [`definition::escape_dollars`](crate::definition::escape_dollars).
+/// [`definition::escape_dollars`](escape_dollars).
 pub fn deescape_orig_dollar(
     input: ParseStream,
 ) -> syn::Result<OrigDollarDeescapedProofToken> {
