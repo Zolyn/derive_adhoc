@@ -26,9 +26,49 @@ impl Parse for TemplateDefinition {
     }
 }
 
-// Replaces every $ with $ORGDOLLAR
-// SRSLY
-fn escape_dollars(input: TokenStream) -> TokenStream {
+/// Replaces every `$` with `$ORGDOLLAR`
+///
+/// Eg, where the template says `$fname`, we emit `$ORGDOLLAR fname`.
+/// When this is found in the macro_rules expander part
+/// of a precanned template,
+/// macro_rules doesn't expand
+/// it because `ORGDOLLAR` isn't one of the arguments to the macro.
+///
+/// Then, we spot these when parsing the template, and disregard them.
+/// That is done by
+/// [`syntax::deescape_orig_dollar`](crate::syntax::deescape_orig_dollar).
+///
+/// See `doc/implementation.md` for why this is needed.
+///
+/// This has the weird result that there's a sometimes
+/// (namely, when using a truly-adhoc, rather than precanned template)
+/// an undocumented `ORGDOLLAR` expansion keyword,
+/// with strange behaviour.
+/// No-one is likely to notice this.
+///
+/// Other tactics:
+///
+///  * Pass a literal dollar sign `$` into the template pattern macro,
+///    capture it with a macro rules parameter `$dollar:tt`,
+///    and write `$dollar` in the template.
+///    This gets the span wrong: the span is that of
+///    the literal dollar, which came from the call site, not the template.
+///
+/// * Use a different syntax in precanned templates:
+///   have `escape_dollars` convert to that syntax,
+///   and the template parsing notice this case and
+///   de-escape the whole template again at the start.
+///   This involves processing the whole template twice for no reason.
+///   (And it would involve inventing an additional, different,
+///   and probably weird, syntax.)
+///
+/// * As above but do the de-escaping on the fly.
+///   Currently, though, the information about the template context
+///   is not available to the parser.
+///   We'd have to pass it in as a thread local,
+///   or as an extra generic on `SubstContext`
+///   (producing two monomorphised copies of the whole template engine).
+pub fn escape_dollars(input: TokenStream) -> TokenStream {
     let mut out = TokenStream::new();
     for tt in input {
         out.extend([match tt {

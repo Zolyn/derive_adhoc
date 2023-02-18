@@ -293,7 +293,12 @@ impl<O: SubstParseContext> Template<O> {
     }
 }
 
-fn deescape_orig_dollar(
+/// Skip over any `ORIGDOLLAR`
+///
+/// Call this after seeing a `$`.
+/// The `ORIGDOLLAR` (hopefully) came from
+/// [`definition::escape_dollars`](crate::definition::escape_dollars).
+pub fn deescape_orig_dollar(
     input: ParseStream,
 ) -> syn::Result<()> {
     input.step(|cursor| {
