@@ -24,6 +24,12 @@ error: unexpected arguments to expansion keyword
 23 |     ${if false { } else { } forbidden}
    |                             ^^^^^^^^^
 
+error: derive-adhoc keyword is an expansion - not valid as a condition
+  --> ui/badargs.rs:25:27
+   |
+25 |     ${if tmeta(some_path) as lit { }}
+   |                           ^^
+
 error: unexpected arguments to expansion keyword
   --> ui/badargs.rs:31:26
    |
