@@ -65,17 +65,6 @@ pub struct Subst<O: SubstParseContext> {
 /// that ensures that detection of such errors occurs during template parsing.
 #[allow(non_camel_case_types)] // clearer to use the exact ident
 #[derive(Debug)]
-// TODO: This comment is largely obsolete,
-//
-// TODO: it might be good to separate this into separate enums for
-// conditions and substitutions? -nickm
-// I don't think so.  I unified these because the following places
-// wanted to treat them very similarly:
-//   - parsing
-//   - iteration inspection
-//   - attribute recursive descent matching
-// Keeping them a single type avoids us making weird syntactic
-// wrinkles (and may help avoid semantic wrinkles). -Diziet
 pub enum SubstDetails<O: SubstParseContext> {
     // variables
     tname(O::NotInBool),
