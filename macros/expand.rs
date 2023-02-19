@@ -468,6 +468,7 @@ where
             })?,
 
             SD::vpat(v, np, ..) => out.push_other_subst(np, |out| {
+                // This comment prevents rustfmt making this unlike the others
                 v.expand(ctx, out, self.span())
             })?,
             SD::vtype(v, np, ..) => out.push_other_subst(np, |out| {
