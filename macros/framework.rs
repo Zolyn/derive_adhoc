@@ -229,11 +229,7 @@ pub trait ExpansionOutput: SubstParseContext {
     fn record_error(&mut self, err: syn::Error);
 
     /// Convenience method for noting an error with span and message
-    fn write_error<S: Spanned, M: Display>(
-        &mut self,
-        span: &S,
-        message: M,
-    ) {
+    fn write_error<S: Spanned, M: Display>(&mut self, span: &S, message: M) {
         self.record_error(span.error(message));
     }
 
