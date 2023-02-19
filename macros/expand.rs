@@ -431,18 +431,18 @@ where
             SD::ttype(_) => do_ttype(out, Some(()), &do_tgnames),
             SD::tdeftype(_) => do_ttype(out, None, &do_tgens),
             SD::vname(_) => {
-                out.push_identfrag_toks(&ctx.syn_variant(self)?.ident)
+                out.push_identfrag_toks(&ctx.syn_variant(&kw_span)?.ident)
             }
             SD::fname(_) => {
-                let fname = ctx.field(self)?.fname(kw_span);
+                let fname = ctx.field(&kw_span)?.fname(kw_span);
                 out.push_identfrag_toks(&fname);
             }
             SD::ftype(_) => {
-                let f = ctx.field(self)?;
+                let f = ctx.field(&kw_span)?;
                 out.push_syn_type(kw_span, &f.field.ty);
             }
             SD::fpatname(_) => {
-                let f = ctx.field(self)?;
+                let f = ctx.field(&kw_span)?;
                 let fpatname = format_ident!("f_{}", f.fname(kw_span));
                 out.push_identfrag_toks(&fpatname);
             }
@@ -472,12 +472,12 @@ where
                 ra.expand(ctx, out, &ctx.top.attrs)
             })?,
             SD::vattrs(ra, np, ..) => out.push_other_subst(np, |out| {
-                let variant = ctx.variant(self)?.variant;
+                let variant = ctx.variant(&kw_span)?.variant;
                 let attrs = variant.as_ref().map(|v| &*v.attrs);
                 ra.expand(ctx, out, attrs.unwrap_or_default())
             })?,
             SD::fattrs(ra, np, ..) => out.push_other_subst(np, |out| {
-                ra.expand(ctx, out, &ctx.field(self)?.field.attrs)
+                ra.expand(ctx, out, &ctx.field(&kw_span)?.field.attrs)
             })?,
 
             SD::tgens(np, ..) => out.push_other_subst(np, |out| {
@@ -503,10 +503,10 @@ where
 
             SD::vpat(v, np, ..) => out.push_other_subst(np, |out| {
                 // This comment prevents rustfmt making this unlike the others
-                v.expand(ctx, out, self.span())
+                v.expand(ctx, out, kw_span)
             })?,
             SD::vtype(v, np, ..) => out.push_other_subst(np, |out| {
-                v.expand(ctx, out, self.span(), SD::ttype(Default::default()))
+                v.expand(ctx, out, kw_span, SD::ttype(Default::default()))
             })?,
 
             SD::tdefvariants(content, np, ..) => {
@@ -560,14 +560,14 @@ where
             }
 
             SD::paste(content, np, ..) => {
-                out.expand_paste(np, ctx, self.span(), content)?
+                out.expand_paste(np, ctx, kw_span, content)?
             }
             SD::ChangeCase(content, case, nc, ..) => {
-                out.expand_case(nc, *case, ctx, self.span(), content)?
+                out.expand_case(nc, *case, ctx, kw_span, content)?
             }
 
             SD::when(..) => out.write_error(
-                self,
+                &kw_span,
                 "${when } only allowed in toplevel of $( )",
             ),
             SD::If(conds, ..) => conds.expand(ctx, out)?,
