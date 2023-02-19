@@ -13,7 +13,7 @@ define_derive_adhoc! {
     VeryPartialOrd =
 
     // ${vpat    fprefix=f_ self=$tname vname=$vname}
-    // ${vconstr fprefix=f_ self=$ttype vname=$vname}
+    // ${vtype              self=$ttype vname=$vname}
     //    each is a single template element, or in {...}
     //    defaults shown
     //    vname not expanded in structs
