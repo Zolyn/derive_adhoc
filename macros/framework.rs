@@ -133,7 +133,7 @@ pub trait ExpansionOutput: SubstParseContext {
     ///
     /// Uses the `IdentFragment` for identifier pasting,
     /// and the `ToTokens` for general expansion.
-    fn push_identfrag_toks<I: quote::IdentFragment + Spanned + ToTokens>(
+    fn push_identfrag_toks<I: quote::IdentFragment + ToTokens>(
         &mut self,
         ident: &I,
     );
@@ -397,7 +397,7 @@ impl ExpansionOutput for TokenAccumulator {
     fn push_display<L: Display + Spanned + ToTokens>(&mut self, lit: &L) {
         self.write_tokens(lit)
     }
-    fn push_identfrag_toks<I: quote::IdentFragment + Spanned + ToTokens>(
+    fn push_identfrag_toks<I: quote::IdentFragment + ToTokens>(
         &mut self,
         ident: &I,
     ) {
