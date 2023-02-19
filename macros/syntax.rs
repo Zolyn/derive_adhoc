@@ -97,7 +97,7 @@ pub enum SubstDetails<O: SubstParseContext> {
     fpatname(O::NotInBool),
     // TODO DOCS (also boolean)
     Vis(SubstVis, O::NotInPaste), // tvis, fvis
-    tkeyword(O::NotInBool), // TODO docs, also paste
+    tkeyword(O::NotInBool),       // TODO docs, also paste
 
     // attributes
     tmeta(SubstAttr),
@@ -165,7 +165,7 @@ pub enum SubstDetails<O: SubstParseContext> {
     all(Punctuated<Subst<BooleanContext>, token::Comma>, O::BoolOnly),
     is_struct(O::BoolOnly), // TODO DOCS
     is_enum(O::BoolOnly),
-    is_union(O::BoolOnly), // TODO DOCS
+    is_union(O::BoolOnly),   // TODO DOCS
     v_is_unit(O::BoolOnly),  // TODO DOCS
     v_is_tuple(O::BoolOnly), // TODO DOCS
     v_is_named(O::BoolOnly), // TODO DOCS
