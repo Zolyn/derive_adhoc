@@ -328,6 +328,24 @@ where
                 },
             )
         };
+        let do_maybe_delimited_group = |out, np, delim, content| {
+            let _: &mut O = out;
+            let _: &Template<TokenAccumulator> = content;
+            out.push_other_subst(np, |out| {
+                if let Some(delim) = delim {
+                    out.write_tokens(delimit_token_group(
+                        delim,
+                        self.kw_span,
+                        |inside: &mut TokenAccumulator| {
+                            Ok(content.expand(ctx, inside))
+                        },
+                    )?);
+                } else {
+                    content.expand(ctx, out);
+                }
+                Ok(())
+            })
+        };
 
         match &self.sd {
             SD::tname(_) => out.push_identfrag_toks(&ctx.top.ident),
@@ -405,19 +423,14 @@ where
                 v.expand(ctx, out, self.span(), SD::ttype(v.not_in_bool))?
             }
 
-            SD::tdefvariants(content, np, ..) => out.push_other_subst(np, |out| {
-                if ctx.is_enum() {
-                    out.write_tokens(braced_group(
-                        self.kw_span,
-                        |inside: &mut TokenAccumulator| {
-                            Ok(content.expand(ctx, inside))
-                        }
-                    )?);
+            SD::tdefvariants(content, np, ..) => {
+                let delim = if ctx.is_enum() {
+                    Some(Delimiter::Brace)
                 } else {
-                    content.expand(ctx, out);
-                }
-                Ok(())
-            })?,
+                    None
+                };
+                do_maybe_delimited_group(out, np, delim, content)?;
+            }
 
             SD::paste(content, np, ..) => {
                 out.expand_paste(np, ctx, self.span(), content)?
