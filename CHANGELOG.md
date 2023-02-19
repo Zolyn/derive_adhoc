@@ -1,3 +1,10 @@
+# MSRV and MSRV policy
+
+The Minimum Supported Rust Version for derive-adhoc is 1.54.
+
+We expect to increase it cautiously and only with good reason.
+(However, MSRV increase would be a minor version bump.)
+
 # Changelog
 
 ## 0.1.0
