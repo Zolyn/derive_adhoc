@@ -27,11 +27,11 @@ define_derive_adhoc!{
     // ${tdefvariants BLAH}        for enum              { BLAH }
     // ${tdefvariants BLAH}        otherwise               BLAH
     //
-    // ${vdefbody VANME BLAH)}   for unit              nothing
-    // ${vdefbody VANME BLAH)}   for tuple             ( BLAH )
+    // ${vdefbody VANME BLAH)}   for unit              nothing;
+    // ${vdefbody VANME BLAH)}   for tuple             ( BLAH );
     // ${vdefbody VANME BLAH)}   for struct            { BLAH }
-    // ${vdefbody VANME BLAH)}   for unit variant      VNAME
-    // ${vdefbody VANME BLAH)}   for tuple variant     VNAME ( BLAH )
+    // ${vdefbody VANME BLAH)}   for unit variant      VNAME,
+    // ${vdefbody VANME BLAH)}   for tuple variant     VNAME ( BLAH ),
     // ${vdefbody VANME BLAH)}   for struct variant    VNAME { BLAH }
     //    * BLAH will pretty much always have to be $( ... )
     //      since it will want to enumerate the fields.
@@ -44,6 +44,10 @@ define_derive_adhoc!{
     //      Or a local sub-macro feature
     //        ${define_subtemplate NAME EXPANSION}
     //        ${expand_subtemplate NAME}
+    //    * A terminating delimiter is included, as needed:
+    //      This appears for units and tuples - it's not there after `{ }`.
+    //      For a complete type it's a semicolon, whereas for a variant
+    //      it's a comma.
     //
     // ${fdefine BLAH}            in unit [variant]     cannot occur
     // ${fdefine BLAH}            in tuple [variant]    nothing
