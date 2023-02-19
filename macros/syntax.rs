@@ -531,11 +531,15 @@ where
 ///  * `(..substruct)`: calls `self.substruct.process_one_keyword`,
 ///     thereby incorporating the sub-structure's subkeywords
 ///
-/// The implementation is always `impl<O: SubstParseContext> ... for TYPE<O>`.
+/// You can write `TYPE<O>: ...`
+/// which results in
+/// `impl<O: SubstParseContext> ... for TYPE<O>`.
 macro_rules! impl_parse_one_subkeyword { {
-    $ty:ident: $( ( $($spec:tt)+ ) ),* $(,)?
+    $ty:ident $( < $O:ident > )?:
+    $( ( $($spec:tt)+ ) ),* $(,)?
 } => {
-    impl<O: SubstParseContext> ParseOneSubkeyword for $ty<O> {
+    impl $(<$O: SubstParseContext>)?
+    ParseOneSubkeyword for $ty $(<$O>)? {
         fn process_one_keyword(&mut self, got: &syn::Ident, ps: ParseStream)
                                -> Option<syn::Result<()>> {
             $( impl_parse_one_subkeyword!{ @ (self, got, ps) @ $($spec)+ } )*
@@ -560,13 +564,13 @@ macro_rules! impl_parse_one_subkeyword { {
 } }
 
 impl_parse_one_subkeyword! {
-    SubstVType:
+    SubstVType<O>:
     ("self": .self_),
     (vname),
 }
 
 impl_parse_one_subkeyword! {
-    SubstVPat:
+    SubstVPat<O>:
     (..vtype),
     (fprefix),
 }
