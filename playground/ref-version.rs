@@ -24,18 +24,18 @@ define_derive_adhoc!{
     // $fvis                    otherwise             field visibility
     // // for effective vis., write ${if is_enum { $tvis } else { $fvis }}
     //
-    // ${tvariants BLAH}        for enum              { BLAH }
-    // ${tvariants BLAH}        otherwise               BLAH
+    // ${tdefvariants BLAH}        for enum              { BLAH }
+    // ${tdefvariants BLAH}        otherwise               BLAH
     //
-    // ${vdefine VANME BLAH)}   for unit              nothing
-    // ${vdefine VANME BLAH)}   for tuple             ( BLAH )
-    // ${vdefine VANME BLAH)}   for struct            { BLAH }
-    // ${vdefine VANME BLAH)}   for unit variant      VNAME
-    // ${vdefine VANME BLAH)}   for tuple variant     VNAME ( BLAH )
-    // ${vdefine VANME BLAH)}   for struct variant    VNAME { BLAH }
+    // ${vdefbody VANME BLAH)}   for unit              nothing
+    // ${vdefbody VANME BLAH)}   for tuple             ( BLAH )
+    // ${vdefbody VANME BLAH)}   for struct            { BLAH }
+    // ${vdefbody VANME BLAH)}   for unit variant      VNAME
+    // ${vdefbody VANME BLAH)}   for tuple variant     VNAME ( BLAH )
+    // ${vdefbody VANME BLAH)}   for struct variant    VNAME { BLAH }
     //    * BLAH will pretty much always have to be $( ... )
     //      since it will want to enumerate the fields.
-    //    * ${vdefine} cannot be emulated with ${if } without
+    //    * ${vdefbody} cannot be emulated with ${if } without
     //      recapitulating the contents.  An alternative would be
     //        ${apply_possible_wrapping {WRAPPING} {CONTENTS}}
     //        ${apply_possible_wrapping {} X} => X
@@ -62,10 +62,10 @@ define_derive_adhoc!{
     //
     // ${Xdefine BLAH} expands to either nothing, or BLAH-plus-framing
     $tvis $tkeyword ${paste $tname Reference}<'reference, $tgens>
-    ${tvariants $(
+    ${tdefvariants $(
     // Or maybe:
     ${t_body_define_variants $(
-        ${vdefine $vname $(
+        ${vdefbody $vname $(
             $fvis ${fdefine $fname } &'r $ttype,
             // Tentatively rejected alternatives
             $fvis ${fdefine $fname:} &'r $ttype,
