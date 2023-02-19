@@ -445,6 +445,33 @@ where
                     Ok(())
                 })?
             }
+            SD::vdefbody(vname, content, np, ..) => {
+                use syn::Fields as SF;
+                let variant = ctx.variant(&self.kw_span)?;
+                let enum_variant: Option<&syn::Variant> = variant.variant;
+                if enum_variant.is_some() {
+                    vname.expand(ctx, out);
+                }
+                let delim = match variant.fields {
+                    SF::Unit => None,
+                    SF::Unnamed(..) => Some(Delimiter::Parenthesis),
+                    SF::Named(..) => Some(Delimiter::Brace),
+                };
+                do_maybe_delimited_group(out, np, delim, content)?;
+                match variant.fields {
+                    SF::Unit => Some(()),
+                    SF::Unnamed(..) => Some(()),
+                    SF::Named(..) => None,
+                }
+                .map(|()| {
+                    if enum_variant.is_some() {
+                        out.push_other_tokens(np, Token![,](self.kw_span))
+                    } else {
+                        out.push_other_tokens(np, Token![;](self.kw_span))
+                    }
+                })
+                .transpose()?;
+            }
 
             SD::paste(content, np, ..) => {
                 out.expand_paste(np, ctx, self.span(), content)?

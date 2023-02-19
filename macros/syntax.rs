@@ -128,6 +128,13 @@ pub enum SubstDetails<O: SubstParseContext> {
         O::NotInPaste,
         O::NotInBool,
     ),
+    // TODO DOCS
+    vdefbody(
+        Template<O>,
+        Template<TokenAccumulator>,
+        O::NotInPaste,
+        O::NotInBool,
+    ),
 
     // expansion manipulation
     paste(
@@ -746,6 +753,11 @@ impl<O: SubstParseContext> Parse for Subst<O> {
                 Template::parse_single_or_braced(input)
             }).transpose()?,
             not_in_paste?, not_in_bool?
+        ) }
+        keyword! { vdefbody(
+            Template::parse_single_or_braced(input)?,
+            parse_def_body(input)?,
+            not_in_paste?, not_in_bool?,
         ) }
 
         keyword! {
