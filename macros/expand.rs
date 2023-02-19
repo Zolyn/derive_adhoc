@@ -642,16 +642,14 @@ where
     T: Parse + ToTokens,
 {
     let s: &syn::LitStr = match lit {
-        syn::Lit::Str(s) => s,
+        syn::Lit::Str(s) => Ok(s),
         // having checked derive_builder, it doesn't handle
         // Lit::Verbatim so I guess we don't need to either.
-        _ => {
-            return Err(attrvalue_spans(tspan, lit.span()).error(format!(
-                "expected string literal, for conversion to {}",
-                into_what,
-            )))
-        }
-    };
+        _ => Err(attrvalue_spans(tspan, lit.span()).error(format_args!(
+            "expected string literal, for conversion to {}",
+            into_what,
+        ))),
+    }?;
 
     let thing: T = s.parse()?;
     Ok(thing)

@@ -28,11 +28,11 @@ impl RepeatAnalysisVisitor {
             None => self.over = Some(over),
             Some(already) => {
                 if already.over != over.over {
-                    let mut e1 = already.span.error(format!(
+                    let mut e1 = already.span.error(format_args!(
  "inconsistent repetition depth: firstly, {} inferred here",
                             already.over,
                         ));
-                    let e2 = over.span.error(format!(
+                    let e2 = over.span.error(format_args!(
  "inconsistent repetition depth: secondly, {} inferred here",
                             over.over,
                         ));
@@ -321,17 +321,12 @@ impl<'c> Context<'c> {
     where
         W: WithinRepeatLevel<'c>,
     {
-        // TODO helper function, maybe ext trait on Spanned, for syn::Error
-        let r = W::current(self).ok_or_else(|| {
-            syn::Error::new(
-                why.span(),
-                format!(
-                    "must be within a {} (so, in a repeat group)",
-                    W::level_display_name(),
-                ),
-            )
-        })?;
-        Ok(r)
+        W::current(self).ok_or_else(|| {
+            why.span().error(format_args!(
+                "must be within a {} (so, in a repeat group)",
+                W::level_display_name(),
+            ))
+        })
     }
 
     /// Obtains the current field (or calls it an error)
@@ -348,7 +343,7 @@ impl<'c> Context<'c> {
         why: &dyn Spanned,
     ) -> syn::Result<&syn::Variant> {
         let r = self.variant(why)?.variant.as_ref().ok_or_else(|| {
-            syn::Error::new(why.span(), "expansion only valid in enums")
+            why.span().error("expansion only valid in enums")
         })?;
         Ok(r)
     }

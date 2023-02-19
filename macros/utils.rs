@@ -33,12 +33,12 @@ use proc_macro_crate::{crate_name, FoundCrate};
 
 pub trait MakeError {
     /// Convenience method to make an error
-    fn error<M: AsRef<str>>(&self, m: M) -> syn::Error;
+    fn error<M: Display>(&self, m: M) -> syn::Error;
 }
 
 impl<T: Spanned> MakeError for T {
-    fn error<M: AsRef<str>>(&self, m: M) -> syn::Error {
-        syn::Error::new(self.span(), m.as_ref())
+    fn error<M: Display>(&self, m: M) -> syn::Error {
+        syn::Error::new(self.span(), m)
     }
 }
 
@@ -55,10 +55,10 @@ pub type ErrorLoc = (Span, &'static str);
 ///
 /// Panics if passed an empty slice.
 impl MakeError for [ErrorLoc] {
-    fn error<M: AsRef<str>>(&self, m: M) -> syn::Error {
+    fn error<M: Display>(&self, m: M) -> syn::Error {
         let mut locs = self.into_iter().cloned();
         let mk = |(span, frag): (Span, _)| {
-            span.error(format!("{} ({})", m.as_ref(), frag))
+            span.error(format_args!("{} ({})", &m, frag))
         };
         let first = locs.next().expect("at least one span needed!");
         let mut build = mk(first);
@@ -215,10 +215,8 @@ pub fn expand_macro_name() -> Result<TokenStream, syn::Error> {
             let ident = Ident::new(&name, Span::call_site());
             Ok(quote!( ::#ident::derive_adhoc_expand ))
         }
-        Err(e) => {
-            Err(syn::Error::new(
-                Span::call_site(),
-                format!("Expected derive-adhoc or derive-adhoc-macro to be present in Cargo.toml: {}", e)))
-        }
+        Err(e) => Err(Span::call_site().error(
+            format_args!("Expected derive-adhoc or derive-adhoc-macro to be present in Cargo.toml: {}", e)
+        )),
     }
 }
