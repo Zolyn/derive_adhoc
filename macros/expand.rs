@@ -431,6 +431,20 @@ where
                 };
                 do_maybe_delimited_group(out, np, delim, content)?;
             }
+            SD::fdefine(spec_f, np, ..) => {
+                out.push_other_subst(np, |out| {
+                    let field = ctx.field(&self.kw_span)?.field;
+                    if let Some(driver_f) = &field.ident {
+                        if let Some(spec_f) = spec_f {
+                            spec_f.expand(ctx, out);
+                        } else {
+                            out.write_tokens(driver_f);
+                        }
+                    }
+                    out.write_tokens(&field.colon_token);
+                    Ok(())
+                })?
+            }
 
             SD::paste(content, np, ..) => {
                 out.expand_paste(np, ctx, self.span(), content)?

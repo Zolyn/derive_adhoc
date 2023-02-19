@@ -111,6 +111,7 @@ impl Subst<BooleanContext> {
             | SD::twheres(_, not_in_bool)
             | SD::fpatname(not_in_bool)
             | SD::tdefvariants(_, _, not_in_bool)
+            | SD::fdefine(_, _, not_in_bool)
             | SD::paste(_, _, _, not_in_bool)
             | SD::ChangeCase(_, _, _, not_in_bool)
             | SD::when(_, not_in_bool, _)

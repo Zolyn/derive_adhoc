@@ -138,6 +138,7 @@ impl<O: SubstParseContext> Subst<O> {
             SD::v_is_tuple(..) => Some(RO::Variants),
             SD::v_is_named(..) => Some(RO::Variants),
             SD::tdefvariants(..) => None,
+            SD::fdefine(..) => Some(RO::Fields),
             SD::paste(body, ..) => {
                 body.analyse_repeat(visitor)?;
                 None
