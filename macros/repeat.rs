@@ -28,11 +28,11 @@ impl RepeatAnalysisVisitor {
             None => self.over = Some(over),
             Some(already) => {
                 if already.over != over.over {
-                    let mut e1 = already.span.error(format!(
+                    let mut e1 = already.span.error(format_args!(
  "inconsistent repetition depth: firstly, {} inferred here",
                             already.over,
                         ));
-                    let e2 = over.span.error(format!(
+                    let e2 = over.span.error(format_args!(
  "inconsistent repetition depth: secondly, {} inferred here",
                             over.over,
                         ));
@@ -325,7 +325,7 @@ impl<'c> Context<'c> {
         let r = W::current(self).ok_or_else(|| {
             syn::Error::new(
                 why.span(),
-                format!(
+                format_args!(
                     "must be within a {} (so, in a repeat group)",
                     W::level_display_name(),
                 ),

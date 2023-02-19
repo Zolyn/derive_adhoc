@@ -58,7 +58,7 @@ impl MakeError for [ErrorLoc] {
     fn error<M: Display>(&self, m: M) -> syn::Error {
         let mut locs = self.into_iter().cloned();
         let mk = |(span, frag): (Span, _)| {
-            span.error(format!("{} ({})", &m, frag))
+            span.error(format_args!("{} ({})", &m, frag))
         };
         let first = locs.next().expect("at least one span needed!");
         let mut build = mk(first);
@@ -218,7 +218,7 @@ pub fn expand_macro_name() -> Result<TokenStream, syn::Error> {
         Err(e) => {
             Err(syn::Error::new(
                 Span::call_site(),
-                format!("Expected derive-adhoc or derive-adhoc-macro to be present in Cargo.toml: {}", e)))
+                format_args!("Expected derive-adhoc or derive-adhoc-macro to be present in Cargo.toml: {}", e)))
         }
     }
 }

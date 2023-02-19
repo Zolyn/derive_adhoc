@@ -330,7 +330,7 @@ impl ItemsData {
             let ident = items.collect::<String>();
             catch_unwind(|| format_ident!("{}", ident, span = span)).map_err(
                 |_| {
-                    span.error(format!(
+                    span.error(format_args!(
                         "pasted identifier {:?} is invalid",
                         ident
                     ))

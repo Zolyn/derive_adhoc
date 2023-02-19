@@ -646,7 +646,7 @@ where
         // having checked derive_builder, it doesn't handle
         // Lit::Verbatim so I guess we don't need to either.
         _ => {
-            return Err(attrvalue_spans(tspan, lit.span()).error(format!(
+            return Err(attrvalue_spans(tspan, lit.span()).error(format_args!(
                 "expected string literal, for conversion to {}",
                 into_what,
             )))
