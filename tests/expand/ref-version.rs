@@ -1,12 +1,11 @@
-//! THIS IS A NON-WORKING CONCEPT, FOR FUTURE DEVELOPMENT
-
-// Example which derives a new type containing references
-//
-// This demonstrates how to make a new type which mirrors the driver type,
-// including both structs and enums, with units, tuples or structs.
-//
-// It also demonstrates how to construct an enum using $vconstr,
-// and handling of visibility attributes.
+//! Example which derives a new type containing references
+//!
+//! This demonstrates how to make a new type which mirrors the driver type,
+//! including both structs and enums, with units, tuples or structs.
+//!
+//! It also demonstrates how to construct a new enum type
+//! using `$vdefvariants`, and `$vdefbody` and `$fdefine}`,
+//! and handling of visibility attributes.
 
 #![allow(dead_code)]
 
