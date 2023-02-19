@@ -8,7 +8,11 @@
 // It also demonstrates how to construct an enum using $vconstr,
 // and handling of visibility attributes.
 
-define_derive_adhoc!{
+#![allow(dead_code)]
+
+use derive_adhoc::{define_derive_adhoc, Adhoc};
+
+define_derive_adhoc! {
     ReferenceVersion =
 
     // New expansions:
@@ -68,39 +72,40 @@ define_derive_adhoc!{
     $tvis $tkeyword ${paste $tname Reference}<'reference, $tgens>
     ${tdefvariants $(
     // Or maybe:
-    ${t_body_define_variants $(
+    //${t_body_define_variants $(
         ${vdefbody $vname $(
-            $fvis ${fdefine $fname } &'r $ttype,
+        //${vdefine $vname $(
+            $fvis ${fdefine $fname } &'reference $ftype,
             // Tentatively rejected alternatives
-            $fvis ${fdefine $fname:} &'r $ttype,
-            $fvis ${fdefine $fname:  &'r $ttype},
-        $) }
+            //$fvis ${fdefine $fname:} &'reference $ttype,
+            //$fvis ${fdefine $fname:  &'reference $ttype},
+        ) }
     ) }
 
-    impl<'r> From<&'r $ttype>
+    impl<'reference, $tgens> From<&'reference $ttype>
     for ${paste $tname Reference}<'reference, $tgens> {
-        fn from(ref_to_owned: &'r $ttype) -> Self {
+        fn from(ref_to_owned: &'reference $ttype) -> Self {
             match ref_to_owned { $(
-                $vpat => $vconstr { $(
+                $vpat => ${vtype self=${paste $ttype Reference}} { $(
                 // Tentatively rejected alternatives
                 // (see vpat in partial-ord.rs)
-                $vpat => Self ${vspec $vname} { $(
-                $vpat => Self $[:: $vname] { $(
-                $vpat => Self ${if is_enum {:: $vname}} { $(
-                    $fname: &ref_to_owned.$fpatname,
-                ) }
+                //$vpat => Self ${vspec $vname} { $(
+                //$vpat => Self $[:: $vname] { $(
+                //$vpat => Self ${if is_enum {:: $vname}} { $(
+                    $fname: $fpatname,
+                ) },
             ) }
         }
     }
 
-    impl<'r> ${paste $tname Reference}<'reference, $tgens> 
+    impl<'reference, $tgens> ${paste $tname Reference}<'reference, $tgens>
     where $( $ftype: Clone, )
     {
         fn cloned(&self) -> $ttype {
             match self { $(
-                ${vpat self=Self} => $vconstr { $(
-                    $fname: self.$fpatname.clone(),
-                ) }
+                ${vpat self=Self} => $vtype { $(
+                    $fname: (**$fpatname).clone(),
+                ) },
             ) }
         }
     }
@@ -114,7 +119,7 @@ define_derive_adhoc!{
 
 #[derive(Adhoc)]
 #[derive_adhoc(ReferenceVersion)]
-struct Tuple<F>(F)
+struct Tuple<F>(F);
 
 #[derive(Adhoc)]
 #[derive_adhoc(ReferenceVersion)]
@@ -130,5 +135,4 @@ enum Enum<F> {
     Struct { field: F },
 }
 
-fn main() {
-}
+fn main() {}
