@@ -321,17 +321,12 @@ impl<'c> Context<'c> {
     where
         W: WithinRepeatLevel<'c>,
     {
-        // TODO helper function, maybe ext trait on Spanned, for syn::Error
-        let r = W::current(self).ok_or_else(|| {
-            syn::Error::new(
-                why.span(),
-                format_args!(
-                    "must be within a {} (so, in a repeat group)",
-                    W::level_display_name(),
-                ),
-            )
-        })?;
-        Ok(r)
+        W::current(self).ok_or_else(|| {
+            why.span().error(format_args!(
+                "must be within a {} (so, in a repeat group)",
+                W::level_display_name(),
+            ))
+        })
     }
 
     /// Obtains the current field (or calls it an error)
