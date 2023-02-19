@@ -30,3 +30,12 @@ cargo-test:
   cache:
     paths:
       - cargo-expand
+
+# Test our MSRV and Cargo.toml minimal versions
+minimal-versions:
+  stage: test
+  image: "rust:1.54.0"
+  script:
+    - rustc --version && cargo --version  # Print version info for debugging
+    - mv Cargo.lock.minimal Cargo.lock
+    - cargo +1.54.0 test --locked --workspace --no-default-features
