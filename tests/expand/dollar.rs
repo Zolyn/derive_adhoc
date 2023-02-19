@@ -1,4 +1,4 @@
-#![feature(macro_metavar_expr)]
+
 #![allow(dead_code)]
 
 use derive_adhoc::{define_derive_adhoc, derive_adhoc, Adhoc};
