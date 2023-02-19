@@ -343,7 +343,7 @@ impl<'c> Context<'c> {
         why: &dyn Spanned,
     ) -> syn::Result<&syn::Variant> {
         let r = self.variant(why)?.variant.as_ref().ok_or_else(|| {
-            syn::Error::new(why.span(), "expansion only valid in enums")
+            why.span().error("expansion only valid in enums")
         })?;
         Ok(r)
     }

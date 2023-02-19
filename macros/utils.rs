@@ -215,10 +215,8 @@ pub fn expand_macro_name() -> Result<TokenStream, syn::Error> {
             let ident = Ident::new(&name, Span::call_site());
             Ok(quote!( ::#ident::derive_adhoc_expand ))
         }
-        Err(e) => {
-            Err(syn::Error::new(
-                Span::call_site(),
-                format_args!("Expected derive-adhoc or derive-adhoc-macro to be present in Cargo.toml: {}", e)))
-        }
+        Err(e) => Err(Span::call_site().error(
+            format_args!("Expected derive-adhoc or derive-adhoc-macro to be present in Cargo.toml: {}", e)
+        )),
     }
 }

@@ -50,8 +50,7 @@ pub fn derive_adhoc_func_macro(
     let driver_mac_name = {
         let mut name = driver;
         let last = name.segments.last_mut().ok_or_else(|| {
-            syn::Error::new(
-                colon.span,
+            colon.error(
                 "expected non-empty path for driver struct name, found colon",
             )
         })?;
