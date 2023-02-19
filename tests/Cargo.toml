@@ -10,12 +10,18 @@ homepage = "https://gitlab.torproject.org/Diziet/rust-derive-adhoc"
 repository = "https://gitlab.torproject.org/Diziet/rust-derive-adhoc"
 publish = false
 
+[features]
+ui = []
+default = []
+# We can't make macrotest and ui default features because
+# in 1.54 (which is why we want this) --no-default-features doesn't work.
+
 [dependencies]
 derive-adhoc = { path = "..", version = "0.1.0" }
 easy-ext = "1"
 glob = "0.3"
 
-macrotest = "1"
+macrotest = { version = "1", optional = true }
 trybuild = "1.0.38"
 
 [lib]
