@@ -427,7 +427,7 @@ where
         match &self.sd {
             SD::tname(_) => out.push_identfrag_toks(&ctx.top.ident),
             SD::ttype(_) => do_ttype(out, Some(()), &do_tgnames),
-            SD::ttypedef(_) => do_ttype(out, None, &do_tgens),
+            SD::tdeftype(_) => do_ttype(out, None, &do_tgens),
             SD::vname(_) => {
                 out.push_identfrag_toks(&ctx.syn_variant(self)?.ident)
             }
