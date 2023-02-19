@@ -117,6 +117,8 @@ impl<O: SubstParseContext> Subst<O> {
             // TODO vtype
             SD::ftype(..) => Some(RO::Fields),
             SD::fpatname(_) => Some(RO::Fields),
+            SD::Vis(SubstVis::T, ..) => None,
+            SD::Vis(SubstVis::F, ..) => Some(RO::Fields),
             SD::tmeta(_) => None,
             SD::vmeta(_) => Some(RO::Variants),
             SD::fmeta(_) => Some(RO::Fields),
@@ -128,7 +130,16 @@ impl<O: SubstParseContext> Subst<O> {
             SD::twheres(..) => None,
             SD::vpat(..) => Some(RO::Variants),
             SD::vtype(..) => Some(RO::Variants),
+            SD::tkeyword(..) => None,
+            SD::is_struct(..) => None,
             SD::is_enum(..) => None,
+            SD::is_union(..) => None,
+            SD::v_is_unit(..) => Some(RO::Variants),
+            SD::v_is_tuple(..) => Some(RO::Variants),
+            SD::v_is_named(..) => Some(RO::Variants),
+            SD::tdefvariants(..) => None,
+            SD::fdefine(..) => Some(RO::Fields),
+            SD::vdefbody(..) => Some(RO::Variants),
             SD::paste(body, ..) => {
                 body.analyse_repeat(visitor)?;
                 None

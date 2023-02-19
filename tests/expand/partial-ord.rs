@@ -1,11 +1,9 @@
-//! THIS IS A NON-WORKING CONCEPT, FOR FUTURE DEVELOPMENT
-
-// Example which derives PartialOrd, treating different enum variants
-// as incomparable.
-//
-// This gives a demonstration on how to handle two enum
-// values (from the same enum) at once - in particular, patterns
-// with a different prefix.
+//! Example which derives PartialOrd, treating different enum variants
+//! as incomparable.
+//!
+//! This gives a demonstration on how to handle two enum
+//! values (from the same enum) at once - in particular, patterns
+//! with a different prefix.
 
 use std::cmp::Ordering::{self, *};
 

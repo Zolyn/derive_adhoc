@@ -1,8 +1,6 @@
-//! THIS IS A NON-WORKING CONCEPT, FOR FUTURE DEVELOPMENT
-
-// Example which fully and precisely derives Clone
-//
-// This gives a basic demonstration of how to handle an enum.
+//! Example which fully and precisely derives Clone
+//!
+//! This gives a basic demonstration of how to handle an enum.
 
 use derive_adhoc::{define_derive_adhoc, Adhoc};
 

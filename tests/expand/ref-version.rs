@@ -1,14 +1,17 @@
-//! THIS IS A NON-WORKING CONCEPT, FOR FUTURE DEVELOPMENT
+//! Example which derives a new type containing references
+//!
+//! This demonstrates how to make a new type which mirrors the driver type,
+//! including both structs and enums, with units, tuples or structs.
+//!
+//! It also demonstrates how to construct a new enum type
+//! using `$vdefvariants`, and `$vdefbody` and `$fdefine}`,
+//! and handling of visibility attributes.
 
-// Example which derives a new type containing references
-//
-// This demonstrates how to make a new type which mirrors the driver type,
-// including both structs and enums, with units, tuples or structs.
-//
-// It also demonstrates how to construct an enum using $vconstr,
-// and handling of visibility attributes.
+#![allow(dead_code)]
 
-define_derive_adhoc!{
+use derive_adhoc::{define_derive_adhoc, Adhoc};
+
+define_derive_adhoc! {
     ReferenceVersion =
 
     // New expansions:
@@ -24,18 +27,18 @@ define_derive_adhoc!{
     // $fvis                    otherwise             field visibility
     // // for effective vis., write ${if is_enum { $tvis } else { $fvis }}
     //
-    // ${tvariants BLAH}        for enum              { BLAH }
-    // ${tvariants BLAH}        otherwise               BLAH
+    // ${tdefvariants BLAH}        for enum              { BLAH }
+    // ${tdefvariants BLAH}        otherwise               BLAH
     //
-    // ${vdefine VANME BLAH)}   for unit              nothing
-    // ${vdefine VANME BLAH)}   for tuple             ( BLAH )
-    // ${vdefine VANME BLAH)}   for struct            { BLAH }
-    // ${vdefine VANME BLAH)}   for unit variant      VNAME
-    // ${vdefine VANME BLAH)}   for tuple variant     VNAME ( BLAH )
-    // ${vdefine VANME BLAH)}   for struct variant    VNAME { BLAH }
+    // ${vdefbody VANME BLAH)}   for unit              nothing;
+    // ${vdefbody VANME BLAH)}   for tuple             ( BLAH );
+    // ${vdefbody VANME BLAH)}   for struct            { BLAH }
+    // ${vdefbody VANME BLAH)}   for unit variant      VNAME,
+    // ${vdefbody VANME BLAH)}   for tuple variant     VNAME ( BLAH ),
+    // ${vdefbody VANME BLAH)}   for struct variant    VNAME { BLAH }
     //    * BLAH will pretty much always have to be $( ... )
     //      since it will want to enumerate the fields.
-    //    * ${vdefine} cannot be emulated with ${if } without
+    //    * ${vdefbody} cannot be emulated with ${if } without
     //      recapitulating the contents.  An alternative would be
     //        ${apply_possible_wrapping {WRAPPING} {CONTENTS}}
     //        ${apply_possible_wrapping {} X} => X
@@ -44,6 +47,10 @@ define_derive_adhoc!{
     //      Or a local sub-macro feature
     //        ${define_subtemplate NAME EXPANSION}
     //        ${expand_subtemplate NAME}
+    //    * A terminating delimiter is included, as needed:
+    //      This appears for units and tuples - it's not there after `{ }`.
+    //      For a complete type it's a semicolon, whereas for a variant
+    //      it's a comma.
     //
     // ${fdefine BLAH}            in unit [variant]     cannot occur
     // ${fdefine BLAH}            in tuple [variant]    nothing
@@ -62,41 +69,42 @@ define_derive_adhoc!{
     //
     // ${Xdefine BLAH} expands to either nothing, or BLAH-plus-framing
     $tvis $tkeyword ${paste $tname Reference}<'reference, $tgens>
-    ${tvariants $(
+    ${tdefvariants $(
     // Or maybe:
-    ${t_body_define_variants $(
-        ${vdefine $vname $(
-            $fvis ${fdefine $fname } &'r $ttype,
+    //${t_body_define_variants $(
+        ${vdefbody $vname $(
+        //${vdefine $vname $(
+            $fvis ${fdefine $fname } &'reference $ftype,
             // Tentatively rejected alternatives
-            $fvis ${fdefine $fname:} &'r $ttype,
-            $fvis ${fdefine $fname:  &'r $ttype},
-        $) }
+            //$fvis ${fdefine $fname:} &'reference $ttype,
+            //$fvis ${fdefine $fname:  &'reference $ttype},
+        ) }
     ) }
 
-    impl<'r> From<&'r $ttype>
+    impl<'reference, $tgens> From<&'reference $ttype>
     for ${paste $tname Reference}<'reference, $tgens> {
-        fn from(ref_to_owned: &'r $ttype) -> Self {
+        fn from(ref_to_owned: &'reference $ttype) -> Self {
             match ref_to_owned { $(
-                $vpat => $vconstr { $(
+                $vpat => ${vtype self=${paste $ttype Reference}} { $(
                 // Tentatively rejected alternatives
                 // (see vpat in partial-ord.rs)
-                $vpat => Self ${vspec $vname} { $(
-                $vpat => Self $[:: $vname] { $(
-                $vpat => Self ${if is_enum {:: $vname}} { $(
-                    $fname: &ref_to_owned.$fpatname,
-                ) }
+                //$vpat => Self ${vspec $vname} { $(
+                //$vpat => Self $[:: $vname] { $(
+                //$vpat => Self ${if is_enum {:: $vname}} { $(
+                    $fname: $fpatname,
+                ) },
             ) }
         }
     }
 
-    impl<'r> ${paste $tname Reference}<'reference, $tgens> 
+    impl<'reference, $tgens> ${paste $tname Reference}<'reference, $tgens>
     where $( $ftype: Clone, )
     {
         fn cloned(&self) -> $ttype {
             match self { $(
-                ${vpat self=Self} => $vconstr { $(
-                    $fname: self.$fpatname.clone(),
-                ) }
+                ${vpat self=Self} => $vtype { $(
+                    $fname: (**$fpatname).clone(),
+                ) },
             ) }
         }
     }
@@ -110,7 +118,7 @@ define_derive_adhoc!{
 
 #[derive(Adhoc)]
 #[derive_adhoc(ReferenceVersion)]
-struct Tuple<F>(F)
+struct Tuple<F>(F);
 
 #[derive(Adhoc)]
 #[derive_adhoc(ReferenceVersion)]
@@ -126,5 +134,4 @@ enum Enum<F> {
     Struct { field: F },
 }
 
-fn main() {
-}
+fn main() {}

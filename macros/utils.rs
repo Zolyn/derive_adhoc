@@ -10,11 +10,19 @@ pub fn braced_group(
     brace_span: Span,
     f: impl FnOnce(&mut TokenAccumulator) -> syn::Result<()>,
 ) -> syn::Result<proc_macro2::Group> {
+    delimit_token_group(Delimiter::Brace, brace_span, f)
+}
+
+pub fn delimit_token_group(
+    delim: Delimiter,
+    delim_span: Span,
+    f: impl FnOnce(&mut TokenAccumulator) -> syn::Result<()>,
+) -> syn::Result<proc_macro2::Group> {
     let mut out = TokenAccumulator::default();
     f(&mut out)?;
     let out = out.tokens()?;
-    let mut out = proc_macro2::Group::new(Delimiter::Brace, out);
-    out.set_span(brace_span);
+    let mut out = proc_macro2::Group::new(delim, out);
+    out.set_span(delim_span);
     Ok(out)
 }
 
@@ -166,6 +174,26 @@ impl ErrorAccumulator {
 impl Drop for ErrorAccumulator {
     fn drop(&mut self) {
         assert!(panicking() || self.defused);
+    }
+}
+
+//---------- TokenAsIdent ----------
+
+/// For use with `ExpansionOutput.push_identfrag_toks`
+///
+/// Will then write out `T` as its tokens.
+/// In identifier pasting, converts the tokens to a string first
+/// (so they had better be keywords).
+pub struct TokenPastesAsIdent<T>(pub T);
+
+impl<T: ToTokens> ToTokens for TokenPastesAsIdent<T> {
+    fn to_tokens(&self, out: &mut TokenStream) {
+        self.0.to_tokens(out)
+    }
+}
+impl<T: ToTokens> quote::IdentFragment for TokenPastesAsIdent<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        Display::fmt(&self.0.to_token_stream(), f)
     }
 }
 

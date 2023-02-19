@@ -53,12 +53,19 @@ impl Subst<BooleanContext> {
                 $wa.path.search_eval_bool(&within . $($pattrs)*)
             }))
         } }
+        let v_fields = || ctx.variant(&self.kw_span).map(|v| &v.fields);
+        use syn::Fields as SF;
 
         let r = match &self.sd {
             SD::tmeta(wa) => is_found(wa.path.search_eval_bool(ctx.tattrs)),
             SD::vmeta(wa) => eval_attr! { wa, WithinVariant, pattrs },
             SD::fmeta(wa) => eval_attr! { wa, WithinField, pfield.pattrs },
             SD::is_enum(..) => ctx.is_enum(),
+            SD::is_struct(..) => matches!(ctx.top.data, syn::Data::Struct(_)),
+            SD::is_union(..) => matches!(ctx.top.data, syn::Data::Union(_)),
+            SD::v_is_unit(..) => matches!(v_fields()?, SF::Unit),
+            SD::v_is_tuple(..) => matches!(v_fields()?, SF::Unnamed(..)),
+            SD::v_is_named(..) => matches!(v_fields()?, SF::Named(..)),
 
             SD::False(..) => false,
             SD::True(..) => true,
@@ -81,8 +88,14 @@ impl Subst<BooleanContext> {
                 })
                 .unwrap_or(Ok(true))?,
 
-            SD::vtype(v) => void::unreachable(v.not_in_bool),
-            SD::vpat(v) => void::unreachable(v.vtype.not_in_bool),
+            SD::Vis(vis, _) => match vis.syn_vis(ctx, self.kw_span)? {
+                syn::Visibility::Public(_) => true,
+                _ => false,
+            },
+
+            // TODO merge this into the arms below
+            SD::vtype(_, _, not_in_bool) => void::unreachable(*not_in_bool),
+            SD::vpat(_, _, not_in_bool) => void::unreachable(*not_in_bool),
 
             SD::tname(not_in_bool)
             | SD::ttype(not_in_bool)
@@ -90,6 +103,7 @@ impl Subst<BooleanContext> {
             | SD::vname(not_in_bool)
             | SD::fname(not_in_bool)
             | SD::ftype(not_in_bool)
+            | SD::tkeyword(not_in_bool)
             | SD::tattrs(_, _, not_in_bool)
             | SD::vattrs(_, _, not_in_bool)
             | SD::fattrs(_, _, not_in_bool)
@@ -97,6 +111,9 @@ impl Subst<BooleanContext> {
             | SD::tgnames(_, not_in_bool)
             | SD::twheres(_, not_in_bool)
             | SD::fpatname(not_in_bool)
+            | SD::tdefvariants(_, _, not_in_bool)
+            | SD::fdefine(_, _, not_in_bool)
+            | SD::vdefbody(_, _, _, not_in_bool)
             | SD::paste(_, _, _, not_in_bool)
             | SD::ChangeCase(_, _, _, not_in_bool)
             | SD::when(_, not_in_bool, _)

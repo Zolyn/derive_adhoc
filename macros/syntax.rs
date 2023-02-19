@@ -95,6 +95,9 @@ pub enum SubstDetails<O: SubstParseContext> {
     ftype(O::NotInBool),
     // TODO DOCS, move from clone-full.rs and/or partial-ord.rs
     fpatname(O::NotInBool),
+    // TODO DOCS (also boolean)
+    Vis(SubstVis, O::NotInPaste), // tvis, fvis
+    tkeyword(O::NotInBool),       // TODO docs, also paste
 
     // attributes
     tmeta(SubstAttr),
@@ -113,9 +116,25 @@ pub enum SubstDetails<O: SubstParseContext> {
     // (The tuple nesting means we can have a single value to
     // pass to `do_vpat` in the parser in syntax.rs.)
     // TODO DOCS, move from clone-full.rs and/or partial-ord.rs
-    vpat(SubstVPat<O>),
+    vpat(SubstVPat, O::NotInPaste, O::NotInBool),
     // TODO DOCS, move from clone-full.rs and/or partial-ord.rs
-    vtype(SubstVType<O>),
+    vtype(SubstVType, O::NotInPaste, O::NotInBool),
+
+    // TODO DOCS
+    tdefvariants(Template<TokenAccumulator>, O::NotInPaste, O::NotInBool),
+    // TODO DOCS
+    fdefine(
+        Option<Template<TokenAccumulator>>,
+        O::NotInPaste,
+        O::NotInBool,
+    ),
+    // TODO DOCS
+    vdefbody(
+        Template<O>,
+        Template<TokenAccumulator>,
+        O::NotInPaste,
+        O::NotInBool,
+    ),
 
     // expansion manipulation
     paste(
@@ -144,7 +163,12 @@ pub enum SubstDetails<O: SubstParseContext> {
     not(Box<Subst<BooleanContext>>, O::BoolOnly),
     any(Punctuated<Subst<BooleanContext>, token::Comma>, O::BoolOnly),
     all(Punctuated<Subst<BooleanContext>, token::Comma>, O::BoolOnly),
+    is_struct(O::BoolOnly), // TODO DOCS
     is_enum(O::BoolOnly),
+    is_union(O::BoolOnly),   // TODO DOCS
+    v_is_unit(O::BoolOnly),  // TODO DOCS
+    v_is_tuple(O::BoolOnly), // TODO DOCS
+    v_is_named(O::BoolOnly), // TODO DOCS
 
     // Explicit iteration
     For(RepeatedTemplate<O>, O::NotInBool),
@@ -165,6 +189,13 @@ pub struct SubstIf<O: SubstParseContext> {
     /// A final element to expand if all tests fail.
     pub otherwise: Option<Box<Template<O>>>,
     pub kw_span: Span,
+}
+
+/// Whether this is `${tvis}` or `${fvis}`
+#[derive(Debug)]
+pub enum SubstVis {
+    T,
+    F,
 }
 
 #[derive(Debug, Clone)]
@@ -198,16 +229,14 @@ struct AdhocAttrList {
 }
 
 #[derive(Debug)]
-pub struct SubstVType<O: SubstParseContext> {
-    pub self_: Option<Template<O>>,
-    pub vname: Option<Template<O>>,
-    pub not_in_paste: O::NotInPaste,
-    pub not_in_bool: O::NotInBool,
+pub struct SubstVType {
+    pub self_: Option<Template<TokenAccumulator>>,
+    pub vname: Option<Template<TokenAccumulator>>,
 }
 
 #[derive(Debug)]
-pub struct SubstVPat<O: SubstParseContext> {
-    pub vtype: SubstVType<O>,
+pub struct SubstVPat {
+    pub vtype: SubstVType,
     pub fprefix: Option<Template<paste::Items>>,
 }
 
@@ -500,11 +529,15 @@ where
 ///  * `(..substruct)`: calls `self.substruct.process_one_keyword`,
 ///     thereby incorporating the sub-structure's subkeywords
 ///
-/// The implementation is always `impl<O: SubstParseContext> ... for TYPE<O>`.
+/// You can write `TYPE<O>: ...`
+/// which results in
+/// `impl<O: SubstParseContext> ... for TYPE<O>`.
 macro_rules! impl_parse_one_subkeyword { {
-    $ty:ident: $( ( $($spec:tt)+ ) ),* $(,)?
+    $ty:ident $( < $O:ident > )?:
+    $( ( $($spec:tt)+ ) ),* $(,)?
 } => {
-    impl<O: SubstParseContext> ParseOneSubkeyword for $ty<O> {
+    impl $(<$O: SubstParseContext>)?
+    ParseOneSubkeyword for $ty $(<$O>)? {
         fn process_one_keyword(&mut self, got: &syn::Ident, ps: ParseStream)
                                -> Option<syn::Result<()>> {
             $( impl_parse_one_subkeyword!{ @ (self, got, ps) @ $($spec)+ } )*
@@ -540,17 +573,15 @@ impl_parse_one_subkeyword! {
     (fprefix),
 }
 
-impl<O: SubstParseContext> ParseUsingSubkeywords for SubstVType<O> {
-    fn new_default(tspan: Span) -> syn::Result<Self> {
+impl ParseUsingSubkeywords for SubstVType {
+    fn new_default(_tspan: Span) -> syn::Result<Self> {
         Ok(SubstVType {
             self_: None,
             vname: None,
-            not_in_paste: O::not_in_paste(&tspan)?,
-            not_in_bool: O::not_in_bool(&tspan)?,
         })
     }
 }
-impl<O: SubstParseContext> ParseUsingSubkeywords for SubstVPat<O> {
+impl ParseUsingSubkeywords for SubstVPat {
     fn new_default(tspan: Span) -> syn::Result<Self> {
         Ok(SubstVPat {
             vtype: SubstVType::new_default(tspan)?,
@@ -670,6 +701,15 @@ impl<O: SubstParseContext> Parse for Subst<O> {
             Ok(inner)
         };
 
+        let parse_def_body = |input: ParseStream<'i>| {
+            if input.is_empty() {
+                return Err(kw.error(
+                    "tdefvariants needs to contain the variant definitions",
+                ));
+            }
+            Template::parse(input, Default::default())
+        };
+
         keyword! { tname(not_in_bool?) }
         keyword! { ttype(not_in_bool?) }
         keyword! { ttypedef(not_in_bool?) }
@@ -677,8 +717,17 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         keyword! { fname(not_in_bool?) }
         keyword! { ftype(not_in_bool?) }
         keyword! { fpatname(not_in_bool?) }
+        keyword! { tkeyword(not_in_bool?) }
 
+        keyword! { "tvis": Vis(SubstVis::T, not_in_paste?) }
+        keyword! { "fvis": Vis(SubstVis::F, not_in_paste?) }
+
+        keyword! { is_struct(bool_only?) }
         keyword! { is_enum(bool_only?) }
+        keyword! { is_union(bool_only?) }
+        keyword! { v_is_unit(bool_only?) }
+        keyword! { v_is_tuple(bool_only?) }
+        keyword! { v_is_named(bool_only?) }
 
         keyword! { tgens(not_in_paste?, not_in_bool?) }
         keyword! { tgnames(not_in_paste?, not_in_bool?) }
@@ -692,8 +741,30 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         keyword! { vattrs(input.parse()?, not_in_paste?, not_in_bool?) }
         keyword! { fattrs(input.parse()?, not_in_paste?, not_in_bool?) }
 
-        keyword! { vtype(SubstVType::parse(input, kw.span())?) }
-        keyword! { vpat(SubstVPat::parse(input, kw.span())?) }
+        keyword! { vtype(
+            SubstVType::parse(input, kw.span())?,
+            not_in_paste?, not_in_bool?,
+        ) }
+        keyword! { vpat(
+            SubstVPat::parse(input, kw.span())?,
+            not_in_paste?, not_in_bool?,
+        ) }
+
+        keyword! { tdefvariants(
+            parse_def_body(input)?,
+            not_in_paste?, not_in_bool?,
+        ) }
+        keyword! { fdefine(
+            (!input.is_empty()).then(|| {
+                Template::parse_single_or_braced(input)
+            }).transpose()?,
+            not_in_paste?, not_in_bool?
+        ) }
+        keyword! { vdefbody(
+            Template::parse_single_or_braced(input)?,
+            parse_def_body(input)?,
+            not_in_paste?, not_in_bool?,
+        ) }
 
         keyword! {
             paste {
@@ -794,6 +865,19 @@ impl<O: SubstParseContext> SubstIf<O> {
             kw_span,
             tests,
             otherwise,
+        })
+    }
+}
+
+impl SubstVis {
+    pub fn syn_vis<'c>(
+        &self,
+        ctx: &'c Context<'c>,
+        tspan: Span,
+    ) -> syn::Result<&'c syn::Visibility> {
+        Ok(match self {
+            SubstVis::T => &ctx.top.vis,
+            SubstVis::F => &ctx.field(&tspan)?.field.vis,
         })
     }
 }

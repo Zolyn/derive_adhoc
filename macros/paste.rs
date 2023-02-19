@@ -427,7 +427,7 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
     fn push_display<S: Display + Spanned>(&mut self, plain: &S) {
         self.push_lit_pair(plain, plain);
     }
-    fn push_ident<I: quote::IdentFragment + Spanned + ToTokens>(
+    fn push_identfrag_toks<I: quote::IdentFragment + ToTokens>(
         &mut self,
         ident: &I,
     ) {
@@ -551,7 +551,7 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
 impl<C: CaseContext> Expand<Items<C>> for TemplateElement<Items<C>> {
     fn expand(&self, ctx: &Context, out: &mut Items<C>) -> syn::Result<()> {
         match self {
-            TE::Ident(ident) => out.push_ident(&ident),
+            TE::Ident(ident) => out.push_identfrag_toks(&ident),
             TE::Literal(lit) => out.push_syn_lit(&lit),
             TE::Subst(e) => e.expand(ctx, out)?,
             TE::Repeat(e) => e.expand(ctx, out),

@@ -138,20 +138,18 @@ where
     }
 }
 
-impl<O: ExpansionOutput> SubstVType<O>
-where
-    TemplateElement<O>: Expand<O>,
-    O: ExpansionOutput,
-{
+impl SubstVType {
     fn expand(
         &self,
         ctx: &Context,
-        out: &mut O,
+        out: &mut TokenAccumulator,
         kw_span: Span,
-        self_def: SubstDetails<O>,
+        self_def: SubstDetails<TokenAccumulator>,
     ) -> syn::Result<()> {
         let expand_spec_or_sd =
-            |out: &mut _, spec: &Option<Template<O>>, sd: SubstDetails<O>| {
+            |out: &mut _,
+             spec: &Option<Template<TokenAccumulator>>,
+             sd: SubstDetails<TokenAccumulator>| {
                 if let Some(spec) = spec {
                     spec.expand(ctx, out);
                     Ok(())
@@ -160,30 +158,81 @@ where
                 }
             };
 
-        expand_spec_or_sd(out, &self.self_, self_def)?;
+        if !ctx.is_enum() {
+            return expand_spec_or_sd(out, &self.self_, self_def);
+        }
+        // It's an enum.  We need to write the main type name,
+        // and the variant.  Naively we might expect to just do
+        //    TTYPE::VNAME
+        // but that doesn't work, because if TTYPE has generics, that's
+        //    TNAME::<TGENERICS>::VNAME
+        // and this triggers bizarre (buggy) behaviour in rustc -
+        // see rust-lang/rust/issues/108224.
+        // So we need to emit
+        //    TNAME::VNAME::<TGENERICS>
+        //
+        // The most convenient way to do that seems to be to re-parse
+        // this bit of the expansion as a syn::Path.  That lets
+        // us fish out the generics, for writing out later.
 
-        if ctx.is_enum() {
-            out.push_other_tokens(&self.not_in_paste, &Token![::](kw_span))?;
-            expand_spec_or_sd(out, &self.vname, SD::vname(self.not_in_bool))?;
+        let mut self_ty = TokenAccumulator::new();
+        expand_spec_or_sd(&mut self_ty, &self.self_, self_def)?;
+        let self_ty = self_ty.tokens()?;
+        let mut self_ty: syn::Path =
+            syn::parse2(self_ty).map_err(|mut e| {
+                e.combine(kw_span.error(
+                    "error re-parsing self type path for this expansion",
+                ));
+                e
+            })?;
+
+        let mut generics = mem::take(
+            &mut self_ty
+                .segments
+                .last_mut()
+                .ok_or_else(|| {
+                    kw_span.error(
+                        "self type path for this expansion is empty path!",
+                    )
+                })?
+                .arguments,
+        );
+
+        out.write_tokens(self_ty);
+        out.write_tokens(Token![::](kw_span));
+        expand_spec_or_sd(out, &self.vname, SD::vname(Default::default()))?;
+        let gen_content = match &mut generics {
+            syn::PathArguments::AngleBracketed(content) => Some(content),
+            syn::PathArguments::None => None,
+            syn::PathArguments::Parenthesized(..) => {
+                return Err([
+                    (generics.span(), "generics"),
+                    (kw_span, "template keyword"),
+                ]
+                .error("self type has parenthesised generics, not supported"))
+            }
+        };
+        if let Some(gen_content) = gen_content {
+            // Normalise `<GENERICS>` to `::<TGENERICS>`.
+            gen_content
+                .colon2_token
+                .get_or_insert_with(|| Token![::](kw_span));
+            out.write_tokens(&generics);
         }
         Ok(())
     }
 }
 
-impl<O: ExpansionOutput> SubstVPat<O>
-where
-    TemplateElement<O>: Expand<O>,
-    O: ExpansionOutput,
-{
+impl SubstVPat {
     // $vpat      for struct    $tname         { $( $fname: $fpatname ) }
     // $vpat      for enum      $tname::$vname { $( $fname: $fpatname ) }
     fn expand(
         &self,
         ctx: &Context,
-        out: &mut O,
+        out: &mut TokenAccumulator,
         kw_span: Span,
     ) -> syn::Result<()> {
-        let self_def = SD::tname(self.vtype.not_in_bool);
+        let self_def = SD::tname(Default::default());
         SubstVType::expand(&self.vtype, ctx, out, kw_span, self_def)?;
 
         let in_braces = braced_group(kw_span, |mut out| {
@@ -201,13 +250,13 @@ where
                 } else {
                     paste.push_fixed_string("f_".into(), kw_span);
                 }
-                paste.push_ident(&field.fname(kw_span));
+                paste.push_identfrag_toks(&field.fname(kw_span));
 
                 out.push_other_subst(&(), |out| paste.assemble(out))?;
                 Ok::<_, syn::Error>(())
             })
         })?;
-        out.push_other_tokens(&self.vtype.not_in_paste, in_braces)?;
+        out.write_tokens(in_braces);
         Ok(())
     }
 }
@@ -328,15 +377,35 @@ where
                 },
             )
         };
+        let do_maybe_delimited_group = |out, np, delim, content| {
+            let _: &mut O = out;
+            let _: &Template<TokenAccumulator> = content;
+            out.push_other_subst(np, |out| {
+                if let Some(delim) = delim {
+                    out.write_tokens(delimit_token_group(
+                        delim,
+                        self.kw_span,
+                        |inside: &mut TokenAccumulator| {
+                            Ok(content.expand(ctx, inside))
+                        },
+                    )?);
+                } else {
+                    content.expand(ctx, out);
+                }
+                Ok(())
+            })
+        };
 
         match &self.sd {
-            SD::tname(_) => out.push_ident(&ctx.top.ident),
+            SD::tname(_) => out.push_identfrag_toks(&ctx.top.ident),
             SD::ttype(_) => do_ttype(out, Some(()), &do_tgnames),
             SD::ttypedef(_) => do_ttype(out, None, &do_tgens),
-            SD::vname(_) => out.push_ident(&ctx.syn_variant(self)?.ident),
+            SD::vname(_) => {
+                out.push_identfrag_toks(&ctx.syn_variant(self)?.ident)
+            }
             SD::fname(_) => {
                 let fname = ctx.field(self)?.fname(self.kw_span);
-                out.push_ident(&fname);
+                out.push_identfrag_toks(&fname);
             }
             SD::ftype(_) => {
                 let f = ctx.field(self)?;
@@ -345,11 +414,29 @@ where
             SD::fpatname(_) => {
                 let f = ctx.field(self)?;
                 let fpatname = format_ident!("f_{}", f.fname(self.kw_span));
-                out.push_ident(&fpatname);
+                out.push_identfrag_toks(&fpatname);
             }
             SD::tmeta(wa) => do_meta(wa, out, ctx.tattrs)?,
             SD::vmeta(wa) => do_meta(wa, out, ctx.variant(wa)?.pattrs)?,
             SD::fmeta(wa) => do_meta(wa, out, &ctx.field(wa)?.pfield.pattrs)?,
+
+            SD::Vis(vis, np) => {
+                out.push_other_tokens(np, vis.syn_vis(ctx, self.kw_span)?)?
+            }
+            SD::tkeyword(_) => {
+                fn w<O>(out: &mut O, t: impl ToTokens)
+                where
+                    O: ExpansionOutput,
+                {
+                    out.push_identfrag_toks(&TokenPastesAsIdent(t))
+                }
+                use syn::Data::*;
+                match &ctx.top.data {
+                    Struct(d) => w(out, &d.struct_token),
+                    Enum(d) => w(out, &d.enum_token),
+                    Union(d) => w(out, &d.union_token),
+                };
+            }
 
             SD::tattrs(ra, np, ..) => out.push_other_subst(np, |out| {
                 ra.expand(ctx, out, &ctx.top.attrs)
@@ -380,9 +467,62 @@ where
                 Ok(())
             })?,
 
-            SD::vpat(v) => v.expand(ctx, out, self.span())?,
-            SD::vtype(v) => {
-                v.expand(ctx, out, self.span(), SD::ttype(v.not_in_bool))?
+            SD::vpat(v, np, ..) => out.push_other_subst(np, |out| {
+                // This comment prevents rustfmt making this unlike the others
+                v.expand(ctx, out, self.span())
+            })?,
+            SD::vtype(v, np, ..) => out.push_other_subst(np, |out| {
+                v.expand(ctx, out, self.span(), SD::ttype(Default::default()))
+            })?,
+
+            SD::tdefvariants(content, np, ..) => {
+                let delim = if ctx.is_enum() {
+                    Some(Delimiter::Brace)
+                } else {
+                    None
+                };
+                do_maybe_delimited_group(out, np, delim, content)?;
+            }
+            SD::fdefine(spec_f, np, ..) => {
+                out.push_other_subst(np, |out| {
+                    let field = ctx.field(&self.kw_span)?.field;
+                    if let Some(driver_f) = &field.ident {
+                        if let Some(spec_f) = spec_f {
+                            spec_f.expand(ctx, out);
+                        } else {
+                            out.write_tokens(driver_f);
+                        }
+                    }
+                    out.write_tokens(&field.colon_token);
+                    Ok(())
+                })?
+            }
+            SD::vdefbody(vname, content, np, ..) => {
+                use syn::Fields as SF;
+                let variant = ctx.variant(&self.kw_span)?;
+                let enum_variant: Option<&syn::Variant> = variant.variant;
+                if enum_variant.is_some() {
+                    vname.expand(ctx, out);
+                }
+                let delim = match variant.fields {
+                    SF::Unit => None,
+                    SF::Unnamed(..) => Some(Delimiter::Parenthesis),
+                    SF::Named(..) => Some(Delimiter::Brace),
+                };
+                do_maybe_delimited_group(out, np, delim, content)?;
+                match variant.fields {
+                    SF::Unit => Some(()),
+                    SF::Unnamed(..) => Some(()),
+                    SF::Named(..) => None,
+                }
+                .map(|()| {
+                    if enum_variant.is_some() {
+                        out.push_other_tokens(np, Token![,](self.kw_span))
+                    } else {
+                        out.push_other_tokens(np, Token![;](self.kw_span))
+                    }
+                })
+                .transpose()?;
             }
 
             SD::paste(content, np, ..) => {
@@ -397,7 +537,12 @@ where
                 "${when } only allowed in toplevel of $( )",
             ),
             SD::If(conds, ..) => conds.expand(ctx, out)?,
-            SD::is_enum(bo)
+            SD::is_struct(bo)
+            | SD::is_enum(bo)
+            | SD::is_union(bo)
+            | SD::v_is_unit(bo)
+            | SD::v_is_tuple(bo)
+            | SD::v_is_named(bo)
             | SD::False(bo)
             | SD::True(bo)
             | SD::not(_, bo)

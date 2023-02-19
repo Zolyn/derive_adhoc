@@ -1,4 +1,6 @@
-//! THIS IS A NON-WORKING CONCEPT, FOR FUTURE DEVELOPMENT
+//! Example which fully and precisely derives Clone
+//!
+//! This gives a basic demonstration of how to handle an enum.
 use derive_adhoc::{define_derive_adhoc, Adhoc};
 #[derive_adhoc(PreciseClone)]
 struct Unit;
@@ -52,10 +54,10 @@ where
 {
     fn clone(&self) -> Self {
         match self {
-            Enum::Unit {} => Enum::<F>::Unit {},
-            Enum::Tuple { 0: f_0 } => Enum::<F>::Tuple { 0: f_0.clone() },
+            Enum::Unit {} => Enum::Unit::<F> {},
+            Enum::Tuple { 0: f_0 } => Enum::Tuple::<F> { 0: f_0.clone() },
             Enum::Struct { field: f_field } => {
-                Enum::<F>::Struct {
+                Enum::Struct::<F> {
                     field: f_field.clone(),
                 }
             }
