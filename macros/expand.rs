@@ -208,15 +208,9 @@ where
         out.write_tokens(self_ty);
         out.write_tokens(Token![::](kw_span));
         expand_spec_or_sd(out, &self.vname, SD::vname(Default::default()))?;
-        match &mut generics {
-            syn::PathArguments::AngleBracketed(content) => {
-                // Normalise `<GENERICS>` to `::<TGENERICS>`.
-                content
-                    .colon2_token
-                    .get_or_insert_with(|| Token![::](kw_span));
-                out.write_tokens(generics);
-            }
-            syn::PathArguments::None => {}
+        let gen_content = match &mut generics {
+            syn::PathArguments::AngleBracketed(content) => Some(content),
+            syn::PathArguments::None => None,
             syn::PathArguments::Parenthesized(..) => {
                 return Err([
                     (generics.span(), "generics"),
@@ -224,6 +218,13 @@ where
                 ]
                 .error("self type has parenthesised generics, not supported"))
             }
+        };
+        if let Some(gen_content) = gen_content {
+            // Normalise `<GENERICS>` to `::<TGENERICS>`.
+            gen_content
+                .colon2_token
+                .get_or_insert_with(|| Token![::](kw_span));
+            out.write_tokens(&generics);
         }
         Ok(())
       })
