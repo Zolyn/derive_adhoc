@@ -13,7 +13,7 @@ define_derive_adhoc! {
     VeryPartialOrd =
 
     // ${vpat    fprefix=f_ self=$tname vname=$vname}
-    // ${vconstr fprefix=f_ self=$ttype vname=$vname}
+    // ${vtype              self=$ttype vname=$vname}
     //    each is a single template element, or in {...}
     //    defaults shown
     //    vname not expanded in structs
@@ -46,7 +46,7 @@ define_derive_adhoc! {
 
 #[derive(Adhoc, PartialEq)]
 #[derive_adhoc(VeryPartialOrd)]
-enum Enum<F: PartialEq, G>
+enum Enum<F: PartialEq = (), G = ()>
 where
     G: PartialEq,
 {
@@ -60,14 +60,12 @@ fn mk_t_struct<F: PartialEq>(field: &str) -> Enum<F, &str> {
 }
 
 fn main() {
-    // TODO use default type parameters to get rid of all these turbofish
-    // (but currently, that breaks)
     use Enum::*;
     expect_none(Unit::<_, ()>, Tuple(42));
     expect_none(Tuple(42), mk_t_struct(""));
     expect_none(Tuple::<_, ()>(Tuple::<_, ()>(42)), Tuple(Unit));
 
-    expect_some(Unit::<(), ()>, Unit::<(), ()>, Equal);
+    expect_some(Unit::<(), ()>, Unit, Equal);
     expect_some(Tuple::<_, ()>(0), Tuple(0), Equal);
     expect_some(Tuple::<_, ()>(1), Tuple(2), Less);
     expect_some(Tuple::<_, ()>(4), Tuple(3), Greater);

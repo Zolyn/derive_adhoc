@@ -68,7 +68,7 @@ define_derive_adhoc! {
     // ?
     //
     // ${Xdefine BLAH} expands to either nothing, or BLAH-plus-framing
-    $tvis $tkeyword ${paste $tname Reference}<'reference, $tgens>
+    $tvis $tkeyword ${paste $tname Reference}<'reference, $tdefgens>
     ${tdefvariants $(
     // Or maybe:
     //${t_body_define_variants $(
@@ -118,20 +118,23 @@ define_derive_adhoc! {
 
 #[derive(Adhoc)]
 #[derive_adhoc(ReferenceVersion)]
-struct Tuple<F>(F);
+struct Tuple<F = ()>(F);
 
 #[derive(Adhoc)]
 #[derive_adhoc(ReferenceVersion)]
-struct Struct<F> {
+struct Struct<F = ()> {
     field: F,
 }
 
 #[derive(Adhoc)]
 #[derive_adhoc(ReferenceVersion)]
-enum Enum<F> {
+enum Enum<F = ()> {
     Unit,
     Tuple(F),
     Struct { field: F },
 }
 
-fn main() {}
+fn main() {
+    let _: Option<EnumReference> = None;
+    let _: Option<EnumReference::<i32>> = None;
+}

@@ -354,6 +354,34 @@ where
                 });
             }
         };
+        let do_tgens_nodefs = |out: &mut TokenAccumulator| {
+            // TODO DOCS
+            for pair in ctx.top.generics.params.pairs() {
+                use syn::GenericParam as GP;
+                let out_attrs = |out: &mut TokenAccumulator, attrs: &[_]| {
+                    attrs.iter().for_each(|attr| out.write_tokens(attr));
+                };
+                match pair.value() {
+                    GP::Type(t) => {
+                        out_attrs(out, &t.attrs);
+                        out.write_tokens(&t.ident);
+                        out.write_tokens(&t.colon_token);
+                        out.write_tokens(&t.bounds);
+                    }
+                    GP::Const(c) => {
+                        out_attrs(out, &c.attrs);
+                        out.write_tokens(&c.const_token);
+                        out.write_tokens(&c.ident);
+                        out.write_tokens(&c.colon_token);
+                        out.write_tokens(&c.ty);
+                    }
+                    GP::Lifetime(l) => out.write_tokens(&l.lifetime),
+                }
+                out.with_tokens(|out| {
+                    pair.punct().to_tokens_punct_composable(out);
+                });
+            }
+        };
         let do_tgens = |out: &mut TokenAccumulator| {
             out.write_tokens(&ctx.top.generics.params);
         };
@@ -399,7 +427,7 @@ where
         match &self.sd {
             SD::tname(_) => out.push_identfrag_toks(&ctx.top.ident),
             SD::ttype(_) => do_ttype(out, Some(()), &do_tgnames),
-            SD::ttypedef(_) => do_ttype(out, None, &do_tgens),
+            SD::tdeftype(_) => do_ttype(out, None, &do_tgens),
             SD::vname(_) => {
                 out.push_identfrag_toks(&ctx.syn_variant(self)?.ident)
             }
@@ -451,6 +479,10 @@ where
             })?,
 
             SD::tgens(np, ..) => out.push_other_subst(np, |out| {
+                do_tgens_nodefs(out);
+                Ok(())
+            })?,
+            SD::tdefgens(np, ..) => out.push_other_subst(np, |out| {
                 do_tgens(out);
                 Ok(())
             })?,

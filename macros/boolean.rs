@@ -99,7 +99,7 @@ impl Subst<BooleanContext> {
 
             SD::tname(not_in_bool)
             | SD::ttype(not_in_bool)
-            | SD::ttypedef(not_in_bool)
+            | SD::tdeftype(not_in_bool)
             | SD::vname(not_in_bool)
             | SD::fname(not_in_bool)
             | SD::ftype(not_in_bool)
@@ -108,6 +108,7 @@ impl Subst<BooleanContext> {
             | SD::vattrs(_, _, not_in_bool)
             | SD::fattrs(_, _, not_in_bool)
             | SD::tgens(_, not_in_bool)
+            | SD::tdefgens(_, not_in_bool)
             | SD::tgnames(_, not_in_bool)
             | SD::twheres(_, not_in_bool)
             | SD::fpatname(not_in_bool)

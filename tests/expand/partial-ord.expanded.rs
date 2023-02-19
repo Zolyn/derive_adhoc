@@ -7,7 +7,7 @@
 use std::cmp::Ordering::{self, *};
 use derive_adhoc::{define_derive_adhoc, Adhoc};
 #[derive_adhoc(VeryPartialOrd)]
-enum Enum<F: PartialEq, G>
+enum Enum<F: PartialEq = (), G = ()>
 where
     G: PartialEq,
 {
@@ -79,7 +79,7 @@ fn main() {
     expect_none(Unit::<_, ()>, Tuple(42));
     expect_none(Tuple(42), mk_t_struct(""));
     expect_none(Tuple::<_, ()>(Tuple::<_, ()>(42)), Tuple(Unit));
-    expect_some(Unit::<(), ()>, Unit::<(), ()>, Equal);
+    expect_some(Unit::<(), ()>, Unit, Equal);
     expect_some(Tuple::<_, ()>(0), Tuple(0), Equal);
     expect_some(Tuple::<_, ()>(1), Tuple(2), Less);
     expect_some(Tuple::<_, ()>(4), Tuple(3), Greater);

@@ -113,7 +113,7 @@ impl<O: SubstParseContext> Subst<O> {
             SD::vname(..) => Some(RO::Variants),
             SD::fname(..) => Some(RO::Fields),
             SD::ttype(..) => None,
-            SD::ttypedef(..) => None,
+            SD::tdeftype(..) => None,
             // TODO vtype
             SD::ftype(..) => Some(RO::Fields),
             SD::fpatname(_) => Some(RO::Fields),
@@ -126,6 +126,7 @@ impl<O: SubstParseContext> Subst<O> {
             SD::vattrs(..) => Some(RO::Variants),
             SD::fattrs(..) => Some(RO::Fields),
             SD::tgens(..) => None,
+            SD::tdefgens(..) => None,
             SD::tgnames(..) => None,
             SD::twheres(..) => None,
             SD::vpat(..) => Some(RO::Variants),
