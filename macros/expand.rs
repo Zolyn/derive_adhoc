@@ -340,6 +340,8 @@ where
     fn expand(&self, ctx: &Context, out: &mut O) -> syn::Result<()> {
         // eprintln!("@@@@@@@@@@@@@@@@@@@@ EXPAND {:?}", self);
 
+        let kw_span = self.kw_span;
+
         let do_meta = |wa: &SubstAttr, out, meta| wa.expand(ctx, out, meta);
         let do_tgnames = |out: &mut TokenAccumulator| {
             for pair in ctx.top.generics.params.pairs() {
@@ -392,16 +394,16 @@ where
         //   defining a new type      $ttypedef  Type<G: bounds>
         let do_ttype = |out: &mut O, colons: Option<()>, do_some_gens| {
             let _: &dyn Fn(&mut _) = do_some_gens; // specify type
-            let colons = colons.map(|()| Token![::](self.kw_span));
+            let colons = colons.map(|()| Token![::](kw_span));
             out.push_idpath(
-                self.kw_span,
+                kw_span,
                 |_| {},
                 &ctx.top.ident,
                 |out| {
                     out.write_tokens(colons);
-                    out.write_tokens(Token![<](self.kw_span));
+                    out.write_tokens(Token![<](kw_span));
                     do_some_gens(out);
-                    out.write_tokens(Token![>](self.kw_span));
+                    out.write_tokens(Token![>](kw_span));
                 },
             )
         };
@@ -412,7 +414,7 @@ where
                 if let Some(delim) = delim {
                     out.write_tokens(delimit_token_group(
                         delim,
-                        self.kw_span,
+                        kw_span,
                         |inside: &mut TokenAccumulator| {
                             Ok(content.expand(ctx, inside))
                         },
@@ -432,16 +434,16 @@ where
                 out.push_identfrag_toks(&ctx.syn_variant(self)?.ident)
             }
             SD::fname(_) => {
-                let fname = ctx.field(self)?.fname(self.kw_span);
+                let fname = ctx.field(self)?.fname(kw_span);
                 out.push_identfrag_toks(&fname);
             }
             SD::ftype(_) => {
                 let f = ctx.field(self)?;
-                out.push_syn_type(self.kw_span, &f.field.ty);
+                out.push_syn_type(kw_span, &f.field.ty);
             }
             SD::fpatname(_) => {
                 let f = ctx.field(self)?;
-                let fpatname = format_ident!("f_{}", f.fname(self.kw_span));
+                let fpatname = format_ident!("f_{}", f.fname(kw_span));
                 out.push_identfrag_toks(&fpatname);
             }
             SD::tmeta(wa) => do_meta(wa, out, ctx.tattrs)?,
@@ -449,7 +451,7 @@ where
             SD::fmeta(wa) => do_meta(wa, out, &ctx.field(wa)?.pfield.pattrs)?,
 
             SD::Vis(vis, np) => {
-                out.push_other_tokens(np, vis.syn_vis(ctx, self.kw_span)?)?
+                out.push_other_tokens(np, vis.syn_vis(ctx, kw_span)?)?
             }
             SD::tkeyword(_) => {
                 fn w<O>(out: &mut O, t: impl ToTokens)
@@ -517,7 +519,7 @@ where
             }
             SD::fdefine(spec_f, np, ..) => {
                 out.push_other_subst(np, |out| {
-                    let field = ctx.field(&self.kw_span)?.field;
+                    let field = ctx.field(&kw_span)?.field;
                     if let Some(driver_f) = &field.ident {
                         if let Some(spec_f) = spec_f {
                             spec_f.expand(ctx, out);
@@ -531,7 +533,7 @@ where
             }
             SD::vdefbody(vname, content, np, ..) => {
                 use syn::Fields as SF;
-                let variant = ctx.variant(&self.kw_span)?;
+                let variant = ctx.variant(&kw_span)?;
                 let enum_variant: Option<&syn::Variant> = variant.variant;
                 if enum_variant.is_some() {
                     vname.expand(ctx, out);
@@ -549,9 +551,9 @@ where
                 }
                 .map(|()| {
                     if enum_variant.is_some() {
-                        out.push_other_tokens(np, Token![,](self.kw_span))
+                        out.push_other_tokens(np, Token![,](kw_span))
                     } else {
-                        out.push_other_tokens(np, Token![;](self.kw_span))
+                        out.push_other_tokens(np, Token![;](kw_span))
                     }
                 })
                 .transpose()?;
