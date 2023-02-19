@@ -109,4 +109,7 @@ where
         }
     }
 }
-fn main() {}
+fn main() {
+    let _: Option<EnumReference> = None;
+    let _: Option<EnumReference<i32>> = None;
+}

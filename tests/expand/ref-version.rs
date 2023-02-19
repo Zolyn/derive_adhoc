@@ -134,4 +134,7 @@ enum Enum<F = ()> {
     Struct { field: F },
 }
 
-fn main() {}
+fn main() {
+    let _: Option<EnumReference> = None;
+    let _: Option<EnumReference::<i32>> = None;
+}
