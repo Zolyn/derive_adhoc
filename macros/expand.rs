@@ -138,21 +138,14 @@ where
     }
 }
 
-impl<O: ExpansionOutput> SubstVType<O>
-where
-    TemplateElement<O>: Expand<O>,
-    O: ExpansionOutput,
-{
+impl SubstVType {
     fn expand(
         &self,
         ctx: &Context,
-        out: &mut O,
+        out: &mut TokenAccumulator,
         kw_span: Span,
         self_def: SubstDetails<TokenAccumulator>,
     ) -> syn::Result<()> {
-     // TODO this has anomalous formatting, but that's going to go away later
-     out.push_other_subst(&self.not_in_paste, |out| {
-
         let expand_spec_or_sd =
             |out: &mut _,
              spec: &Option<Template<TokenAccumulator>>,
@@ -227,21 +220,16 @@ where
             out.write_tokens(&generics);
         }
         Ok(())
-      })
     }
 }
 
-impl<O: ExpansionOutput> SubstVPat<O>
-where
-    TemplateElement<O>: Expand<O>,
-    O: ExpansionOutput,
-{
+impl SubstVPat {
     // $vpat      for struct    $tname         { $( $fname: $fpatname ) }
     // $vpat      for enum      $tname::$vname { $( $fname: $fpatname ) }
     fn expand(
         &self,
         ctx: &Context,
-        out: &mut O,
+        out: &mut TokenAccumulator,
         kw_span: Span,
     ) -> syn::Result<()> {
         let self_def = SD::tname(Default::default());
@@ -268,7 +256,7 @@ where
                 Ok::<_, syn::Error>(())
             })
         })?;
-        out.push_other_tokens(&self.vtype.not_in_paste, in_braces)?;
+        out.write_tokens(in_braces);
         Ok(())
     }
 }
@@ -479,10 +467,12 @@ where
                 Ok(())
             })?,
 
-            SD::vpat(v) => v.expand(ctx, out, self.span())?,
-            SD::vtype(v) => {
-                v.expand(ctx, out, self.span(), SD::ttype(Default::default()))?
-            }
+            SD::vpat(v, np, ..) => out.push_other_subst(np, |out| {
+                v.expand(ctx, out, self.span())
+            })?,
+            SD::vtype(v, np, ..) => out.push_other_subst(np, |out| {
+                v.expand(ctx, out, self.span(), SD::ttype(Default::default()))
+            })?,
 
             SD::tdefvariants(content, np, ..) => {
                 let delim = if ctx.is_enum() {

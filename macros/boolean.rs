@@ -93,8 +93,9 @@ impl Subst<BooleanContext> {
                 _ => false,
             },
 
-            SD::vtype(v) => void::unreachable(v.not_in_bool),
-            SD::vpat(v) => void::unreachable(v.vtype.not_in_bool),
+            // TODO merge this into the arms below
+            SD::vtype(_, _, not_in_bool) => void::unreachable(*not_in_bool),
+            SD::vpat(_, _, not_in_bool) => void::unreachable(*not_in_bool),
 
             SD::tname(not_in_bool)
             | SD::ttype(not_in_bool)

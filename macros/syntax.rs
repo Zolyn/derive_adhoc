@@ -116,9 +116,9 @@ pub enum SubstDetails<O: SubstParseContext> {
     // (The tuple nesting means we can have a single value to
     // pass to `do_vpat` in the parser in syntax.rs.)
     // TODO DOCS, move from clone-full.rs and/or partial-ord.rs
-    vpat(SubstVPat<O>),
+    vpat(SubstVPat, O::NotInPaste, O::NotInBool),
     // TODO DOCS, move from clone-full.rs and/or partial-ord.rs
-    vtype(SubstVType<O>),
+    vtype(SubstVType, O::NotInPaste, O::NotInBool),
 
     // TODO DOCS
     tdefvariants(Template<TokenAccumulator>, O::NotInPaste, O::NotInBool),
@@ -229,16 +229,14 @@ struct AdhocAttrList {
 }
 
 #[derive(Debug)]
-pub struct SubstVType<O: SubstParseContext> {
+pub struct SubstVType {
     pub self_: Option<Template<TokenAccumulator>>,
     pub vname: Option<Template<TokenAccumulator>>,
-    pub not_in_paste: O::NotInPaste,
-    pub not_in_bool: O::NotInBool,
 }
 
 #[derive(Debug)]
-pub struct SubstVPat<O: SubstParseContext> {
-    pub vtype: SubstVType<O>,
+pub struct SubstVPat {
+    pub vtype: SubstVType,
     pub fprefix: Option<Template<paste::Items>>,
 }
 
@@ -564,28 +562,26 @@ macro_rules! impl_parse_one_subkeyword { {
 } }
 
 impl_parse_one_subkeyword! {
-    SubstVType<O>:
+    SubstVType:
     ("self": .self_),
     (vname),
 }
 
 impl_parse_one_subkeyword! {
-    SubstVPat<O>:
+    SubstVPat:
     (..vtype),
     (fprefix),
 }
 
-impl<O: SubstParseContext> ParseUsingSubkeywords for SubstVType<O> {
-    fn new_default(tspan: Span) -> syn::Result<Self> {
+impl ParseUsingSubkeywords for SubstVType {
+    fn new_default(_tspan: Span) -> syn::Result<Self> {
         Ok(SubstVType {
             self_: None,
             vname: None,
-            not_in_paste: O::not_in_paste(&tspan)?,
-            not_in_bool: O::not_in_bool(&tspan)?,
         })
     }
 }
-impl<O: SubstParseContext> ParseUsingSubkeywords for SubstVPat<O> {
+impl ParseUsingSubkeywords for SubstVPat {
     fn new_default(tspan: Span) -> syn::Result<Self> {
         Ok(SubstVPat {
             vtype: SubstVType::new_default(tspan)?,
@@ -745,8 +741,14 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         keyword! { vattrs(input.parse()?, not_in_paste?, not_in_bool?) }
         keyword! { fattrs(input.parse()?, not_in_paste?, not_in_bool?) }
 
-        keyword! { vtype(SubstVType::parse(input, kw.span())?) }
-        keyword! { vpat(SubstVPat::parse(input, kw.span())?) }
+        keyword! { vtype(
+            SubstVType::parse(input, kw.span())?,
+            not_in_paste?, not_in_bool?,
+        ) }
+        keyword! { vpat(
+            SubstVPat::parse(input, kw.span())?,
+            not_in_paste?, not_in_bool?,
+        ) }
 
         keyword! { tdefvariants(
             parse_def_body(input)?,
