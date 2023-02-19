@@ -13,6 +13,7 @@ authors=["Ian Jackson <ijackson@chiark.greenend.org.uk>",
 description="Bizarrely incompatible copy of derive-adhoc, for testing"
 
 publish = false
+rust-version = "1.54"
 
 autotests = false
 

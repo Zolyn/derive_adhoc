@@ -27,3 +27,6 @@ pub mod doc_template_syntax {}
 
 #[doc=include_str!("../doc/implementation.md")]
 pub mod doc_implementation {}
+
+#[doc=include_str!("../CHANGELOG.md")]
+pub mod doc_changelog {}

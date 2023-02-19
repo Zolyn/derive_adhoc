@@ -8,6 +8,7 @@ authors=["Ian Jackson <ijackson@chiark.greenend.org.uk>",
 description="An ergonomic way to write derive() macros"
 homepage = "https://gitlab.torproject.org/Diziet/rust-derive-adhoc"
 repository = "https://gitlab.torproject.org/Diziet/rust-derive-adhoc"
+rust-version = "1.54"
 
 autotests = false
 
