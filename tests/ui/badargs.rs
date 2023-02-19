@@ -19,6 +19,8 @@ derive_adhoc! {
     ${for fields {
         f ${fname junk}() { }
     }}
+
+    ${if false { } else { } forbidden}
 }
 
 define_derive_adhoc! {
