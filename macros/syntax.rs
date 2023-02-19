@@ -688,6 +688,15 @@ impl<O: SubstParseContext> Parse for Subst<O> {
             Ok(inner)
         };
 
+        let parse_def_body = |input: ParseStream<'i>| {
+            if input.is_empty() {
+                return Err(kw.error(
+                    "tdefvariants needs to contain the variant definitions",
+                ));
+            }
+            Template::parse(input, Default::default())
+        };
+
         keyword! { tname(not_in_bool?) }
         keyword! { ttype(not_in_bool?) }
         keyword! { ttypedef(not_in_bool?) }
@@ -722,14 +731,10 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         keyword! { vtype(SubstVType::parse(input, kw.span())?) }
         keyword! { vpat(SubstVPat::parse(input, kw.span())?) }
 
-        keyword! { tdefvariants {
-            if input.is_empty() {
-                return Err(kw.error(
-                    "tdefvariants needs to contain the variant definitions"
-                ));
-            }
-            let content = Template::parse(input, Default::default())?;
-        } (content, not_in_paste?, not_in_bool?) }
+        keyword! { tdefvariants(
+            parse_def_body(input)?,
+            not_in_paste?, not_in_bool?,
+        ) }
 
         keyword! {
             paste {
