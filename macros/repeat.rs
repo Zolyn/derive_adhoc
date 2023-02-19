@@ -114,7 +114,6 @@ impl<O: SubstParseContext> Subst<O> {
             SD::fname(..) => Some(RO::Fields),
             SD::ttype(..) => None,
             SD::tdeftype(..) => None,
-            // TODO vtype
             SD::ftype(..) => Some(RO::Fields),
             SD::fpatname(_) => Some(RO::Fields),
             SD::Vis(SubstVis::T, ..) => None,

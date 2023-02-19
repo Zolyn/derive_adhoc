@@ -855,14 +855,14 @@ impl<O: SubstParseContext> SubstIf<O> {
                 otherwise = Some(
                     Template::parse(&content, not_in_nonterminal)?.into(),
                 );
-                break; // no more input allowed.
+                break;
+                // No more input allowed.
+                // Subst::parse_after_dollar will detect any remaining
+                // tokens and make an error if there are any.
             } else {
                 return Err(lookahead.error());
             }
         }
-
-        // TODO: Q: What ensures that there are no unhandled
-        // tokens left for us?
 
         Ok(SubstIf {
             kw_span,

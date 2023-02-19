@@ -309,35 +309,27 @@ impl Expand<TokenAccumulator> for TemplateElement<TokenAccumulator> {
     }
 }
 
-impl<O> SubstDetails<O>
-where
-    O: ExpansionOutput,
-    TemplateElement<O>: Expand<O>,
-{
-    fn expand(
-        self,
-        ctx: &Context,
-        out: &mut O,
-        kw_span: Span,
-    ) -> syn::Result<()> {
-        // TODO: swap out the bodies, and the which-calls-which of
-        // this and <Subst as Expand>::expand.
-        // Then this wouldn't need to consume `self`
-        Subst {
-            kw_span,
-            sd: self,
-            output_marker: PhantomData,
-        }
-        .expand(ctx, out)
-    }
-}
-
 impl<O> Expand<O> for Subst<O>
 where
     O: ExpansionOutput,
     TemplateElement<O>: Expand<O>,
 {
     fn expand(&self, ctx: &Context, out: &mut O) -> syn::Result<()> {
+        self.sd.expand(ctx, out, self.kw_span)
+    }
+}
+
+impl<O> SubstDetails<O>
+where
+    O: ExpansionOutput,
+    TemplateElement<O>: Expand<O>,
+{
+    fn expand(
+        &self,
+        ctx: &Context,
+        out: &mut O,
+        kw_span: Span,
+    ) -> syn::Result<()> {
         // eprintln!("@@@@@@@@@@@@@@@@@@@@ EXPAND {:?}", self);
 
         let do_meta = |wa: &SubstAttr, out, meta| wa.expand(ctx, out, meta);
@@ -392,16 +384,16 @@ where
         //   defining a new type      $ttypedef  Type<G: bounds>
         let do_ttype = |out: &mut O, colons: Option<()>, do_some_gens| {
             let _: &dyn Fn(&mut _) = do_some_gens; // specify type
-            let colons = colons.map(|()| Token![::](self.kw_span));
+            let colons = colons.map(|()| Token![::](kw_span));
             out.push_idpath(
-                self.kw_span,
+                kw_span,
                 |_| {},
                 &ctx.top.ident,
                 |out| {
                     out.write_tokens(colons);
-                    out.write_tokens(Token![<](self.kw_span));
+                    out.write_tokens(Token![<](kw_span));
                     do_some_gens(out);
-                    out.write_tokens(Token![>](self.kw_span));
+                    out.write_tokens(Token![>](kw_span));
                 },
             )
         };
@@ -412,7 +404,7 @@ where
                 if let Some(delim) = delim {
                     out.write_tokens(delimit_token_group(
                         delim,
-                        self.kw_span,
+                        kw_span,
                         |inside: &mut TokenAccumulator| {
                             Ok(content.expand(ctx, inside))
                         },
@@ -424,24 +416,24 @@ where
             })
         };
 
-        match &self.sd {
+        match self {
             SD::tname(_) => out.push_identfrag_toks(&ctx.top.ident),
             SD::ttype(_) => do_ttype(out, Some(()), &do_tgnames),
             SD::tdeftype(_) => do_ttype(out, None, &do_tgens),
             SD::vname(_) => {
-                out.push_identfrag_toks(&ctx.syn_variant(self)?.ident)
+                out.push_identfrag_toks(&ctx.syn_variant(&kw_span)?.ident)
             }
             SD::fname(_) => {
-                let fname = ctx.field(self)?.fname(self.kw_span);
+                let fname = ctx.field(&kw_span)?.fname(kw_span);
                 out.push_identfrag_toks(&fname);
             }
             SD::ftype(_) => {
-                let f = ctx.field(self)?;
-                out.push_syn_type(self.kw_span, &f.field.ty);
+                let f = ctx.field(&kw_span)?;
+                out.push_syn_type(kw_span, &f.field.ty);
             }
             SD::fpatname(_) => {
-                let f = ctx.field(self)?;
-                let fpatname = format_ident!("f_{}", f.fname(self.kw_span));
+                let f = ctx.field(&kw_span)?;
+                let fpatname = format_ident!("f_{}", f.fname(kw_span));
                 out.push_identfrag_toks(&fpatname);
             }
             SD::tmeta(wa) => do_meta(wa, out, ctx.tattrs)?,
@@ -449,7 +441,7 @@ where
             SD::fmeta(wa) => do_meta(wa, out, &ctx.field(wa)?.pfield.pattrs)?,
 
             SD::Vis(vis, np) => {
-                out.push_other_tokens(np, vis.syn_vis(ctx, self.kw_span)?)?
+                out.push_other_tokens(np, vis.syn_vis(ctx, kw_span)?)?
             }
             SD::tkeyword(_) => {
                 fn w<O>(out: &mut O, t: impl ToTokens)
@@ -470,12 +462,12 @@ where
                 ra.expand(ctx, out, &ctx.top.attrs)
             })?,
             SD::vattrs(ra, np, ..) => out.push_other_subst(np, |out| {
-                let variant = ctx.variant(self)?.variant;
+                let variant = ctx.variant(&kw_span)?.variant;
                 let attrs = variant.as_ref().map(|v| &*v.attrs);
                 ra.expand(ctx, out, attrs.unwrap_or_default())
             })?,
             SD::fattrs(ra, np, ..) => out.push_other_subst(np, |out| {
-                ra.expand(ctx, out, &ctx.field(self)?.field.attrs)
+                ra.expand(ctx, out, &ctx.field(&kw_span)?.field.attrs)
             })?,
 
             SD::tgens(np, ..) => out.push_other_subst(np, |out| {
@@ -501,10 +493,10 @@ where
 
             SD::vpat(v, np, ..) => out.push_other_subst(np, |out| {
                 // This comment prevents rustfmt making this unlike the others
-                v.expand(ctx, out, self.span())
+                v.expand(ctx, out, kw_span)
             })?,
             SD::vtype(v, np, ..) => out.push_other_subst(np, |out| {
-                v.expand(ctx, out, self.span(), SD::ttype(Default::default()))
+                v.expand(ctx, out, kw_span, SD::ttype(Default::default()))
             })?,
 
             SD::tdefvariants(content, np, ..) => {
@@ -517,7 +509,7 @@ where
             }
             SD::fdefine(spec_f, np, ..) => {
                 out.push_other_subst(np, |out| {
-                    let field = ctx.field(&self.kw_span)?.field;
+                    let field = ctx.field(&kw_span)?.field;
                     if let Some(driver_f) = &field.ident {
                         if let Some(spec_f) = spec_f {
                             spec_f.expand(ctx, out);
@@ -531,7 +523,7 @@ where
             }
             SD::vdefbody(vname, content, np, ..) => {
                 use syn::Fields as SF;
-                let variant = ctx.variant(&self.kw_span)?;
+                let variant = ctx.variant(&kw_span)?;
                 let enum_variant: Option<&syn::Variant> = variant.variant;
                 if enum_variant.is_some() {
                     vname.expand(ctx, out);
@@ -549,23 +541,23 @@ where
                 }
                 .map(|()| {
                     if enum_variant.is_some() {
-                        out.push_other_tokens(np, Token![,](self.kw_span))
+                        out.push_other_tokens(np, Token![,](kw_span))
                     } else {
-                        out.push_other_tokens(np, Token![;](self.kw_span))
+                        out.push_other_tokens(np, Token![;](kw_span))
                     }
                 })
                 .transpose()?;
             }
 
             SD::paste(content, np, ..) => {
-                out.expand_paste(np, ctx, self.span(), content)?
+                out.expand_paste(np, ctx, kw_span, content)?
             }
             SD::ChangeCase(content, case, nc, ..) => {
-                out.expand_case(nc, *case, ctx, self.span(), content)?
+                out.expand_case(nc, *case, ctx, kw_span, content)?
             }
 
             SD::when(..) => out.write_error(
-                self,
+                &kw_span,
                 "${when } only allowed in toplevel of $( )",
             ),
             SD::If(conds, ..) => conds.expand(ctx, out)?,

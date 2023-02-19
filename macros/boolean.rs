@@ -93,16 +93,13 @@ impl Subst<BooleanContext> {
                 _ => false,
             },
 
-            // TODO merge this into the arms below
-            SD::vtype(_, _, not_in_bool) => void::unreachable(*not_in_bool),
-            SD::vpat(_, _, not_in_bool) => void::unreachable(*not_in_bool),
-
             SD::tname(not_in_bool)
             | SD::ttype(not_in_bool)
             | SD::tdeftype(not_in_bool)
             | SD::vname(not_in_bool)
             | SD::fname(not_in_bool)
             | SD::ftype(not_in_bool)
+            | SD::vtype(_, _, not_in_bool)
             | SD::tkeyword(not_in_bool)
             | SD::tattrs(_, _, not_in_bool)
             | SD::vattrs(_, _, not_in_bool)
@@ -111,6 +108,7 @@ impl Subst<BooleanContext> {
             | SD::tdefgens(_, not_in_bool)
             | SD::tgnames(_, not_in_bool)
             | SD::twheres(_, not_in_bool)
+            | SD::vpat(_, _, not_in_bool)
             | SD::fpatname(not_in_bool)
             | SD::tdefvariants(_, _, not_in_bool)
             | SD::fdefine(_, _, not_in_bool)
