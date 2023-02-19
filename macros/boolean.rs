@@ -39,7 +39,7 @@ impl SubstParseContext for BooleanContext {
 
     fn not_in_bool(span: &impl Spanned) -> syn::Result<Void> {
         Err(span.error(
-            "derive-adhoc keyword is an expansion - not valid as a condition",
+            "derive-adhoc construct is an expansion - not valid in a condition",
         ))
     }
 }
