@@ -17,7 +17,7 @@ define_derive_adhoc! {
     // New expansions:
     //
     // $tkeyword                                      struct / enum / union
-    //   TODO should this be $tkwd?
+    //   TODO should this be $tkwd? $tdefkwd?
     //   We abbreviate many other things but this one is going to be
     //   more rarely used.
     //   https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/merge_requests/37#note_2877533
