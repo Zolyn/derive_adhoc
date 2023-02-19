@@ -242,6 +242,7 @@ pub struct SubstVPat {
 
 #[derive(Debug, Clone)]
 pub enum RawAttr {
+    Default,
     Include {
         entries: Punctuated<RawAttrEntry, token::Comma>,
     },
@@ -334,7 +335,7 @@ pub struct OrigDollarDeescapedProofToken {}
 ///
 /// Call this after seeing a `$`.
 /// The `ORIGDOLLAR` (hopefully) came from
-/// [`definition::escape_dollars`](crate::definition::escape_dollars).
+/// [`definition::escape_dollars`](escape_dollars).
 pub fn deescape_orig_dollar(
     input: ParseStream,
 ) -> syn::Result<OrigDollarDeescapedProofToken> {
@@ -890,6 +891,10 @@ impl RawAttrEntry {
 
 impl Parse for RawAttr {
     fn parse(input: ParseStream) -> syn::Result<Self> {
+        if input.is_empty() {
+            return Ok(RawAttr::Default);
+        }
+
         let la = input.lookahead1();
         let negated;
         if la.peek(Token![!]) {

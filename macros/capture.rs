@@ -44,12 +44,12 @@ impl Parse for InvocationAttr {
 
 /// This is #[derive(Adhoc)]
 pub fn derive_adhoc_derive_macro(
-    driver: TokenStream,
+    driver_stream: TokenStream,
 ) -> Result<TokenStream, syn::Error> {
     // TODO optimisation: parse this in a way that doesn't actually
     // parse the input data, with some custom CaptureInput which is
     // a bit like syn::DeriveInput.
-    let driver: syn::DeriveInput = syn::parse2(driver)?;
+    let driver: syn::DeriveInput = syn::parse2(driver_stream.clone())?;
 
     let driver_mac_name =
         format_ident!("derive_adhoc_driver_{}", &driver.ident);
@@ -96,16 +96,40 @@ pub fn derive_adhoc_derive_macro(
         })
         .transpose()?;
 
+    // If the driver contains any $ tokens, we must do something about them.
+    // Otherwise, they might get mangled by the macro_rules expander.
+    // In particular, the following cause trouble:
+    //   `$template`, `$passthrough` - taken as references to the
+    //      macro arguments.
+    //  `$$` - taken as a reference to the nightly `$$` macro rules feature
+    //     (which we would love to use here, but can't yet)
+    //
+    // `$ORGDOLLAR` is a literal dollar which comes from the driver
+    // invocation in invocation.rs.  This technique doesn't get the span
+    // right.  But getting the span right here is hard without having
+    // a whole new quoting scheme - see the discussion in the doc comment
+    // for `escape_dollars`.
+    //
+    // We can't use the technique we use for the template, because that
+    // technique relies on the fact that it's *us* that parses the template.
+    // But the driver is parsed for us by `syn`.
+    //
+    // Actual `$` in drivers will be very rare.  They could only appear in
+    // attributes or the like.  So, unlike with templates (which are
+    // full of important `$`s) we can probably live with the wrong spans.
+    let driver_escaped = escape_dollars(driver_stream);
+
     let mut output = quote! {
         #[allow(unused_macros)]
         #macro_export
         macro_rules! #driver_mac_name {
             {
                 { $($template:tt)* }
+                { ($ORGDOLLAR:tt) $(future:tt)* }
                 $($tpassthrough:tt)*
             } => {
                 #expand_macro!{
-                    { #driver }
+                    { #driver_escaped }
                     { }
                     { $($template)* }
                     { $($tpassthrough)* }
@@ -128,6 +152,7 @@ pub fn derive_adhoc_derive_macro(
         output.extend(quote! {
             #templ_path !{
                 { #driver }
+                { }
             }
         });
     }

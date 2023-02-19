@@ -161,7 +161,8 @@ and also an error if multiple values were specified.
 Expands to non-`#[adhoc()]` attributes.
 The attributes can be filtered:
 
-  * **`$Xattrs`**: All the attributes.
+  * **`$Xattrs`**: All the attributes
+    except `#[adhoc]` and `#[derive_adhoc]`
   * **`${Xattrs A1, A2, ...}`**, or
     **`${Xattrs = A, A2, ...}`**:
     Attributes `#[A1...]` and `#[A2...]` only.
@@ -171,7 +172,11 @@ The attributes can be filtered:
 With `${Xattrs}`, unlike `${Xmeta}`,
 
    * The expansion is all of the attributes, including the `#[...]`;
-   * All attributes, not just `#[adhoc(...)]`,, are included.
+   * All attributes, are included.
+   * But `#[adhoc(...)]` and `#[derive_adhoc(...)]` are *excluded* by default,
+     because typically they would be rejected by the compiler:
+     the expanded output is no longer within `#[derive(Adhoc)]`,
+     so those attributes are not recognised there.
    * The attributes can be filtered by toplevel attribute name,
      but not deeply manipulated.
 

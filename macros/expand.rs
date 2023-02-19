@@ -668,6 +668,14 @@ impl RawAttr {
     ) -> syn::Result<()> {
         for attr in attrs {
             match self {
+                RawAttr::Default => {
+                    if ["adhoc", "derive_adhoc"]
+                        .iter()
+                        .all(|exclude| !attr.path.is_ident(exclude))
+                    {
+                        out.write_tokens(attr);
+                    }
+                }
                 RawAttr::Include { entries } => {
                     let ent = entries.iter().find(|ent| ent.matches(attr));
                     if let Some(ent) = ent {

@@ -29,6 +29,7 @@ pub use void::{ResultVoidErrExt as _, ResultVoidExt as _, Void};
 
 pub use TokenTree as TT;
 
+pub use crate::definition::escape_dollars;
 pub use crate::framework::TokenAccumulator;
 pub use crate::utils::expand_macro_name;
 pub use crate::utils::ErrorAccumulator;
