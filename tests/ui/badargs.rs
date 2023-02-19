@@ -21,6 +21,8 @@ derive_adhoc! {
     }}
 
     ${if false { } else { } forbidden}
+
+    ${if tmeta(some_path) as lit { }}
 }
 
 define_derive_adhoc! {
