@@ -309,38 +309,28 @@ impl Expand<TokenAccumulator> for TemplateElement<TokenAccumulator> {
     }
 }
 
-impl<O> SubstDetails<O>
-where
-    O: ExpansionOutput,
-    TemplateElement<O>: Expand<O>,
-{
-    fn expand(
-        self,
-        ctx: &Context,
-        out: &mut O,
-        kw_span: Span,
-    ) -> syn::Result<()> {
-        // TODO: swap out the bodies, and the which-calls-which of
-        // this and <Subst as Expand>::expand.
-        // Then this wouldn't need to consume `self`
-        Subst {
-            kw_span,
-            sd: self,
-            output_marker: PhantomData,
-        }
-        .expand(ctx, out)
-    }
-}
-
 impl<O> Expand<O> for Subst<O>
 where
     O: ExpansionOutput,
     TemplateElement<O>: Expand<O>,
 {
     fn expand(&self, ctx: &Context, out: &mut O) -> syn::Result<()> {
-        // eprintln!("@@@@@@@@@@@@@@@@@@@@ EXPAND {:?}", self);
+        self.sd.expand(ctx, out, self.kw_span)
+    }
+}
 
-        let kw_span = self.kw_span;
+impl<O> SubstDetails<O>
+where
+    O: ExpansionOutput,
+    TemplateElement<O>: Expand<O>,
+{
+    fn expand(
+        &self,
+        ctx: &Context,
+        out: &mut O,
+        kw_span: Span,
+    ) -> syn::Result<()> {
+        // eprintln!("@@@@@@@@@@@@@@@@@@@@ EXPAND {:?}", self);
 
         let do_meta = |wa: &SubstAttr, out, meta| wa.expand(ctx, out, meta);
         let do_tgnames = |out: &mut TokenAccumulator| {
@@ -426,7 +416,7 @@ where
             })
         };
 
-        match &self.sd {
+        match self {
             SD::tname(_) => out.push_identfrag_toks(&ctx.top.ident),
             SD::ttype(_) => do_ttype(out, Some(()), &do_tgnames),
             SD::tdeftype(_) => do_ttype(out, None, &do_tgens),
