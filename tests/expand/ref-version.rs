@@ -118,17 +118,17 @@ define_derive_adhoc! {
 
 #[derive(Adhoc)]
 #[derive_adhoc(ReferenceVersion)]
-struct Tuple<F>(F);
+struct Tuple<F = ()>(F);
 
 #[derive(Adhoc)]
 #[derive_adhoc(ReferenceVersion)]
-struct Struct<F> {
+struct Struct<F = ()> {
     field: F,
 }
 
 #[derive(Adhoc)]
 #[derive_adhoc(ReferenceVersion)]
-enum Enum<F> {
+enum Enum<F = ()> {
     Unit,
     Tuple(F),
     Struct { field: F },

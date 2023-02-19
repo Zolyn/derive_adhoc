@@ -46,7 +46,7 @@ define_derive_adhoc! {
 
 #[derive(Adhoc, PartialEq)]
 #[derive_adhoc(VeryPartialOrd)]
-enum Enum<F: PartialEq, G>
+enum Enum<F: PartialEq = (), G = ()>
 where
     G: PartialEq,
 {

@@ -7,7 +7,7 @@
 use std::cmp::Ordering::{self, *};
 use derive_adhoc::{define_derive_adhoc, Adhoc};
 #[derive_adhoc(VeryPartialOrd)]
-enum Enum<F: PartialEq, G>
+enum Enum<F: PartialEq = (), G = ()>
 where
     G: PartialEq,
 {

@@ -9,7 +9,7 @@
 #![allow(dead_code)]
 use derive_adhoc::{define_derive_adhoc, Adhoc};
 #[derive_adhoc(ReferenceVersion)]
-struct Tuple<F>(F);
+struct Tuple<F = ()>(F);
 struct TupleReference<'reference, F>(&'reference F);
 impl<'reference, F> From<&'reference Tuple<F>> for TupleReference<'reference, F> {
     fn from(ref_to_owned: &'reference Tuple<F>) -> Self {
@@ -29,7 +29,7 @@ where
     }
 }
 #[derive_adhoc(ReferenceVersion)]
-struct Struct<F> {
+struct Struct<F = ()> {
     field: F,
 }
 struct StructReference<'reference, F> {
@@ -61,7 +61,7 @@ where
     }
 }
 #[derive_adhoc(ReferenceVersion)]
-enum Enum<F> {
+enum Enum<F = ()> {
     Unit,
     Tuple(F),
     Struct { field: F },
