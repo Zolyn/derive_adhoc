@@ -482,6 +482,10 @@ where
                 do_tgens_nodefs(out);
                 Ok(())
             })?,
+            SD::tdefgens(np, ..) => out.push_other_subst(np, |out| {
+                do_tgens(out);
+                Ok(())
+            })?,
             SD::tgnames(np, ..) => out.push_other_subst(np, |out| {
                 do_tgnames(out);
                 Ok(())

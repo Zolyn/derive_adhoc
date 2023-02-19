@@ -68,7 +68,7 @@ define_derive_adhoc! {
     // ?
     //
     // ${Xdefine BLAH} expands to either nothing, or BLAH-plus-framing
-    $tvis $tkeyword ${paste $tname Reference}<'reference, $tgens>
+    $tvis $tkeyword ${paste $tname Reference}<'reference, $tdefgens>
     ${tdefvariants $(
     // Or maybe:
     //${t_body_define_variants $(

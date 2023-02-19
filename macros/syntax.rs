@@ -109,6 +109,7 @@ pub enum SubstDetails<O: SubstParseContext> {
 
     // generics
     tgens(O::NotInPaste, O::NotInBool),
+    tdefgens(O::NotInPaste, O::NotInBool), // TODO DOCS
     tgnames(O::NotInPaste, O::NotInBool),
     twheres(O::NotInPaste, O::NotInBool),
 
@@ -731,6 +732,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         keyword! { v_is_named(bool_only?) }
 
         keyword! { tgens(not_in_paste?, not_in_bool?) }
+        keyword! { tdefgens(not_in_paste?, not_in_bool?) }
         keyword! { tgnames(not_in_paste?, not_in_bool?) }
         keyword! { twheres(not_in_paste?, not_in_bool?) }
 

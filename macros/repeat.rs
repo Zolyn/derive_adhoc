@@ -126,6 +126,7 @@ impl<O: SubstParseContext> Subst<O> {
             SD::vattrs(..) => Some(RO::Variants),
             SD::fattrs(..) => Some(RO::Fields),
             SD::tgens(..) => None,
+            SD::tdefgens(..) => None,
             SD::tgnames(..) => None,
             SD::twheres(..) => None,
             SD::vpat(..) => Some(RO::Variants),
