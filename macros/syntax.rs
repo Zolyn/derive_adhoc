@@ -213,6 +213,7 @@ pub struct SubstVPat<O: SubstParseContext> {
 
 #[derive(Debug, Clone)]
 pub enum RawAttr {
+    Default,
     Include {
         entries: Punctuated<RawAttrEntry, token::Comma>,
     },
@@ -806,6 +807,10 @@ impl RawAttrEntry {
 
 impl Parse for RawAttr {
     fn parse(input: ParseStream) -> syn::Result<Self> {
+        if input.is_empty() {
+            return Ok(RawAttr::Default);
+        }
+
         let la = input.lookahead1();
         let negated;
         if la.peek(Token![!]) {
