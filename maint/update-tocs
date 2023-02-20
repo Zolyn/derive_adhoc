@@ -8,6 +8,8 @@ case "$*" in
     *) echo >&2 'bad usage'; exit 1;;
 esac
 
+problems=false
+
 process_file () {
     file=$1
     perl <$file -wne '
@@ -40,8 +42,20 @@ process_file () {
     if $install; then
 	mv -f $file.new $file
     else
+	set +e
 	diff -u $file $file.new
+	rc=$?
+	set -e
+	case $rc in
+	    0) ;;
+	    1) problems=true ;;
+	    *) exit $rc ;;
+	esac
     fi
 }
 
 process_file doc/template-syntax.md
+
+if $problems; then
+    echo 'Documentation TOC mismatch - rerun maint/update-tocs'
+fi
