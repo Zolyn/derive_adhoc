@@ -104,7 +104,7 @@ impl Subst<BooleanContext> {
             | SD::fname(not_in_bool)
             | SD::ftype(not_in_bool)
             | SD::vtype(_, _, not_in_bool)
-            | SD::tkeyword(not_in_bool)
+            | SD::tdefkwd(not_in_bool)
             | SD::tattrs(_, _, not_in_bool)
             | SD::vattrs(_, _, not_in_bool)
             | SD::fattrs(_, _, not_in_bool)

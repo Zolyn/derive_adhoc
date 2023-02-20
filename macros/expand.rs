@@ -348,7 +348,6 @@ where
             }
         };
         let do_tgens_nodefs = |out: &mut TokenAccumulator| {
-            // TODO DOCS
             for pair in ctx.top.generics.params.pairs() {
                 use syn::GenericParam as GP;
                 let out_attrs = |out: &mut TokenAccumulator, attrs: &[_]| {
@@ -445,7 +444,7 @@ where
             SD::Vis(vis, np) => {
                 out.push_other_tokens(np, vis.syn_vis(ctx, kw_span)?)?
             }
-            SD::tkeyword(_) => {
+            SD::tdefkwd(_) => {
                 fn w<O>(out: &mut O, t: impl ToTokens)
                 where
                     O: ExpansionOutput,

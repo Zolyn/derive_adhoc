@@ -16,7 +16,6 @@ struct InvocationAttr {
 impl Parse for InvocationEntry {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let entry = if input.lookahead1().peek(Token![pub]) {
-            // TODO DOCS
             let vis = match input.parse()? {
                 syn::Visibility::Public(vis) => vis,
                 other => {

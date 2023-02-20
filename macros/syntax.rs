@@ -73,11 +73,9 @@ pub enum SubstDetails<O: SubstParseContext> {
     vname(O::NotInBool),
     fname(O::NotInBool),
     ftype(O::NotInBool),
-    // TODO DOCS, move from clone-full.rs and/or partial-ord.rs
     fpatname(O::NotInBool),
-    // TODO DOCS (also boolean)
     Vis(SubstVis, O::NotInPaste), // tvis, fvis
-    tkeyword(O::NotInBool),       // TODO docs, also paste
+    tdefkwd(O::NotInBool),
 
     // attributes
     tmeta(SubstAttr<O>),
@@ -89,27 +87,19 @@ pub enum SubstDetails<O: SubstParseContext> {
 
     // generics
     tgens(O::NotInPaste, O::NotInBool),
-    tdefgens(O::NotInPaste, O::NotInBool), // TODO DOCS
+    tdefgens(O::NotInPaste, O::NotInBool),
     tgnames(O::NotInPaste, O::NotInBool),
     twheres(O::NotInPaste, O::NotInBool),
 
-    // patterns
-    // (The tuple nesting means we can have a single value to
-    // pass to `do_vpat` in the parser in syntax.rs.)
-    // TODO DOCS, move from clone-full.rs and/or partial-ord.rs
     vpat(SubstVPat, O::NotInPaste, O::NotInBool),
-    // TODO DOCS, move from clone-full.rs and/or partial-ord.rs
     vtype(SubstVType, O::NotInPaste, O::NotInBool),
 
-    // TODO DOCS
     tdefvariants(Template<TokenAccumulator>, O::NotInPaste, O::NotInBool),
-    // TODO DOCS
     fdefine(
         Option<Template<TokenAccumulator>>,
         O::NotInPaste,
         O::NotInBool,
     ),
-    // TODO DOCS
     vdefbody(
         Template<O>,
         Template<TokenAccumulator>,
@@ -144,12 +134,12 @@ pub enum SubstDetails<O: SubstParseContext> {
     not(Box<Subst<BooleanContext>>, O::BoolOnly),
     any(Punctuated<Subst<BooleanContext>, token::Comma>, O::BoolOnly),
     all(Punctuated<Subst<BooleanContext>, token::Comma>, O::BoolOnly),
-    is_struct(O::BoolOnly), // TODO DOCS
+    is_struct(O::BoolOnly),
     is_enum(O::BoolOnly),
-    is_union(O::BoolOnly),   // TODO DOCS
-    v_is_unit(O::BoolOnly),  // TODO DOCS
-    v_is_tuple(O::BoolOnly), // TODO DOCS
-    v_is_named(O::BoolOnly), // TODO DOCS
+    is_union(O::BoolOnly),
+    v_is_unit(O::BoolOnly),
+    v_is_tuple(O::BoolOnly),
+    v_is_named(O::BoolOnly),
 
     // Explicit iteration
     For(RepeatedTemplate<O>, O::NotInBool),
@@ -700,7 +690,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         keyword! { fname(not_in_bool?) }
         keyword! { ftype(not_in_bool?) }
         keyword! { fpatname(not_in_bool?) }
-        keyword! { tkeyword(not_in_bool?) }
+        keyword! { tdefkwd(not_in_bool?) }
 
         keyword! { "tvis": Vis(SubstVis::T, not_in_paste?) }
         keyword! { "fvis": Vis(SubstVis::F, not_in_paste?) }

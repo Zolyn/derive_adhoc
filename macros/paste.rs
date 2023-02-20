@@ -292,7 +292,6 @@ impl ItemsData {
         // us $vpat to bind fields, not $fname, since $fname risks clashes
         // with other variables that might be in scope.  But the rustc error
         // messages for identifiers with the wrong span are rather poor.
-        // TODO DOCS for now, document this under $fname.
         let out_span = self.tspan;
 
         let nontrivial = self
