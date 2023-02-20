@@ -346,9 +346,12 @@ Exactly one of them must be true;
 or, none of them, bot only if an `else` is supplied -
 otherwise it is an error.
 
-### `${for fields { ... }}`, `${for variants { ... }}` - explicit repetition
+### `${for fields { ... }}`, `${for variants { ... }}`, `$( )` - repetition
 
-Expands the contents once per field, or once per variant.
+`${for ...}` expands the contents once per field, or once per variant.
+
+`$( ... )` expands the input with an appropriate number of iterations -
+see [Repetition and nesting](#repetition-and-nesting).
 
 ### `$tdefkwd` - keyword introducing the new data structure
 
