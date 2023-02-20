@@ -86,7 +86,9 @@ impl Trait for Struct {
 }
 #[derive_adhoc(Trait)]
 enum Enum {
+    #[adhoc(hello(there))]
     Unit,
+    #[adhoc(hello(there(inner)))]
     Tuple(usize),
     Named { field: usize },
 }
@@ -112,9 +114,9 @@ impl Trait for Enum {
         unsafe {
             match self {
                 #[allow(unused_variables)]
-                Enum::Unit {} => false,
+                Enum::Unit {} => true,
                 #[allow(unused_variables)]
-                Enum::Tuple { 0: f_0 } => false,
+                Enum::Tuple { 0: f_0 } => true,
                 #[allow(unused_variables)]
                 Enum::Named { field: f_field } => false,
             }
@@ -159,8 +161,8 @@ fn main() {
     test("struct", "unit", false, Unit);
     test("struct", "tuple", false, Tuple(0));
     test("struct", "named", false, Struct { field: 0 });
-    test("enum", "unit", false, Enum::Unit);
-    test("enum", "tuple", false, Enum::Tuple(0));
+    test("enum", "unit", true, Enum::Unit);
+    test("enum", "tuple", true, Enum::Tuple(0));
     test("enum", "named", false, Enum::Named { field: 0 });
     test("union", "named", false, Union { field: 0 });
 }
