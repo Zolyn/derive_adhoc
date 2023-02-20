@@ -76,6 +76,12 @@ The name of the field, variant, or toplevel type.
 This is an the identifier (without any path or generics).
 For tuple fields, `$fname` is the field number.
 
+`$fname` is not suitable for direct use as a local variable name.
+It might clash with other local variables;
+and, unlike most other expansions,
+`$fname` has the hygiene span of the driver field name.
+Instead, use `$vpat`, `$fpatname`, or `${paste ... $fname ...}`.
+
 ### `$ftype`, `$ttype` - types
 
 The type of the field, or the toplevel type.
