@@ -799,6 +799,12 @@ impl quote::IdentFragment for Fname<'_> {
             Fname::Index(v) => quote::IdentFragment::fmt(v, f),
         }
     }
+    fn span(&self) -> Option<Span> {
+        Some(match self {
+            Fname::Name(v) => (*v).span(),
+            Fname::Index(v) => v.span,
+        })
+    }
 }
 impl ToTokens for Fname<'_> {
     fn to_tokens(&self, out: &mut TokenStream) {
