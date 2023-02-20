@@ -1,12 +1,10 @@
+use derive_adhoc_tests::*;
+
 #[test]
 pub fn run_pass_expand() {
     let t = trybuild::TestCases::new();
-    let ignore = glob::Pattern::new("*.expanded.rs").unwrap();
-    for path in glob::glob("expand/*.rs").unwrap() {
-        let path = path.unwrap();
-        if ignore.matches_path(&path) {
-            continue;
-        }
+
+    for path in list_expand_test_paths() {
         t.pass(path);
     }
 }
