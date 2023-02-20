@@ -338,14 +338,13 @@ impl ItemsData {
                 }
             });
             let ident = items.collect::<String>();
-            catch_unwind(|| format_ident!("{}", ident, span = out_span)).map_err(
-                |_| {
+            catch_unwind(|| format_ident!("{}", ident, span = out_span))
+                .map_err(|_| {
                     out_span.error(format_args!(
                         "pasted identifier {:?} is invalid",
                         ident
                     ))
-                },
-            )
+                })
         }
 
         if let Some(nontrivial) = nontrivial {
