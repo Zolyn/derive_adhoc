@@ -86,6 +86,11 @@ the driver type argument to
 `derive_adhoc!{ }`
 had a path prefix.
 
+#### Examples
+
+ * `$ftype`: `std::iter::Once::<T>`
+ * `$ttype`: `Enum<'a, 'l, T, C>`
+
 ### `$tdeftype` - type name, for defining a new type
 
 The top-level driver type name in a form suitable for defining
