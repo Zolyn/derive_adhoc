@@ -192,7 +192,7 @@ With `${Xattrs}`, unlike `${Xmeta}`,
 Expand the contents and paste it together into a single identifier.
 The contents may only contain identifer fragments, strings (`"..."`),
 and (certain) expansions.
-Supported expansions are `${Xtype}`, `${Xname}`, `${Xmeta}`,
+Supported expansions are `$Xtype`, `$Xname`, `$Xmeta`,
 `${CASE_CHANGE}`,
 as well as conditionals and repetitions.
 
