@@ -97,7 +97,6 @@ pub enum SubstDetails<O: SubstParseContext> {
     // pass to `do_vpat` in the parser in syntax.rs.)
     // TODO DOCS, move from clone-full.rs and/or partial-ord.rs
     vpat(SubstVPat, O::NotInPaste, O::NotInBool),
-    // TODO DOCS, move from clone-full.rs and/or partial-ord.rs
     vtype(SubstVType, O::NotInPaste, O::NotInBool),
 
     // TODO DOCS

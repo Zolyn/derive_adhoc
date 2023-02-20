@@ -13,14 +13,8 @@ define_derive_adhoc! {
     VeryPartialOrd =
 
     // ${vpat    fprefix=f_ self=$tname vname=$vname}
-    // ${vtype              self=$ttype vname=$vname}
     //    each is a single template element, or in {...}
     //    defaults shown
-    //    vname not expanded in structs
-    // expands to something like
-    //    SELF ${if is_enum {:: VNAME}} { $(
-    //        $fname: ${paste FPREFIX $fname}
-    //    ) }
     impl<$tgens> PartialOrd for $ttype
     where $( $ftype: PartialOrd, )
           $twheres

@@ -104,16 +104,20 @@ Variants don't have visibility -
 Rust enum variants inherit visibility from the enum itself -
 so there is no `$vvis`.
 
-### `$ftype`, `$ttype`, `$tdeftype` - types
+### `$ftype`, `$vtype`, `$ttype`, `$tdeftype` - types
 
-The type of the field, or the toplevel type.
+The type of the field, variant, or the toplevel type.
 
-`$ftype` and `$type`
+`$ftype`, `$vtype` and `$type`
 are suitable for referencing the type in any context
 (for example, when defining the type of a binding,
 or as a type parameter for a generic type).
 These contains all necessary generics
 (as names, without any bounds etc., but within `::<...>`).
+
+`$vtype` includes both the top-level enum type, and the variant.
+To construct a value, prefer `$vtype` rather than `$ttype`,
+since `$vtype` works with enums too.
 
 `$tdeftype` is
 the top-level driver type name in a form suitable for defining
@@ -127,11 +131,29 @@ the driver type argument to
 `derive_adhoc!`
 had a path prefix.
 
+`$vtype` (and `$ttype` and `$tdeftype`) are not suitable for matching.
+Use `$vpat` for that.
+
+#### `$vtype` keyword arguments
+
+ * `self`: top level type.  Default is `$ttype`.
+   Must expand to a syntactically valid type.
+ * `vname`: variant name.  Default is `$vname`.
+   Not expanded for structs.
+
+These can be used to with `${paste }`
+to name related (derived) types and variants.
+
 #### Examples
 
  * `$ftype`: `std::iter::Once::<T>`
+ * `$vtype` for struct: `Tuple::<'a, 'l, T, C>`
+ * `$vtype` for enum variant: `Enum::TupleVariant::<'a, 'l, T, C>`
  * `$ttype`: `Enum::<'a, 'l, T, C>`
  * `$tdeftype`: `Enum<'a, 'l: 'a, T: Display = usize, const C: usize = 1>`
+ * `${vtype self=${paste $ttype Reference} vname=${paste Ref $vname}}`
+   for enum variant:
+   `EnumReference::RefTupleVariant::<'a, 'l, T, C>`
 
 ### `$tgens`, `$tgens`, `$twheres` - generics
 
@@ -227,7 +249,7 @@ With `${Xattrs}`, unlike `${Xmeta}`,
 Expand the contents and paste it together into a single identifier.
 The contents may only contain identifer fragments, strings (`"..."`),
 and (certain) expansions.
-Supported expansions are `$Xtype`, `$Xname`, `$Xmeta`,
+Supported expansions are `$ftype`, `$ttype`, `$tdeftype`, `$Xname`, `$Xmeta`,
 `${CASE_CHANGE}`,
 $tdefkwd,
 as well as conditionals and repetitions.
