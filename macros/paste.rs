@@ -48,7 +48,6 @@ enum Item {
     IdPath {
         pre: TokenStream,
         text: String,
-        span: Span,
         post: TokenStream,
         te_span: Span,
     },
@@ -221,7 +220,8 @@ impl Spanned for Item {
     fn span(&self) -> Span {
         match self {
             Item::Plain { span, .. } => *span,
-            Item::IdPath { span, .. } => *span,
+            // TODO this is going away
+            Item::IdPath { te_span, .. } => *te_span,
             Item::Path { path, .. } => path.span(),
         }
     }
@@ -363,7 +363,7 @@ impl ItemsData {
             let nontrivial = &mut items[0];
             let nontrivial_case = nontrivial.case;
 
-            let mk_ident_nt = |span, text: &str| {
+            let mk_ident_nt = |text: &str| {
                 mk_ident(
                     out_span,
                     chain!(
@@ -378,12 +378,11 @@ impl ItemsData {
                 Item::IdPath {
                     pre,
                     text,
-                    span,
                     post,
                     te_span: _,
                 } => {
                     out.write_tokens(mem::take(pre));
-                    out.write_tokens(mk_ident_nt(*span, text)?);
+                    out.write_tokens(mk_ident_nt(text)?);
                     out.write_tokens(/*mem::take(*/ post /*)*/);
                 }
                 Item::Path { path, .. } => {
@@ -398,18 +397,12 @@ impl ItemsData {
                         )
                         })?
                         .ident;
-                    *last = mk_ident_nt(last.span(), &last.to_string())?;
+                    *last = mk_ident_nt(&last.to_string())?;
                     out.write_tokens(path);
                 }
                 Item::Plain { .. } => panic!("trivial nontrivial"),
             }
         } else {
-            let span = self
-                .items
-                .first()
-                .ok_or_else(|| self.tspan.error("empty ${paste ... }"))?
-                .item
-                .span();
             out.write_tokens(mk_ident(out_span, plain_strs(&self.items))?);
         }
 
@@ -473,7 +466,6 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
         let mut post = TokenAccumulator::new();
         post_(&mut post);
         let text = ident.to_string();
-        let span = ident.span();
         let mut handle_err = |prepost: TokenAccumulator| {
             prepost.tokens().unwrap_or_else(|err| {
                 self.record_error(err);
@@ -486,7 +478,6 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
             pre,
             post,
             text,
-            span,
             te_span,
         });
     }
