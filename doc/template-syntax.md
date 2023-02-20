@@ -289,9 +289,34 @@ So `Xmeta(SUB(NAME))` is true if the driver has
 `#[adhoc(SUB(NAME(INNER=...)))]` or `#[adhoc(SUB(NAME))]` or
 `#[adhoc(SUB(NAME=LIT))]` or even `#[adhoc(SUB(NAME()))]`.
 
-### `is_enum`
+### `is_struct`, `is_enum`, `is_union`
 
-The driver data structure is an enum.
+The driver data structure is a struct, enum, or union, respectively.
+
+Prefer to avoid these explicit tests,
+when writing a template to work with either structs or enums.
+Instead,
+use `match` and `$vpat` for deconstructing values,
+and `$vtype` for constructing them.
+Use `$tdefvariants` when defining a derived type.
+
+### `v_is_unit`, `v_is_tuple`, `v_is_named`
+
+Whether and what kind of fields there are.
+
+ * `v_is_unit`: True for `struct Unit;`, and `Enum::UnitVariant;`
+ * `v_is_tuple`: True for `struct Tuple(...);`, and `Enum::TupleVariant(...);`
+ * `v_is_named`: True for `struct Struct {...}`, and `Enum::NamedVariant {...}`
+
+Prefer to avoid these explicit tests,
+when writing a template to work with any shape of structure.
+Instead,
+use Rust's universal `Typename { }` syntax,
+possibly via `$vpat` and `$fpatname`,
+or via `$vtype`.
+The `Typename { }` syntax can be used for matching and constructing
+all kinds of structures, including units and tuples.
+Use `$vdefbody` and `$fdefine` when defining a derived type.
 
 ### `false`, `true`, `not(CONDITION)`, `any(COND1,COND2,...)`, `all(COND1,COND2,...)` -- boolean logic
 
@@ -338,7 +363,7 @@ struct Tuple<'a, 'l: 'a, T: Display = usize, const C: usize = 1>(
     &'a &'l T,
 );
 
-struct Named<'a, 'l: 'a, T: Display = usize, const C: usize = 1>
+struct Struct<'a, 'l: 'a, T: Display = usize, const C: usize = 1>
 where T: 'l, T: TryInto<u8>
 {
     field: &'l &'a T,

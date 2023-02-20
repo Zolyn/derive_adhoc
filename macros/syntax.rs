@@ -144,12 +144,12 @@ pub enum SubstDetails<O: SubstParseContext> {
     not(Box<Subst<BooleanContext>>, O::BoolOnly),
     any(Punctuated<Subst<BooleanContext>, token::Comma>, O::BoolOnly),
     all(Punctuated<Subst<BooleanContext>, token::Comma>, O::BoolOnly),
-    is_struct(O::BoolOnly), // TODO DOCS
+    is_struct(O::BoolOnly),
     is_enum(O::BoolOnly),
-    is_union(O::BoolOnly),   // TODO DOCS
-    v_is_unit(O::BoolOnly),  // TODO DOCS
-    v_is_tuple(O::BoolOnly), // TODO DOCS
-    v_is_named(O::BoolOnly), // TODO DOCS
+    is_union(O::BoolOnly),
+    v_is_unit(O::BoolOnly),
+    v_is_tuple(O::BoolOnly),
+    v_is_named(O::BoolOnly),
 
     // Explicit iteration
     For(RepeatedTemplate<O>, O::NotInBool),
