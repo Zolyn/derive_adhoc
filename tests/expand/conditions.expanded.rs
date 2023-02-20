@@ -5,6 +5,7 @@ use derive_adhoc::{define_derive_adhoc, derive_adhoc, Adhoc};
 trait Trait {
     fn shape_top(&self) -> &'static str;
     fn shape_fields(&self) -> &'static str;
+    fn has_vmeta(&self) -> bool;
 }
 #[derive_adhoc(Trait)]
 struct Unit;
@@ -18,6 +19,15 @@ impl Trait for Unit {
             match self {
                 #[allow(unused_variables)]
                 Unit {} => "unit",
+            }
+        }
+    }
+    fn has_vmeta(&self) -> bool {
+        #[allow(unused_unsafe)]
+        unsafe {
+            match self {
+                #[allow(unused_variables)]
+                Unit {} => false,
             }
         }
     }
@@ -37,6 +47,15 @@ impl Trait for Tuple {
             }
         }
     }
+    fn has_vmeta(&self) -> bool {
+        #[allow(unused_unsafe)]
+        unsafe {
+            match self {
+                #[allow(unused_variables)]
+                Tuple { 0: f_0 } => false,
+            }
+        }
+    }
 }
 #[derive_adhoc(Trait)]
 struct Struct {
@@ -52,6 +71,15 @@ impl Trait for Struct {
             match self {
                 #[allow(unused_variables)]
                 Struct { field: f_field } => "named",
+            }
+        }
+    }
+    fn has_vmeta(&self) -> bool {
+        #[allow(unused_unsafe)]
+        unsafe {
+            match self {
+                #[allow(unused_variables)]
+                Struct { field: f_field } => false,
             }
         }
     }
@@ -79,6 +107,19 @@ impl Trait for Enum {
             }
         }
     }
+    fn has_vmeta(&self) -> bool {
+        #[allow(unused_unsafe)]
+        unsafe {
+            match self {
+                #[allow(unused_variables)]
+                Enum::Unit {} => false,
+                #[allow(unused_variables)]
+                Enum::Tuple { 0: f_0 } => false,
+                #[allow(unused_variables)]
+                Enum::Named { field: f_field } => false,
+            }
+        }
+    }
 }
 #[derive_adhoc(Trait)]
 union Union {
@@ -97,20 +138,29 @@ impl Trait for Union {
             }
         }
     }
+    fn has_vmeta(&self) -> bool {
+        #[allow(unused_unsafe)]
+        unsafe {
+            match self {
+                #[allow(unused_variables)]
+                Union { field: f_field } => false,
+            }
+        }
+    }
 }
 fn static_test() {}
-fn test(top: &str, fields: &str, v: impl Trait) {
-    if !(v.shape_top() == top && v.shape_fields() == fields) {
+fn test(top: &str, fields: &str, vmeta: bool, v: impl Trait) {
+    if !(v.shape_top() == top && v.shape_fields() == fields && v.has_vmeta() == vmeta) {
         { ::std::rt::begin_panic("explicit panic") }
     }
 }
 fn main() {
     static_test();
-    test("struct", "unit", Unit);
-    test("struct", "tuple", Tuple(0));
-    test("struct", "named", Struct { field: 0 });
-    test("enum", "unit", Enum::Unit);
-    test("enum", "tuple", Enum::Tuple(0));
-    test("enum", "named", Enum::Named { field: 0 });
-    test("union", "named", Union { field: 0 });
+    test("struct", "unit", false, Unit);
+    test("struct", "tuple", false, Tuple(0));
+    test("struct", "named", false, Struct { field: 0 });
+    test("enum", "unit", false, Enum::Unit);
+    test("enum", "tuple", false, Enum::Tuple(0));
+    test("enum", "named", false, Enum::Named { field: 0 });
+    test("union", "named", false, Union { field: 0 });
 }

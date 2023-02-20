@@ -7,6 +7,7 @@ use derive_adhoc::{define_derive_adhoc, derive_adhoc, Adhoc};
 trait Trait {
     fn shape_top(&self) -> &'static str;
     fn shape_fields(&self) -> &'static str;
+    fn has_vmeta(&self) -> bool;
 }
 
 define_derive_adhoc! {
@@ -30,6 +31,18 @@ define_derive_adhoc! {
                                v_is_tuple { "tuple" }
                                v_is_named { "named" }
                     },
+                ) }
+            }
+        }
+        fn has_vmeta(&self) -> bool {
+            #[allow(unused_unsafe)]
+            unsafe {
+                match self { $(
+                    #[allow(unused_variables)]
+                    // TODO maybe ${bool COND} for ${if ... true ... false} ?
+                    $vpat => ${if vmeta(hello(there))
+                               { true }
+                               else { false }},
                 ) }
             }
         }
@@ -86,9 +99,11 @@ derive_adhoc! {
     }
 }
 
-fn test(top: &str, fields: &str, v: impl Trait) {
+fn test(top: &str, fields: &str, vmeta: bool, v: impl Trait) {
     if !(v.shape_top() == top
-        && v.shape_fields() == fields) {
+        && v.shape_fields() == fields
+        && v.has_vmeta() == vmeta)
+    {
         panic!()
     }
 }
@@ -96,11 +111,11 @@ fn test(top: &str, fields: &str, v: impl Trait) {
 fn main() {
     static_test();
 
-    test("struct", "unit", Unit);
-    test("struct", "tuple", Tuple(0));
-    test("struct", "named", Struct { field: 0 });
-    test("enum", "unit", Enum::Unit);
-    test("enum", "tuple", Enum::Tuple(0));
-    test("enum", "named", Enum::Named { field: 0 });
-    test("union", "named", Union { field: 0 });
+    test("struct", "unit", false, Unit);
+    test("struct", "tuple", false, Tuple(0));
+    test("struct", "named", false, Struct { field: 0 });
+    test("enum", "unit", false, Enum::Unit);
+    test("enum", "tuple", false, Enum::Tuple(0));
+    test("enum", "named", false, Enum::Named { field: 0 });
+    test("union", "named", false, Union { field: 0 });
 }
