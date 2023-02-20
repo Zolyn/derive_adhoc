@@ -445,7 +445,7 @@ where
             SD::Vis(vis, np) => {
                 out.push_other_tokens(np, vis.syn_vis(ctx, kw_span)?)?
             }
-            SD::tkeyword(_) => {
+            SD::tdefkwd(_) => {
                 fn w<O>(out: &mut O, t: impl ToTokens)
                 where
                     O: ExpansionOutput,

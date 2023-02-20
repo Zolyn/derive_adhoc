@@ -130,7 +130,7 @@ impl<O: SubstParseContext> Subst<O> {
             SD::twheres(..) => None,
             SD::vpat(..) => Some(RO::Variants),
             SD::vtype(..) => Some(RO::Variants),
-            SD::tkeyword(..) => None,
+            SD::tdefkwd(..) => None,
             SD::is_struct(..) => None,
             SD::is_enum(..) => None,
             SD::is_union(..) => None,

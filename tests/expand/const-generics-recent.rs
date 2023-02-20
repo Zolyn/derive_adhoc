@@ -20,7 +20,7 @@ enum Enum<T = (), const N: usize = 1> {
 derive_adhoc! {
     Enum:
 
-    $tvis $tkeyword ${paste $tdeftype Copy}
+    $tvis $tdefkwd ${paste $tdeftype Copy}
     ${tdefvariants $(
         ${vdefbody $vname $(
             $fvis ${fdefine $fname} $ftype,

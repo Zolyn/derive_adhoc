@@ -16,11 +16,7 @@ define_derive_adhoc! {
 
     // New expansions:
     //
-    // $tkeyword                                      struct / enum / union
-    //   TODO should this be $tkwd? $tdefkwd?
-    //   We abbreviate many other things but this one is going to be
-    //   more rarely used.
-    //   https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/merge_requests/37#note_2877533
+    // $tdefkwd                                      struct / enum / union
     //
     // $tvis                                          toplevel visibility
     // $fvis                    for enum              always nothing
@@ -68,7 +64,7 @@ define_derive_adhoc! {
     // ?
     //
     // ${Xdefine BLAH} expands to either nothing, or BLAH-plus-framing
-    $tvis $tkeyword ${paste $tname Reference}<'reference, $tdefgens>
+    $tvis $tdefkwd ${paste $tname Reference}<'reference, $tdefgens>
     ${tdefvariants $(
     // Or maybe:
     //${t_body_define_variants $(
