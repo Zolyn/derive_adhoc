@@ -401,7 +401,7 @@ ${tdefvariants $(
 
 Expands to:
 
-```
+```ignore
 # use std::fmt::Display;
 struct TupleCopy<'a, 'l: 'a, T: Display = usize, const C: usize = 1,>(
     &'a &'l T,
@@ -509,7 +509,7 @@ which is used to implement the actual case changing.
 The example expansions in the syntax reference 
 are those generated for the following driver types:
 
-```
+```ignore
 # use std::fmt::Display;
 # use std::convert::TryInto;
 #
