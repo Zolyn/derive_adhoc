@@ -347,6 +347,31 @@ Specifically:
 named fields (a "struct" or "struct variant"),
 or nothing otherwise.
 
+#### Example
+
+```text
+$tvis $tdefkwd ${paste $tname Copy}<$tdefgens>
+${tdefvariants $(
+    ${vdefbody ${paste $vname Copy} $(
+        $fvis ${fdefine ${paste $fname _copy}} $ftype,
+    ) }
+) }
+```
+
+Expands to:
+
+```
+# use std::fmt::Display;
+struct TupleCopy<'a, 'l: 'a, T: Display = usize, const C: usize = 1,>(
+    &'a &'l T,
+);
+pub(crate) enum EnumCopy<'a, 'l: 'a, T: Display = usize, const C: usize = 1,> {
+    UnitVariantCopy,
+    TupleVariantCopy(std::iter::Once::<T>),
+    NamedVariantCopy { field_copy: &'l &'a T, /*...*/ }
+}
+```
+
 ### `${CASE_CHANGE ...}` - case changing
 
 Expands the content, and changes its case
