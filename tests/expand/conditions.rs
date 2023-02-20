@@ -59,6 +59,7 @@ struct Tuple(usize);
 
 #[derive(Adhoc)]
 #[derive_adhoc(Trait)]
+#[adhoc(hello(there = 42))]
 struct Struct {
     field: usize,
 }
@@ -115,7 +116,7 @@ fn main() {
 
     test("struct", "unit", false, Unit);
     test("struct", "tuple", false, Tuple(0));
-    test("struct", "named", false, Struct { field: 0 });
+    test("struct", "named", true, Struct { field: 0 });
     test("enum", "unit", true, Enum::Unit);
     test("enum", "tuple", true, Enum::Tuple(0));
     test("enum", "named", false, Enum::Named { field: 0 });
