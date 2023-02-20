@@ -77,7 +77,7 @@ pub enum SubstDetails<O: SubstParseContext> {
     fpatname(O::NotInBool),
     // TODO DOCS (also boolean)
     Vis(SubstVis, O::NotInPaste), // tvis, fvis
-    tdefkwd(O::NotInBool),        // TODO docs, also paste
+    tdefkwd(O::NotInBool),
 
     // attributes
     tmeta(SubstAttr<O>),

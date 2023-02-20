@@ -194,6 +194,7 @@ The contents may only contain identifer fragments, strings (`"..."`),
 and (certain) expansions.
 Supported expansions are `$Xtype`, `$Xname`, `$Xmeta`,
 `${CASE_CHANGE}`,
+$tdefkwd,
 as well as conditionals and repetitions.
 
 The contents can contain at most one occurrence of
@@ -241,6 +242,10 @@ otherwise it is an error.
 ### `${for fields { ... }}`, `${for variants { ... }}` - explicit repetition
 
 Expands the contents once per field, or once per variant.
+
+### `$tdefkwd` - keyword introducing the new data structure
+
+Expands to `struct`, `enum`, or `union`.
 
 ## Conditions
 
