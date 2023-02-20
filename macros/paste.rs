@@ -23,7 +23,7 @@ where
 /// Any case changing is done during assembly.
 #[derive(Debug)]
 pub struct ItemsData {
-    span: Span,
+    tspan: Span,
     items: Vec<ItemEntry>,
     errors: Vec<syn::Error>,
 }
@@ -182,7 +182,7 @@ impl CaseContext for () {
         case: ChangeCase,
         f: impl FnOnce(&mut Items<WithinCaseContext>) -> R,
     ) -> R {
-        let placeholder = ItemsData::new(outer.span);
+        let placeholder = ItemsData::new(outer.tspan);
         let inner = mem::replace(outer, placeholder);
         let mut inner = Items { data: inner, case };
         let r = catch_unwind(AssertUnwindSafe(|| f(&mut inner))).unwrap();
@@ -228,27 +228,27 @@ impl Spanned for Item {
 }
 
 impl Items<()> {
-    pub fn new(span: Span) -> Items<()> {
+    pub fn new(tspan: Span) -> Items<()> {
         Items {
-            data: ItemsData::new(span),
+            data: ItemsData::new(tspan),
             case: (),
         }
     }
 }
 
 impl Items<WithinCaseContext> {
-    pub fn new_case(span: Span, case: ChangeCase) -> Self {
+    pub fn new_case(tspan: Span, case: ChangeCase) -> Self {
         Items {
-            data: ItemsData::new(span),
+            data: ItemsData::new(tspan),
             case,
         }
     }
 }
 
 impl ItemsData {
-    fn new(span: Span) -> Self {
+    fn new(tspan: Span) -> Self {
         ItemsData {
-            span,
+            tspan,
             items: vec![],
             errors: vec![],
         }
@@ -389,7 +389,7 @@ impl ItemsData {
             let span = self
                 .items
                 .first()
-                .ok_or_else(|| self.span.error("empty ${paste ... }"))?
+                .ok_or_else(|| self.tspan.error("empty ${paste ... }"))?
                 .item
                 .span();
             out.write_tokens(mk_ident(span, plain_strs(&self.items))?);

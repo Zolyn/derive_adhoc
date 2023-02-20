@@ -443,10 +443,10 @@ impl ExpansionOutput for TokenAccumulator {
         &mut self,
         _not_in_paste: &(),
         ctx: &Context,
-        span: Span,
+        tspan: Span,
         paste_body: &Template<paste::Items>,
     ) -> syn::Result<()> {
-        let mut items = paste::Items::new(span);
+        let mut items = paste::Items::new(tspan);
         paste_body.expand(ctx, &mut items);
         items.assemble(self)
     }
@@ -455,10 +455,10 @@ impl ExpansionOutput for TokenAccumulator {
         _not_in_case: &(),
         case: paste::ChangeCase,
         ctx: &Context,
-        span: Span,
+        tspan: Span,
         paste_body: &Subst<paste::Items<paste::WithinCaseContext>>,
     ) -> syn::Result<()> {
-        let mut items = paste::Items::new_case(span, case);
+        let mut items = paste::Items::new_case(tspan, case);
         paste_body.expand(ctx, &mut items)?;
         items.assemble(self)
     }
