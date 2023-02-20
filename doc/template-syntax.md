@@ -291,13 +291,37 @@ which is used to implement the actual case changing.
 | `shouty_snake_case`  | `SHOUTY_SNAKE_CASE`              | `ShoutySnakeCase`                 | `SHOUTY_SNAKE_CASE`   |
 | `lower_camel_case`   | `lowerCamelCase`                 | `LowerCamelCase`                  | `lowerCamelCase`      |
 
-## Example struct
+## Structs used in examples
 
 The example expansions in the syntax reference 
 are those generated for the following driver types:
 
 ```
-struct Foo<'l:'a, T:X, const C=1> where T: 'a {
-    ...
+# use std::fmt::Display;
+# use std::convert::TryInto;
+#
+struct Unit<const C: usize = 1>;
+
+struct Tuple<'a, 'l: 'a, T: Display = usize, const C: usize = 1>(
+    &'a &'l T,
+);
+
+struct Named<'a, 'l: 'a, T: Display = usize, const C: usize = 1>
+where T: 'l, T: TryInto<u8>
+{
+    field: &'l &'a T,
+    field_b: String,
+}
+
+enum Enum<'a, 'l: 'a, T: Display = usize, const C: usize = 1>
+where T: 'l, T: TryInto<u8>
+{
+    UnitVariant,
+    TupleVariant(std::iter::Once::<T>),
+    NamedVariant { 
+        field: &'l &'a T,
+        field_b: String,
+        field_e: <T as TryInto<u8>>::Error,
+     },
 }
 ```
