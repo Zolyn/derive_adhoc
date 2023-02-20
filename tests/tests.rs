@@ -46,15 +46,17 @@ pub fn list_expand_test_paths() -> impl Iterator<Item = PathBuf> {
         #[cfg(not(feature = "recent"))]
         "*recent*",
     ]
-    .iter()
-    .map(|pat| glob::Pattern::new(pat).unwrap())
-    .collect();
+        .iter()
+        .map(|pat| glob::Pattern::new(pat).unwrap())
+        .collect();
 
-    glob::glob("expand/*.rs").unwrap().filter_map(move |path| {
-        let path = path.unwrap();
-        if ignores.iter().any(|pat| pat.matches_path(&path)) {
-            return None;
-        }
-        Some(path)
-    })
+    glob::glob("expand/*.rs")
+        .unwrap()
+        .filter_map(move |path| {
+            let path = path.unwrap();
+            if ignores.iter().any(|pat| pat.matches_path(&path)) {
+                return None;
+            }
+            Some(path)
+        })
 }
