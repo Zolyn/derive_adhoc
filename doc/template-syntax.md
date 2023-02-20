@@ -113,7 +113,7 @@ are suitable for referencing the type in any context
 (for example, when defining the type of a binding,
 or as a type parameter for a generic type).
 These contains all necessary generics
-(as names, without any bunds etc., but within `::<...>`).
+(as names, without any bounds etc., but within `::<...>`).
 
 `$tdeftype` is
 the top-level driver type name in a form suitable for defining
