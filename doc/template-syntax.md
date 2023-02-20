@@ -99,27 +99,27 @@ Generic parameters and bounds, from the toplevel type,
 in various forms.
 
    * **`$tgens`**:
-     The generic arguments, with bounds,
+     The generic arguments, with bounds, but without defaults,
      as written in the toplevel type definition.
-
-     Example: `'l:'a, T:X, const C=1,`
 
    * **`$tgnames`**:
      The generic argument names, without bounds,
-     as might be used in a field type or inherent impl.
-
-     Example: `'l, T, C,`
+     as might be used in a field type or on an impl.
 
    * **`$twheres`**:
      The where clauses, as written in the toplevel type definition.
-
-     Example: `T: 'a,`
 
 If not empty, will always have a trailing comma.
 
 Bounds appear in `$tgens` or `$twheres`,
 according to where they appear in the toplevel type,
 so for full support of generic types the template must expand both.
+
+#### Examples
+
+ * `$tgens`: `a, 'l: 'a, T: Display, const C: usize,`
+ * `$tgnames`: `'a, 'l, T, C,`
+ * `$twheres`: `T: 'l, T: TryInto<u8>,`
 
 ### <a name="derive_adhoc_syntax_Xmeta">`${tmeta(...)}` `${vmeta(...)}` `${fmeta(...)}`</a> - `#[adhoc]` attributes
 
