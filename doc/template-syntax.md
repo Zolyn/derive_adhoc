@@ -85,6 +85,10 @@ Instead, use `$vpat`, `$fpatname`, or `${paste ... $fname ...}`.
 ### `$ftype`, `$ttype` - types
 
 The type of the field, or the toplevel type.
+These are suitable for referencing the type in any context
+(for example, when defining the type of a binding,
+or as a type parameter for a generic type).
+
 This contains all necessary generics
 (as names, without any bunds etc., but within `::<...>`).
 For the toplevel type it doesn't contains a path prefix, even if
