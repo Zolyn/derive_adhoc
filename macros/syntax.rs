@@ -92,9 +92,6 @@ pub enum SubstDetails<O: SubstParseContext> {
     tgnames(O::NotInPaste, O::NotInBool),
     twheres(O::NotInPaste, O::NotInBool),
 
-    // patterns
-    // (The tuple nesting means we can have a single value to
-    // pass to `do_vpat` in the parser in syntax.rs.)
     // TODO DOCS, move from clone-full.rs and/or partial-ord.rs
     vpat(SubstVPat, O::NotInPaste, O::NotInBool),
     vtype(SubstVType, O::NotInPaste, O::NotInBool),
