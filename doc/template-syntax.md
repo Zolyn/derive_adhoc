@@ -318,6 +318,35 @@ writing
 generates
 `crate::config::ZingyFooBuilder<'a,T,C>`.
 
+### `$tdefvariants`, `$vdefbody`, `$fdefine` - tools for defining types
+
+These, used together, allow the template to expand to a
+new definition, mirroring the driver type in form.
+
+**`${tdefvariants VARIANTS}`** expands to `{ VARIANTS }` for an enum,
+or just `VARIANTS` otherwise.
+Usually, it would contain a `$( )` repeating over the variants,
+expanding `$vdefbody` for each one.
+
+**`${vdefbody VNAME FIELDS}`** expands to the definition of a variant,
+with a appropriate delimiters.
+Usualy, it would contain a `$( )` repeating over the fields,
+using `$fdefine` to introduce each one.
+Specifically:
+
+```text
+ ${vdefbody VANME FIELDS)}   for unit              nothing;
+ ${vdefbody VANME FIELDS)}   for tuple             ( FIELDS );
+ ${vdefbody VANME FIELDS)}   for struct            { FIELDS }
+ ${vdefbody VANME FIELDS)}   for unit variant      VNAME,
+ ${vdefbody VANME FIELDS)}   for tuple variant     VNAME ( FIELDS ),
+ ${vdefbody VANME FIELDS)}   for struct variant    VNAME { FIELDS }
+```
+
+**`${fdefine FNAME}`** expands to `FNAME:` in the context of
+named fields (a "struct" or "struct variant"),
+or nothing otherwise.
+
 ### `${CASE_CHANGE ...}` - case changing
 
 Expands the content, and changes its case

@@ -94,15 +94,12 @@ pub enum SubstDetails<O: SubstParseContext> {
     vpat(SubstVPat, O::NotInPaste, O::NotInBool),
     vtype(SubstVType, O::NotInPaste, O::NotInBool),
 
-    // TODO DOCS
     tdefvariants(Template<TokenAccumulator>, O::NotInPaste, O::NotInBool),
-    // TODO DOCS
     fdefine(
         Option<Template<TokenAccumulator>>,
         O::NotInPaste,
         O::NotInBool,
     ),
-    // TODO DOCS
     vdefbody(
         Template<O>,
         Template<TokenAccumulator>,
