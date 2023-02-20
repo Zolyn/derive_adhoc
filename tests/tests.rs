@@ -35,10 +35,16 @@ pub impl<T: Debug> T {
 
 /// List the test cases in tests/expand/*.rs
 ///
+/// Filters out tests with the word `recent` in,
+/// unless the `recent` cargo feature is enabled.
+/// These are tests that won't work with our MSRV.
+///
 /// Filters out *.expanded.rs.
 pub fn list_expand_test_paths() -> impl Iterator<Item = PathBuf> {
     let ignores: Vec<_> = [
         "*.expanded.rs",
+        #[cfg(not(feature = "recent"))]
+        "*recent*",
     ]
     .iter()
     .map(|pat| glob::Pattern::new(pat).unwrap())

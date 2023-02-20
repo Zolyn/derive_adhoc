@@ -12,8 +12,9 @@ publish = false
 
 [features]
 ui = []
+recent = [] # We're not running with the MWRV compiler
 default = []
-# We can't make macrotest and ui default features because
+# We can't make macrotest, ui and recent default features because
 # in 1.54 (which is why we want this) --no-default-features doesn't work.
 
 [dependencies]
