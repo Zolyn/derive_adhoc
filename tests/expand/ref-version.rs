@@ -74,7 +74,7 @@ define_derive_adhoc! {
     //${t_body_define_variants $(
         ${vdefbody $vname $(
         //${vdefine $vname $(
-            $fvis ${fdefine $fname } &'reference $ftype,
+            $fvis ${fdefine $fname} &'reference $ftype,
             // Tentatively rejected alternatives
             //$fvis ${fdefine $fname:} &'reference $ttype,
             //$fvis ${fdefine $fname:  &'reference $ttype},
