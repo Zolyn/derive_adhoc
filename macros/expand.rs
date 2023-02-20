@@ -434,7 +434,7 @@ where
             }
             SD::fpatname(_) => {
                 let f = ctx.field(&kw_span)?;
-                let fpatname = format_ident!("f_{}", f.fname(kw_span));
+                let fpatname = format_ident!("f_{}", f.fname(kw_span), span = kw_span);
                 out.push_identfrag_toks(&fpatname);
             }
             SD::tmeta(wa) => do_meta(wa, out, ctx.tattrs)?,

@@ -285,6 +285,24 @@ impl ItemsData {
             return Ok(());
         }
 
+        // We must always use a similar span when we emit identifiers
+        // that are going to be used to bind variables, or the hygiene
+        // system doesn't think they're the same identifier.
+        //
+        // We choose the template keyword span for this.
+        // (The span of `paste` in `${paste ...}`).
+        // This isn't perfect, since we might want to point at the driver,
+        // but we don't always have a suitable driver span.
+        //
+        // This applies to `fpatname`, `vpat`, and so on, too.
+        //
+        // TODO should this apply to fname too?  The template author ought to
+        // us $vpat to bind fields, not $fname, since $fname risks clashes
+        // with other variables that might be in scope.  But the rustc error
+        // messages for identifiers with the wrong span are rather poor.
+        // TODO DOCS for now, document this under $fname.
+        let out_span = self.tspan;
+
         let nontrivial = self
             .items
             .iter()
@@ -317,7 +335,7 @@ impl ItemsData {
         }
 
         fn mk_ident<'i>(
-            span: Span,
+            out_span: Span,
             items: impl Iterator<Item = (&'i str, Option<ChangeCase>)>,
         ) -> syn::Result<syn::Ident> {
             let items = items.map(|(s, case)| {
@@ -328,9 +346,9 @@ impl ItemsData {
                 }
             });
             let ident = items.collect::<String>();
-            catch_unwind(|| format_ident!("{}", ident, span = span)).map_err(
+            catch_unwind(|| format_ident!("{}", ident, span = out_span)).map_err(
                 |_| {
-                    span.error(format_args!(
+                    out_span.error(format_args!(
                         "pasted identifier {:?} is invalid",
                         ident
                     ))
@@ -347,7 +365,7 @@ impl ItemsData {
 
             let mk_ident_nt = |span, text: &str| {
                 mk_ident(
-                    span,
+                    out_span,
                     chain!(
                         plain_strs(items_before),
                         iter::once((text, nontrivial_case)),
@@ -392,7 +410,7 @@ impl ItemsData {
                 .ok_or_else(|| self.tspan.error("empty ${paste ... }"))?
                 .item
                 .span();
-            out.write_tokens(mk_ident(span, plain_strs(&self.items))?);
+            out.write_tokens(mk_ident(out_span, plain_strs(&self.items))?);
         }
 
         Ok(())
