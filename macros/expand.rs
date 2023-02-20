@@ -348,7 +348,6 @@ where
             }
         };
         let do_tgens_nodefs = |out: &mut TokenAccumulator| {
-            // TODO DOCS
             for pair in ctx.top.generics.params.pairs() {
                 use syn::GenericParam as GP;
                 let out_attrs = |out: &mut TokenAccumulator, attrs: &[_]| {

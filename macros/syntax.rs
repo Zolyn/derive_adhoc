@@ -87,7 +87,7 @@ pub enum SubstDetails<O: SubstParseContext> {
 
     // generics
     tgens(O::NotInPaste, O::NotInBool),
-    tdefgens(O::NotInPaste, O::NotInBool), // TODO DOCS
+    tdefgens(O::NotInPaste, O::NotInBool),
     tgnames(O::NotInPaste, O::NotInBool),
     twheres(O::NotInPaste, O::NotInBool),
 

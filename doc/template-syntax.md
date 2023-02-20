@@ -200,25 +200,30 @@ to name related (derived) types and variants.
    for enum variant:
    `EnumReference::RefTupleVariant::<'a, 'l, T, C>`
 
-### `$tgens`, `$tgens`, `$twheres` - generics
+### `$tgens`, `$tgens`, `$twheres`, `$tdefgens` - generics
 
 Generic parameters and bounds, from the toplevel type,
 in various forms.
 
    * **`$tgens`**:
-     The generic arguments, with bounds, but without defaults,
-     as written in the toplevel type definition.
+     The generic arguments, with bounds, but without defaults.
+     Suitable for use when starting an `impl`.
 
    * **`$tgnames`**:
-     The generic argument names, without bounds,
-     as might be used in a field type or on an impl.
+     The generic argument names, without bounds.
+     Suitable for use in a field type or in the body of an impl.
 
    * **`$twheres`**:
      The where clauses, as written in the toplevel type definition.
 
-If not empty, will always have a trailing comma.
+   * **`$tdefgens`**:
+     The generic arguments, with bounds, *with* defaults,
+     as written in the toplevel type definition,
+     suitable for defining a derived type.
 
-Bounds appear in `$tgens` or `$twheres`,
+If not empty, each of these will always have a trailing comma.
+
+Bounds appear in `$tgens`/`$tdefgens` or `$twheres`,
 according to where they appear in the toplevel type,
 so for full support of generic types the template must expand both.
 
@@ -227,6 +232,7 @@ so for full support of generic types the template must expand both.
  * `$tgens`: `a, 'l: 'a, T: Display, const C: usize,`
  * `$tgnames`: `'a, 'l, T, C,`
  * `$twheres`: `T: 'l, T: TryInto<u8>,`
+ * `$tdefgens`: `'a, 'l: 'a, T: Display = usize, const C: usize = 1,`
 
 ### <a name="derive_adhoc_syntax_Xmeta">`${tmeta(...)}` `${vmeta(...)}` `${fmeta(...)}`</a> - `#[adhoc]` attributes
 
