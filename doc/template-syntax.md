@@ -130,7 +130,7 @@ had a path prefix.
 #### Examples
 
  * `$ftype`: `std::iter::Once::<T>`
- * `$ttype`: `Enum<'a, 'l, T, C>`
+ * `$ttype`: `Enum::<'a, 'l, T, C>`
  * `$tdeftype`: `Enum<'a, 'l: 'a, T: Display = usize, const C: usize = 1>`
 
 ### `$tgens`, `$tgens`, `$twheres` - generics
