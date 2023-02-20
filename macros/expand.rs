@@ -249,7 +249,7 @@ impl SubstVPat {
                 if let Some(fprefix) = &self.fprefix {
                     fprefix.expand(ctx, &mut paste);
                 } else {
-                    paste.push_fixed_string("f_".into(), kw_span);
+                    paste.push_fixed_string("f_".into());
                 }
                 paste.push_identfrag_toks(&field.fname(kw_span));
 

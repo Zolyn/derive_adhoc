@@ -40,10 +40,14 @@ struct ItemEntry {
 }
 
 #[derive(Debug)]
+/// Entry in a `${paste ...}` or `${case ...}`
+///
+/// `te_span` is the span of this item entry in the template.
+/// It is used for error reporting if we can't cope with this entry
+/// (for example, if we have multiple nontrivial entries.)
 enum Item {
     Plain {
         text: String,
-        span: Span,
     },
     IdPath {
         pre: TokenStream,
@@ -216,17 +220,6 @@ impl CaseContext for WithinCaseContext {
     }
 }
 
-impl Spanned for Item {
-    fn span(&self) -> Span {
-        match self {
-            Item::Plain { span, .. } => *span,
-            // TODO this is going away
-            Item::IdPath { te_span, .. } => *te_span,
-            Item::Path { path, .. } => path.span(),
-        }
-    }
-}
-
 impl Items<()> {
     pub fn new(tspan: Span) -> Items<()> {
         Items {
@@ -260,14 +253,13 @@ impl<C: CaseContext> Items<C> {
         let case = C::push_case(self.case);
         self.data.items.push(ItemEntry { item, case });
     }
-    fn push_lit_pair<V: Display, S: Spanned>(&mut self, v: &V, s: &S) {
+    fn push_lit_pair<V: Display>(&mut self, v: &V) {
         self.push_item(Item::Plain {
             text: v.to_string(),
-            span: s.span(),
         })
     }
-    pub fn push_fixed_string(&mut self, text: String, span: Span) {
-        self.push_item(Item::Plain { text, span });
+    pub fn push_fixed_string(&mut self, text: String) {
+        self.push_item(Item::Plain { text });
     }
 
     /// Combine the accumulated pieces and write them as tokens
@@ -436,7 +428,7 @@ impl<C: CaseContext> SubstParseContext for Items<C> {
 
 impl<C: CaseContext> ExpansionOutput for Items<C> {
     fn push_display<S: Display + Spanned>(&mut self, plain: &S) {
-        self.push_lit_pair(plain, plain);
+        self.push_lit_pair(plain);
     }
     fn push_identfrag_toks<I: quote::IdentFragment + ToTokens>(
         &mut self,
@@ -449,7 +441,7 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
                 QIF::fmt(&self.0, f)
             }
         }
-        self.push_lit_pair(&AsIdentFragment(ident), ident);
+        self.push_lit_pair(&AsIdentFragment(ident));
     }
     fn push_idpath<A, B>(
         &mut self,
@@ -486,10 +478,9 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
         match lit {
             L::Str(s) => self.push_item(Item::Plain {
                 text: s.value(),
-                span: s.span(),
             }),
             L::Int(v) => self.push_display(v),
-            L::Bool(v) => self.push_lit_pair(&v.value(), lit),
+            L::Bool(v) => self.push_lit_pair(&v.value()),
             L::Verbatim(v) => self.push_display(v),
             x => self.write_error(
                 x,
