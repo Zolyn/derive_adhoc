@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -e -o pipefail
+
+toc=$(perl <doc/template-syntax.md -wne '
+	next unless s{^\#(\#+)\s+}{};
+	my $depth = length($1);
+	next if $depth > 2;
+	print "   " x $depth, "* ";
+	chomp;
+	my $txt = $_;
+	s{[^- \w]}{}g;
+	y/ A-Z/-a-z/;
+	print "[$txt](#$_)\n";
+')
+
+echo "$toc"
