@@ -82,7 +82,7 @@ define_derive_adhoc! {
     ) }
 
     impl<'reference, $tgens> From<&'reference $ttype>
-    for ${paste $tname Reference}<'reference, $tgens> {
+    for ${paste $tname Reference}<'reference, $tgnames> {
         fn from(ref_to_owned: &'reference $ttype) -> Self {
             match ref_to_owned { $(
                 $vpat => ${vtype self=${paste $ttype Reference}} { $(
@@ -97,7 +97,7 @@ define_derive_adhoc! {
         }
     }
 
-    impl<'reference, $tgens> ${paste $tname Reference}<'reference, $tgens>
+    impl<'reference, $tgens> ${paste $tname Reference}<'reference, $tgnames>
     where $( $ftype: Clone, )
     {
         fn cloned(&self) -> $ttype {
