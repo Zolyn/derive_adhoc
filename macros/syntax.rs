@@ -75,7 +75,6 @@ pub enum SubstDetails<O: SubstParseContext> {
     ftype(O::NotInBool),
     // TODO DOCS, move from clone-full.rs and/or partial-ord.rs
     fpatname(O::NotInBool),
-    // TODO DOCS (also boolean)
     Vis(SubstVis, O::NotInPaste), // tvis, fvis
     tdefkwd(O::NotInBool),
 

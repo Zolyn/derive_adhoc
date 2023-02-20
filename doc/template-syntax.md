@@ -91,6 +91,19 @@ and, unlike most other expansions,
 `$fname` has the hygiene span of the driver field name.
 Instead, use `$vpat`, `$fpatname`, or `${paste ... $fname ...}`.
 
+### `$fvis`, `$tvis` - visibility
+
+The declared visibility of the field, or toplevel type.
+
+Expands to `pub`, `pub(crate)`, etc.
+Expands to nothing for private types or private struct fields.
+
+Always expands to nothing for enum fields,
+even though those might be public.
+Variants don't have visibility -
+Rust enum variants inherit visibility from the enum itself -
+so there is no `$vvis`.
+
 ### `$ftype`, `$ttype`, `$tdeftype` - types
 
 The type of the field, or the toplevel type.
@@ -274,6 +287,18 @@ Expands to `struct`, `enum`, or `union`.
 Conditions all start with a `KEYWORD`.
 They are found within `${if }`, `${when }`, and `${select1 }`.
 
+### `fvis`, `tvis` - test for public visibility
+
+True iff the field, or the whole toplevel type, is `pub`.
+
+This tests only the syntax in the driver definition;
+a type which is `pub` might still not be reachable,
+for example if it is in a private inner module.
+
+Within-crate visibility, e.g. `pub(crate)`, is treated as "not visible"
+for the purposes of `fvis` and `tvis`
+(although the `$fvis` and `$tvis` expansions will handle those faithfully).
+
 ### `fmeta(NAME)`, `vmeta(NAME)`, `tmeta(NAME)` - `#[adhoc]` attributes
 
 Looks for `#[adhoc(NAME)]`.
@@ -357,7 +382,7 @@ are those generated for the following driver types:
 # use std::fmt::Display;
 # use std::convert::TryInto;
 #
-struct Unit<const C: usize = 1>;
+pub struct Unit<const C: usize = 1>;
 
 struct Tuple<'a, 'l: 'a, T: Display = usize, const C: usize = 1>(
     &'a &'l T,
@@ -370,7 +395,7 @@ where T: 'l, T: TryInto<u8>
     field_b: String,
 }
 
-enum Enum<'a, 'l: 'a, T: Display = usize, const C: usize = 1>
+pub(crate) enum Enum<'a, 'l: 'a, T: Display = usize, const C: usize = 1>
 where T: 'l, T: TryInto<u8>
 {
     UnitVariant,
