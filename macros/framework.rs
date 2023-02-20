@@ -297,7 +297,7 @@ impl<'c> Context<'c> {
         let tattrs = preprocess_attrs(&driver.attrs)?;
 
         let pvariants_one = |fields| {
-            let pattrs = vec![];
+            let pattrs = tattrs.clone(); // TODO Cow maybe?
             let pfields = preprocess_fields(fields)?;
             let pvariant = PreprocessedVariant {
                 fields,
