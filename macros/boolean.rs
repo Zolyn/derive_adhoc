@@ -39,7 +39,7 @@ impl SubstParseContext for BooleanContext {
 
     fn not_in_bool(span: &impl Spanned) -> syn::Result<Void> {
         Err(span.error(
-            "derive-adhoc keyword is an expansion - not valid as a condition",
+            "derive-adhoc construct is an expansion - not valid in a condition",
         ))
     }
 }
@@ -48,11 +48,15 @@ impl Subst<BooleanContext> {
     pub fn eval_bool(&self, ctx: &Context) -> syn::Result<bool> {
         // eprintln!("@@@@@@@@@@@@@@@@@@@@ EVAL {:?}", self);
 
-        macro_rules! eval_attr { { $wa:expr, $lev:ident, $($pattrs:tt)* } => {
+        macro_rules! eval_attr { { $wa:expr, $lev:ident, $($pattrs:tt)* } => { {
+            let SubstAttr { path, as_, as_span: _ } = $wa;
+            if let Some(as_) = as_ {
+                void::unreachable(as_.1)
+            }
             is_found(ctx.for_with_within::<$lev,_,_>(|_ctx, within| {
-                $wa.path.search_eval_bool(&within . $($pattrs)*)
+                path.search_eval_bool(&within . $($pattrs)*)
             }))
-        } }
+        } } }
         let v_fields = || ctx.variant(&self.kw_span).map(|v| &v.fields);
         use syn::Fields as SF;
 

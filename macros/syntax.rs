@@ -65,26 +65,6 @@ pub struct Subst<O: SubstParseContext> {
 /// that ensures that detection of such errors occurs during template parsing.
 #[allow(non_camel_case_types)] // clearer to use the exact ident
 #[derive(Debug)]
-// TODO: This comment is largely obsolete,
-// but we should review the ${if } parsing to see if it can be
-// dealt with at parse type using `SubstParseContext`
-//
-// TODO: it might be good to separate this into separate enums for
-// conditions and substitutions? -nickm
-// I don't think so.  I unified these because the following places
-// wanted to treat them very similarly:
-//   - parsing
-//   - iteration inspection
-//   - attribute recursive descent matching
-// Keeping them a single type avoids us making weird syntactic
-// wrinkles (and may help avoid semantic wrinkles). -Diziet
-//
-// Hrm, actually, compare
-//     ${if fmeta(foo) { ...
-//     ${fmeta(foo) as ty}
-// and this demonstrates different parsing.  We want to forbid
-//     ${if fmeta(foo) as ty { ...
-// and right now that is a bit funny.
 pub enum SubstDetails<O: SubstParseContext> {
     // variables
     tname(O::NotInBool),
@@ -100,9 +80,9 @@ pub enum SubstDetails<O: SubstParseContext> {
     tkeyword(O::NotInBool),       // TODO docs, also paste
 
     // attributes
-    tmeta(SubstAttr),
-    vmeta(SubstAttr),
-    fmeta(SubstAttr),
+    tmeta(SubstAttr<O>),
+    vmeta(SubstAttr<O>),
+    fmeta(SubstAttr<O>),
     tattrs(RawAttr, O::NotInPaste, O::NotInBool),
     vattrs(RawAttr, O::NotInPaste, O::NotInBool),
     fattrs(RawAttr, O::NotInPaste, O::NotInBool),
@@ -200,9 +180,9 @@ pub enum SubstVis {
 }
 
 #[derive(Debug, Clone)]
-pub struct SubstAttr {
+pub struct SubstAttr<O: SubstParseContext> {
     pub path: SubstAttrPath,
-    pub as_: Option<SubstAttrAs>,
+    pub as_: Option<(SubstAttrAs, O::NotInBool)>,
     pub as_span: Span,
 }
 
@@ -263,7 +243,7 @@ impl<O: SubstParseContext> Spanned for Subst<O> {
     }
 }
 
-impl Spanned for SubstAttr {
+impl<O: SubstParseContext> Spanned for SubstAttr<O> {
     fn span(&self) -> Span {
         self.path.span()
     }
@@ -402,7 +382,7 @@ impl Parse for AdhocAttrList {
     }
 }
 
-impl Parse for SubstAttr {
+impl<O: SubstParseContext> Parse for SubstAttr<O> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let path: SubstAttrPath = input.parse()?;
 
@@ -410,12 +390,13 @@ impl Parse for SubstAttr {
         let as_span;
 
         if input.peek(Token![as]) {
-            let _: Token![as] = input.parse()?;
+            let as_token: Token![as] = input.parse()?;
             let kw = input.call(syn::Ident::parse_any)?;
             as_span = kw.span();
-            as_ = Some(SubstAttrAs::iter().find(|as_| kw == as_).ok_or_else(
+            let as_ty = SubstAttrAs::iter().find(|as_| kw == as_).ok_or_else(
                 || kw.error("unknown derive-adhoc 'as' syntax type keyword"),
-            )?);
+            )?;
+            as_ = Some((as_ty, O::not_in_bool(&as_token)?));
         } else {
             as_ = None;
             as_span = path.span();

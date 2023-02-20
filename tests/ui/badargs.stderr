@@ -24,13 +24,19 @@ error: unexpected arguments to expansion keyword
 23 |     ${if false { } else { } forbidden}
    |                             ^^^^^^^^^
 
-error: unexpected arguments to expansion keyword
-  --> ui/badargs.rs:29:26
+error: derive-adhoc construct is an expansion - not valid in a condition
+  --> ui/badargs.rs:25:27
    |
-29 |     type Alias = ${ttype $junk};
+25 |     ${if tmeta(some_path) as lit { }}
+   |                           ^^
+
+error: unexpected arguments to expansion keyword
+  --> ui/badargs.rs:31:26
+   |
+31 |     type Alias = ${ttype $junk};
    |                          ^
 ...
-32 | #[derive(Adhoc)]
+34 | #[derive(Adhoc)]
    |          ----- in this derive macro expansion
    |
    = note: this error originates in the macro `derive_adhoc_template_Broken` which comes from the expansion of the derive macro `Adhoc` (in Nightly builds, run with -Z macro-backtrace for more info)

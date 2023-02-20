@@ -332,7 +332,7 @@ where
     ) -> syn::Result<()> {
         // eprintln!("@@@@@@@@@@@@@@@@@@@@ EXPAND {:?}", self);
 
-        let do_meta = |wa: &SubstAttr, out, meta| wa.expand(ctx, out, meta);
+        let do_meta = |wa: &SubstAttr<_>, out, meta| wa.expand(ctx, out, meta);
         let do_tgnames = |out: &mut TokenAccumulator| {
             for pair in ctx.top.generics.params.pairs() {
                 use syn::GenericParam as GP;
@@ -583,16 +583,16 @@ where
     }
 }
 
-impl SubstAttr {
-    fn expand<O>(
+impl<O> SubstAttr<O>
+where
+    O: ExpansionOutput,
+{
+    fn expand(
         &self,
         ctx: &Context,
         out: &mut O,
         pattrs: &PreprocessedAttrs,
-    ) -> syn::Result<()>
-    where
-        O: ExpansionOutput,
-    {
+    ) -> syn::Result<()> {
         let mut found = None;
         let error_loc = || [(self.span(), "expansion"), ctx.error_loc()];
 
@@ -612,7 +612,9 @@ impl SubstAttr {
             )
         })?;
 
-        found.expand(self.span(), &self.as_, out)?;
+        let as_ = self.as_.as_ref().map(|(as_, _nb)| as_);
+
+        found.expand(self.span(), as_, out)?;
 
         Ok(())
     }
@@ -651,7 +653,7 @@ impl<'l> AttrValue<'l> {
     fn expand<O>(
         &self,
         tspan: Span,
-        as_: &Option<SubstAttrAs>,
+        as_: Option<&SubstAttrAs>,
         out: &mut O,
     ) -> syn::Result<()>
     where
