@@ -115,6 +115,40 @@ Variants don't have visibility -
 Rust enum variants inherit visibility from the enum itself -
 so there is no `$vvis`.
 
+### `$vpat`, `$fpatname` - pattern matching and value deconstruction
+
+`$vpat` expands to a pattern
+suitable for matching a value of the top-level type.
+It expands to `TYPE { FIELD: f_FNAME .. }`,
+where `TYPE` names the top-level type or enum variant.
+(`TYPE` doesn't have generics,
+since those are not allowed in patterns.)
+
+Each field is bound to a local variant `f_FNAME`,
+where `FNAME` is the actual field name (or tuple field number).
+
+`$vpatname` expands to `f_FNAME` for the current field.
+
+#### `$vpat` named arguments
+
+ * `self`: top level type path.  Default is `$tname`.
+   Must expand to a syntactically valid type path,
+   without generics.
+ * `vname`: variant name.  Default is `$vname`.
+   Not expanded for structs.
+ * `fprefix`: prefix to use for the local bindings.
+   Useful if you need to bind multiple values at once.
+   Default is `f_`.
+   When using this, use `${paste FPREFIX $fname}`
+   rather than `$fpatname`.
+
+#### Examples
+
+ * `$vpat` for structs: `Unit { }`, `Tuple { 0: f_0 }`
+ * `$vpat` for a variant: `Enum::NamedVariant { field: f_field, ... }`
+ * `$vpatname`: `f_0`, `f_field`.
+ * `${vpat self=${paste $tname Reference} vname=${paste Ref $vname} fprefix=other_}`: `EnumReference::RefNamedVariant { field: other_field, ... }`
+
 ### `$ftype`, `$vtype`, `$ttype`, `$tdeftype` - types
 
 The type of the field, variant, or the toplevel type.
@@ -145,7 +179,7 @@ had a path prefix.
 `$vtype` (and `$ttype` and `$tdeftype`) are not suitable for matching.
 Use `$vpat` for that.
 
-#### `$vtype` keyword arguments
+#### `$vtype` named arguments
 
  * `self`: top level type.  Default is `$ttype`.
    Must expand to a syntactically valid type.

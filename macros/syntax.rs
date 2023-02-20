@@ -73,7 +73,6 @@ pub enum SubstDetails<O: SubstParseContext> {
     vname(O::NotInBool),
     fname(O::NotInBool),
     ftype(O::NotInBool),
-    // TODO DOCS, move from clone-full.rs and/or partial-ord.rs
     fpatname(O::NotInBool),
     Vis(SubstVis, O::NotInPaste), // tvis, fvis
     tdefkwd(O::NotInBool),
@@ -92,7 +91,6 @@ pub enum SubstDetails<O: SubstParseContext> {
     tgnames(O::NotInPaste, O::NotInBool),
     twheres(O::NotInPaste, O::NotInBool),
 
-    // TODO DOCS, move from clone-full.rs and/or partial-ord.rs
     vpat(SubstVPat, O::NotInPaste, O::NotInBool),
     vtype(SubstVType, O::NotInPaste, O::NotInBool),
 
