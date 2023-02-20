@@ -318,6 +318,43 @@ writing
 generates
 `crate::config::ZingyFooBuilder<'a,T,C>`.
 
+### `${CASE_CHANGE ...}` - case changing
+
+Expands the content, and changes its case
+(eg. uppercase to lowercase, etc.
+See [Case changing](#case-changing).
+
+### `${when CONDITION}` - filtering out repetitions by a predicate
+
+Allowed only within repetitions, and only at the toplevel
+of the repetition,
+before other expansions.
+Skips this repetition if the `CONDITION` is not true.
+
+### `${if COND1 { ... } else if COND2 { ... } else { ... }}` - conditional
+
+Conditionals.  The else clause is, of course, optional.
+The `else if` between arms is also optional,
+but `else` in the fallback clause is mandatory.
+So you can write `${if COND1 { ... } COND2 { ... } else { ... }`.
+
+### `${select1 COND1 { ... } else if COND2 { ... } else { ... }}` - expect precisely one predicate
+
+Conditionals which insist on expanding exactly one of the branches.
+Syntax is identical to that of `${if }`.
+*All* of the `COND` are always evaluated.
+Exactly one of them must be true;
+or, none of them, bot only if an `else` is supplied -
+otherwise it is an error.
+
+### `${for fields { ... }}`, `${for variants { ... }}` - explicit repetition
+
+Expands the contents once per field, or once per variant.
+
+### `$tdefkwd` - keyword introducing the new data structure
+
+Expands to `struct`, `enum`, or `union`.
+
 ### `$tdefvariants`, `$vdefbody`, `$fdefine` - tools for defining types
 
 These, used together, allow the template to expand to a
@@ -371,43 +408,6 @@ pub(crate) enum EnumCopy<'a, 'l: 'a, T: Display = usize, const C: usize = 1,> {
     NamedVariantCopy { field_copy: &'l &'a T, /*...*/ }
 }
 ```
-
-### `${CASE_CHANGE ...}` - case changing
-
-Expands the content, and changes its case
-(eg. uppercase to lowercase, etc.
-See [Case changing](#case-changing).
-
-### `${when CONDITION}` - filtering out repetitions by a predicate
-
-Allowed only within repetitions, and only at the toplevel
-of the repetition,
-before other expansions.
-Skips this repetition if the `CONDITION` is not true.
-
-### `${if COND1 { ... } else if COND2 { ... } else { ... }}` - conditional
-
-Conditionals.  The else clause is, of course, optional.
-The `else if` between arms is also optional,
-but `else` in the fallback clause is mandatory.
-So you can write `${if COND1 { ... } COND2 { ... } else { ... }`.
-
-### `${select1 COND1 { ... } else if COND2 { ... } else { ... }}` - expect precisely one predicate
-
-Conditionals which insist on expanding exactly one of the branches.
-Syntax is identical to that of `${if }`.
-*All* of the `COND` are always evaluated.
-Exactly one of them must be true;
-or, none of them, bot only if an `else` is supplied -
-otherwise it is an error.
-
-### `${for fields { ... }}`, `${for variants { ... }}` - explicit repetition
-
-Expands the contents once per field, or once per variant.
-
-### `$tdefkwd` - keyword introducing the new data structure
-
-Expands to `struct`, `enum`, or `union`.
 
 ## Conditions
 
