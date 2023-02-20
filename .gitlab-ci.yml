@@ -17,6 +17,13 @@ cargo-check:
     - cargo fmt --verbose --check
 
 
+# Warning-only checks
+check-doc-tocs:
+  stage: test
+  allow_failure: true
+  script:
+    - maint/update-tocs --check
+
 # Actual tests
 cargo-test:
   stage: test
