@@ -1,5 +1,11 @@
 # **Template syntax reference**
 
+**Table of contents**
+
+<!--##toc##-->
+
+## Template syntax overview
+
 Within the macro template,
 expansions (and control structures) are introduced with `$`.
 They generally refer to properties of the data structure that

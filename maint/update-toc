@@ -2,7 +2,15 @@
 
 set -e -o pipefail
 
-toc=$(perl <doc/template-syntax.md -wne '
+case "$*" in
+    --check) install=false;;
+    '') install=true;;
+    *) echo >&2 'bad usage'; exit 1;;
+esac
+
+process_file () {
+    file=$1
+    perl <$file -wne '
 	next unless s{^\#(\#+)\s+}{};
 	my $depth = length($1);
 	next if $depth > 2;
@@ -12,6 +20,27 @@ toc=$(perl <doc/template-syntax.md -wne '
 	s{[^- \w]}{}g;
 	y/ A-Z/-a-z/;
 	print "[$txt](#$_)\n";
-')
+    ' | perl -wne '
+	BEGIN {
+	    $toc = do { local $/ = undef; <STDIN>; };
+	    $toc =~ s{\n+}{};
+	}
+	print unless $skip;
+	if (m{^\Q<!--##toc##-->}) {
+            $skip = 1;
+	    print $toc, "\n";
+	    next;
+    	}
+	if (!m{^ +\*}) {
+            $skip = 0;
+	}
+    ' $file >$file.new
 
-echo "$toc"
+    if $install; then
+	mv -f $file.new $file
+    else
+	diff -u $file $file.new
+    fi
+}
+
+process_file doc/template-syntax.md
