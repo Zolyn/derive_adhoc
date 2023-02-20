@@ -27,6 +27,7 @@ pub enum AttrValue<'l> {
 /// What would `${fname}` expand to?  As type from [`syn`].
 ///
 /// Implements [`quote::IdentFragment`] and [`ToTokens`].
+#[derive(Debug)]
 pub enum Fname<'r> {
     Name(&'r syn::Ident),
     Index(syn::Index),
@@ -248,7 +249,7 @@ impl SubstVPat {
                 if let Some(fprefix) = &self.fprefix {
                     fprefix.expand(ctx, &mut paste);
                 } else {
-                    paste.push_fixed_string("f_".into(), kw_span);
+                    paste.push_fixed_string("f_".into());
                 }
                 paste.push_identfrag_toks(&field.fname(kw_span));
 
@@ -433,7 +434,8 @@ where
             }
             SD::fpatname(_) => {
                 let f = ctx.field(&kw_span)?;
-                let fpatname = format_ident!("f_{}", f.fname(kw_span));
+                let fpatname =
+                    format_ident!("f_{}", f.fname(kw_span), span = kw_span);
                 out.push_identfrag_toks(&fpatname);
             }
             SD::tmeta(wa) => do_meta(wa, out, ctx.tattrs)?,
@@ -796,6 +798,12 @@ impl quote::IdentFragment for Fname<'_> {
             Fname::Name(v) => quote::IdentFragment::fmt(v, f),
             Fname::Index(v) => quote::IdentFragment::fmt(v, f),
         }
+    }
+    fn span(&self) -> Option<Span> {
+        Some(match self {
+            Fname::Name(v) => (*v).span(),
+            Fname::Index(v) => v.span,
+        })
     }
 }
 impl ToTokens for Fname<'_> {

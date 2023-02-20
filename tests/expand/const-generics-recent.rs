@@ -31,9 +31,7 @@ derive_adhoc! {
         fn from(orig: $ttype) -> Self {
             match orig { $(
                 ${vpat} => ${vtype self=${paste $ttype Copy}} { $(
-                    // TODO We ought to be able to use $fpatname here but it
-                    // doesn't work for some reason related to spans hygiene.
-                    $fname: ${paste f_ $fname},
+                    $fname: $fpatname,
                 ) },
             ) }
         }

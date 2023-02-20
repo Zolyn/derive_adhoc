@@ -23,7 +23,7 @@ where
 /// Any case changing is done during assembly.
 #[derive(Debug)]
 pub struct ItemsData {
-    span: Span,
+    tspan: Span,
     items: Vec<ItemEntry>,
     errors: Vec<syn::Error>,
 }
@@ -40,15 +40,18 @@ struct ItemEntry {
 }
 
 #[derive(Debug)]
+/// Entry in a `${paste ...}` or `${case ...}`
+///
+/// `te_span` is the span of this item entry in the template.
+/// It is used for error reporting if we can't cope with this entry
+/// (for example, if we have multiple nontrivial entries.)
 enum Item {
     Plain {
         text: String,
-        span: Span,
     },
     IdPath {
         pre: TokenStream,
         text: String,
-        span: Span,
         post: TokenStream,
         te_span: Span,
     },
@@ -182,7 +185,7 @@ impl CaseContext for () {
         case: ChangeCase,
         f: impl FnOnce(&mut Items<WithinCaseContext>) -> R,
     ) -> R {
-        let placeholder = ItemsData::new(outer.span);
+        let placeholder = ItemsData::new(outer.tspan);
         let inner = mem::replace(outer, placeholder);
         let mut inner = Items { data: inner, case };
         let r = catch_unwind(AssertUnwindSafe(|| f(&mut inner))).unwrap();
@@ -217,38 +220,28 @@ impl CaseContext for WithinCaseContext {
     }
 }
 
-impl Spanned for Item {
-    fn span(&self) -> Span {
-        match self {
-            Item::Plain { span, .. } => *span,
-            Item::IdPath { span, .. } => *span,
-            Item::Path { path, .. } => path.span(),
-        }
-    }
-}
-
 impl Items<()> {
-    pub fn new(span: Span) -> Items<()> {
+    pub fn new(tspan: Span) -> Items<()> {
         Items {
-            data: ItemsData::new(span),
+            data: ItemsData::new(tspan),
             case: (),
         }
     }
 }
 
 impl Items<WithinCaseContext> {
-    pub fn new_case(span: Span, case: ChangeCase) -> Self {
+    pub fn new_case(tspan: Span, case: ChangeCase) -> Self {
         Items {
-            data: ItemsData::new(span),
+            data: ItemsData::new(tspan),
             case,
         }
     }
 }
 
 impl ItemsData {
-    fn new(span: Span) -> Self {
+    fn new(tspan: Span) -> Self {
         ItemsData {
-            span,
+            tspan,
             items: vec![],
             errors: vec![],
         }
@@ -260,14 +253,13 @@ impl<C: CaseContext> Items<C> {
         let case = C::push_case(self.case);
         self.data.items.push(ItemEntry { item, case });
     }
-    fn push_lit_pair<V: Display, S: Spanned>(&mut self, v: &V, s: &S) {
+    fn push_lit_pair<V: Display>(&mut self, v: &V) {
         self.push_item(Item::Plain {
             text: v.to_string(),
-            span: s.span(),
         })
     }
-    pub fn push_fixed_string(&mut self, text: String, span: Span) {
-        self.push_item(Item::Plain { text, span });
+    pub fn push_fixed_string(&mut self, text: String) {
+        self.push_item(Item::Plain { text });
     }
 
     /// Combine the accumulated pieces and write them as tokens
@@ -284,6 +276,24 @@ impl ItemsData {
             }
             return Ok(());
         }
+
+        // We must always use a similar span when we emit identifiers
+        // that are going to be used to bind variables, or the hygiene
+        // system doesn't think they're the same identifier.
+        //
+        // We choose the template keyword span for this.
+        // (The span of `paste` in `${paste ...}`).
+        // This isn't perfect, since we might want to point at the driver,
+        // but we don't always have a suitable driver span.
+        //
+        // This applies to `fpatname`, `vpat`, and so on, too.
+        //
+        // TODO should this apply to fname too?  The template author ought to
+        // us $vpat to bind fields, not $fname, since $fname risks clashes
+        // with other variables that might be in scope.  But the rustc error
+        // messages for identifiers with the wrong span are rather poor.
+        // TODO DOCS for now, document this under $fname.
+        let out_span = self.tspan;
 
         let nontrivial = self
             .items
@@ -317,7 +327,7 @@ impl ItemsData {
         }
 
         fn mk_ident<'i>(
-            span: Span,
+            out_span: Span,
             items: impl Iterator<Item = (&'i str, Option<ChangeCase>)>,
         ) -> syn::Result<syn::Ident> {
             let items = items.map(|(s, case)| {
@@ -328,14 +338,13 @@ impl ItemsData {
                 }
             });
             let ident = items.collect::<String>();
-            catch_unwind(|| format_ident!("{}", ident, span = span)).map_err(
-                |_| {
-                    span.error(format_args!(
+            catch_unwind(|| format_ident!("{}", ident, span = out_span))
+                .map_err(|_| {
+                    out_span.error(format_args!(
                         "pasted identifier {:?} is invalid",
                         ident
                     ))
-                },
-            )
+                })
         }
 
         if let Some(nontrivial) = nontrivial {
@@ -345,9 +354,9 @@ impl ItemsData {
             let nontrivial = &mut items[0];
             let nontrivial_case = nontrivial.case;
 
-            let mk_ident_nt = |span, text: &str| {
+            let mk_ident_nt = |text: &str| {
                 mk_ident(
-                    span,
+                    out_span,
                     chain!(
                         plain_strs(items_before),
                         iter::once((text, nontrivial_case)),
@@ -360,12 +369,11 @@ impl ItemsData {
                 Item::IdPath {
                     pre,
                     text,
-                    span,
                     post,
                     te_span: _,
                 } => {
                     out.write_tokens(mem::take(pre));
-                    out.write_tokens(mk_ident_nt(*span, text)?);
+                    out.write_tokens(mk_ident_nt(text)?);
                     out.write_tokens(/*mem::take(*/ post /*)*/);
                 }
                 Item::Path { path, .. } => {
@@ -380,19 +388,13 @@ impl ItemsData {
                         )
                         })?
                         .ident;
-                    *last = mk_ident_nt(last.span(), &last.to_string())?;
+                    *last = mk_ident_nt(&last.to_string())?;
                     out.write_tokens(path);
                 }
                 Item::Plain { .. } => panic!("trivial nontrivial"),
             }
         } else {
-            let span = self
-                .items
-                .first()
-                .ok_or_else(|| self.span.error("empty ${paste ... }"))?
-                .item
-                .span();
-            out.write_tokens(mk_ident(span, plain_strs(&self.items))?);
+            out.write_tokens(mk_ident(out_span, plain_strs(&self.items))?);
         }
 
         Ok(())
@@ -425,7 +427,7 @@ impl<C: CaseContext> SubstParseContext for Items<C> {
 
 impl<C: CaseContext> ExpansionOutput for Items<C> {
     fn push_display<S: Display + Spanned>(&mut self, plain: &S) {
-        self.push_lit_pair(plain, plain);
+        self.push_lit_pair(plain);
     }
     fn push_identfrag_toks<I: quote::IdentFragment + ToTokens>(
         &mut self,
@@ -438,7 +440,7 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
                 QIF::fmt(&self.0, f)
             }
         }
-        self.push_lit_pair(&AsIdentFragment(ident), ident);
+        self.push_lit_pair(&AsIdentFragment(ident));
     }
     fn push_idpath<A, B>(
         &mut self,
@@ -455,7 +457,6 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
         let mut post = TokenAccumulator::new();
         post_(&mut post);
         let text = ident.to_string();
-        let span = ident.span();
         let mut handle_err = |prepost: TokenAccumulator| {
             prepost.tokens().unwrap_or_else(|err| {
                 self.record_error(err);
@@ -468,7 +469,6 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
             pre,
             post,
             text,
-            span,
             te_span,
         });
     }
@@ -477,10 +477,9 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
         match lit {
             L::Str(s) => self.push_item(Item::Plain {
                 text: s.value(),
-                span: s.span(),
             }),
             L::Int(v) => self.push_display(v),
-            L::Bool(v) => self.push_lit_pair(&v.value(), lit),
+            L::Bool(v) => self.push_lit_pair(&v.value()),
             L::Verbatim(v) => self.push_display(v),
             x => self.write_error(
                 x,
