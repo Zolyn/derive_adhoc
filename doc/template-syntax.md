@@ -121,9 +121,6 @@ Bounds appear in `$tgens` or `$twheres`,
 according to where they appear in the toplevel type,
 so for full support of generic types the template must expand both.
 
-Examples each show the expansion for
-`struct Foo<'l:'a, T:X, const C=1> where T: 'a {...}`.
-
 ### <a name="derive_adhoc_syntax_Xmeta">`${tmeta(...)}` `${vmeta(...)}` `${fmeta(...)}`</a> - `#[adhoc]` attributes
 
 Accesses macro parameters passed via `#[adhoc(...)]` attributes.
@@ -293,3 +290,14 @@ which is used to implement the actual case changing.
 | `snake_case`         |                                  | `SnakeCase`                       | `snake_case`          |
 | `shouty_snake_case`  | `SHOUTY_SNAKE_CASE`              | `ShoutySnakeCase`                 | `SHOUTY_SNAKE_CASE`   |
 | `lower_camel_case`   | `lowerCamelCase`                 | `LowerCamelCase`                  | `lowerCamelCase`      |
+
+## Example struct
+
+The example expansions in the syntax reference 
+are those generated for the following driver types:
+
+```
+struct Foo<'l:'a, T:X, const C=1> where T: 'a {
+    ...
+}
+```
