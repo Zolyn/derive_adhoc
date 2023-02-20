@@ -740,9 +740,10 @@ where
     O: ExpansionOutput,
 {
     fn expand(&self, ctx: &Context, out: &mut O) {
-        // TODO(nickm): Clippy thinks that this Void stuff is
-        // gratuituous, but I don't understand it.
-        #[allow(clippy::unit_arg)]
+        // for_with_within expects a fallible closure, but we want to do
+        // infallible work in our infallible context, so we use `Void`
+        // as the error type and wrap each call in `Ok`.
+        #[allow(clippy::unit_arg)] // clippy wants us to worsify the style
         match self.over {
             RO::Variants => ctx.for_with_within(|ctx, _: &WithinVariant| {
                 Ok::<_, Void>(self.expand_inner(ctx, out))
