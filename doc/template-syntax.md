@@ -114,6 +114,8 @@ even though those might be public.
 Variants don't have visibility -
 Rust enum variants inherit visibility from the enum itself -
 so there is no `$vvis`.
+For the effective visibility of an enum field, write
+`${if is_enum { $tvis } else { $fvis }}`.
 
 ### `$vpat`, `$fpatname` - pattern matching and value deconstruction
 

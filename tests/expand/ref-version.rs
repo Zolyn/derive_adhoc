@@ -21,7 +21,6 @@ define_derive_adhoc! {
     // $tvis                                          toplevel visibility
     // $fvis                    for enum              always nothing
     // $fvis                    otherwise             field visibility
-    // // for effective vis., write ${if is_enum { $tvis } else { $fvis }}
     //
     // ${tdefvariants BLAH}        for enum              { BLAH }
     // ${tdefvariants BLAH}        otherwise               BLAH
