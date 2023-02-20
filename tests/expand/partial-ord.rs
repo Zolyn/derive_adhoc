@@ -12,9 +12,6 @@ use derive_adhoc::{define_derive_adhoc, Adhoc};
 define_derive_adhoc! {
     VeryPartialOrd =
 
-    // ${vpat    fprefix=f_ self=$tname vname=$vname}
-    //    each is a single template element, or in {...}
-    //    defaults shown
     impl<$tgens> PartialOrd for $ttype
     where $( $ftype: PartialOrd, )
           $twheres
