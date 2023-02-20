@@ -311,12 +311,11 @@ a more complex type expansion `${Xtype}`
 which must refer to a path (perhaps with generics).
 Then the pasting will be applied to the final path element identifier,
 and the path prefix and generics reproduced unaltered.
-For example, with
-a struct field `field: crate::config::Foo<'a,T,C>`,
-writing
-`${paste Zingy $ftype Builder}`
-generates
-`crate::config::ZingyFooBuilder<'a,T,C>`.
+
+#### Example
+
+ * `${paste Zingy $ftype Builder}` for `TupleVariant`:
+    `std::iter::ZingyOnceBuilder::<T>`
 
 ### `${CASE_CHANGE ...}` - case changing
 
