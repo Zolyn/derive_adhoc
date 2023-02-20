@@ -91,31 +91,34 @@ and, unlike most other expansions,
 `$fname` has the hygiene span of the driver field name.
 Instead, use `$vpat`, `$fpatname`, or `${paste ... $fname ...}`.
 
-### `$ftype`, `$ttype` - types
+### `$ftype`, `$ttype`, `$tdeftype` - types
 
 The type of the field, or the toplevel type.
-These are suitable for referencing the type in any context
+
+`$ftype` and `$type`
+are suitable for referencing the type in any context
 (for example, when defining the type of a binding,
 or as a type parameter for a generic type).
-
-This contains all necessary generics
+These contains all necessary generics
 (as names, without any bunds etc., but within `::<...>`).
-For the toplevel type it doesn't contains a path prefix, even if
+
+`$tdeftype` is
+the top-level driver type name in a form suitable for defining
+a new type with a derived name (eg, using `${paste...}`).
+Contains all the necessary generics, with bounds,
+within `<...>` but without an introducing `::`.
+
+The toplevel type expansions, `$ttype` and `$tdeftype`,
+don't contain a path prefix, even if
 the driver type argument to
-`derive_adhoc!{ }`
+`derive_adhoc!`
 had a path prefix.
 
 #### Examples
 
  * `$ftype`: `std::iter::Once::<T>`
  * `$ttype`: `Enum<'a, 'l, T, C>`
-
-### `$tdeftype` - type name, for defining a new type
-
-The top-level driver type name in a form suitable for defining
-a new type with a derived name (eg, using `${paste }`).
-Contains all the necessary generics, with bounds,
-within `<...>` but without an introducing `::`.
+ * `$tdeftype`: `Enum<'a, 'l: 'a, T: Display = usize, const C: usize = 1>`
 
 ### `$tgens`, `$tgens`, `$twheres` - generics
 
