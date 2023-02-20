@@ -2,7 +2,7 @@
 //!
 //! This gives a basic demonstration of how to handle an enum.
 
-use derive_adhoc::{define_derive_adhoc, Adhoc};
+use derive_adhoc::{define_derive_adhoc, derive_adhoc, Adhoc};
 
 trait Trait {
     fn shape_top(&self) -> &'static str;
@@ -64,6 +64,28 @@ union Union {
     field: usize,
 }
 
+derive_adhoc! {
+    Unit:
+
+    fn static_test() {
+        // bad is an error
+        ${if false             { bad }}
+        ${if true              {} else { bad }}
+        ${if not(false)        {} else { bad }}
+        ${if not(true)         { bad }}
+        ${if any()             { bad }}
+        ${if any(false)        { bad }}
+        ${if any(true)         {} else { bad }}
+        ${if any(true,false)   {} else { bad }}
+        ${if any(false,true)   {} else { bad }}
+        ${if all()             {} else { bad }}
+        ${if all(false)        { bad }}
+        ${if all(true)         {} else { bad }}
+        ${if all(true,false)   { bad }}
+        ${if all(false,true)   { bad }}
+    }
+}
+
 fn test(top: &str, fields: &str, v: impl Trait) {
     if !(v.shape_top() == top
         && v.shape_fields() == fields) {
@@ -72,6 +94,8 @@ fn test(top: &str, fields: &str, v: impl Trait) {
 }
 
 fn main() {
+    static_test();
+
     test("struct", "unit", Unit);
     test("struct", "tuple", Tuple(0));
     test("struct", "named", Struct { field: 0 });

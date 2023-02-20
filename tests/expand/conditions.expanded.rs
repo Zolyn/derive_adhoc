@@ -1,7 +1,7 @@
 //! Test cases for conditions
 //!
 //! This gives a basic demonstration of how to handle an enum.
-use derive_adhoc::{define_derive_adhoc, Adhoc};
+use derive_adhoc::{define_derive_adhoc, derive_adhoc, Adhoc};
 trait Trait {
     fn shape_top(&self) -> &'static str;
     fn shape_fields(&self) -> &'static str;
@@ -98,12 +98,14 @@ impl Trait for Union {
         }
     }
 }
+fn static_test() {}
 fn test(top: &str, fields: &str, v: impl Trait) {
     if !(v.shape_top() == top && v.shape_fields() == fields) {
         { ::std::rt::begin_panic("explicit panic") }
     }
 }
 fn main() {
+    static_test();
     test("struct", "unit", Unit);
     test("struct", "tuple", Tuple(0));
     test("struct", "named", Struct { field: 0 });
