@@ -27,6 +27,7 @@ pub enum AttrValue<'l> {
 /// What would `${fname}` expand to?  As type from [`syn`].
 ///
 /// Implements [`quote::IdentFragment`] and [`ToTokens`].
+#[derive(Debug)]
 pub enum Fname<'r> {
     Name(&'r syn::Ident),
     Index(syn::Index),
