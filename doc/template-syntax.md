@@ -3,6 +3,31 @@
 **Table of contents**
 
 <!--##toc##-->
+   * [Template syntax overview](#template-syntax-overview)   * [Repetition and nesting](#repetition-and-nesting)
+   * [Expansions](#expansions)
+      * [`$fname`, `$vname`, `$tname` - names](#fname-vname-tname---names)
+      * [`$fvis`, `$tvis` - visibility](#fvis-tvis---visibility)
+      * [`$vpat`, `$fpatname` - pattern matching and value deconstruction](#vpat-fpatname---pattern-matching-and-value-deconstruction)
+      * [`$ftype`, `$vtype`, `$ttype`, `$tdeftype` - types](#ftype-vtype-ttype-tdeftype---types)
+      * [`$tgens`, `$tgens`, `$twheres`, `$tdefgens` - generics](#tgens-tgens-twheres-tdefgens---generics)
+      * [`${tmeta(...)}` `${vmeta(...)}` `${fmeta(...)}` - `#[adhoc]` attributes](#tmeta-vmeta-fmeta---adhoc-attributes)
+      * [`${fattrs ...}` `${vattrs ...}` `${tattrs ...}` - other attributes](#fattrs--vattrs--tattrs----other-attributes)
+      * [`${paste ...}` - identifier pasting](#paste----identifier-pasting)
+      * [`${CASE_CHANGE ...}` - case changing](#case_change----case-changing)
+      * [`${when CONDITION}` - filtering out repetitions by a predicate](#when-condition---filtering-out-repetitions-by-a-predicate)
+      * [`${if COND1 { ... } else if COND2 { ... } else { ... }}` - conditional](#if-cond1----else-if-cond2----else------conditional)
+      * [`${select1 COND1 { ... } else if COND2 { ... } else { ... }}` - expect precisely one predicate](#select1-cond1----else-if-cond2----else------expect-precisely-one-predicate)
+      * [`${for fields { ... }}`, `${for variants { ... }}`, `$( )` - repetition](#for-fields----for-variants--------repetition)
+      * [`$tdefkwd` - keyword introducing the new data structure](#tdefkwd---keyword-introducing-the-new-data-structure)
+      * [`$tdefvariants`, `$vdefbody`, `$fdefine` - tools for defining types](#tdefvariants-vdefbody-fdefine---tools-for-defining-types)
+   * [Conditions](#conditions)
+      * [`fvis`, `tvis` - test for public visibility](#fvis-tvis---test-for-public-visibility)
+      * [`fmeta(NAME)`, `vmeta(NAME)`, `tmeta(NAME)` - `#[adhoc]` attributes](#fmetaname-vmetaname-tmetaname---adhoc-attributes)
+      * [`is_struct`, `is_enum`, `is_union`](#is_struct-is_enum-is_union)
+      * [`v_is_unit`, `v_is_tuple`, `v_is_named`](#v_is_unit-v_is_tuple-v_is_named)
+      * [`false`, `true`, `not(CONDITION)`, `any(COND1,COND2,...)`, `all(COND1,COND2,...)` -- boolean logic](#false-true-notcondition-anycond1cond2-allcond1cond2----boolean-logic)
+   * [Case changing](#case-changing)
+   * [Structs used in examples](#structs-used-in-examples)
 
 ## Template syntax overview
 
