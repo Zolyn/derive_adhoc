@@ -234,7 +234,7 @@ so for full support of generic types the template must expand both.
  * `$twheres`: `T: 'l, T: TryInto<u8>,`
  * `$tdefgens`: `'a, 'l: 'a, T: Display = usize, const C: usize = 1,`
 
-### <a name="derive_adhoc_syntax_Xmeta">`${tmeta(...)}` `${vmeta(...)}` `${fmeta(...)}`</a> - `#[adhoc]` attributes
+### `${tmeta(...)}` `${vmeta(...)}` `${fmeta(...)}` - `#[adhoc]` attributes
 
 Accesses macro parameters passed via `#[adhoc(...)]` attributes.
 
