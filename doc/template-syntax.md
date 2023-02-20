@@ -156,6 +156,11 @@ When expanding `${Xmeta}`,
 it is an error if the value was not specified in the driver,
 and also an error if multiple values were specified.
 
+For a struct, both `$tmeta` and `$vmeta`
+look in the top-level attributes.
+This allows a template to have uniform handling of attributes
+which should affect how a set of fields should be processed.
+
 ### `${fattrs ...}` `${vattrs ...}` `${tattrs ...}` - other attributes
 
 Expands to non-`#[adhoc()]` attributes.
