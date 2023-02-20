@@ -9,7 +9,7 @@ We call that data structure the **driver**.
 In general the syntax is:
 
  * `$KEYWORD`: Invoke the expansion of the keyword `KEYWORD`.
- * `${KEYWORD PARAMS...}`: Invoke with parameters.
+ * `${KEYWORD ARGS...}`: Invoke with parameters.
  * `$( .... )`: Repetition (abbreviated, automatic, form).
    (Note: there is no `+` or `*` after the `)`)
 
@@ -18,6 +18,17 @@ You can pass a `$` through
 (e.g. if you want to confuse yourself
 by making derive-adhoc-generated pattern macros)
 by writing `$$`.
+
+Some expansions take named arguments, within the `${...}`.
+These are generally optional.
+The syntax is: `${KEYWORD ARG=VALUE ARG=VALUE...}`,
+where the acceptable `VALUE`s depend on the `KEYWORD`,
+but the syntax is:
+ * `IDENTIFIER`
+ * `LITERAL` (eg, `NUMBER` or `"STRING"`)
+ * `$EXPANSION` or `${EXPANSION}` or `${EXPANSION...}`
+ * `{ STUFF }`, where `STUFF` is expanded.
+   (The `{ }` just for delimiting the value, and are discarded).
 
 Many of the expansion keywords start with `f`, `v`, or `s` to indicate
 the depth of the thing being expanded:
