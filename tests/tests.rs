@@ -18,6 +18,8 @@ use easy_ext::ext;
 //
 // The test modules listed here, containing #[test] tests:
 
+use std::path::PathBuf;
+
 #[cfg(test)]
 mod list_names;
 
@@ -29,4 +31,24 @@ pub impl<T: Debug> T {
     fn to_debug(&self) -> String {
         format!("{:?}", self)
     }
+}
+
+/// List the test cases in tests/expand/*.rs
+///
+/// Filters out *.expanded.rs.
+pub fn list_expand_test_paths() -> impl Iterator<Item = PathBuf> {
+    let ignores: Vec<_> = [
+        "*.expanded.rs",
+    ]
+    .iter()
+    .map(|pat| glob::Pattern::new(pat).unwrap())
+    .collect();
+
+    glob::glob("expand/*.rs").unwrap().filter_map(move |path| {
+        let path = path.unwrap();
+        if ignores.iter().any(|pat| pat.matches_path(&path)) {
+            return None;
+        }
+        Some(path)
+    })
 }
