@@ -31,7 +31,22 @@ cargo-test:
     paths:
       - cargo-expand
 
+# Test on Stable Rust
+#
+# We don't enable the ui and macrotest fatures in derive-adhoc-tests, since
+# we think their output might reasonably vary (in detail) when the with
+# compiler changes.  But we do enable the "recent" feature to test even new
+# features.
+stable:
+  stage: test
+  script:
+    - rustc --version && cargo --version  # Print version info for debugging
+    - mv Cargo.lock.example Cargo.lock
+    - cargo test --locked --workspace --verbose --features=derive-adhoc-tests/recent
+
 # Test our MSRV and Cargo.toml minimal versions
+#
+# We don't enable any of the optional fatures in derive-adhoc-tests.
 minimal-versions:
   stage: test
   image: "rust:1.54.0"
