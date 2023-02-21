@@ -337,12 +337,12 @@ The contents may only contain identifer fragments, strings (`"..."`),
 and (certain) expansions.
 Supported expansions are `$ftype`, `$ttype`, `$tdeftype`, `$Xname`, `$Xmeta`,
 `${CASE_CHANGE}`,
-$tdefkwd,
+`$tdefkwd`,
 as well as conditionals and repetitions.
 
 The contents can contain at most one occurrence of
 a more complex type expansion `${Xtype}`
-(or `${}Xmeta as ty)`),
+(or `${Xmeta as ty)`),
 which must refer to a path (perhaps with generics).
 Then the pasting will be applied to the final path element identifier,
 and the path prefix and generics reproduced unaltered.
@@ -357,6 +357,7 @@ and the path prefix and generics reproduced unaltered.
 Expands the content, and changes its case
 (eg. uppercase to lowercase, etc.
 See [Case changing](#case-changing).
+`CASE_CHANGE` is one of the values listed there.
 
 ### `${when CONDITION}` - filtering out repetitions by a predicate
 
@@ -415,6 +416,10 @@ or just `VARIANTS` otherwise.
 Usually, it would contain a `$( )` repeating over the variants,
 expanding `$vdefbody` for each one.
 
+**`${fdefine FNAME}`** expands to `FNAME:` in the context of
+named fields (a "struct" or "struct variant"),
+or nothing otherwise.
+
 **`${vdefbody VNAME FIELDS}`** expands to the definition of a variant,
 with a appropriate delimiters.
 Usualy, it would contain a `$( )` repeating over the fields,
@@ -422,17 +427,18 @@ using `$fdefine` to introduce each one.
 Specifically:
 
 ```text
- ${vdefbody VANME FIELDS)}   for unit              nothing;
+ ${vdefbody VANME FIELDS)}   for unit                FIELDS;          [*] ie  ;
  ${vdefbody VANME FIELDS)}   for tuple             ( FIELDS );
  ${vdefbody VANME FIELDS)}   for struct            { FIELDS }
- ${vdefbody VANME FIELDS)}   for unit variant      VNAME,
+ ${vdefbody VANME FIELDS)}   for unit variant      VNAME   FIELDS,    [*] ie  VNAME,
  ${vdefbody VANME FIELDS)}   for tuple variant     VNAME ( FIELDS ),
  ${vdefbody VANME FIELDS)}   for struct variant    VNAME { FIELDS }
 ```
 
-**`${fdefine FNAME}`** expands to `FNAME:` in the context of
-named fields (a "struct" or "struct variant"),
-or nothing otherwise.
+`[*]`: In the unit and unit variant cases,
+`FIELDS` ought to expand to nothing;
+otherwise, the expansion of `$vdefbody`
+will probably be syntactically invalid in context.
 
 #### Example
 
