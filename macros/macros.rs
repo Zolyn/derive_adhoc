@@ -241,6 +241,35 @@ pub fn define_derive_adhoc(
 /// If the template(s) don't use them, they are ignored.
 /// `derive-adhoc` does not impose any namespacing within `#[adhoc]`:
 /// all templates see the same adhoc meta attributes.
+///
+/// ## Exporting the driver for downstream crates' templates
+///
+// Really, the documentation about this in `pub-a.rs` and `pub-b.rs`,
+// should be somewhere in our rustdoc output.
+// But I don't want to put it *here* because it would completely
+// dominate this macro documentation.
+// So for now just reference the source tree docs.
+// (We can't really easily provide even a link.)
+// I think this is such a minority feature,
+// that hiding the docs like this is OK.
+//
+/// To cause the macro embodying the driver struct to be exported,
+/// write:
+/// `#[derive_adhoc(pub)]`.
+/// The driver can then be derived from in other crates,
+/// with `derive_adhoc! { exporting_crate::DriverStruct: ... }`.
+///
+/// This is a tricky feature,
+/// which should only be used by experts
+/// who fully understand the implications.
+/// It effectively turns the body of the struct into a macro,
+/// with a brittle API
+/// and very limited support for namespacing or hygiene.
+///
+/// See `pub mod a_driver` in the example file `pub-a.rs`,
+/// in the source tree,
+/// for a fuller discussion of the implications,
+/// and some advice.
 //
 // This is the implementation of #[derive(Adhoc)]
 //
