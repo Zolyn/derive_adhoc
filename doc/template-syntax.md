@@ -18,6 +18,7 @@
       * [`${if COND1 { ... } else if COND2 { ... } else { ... }}` - conditional](#if-cond1----else-if-cond2----else------conditional)
       * [`${select1 COND1 { ... } else if COND2 { ... } else { ... }}` - expect precisely one predicate](#select1-cond1----else-if-cond2----else------expect-precisely-one-predicate)
       * [`${for fields { ... }}`, `${for variants { ... }}`, `$( )` - repetition](#for-fields----for-variants--------repetition)
+      * [`$crate` - root of template crate](#crate---root-of-template-crate)
       * [`$tdefkwd` - keyword introducing the new data structure](#tdefkwd---keyword-introducing-the-new-data-structure)
       * [`$tdefvariants`, `$vdefbody`, `$fdefine` - tools for defining types](#tdefvariants-vdefbody-fdefine---tools-for-defining-types)
    * [Conditions](#conditions)
@@ -385,6 +386,19 @@ otherwise it is an error.
 
 `$( ... )` expands the input with an appropriate number of iterations -
 see [Repetition and nesting](#repetition-and-nesting).
+
+### `$crate` - root of template crate
+
+`$crate` always refers to the root of the crate 
+defining the template.
+Within a `pub` template,
+being expanded in another crate,
+it refers to the crate containing the template definition.
+In templates being used locally,
+it refers to the current crate, ie simply `crate`.
+
+This is similar to the `$crate` builtin expansion
+in `macro_rules!`.
 
 ### `$tdefkwd` - keyword introducing the new data structure
 
