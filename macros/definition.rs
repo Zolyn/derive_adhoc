@@ -4,7 +4,7 @@ use crate::prelude::*;
 
 #[derive(Debug, Clone)]
 struct TemplateDefinition {
-    vis: Option<syn::VisPublic>, // TODO DOCS
+    vis: Option<syn::VisPublic>,
     templ_name: syn::Ident,
     template: TokenStream,
 }

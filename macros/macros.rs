@@ -86,10 +86,9 @@ pub fn derive_adhoc(
 
 /// Define a reuseable template
 ///
-/// ```
-/// # use derive_adhoc_macros::define_derive_adhoc;
+/// ```ignore
 /// define_derive_adhoc! {
-///     MyMacro =
+///     [pub] MyMacro =
 ///     TEMPLATE
 /// }
 /// ```
@@ -109,6 +108,66 @@ pub fn derive_adhoc(
 /// are subtle.
 /// For more information, see the
 /// [documentation for `#[derive(Adhoc)]`](derive.Adhoc.html#captured-data-structure-definition-derive_adhoc_driver_type).
+///
+/// ## Exporting a template for use by other crates
+///
+/// With `pub MyMacro`, `define_derive_adhoc!` exports the macro
+/// for use by other crates.
+/// It is referred to in other crates
+/// using `#[derive_ahdoc(this_crate::MyMacro)]`.
+///
+/// I.e., `pub MyMacro` causes the `derive_adhoc_template_MyMacro`
+/// pattern macro to be exported with `#[macro_export]`.
+///
+/// Note that a template can only be exported at the crate top level,
+/// not in a sub-module,
+/// even if it is *defined* in a sub-module.
+///
+/// ### You must re-export `derive_adhoc`; (usually no) semver implications
+///
+/// When exporting a template to other crates, you must also
+/// re-export `derive_adhoc`,
+/// at the top level of your crate:
+///
+/// ```ignore
+/// #[doc(hidden)]
+/// pub use derive_adhoc;
+/// ```
+/// This is used to find the template expansion engine,
+/// and will arrange that your template is expanded
+/// by the right version of derive-adhoc.
+/// The template syntax is that for *your* version of `derive-adhoc`,
+/// even if the depending crate uses a different version of derive-adhoc.
+///
+/// You should *not* treat a breaking change
+/// to derive-adhoc's template syntax
+/// (which is a major change to derive-adhoc),
+/// nor a requirement to use a newer template feature,
+/// as a breaking changes in the API of your crate.
+/// (You *should* use `#[doc(hidden)]`, or other approaches,
+/// to discourage downstream crates from using
+/// the derive-adhoc version you re-export.
+/// Such use would be outside the semver guarantees.)
+///
+/// Changes that would require a semver bump
+/// for all libraries that export templates,
+/// will be rare, and specially marked in the derive-adhoc
+/// changelog.
+///
+/// ### Namespacing within an exported template
+///
+/// Within the template,
+/// items within your crate can be referred to with `$crate`.
+///
+/// For other items,
+/// including from the standard library e.g., `std::option::Option`,
+/// you may rely on the crate which uses the template
+/// to have a reasonable namespace,
+/// or use an explicit path starting with `std`
+/// or `$crate` (perhaps naming a re-export).
+///
+/// Overall, the situation is similar to defining
+/// an exported `macro_rules` macro.
 #[proc_macro]
 pub fn define_derive_adhoc(
     input: proc_macro::TokenStream,
@@ -129,7 +188,26 @@ pub fn define_derive_adhoc(
 ///  2. If `#[derive_adhoc(MyMacro)]` attributes are also specified,
 ///     they are taken to refer to reuseable templates
 ///     defined with [`define_derive_adhoc!`].
-///     Each such `MyMacro` is invoked on the data structure.
+///     Each such `MyMacro` is applied to the data structure.
+///
+/// ## Applying a template (derive-adhoc macro) from another crate
+///
+/// `#[derive_adhoc(some_crate::MyMacro)]`
+/// applies an exported (`pub`) template
+/// defined and exported by `some_crate`.
+///
+/// You can import a template from another crate,
+/// so you can apply it with an unqualified name,
+/// with `use`,
+/// but you have to refer to
+/// the actual pattern macro name `derive_adhoc_template_MyMacro`:
+/// ```ignore
+/// use other_crate::derive_adhoc_template_TheirMacro;
+/// #[derive(Adhoc)]
+/// #[derive_Adhoc(TheirMacro)]
+/// struct MyStruct { // ...
+/// # }
+/// ```
 ///
 /// ## Captured data structure definition `derive_adhoc_driver_TYPE`
 ///
