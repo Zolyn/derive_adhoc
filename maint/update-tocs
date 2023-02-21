@@ -26,12 +26,12 @@ process_file () {
     ' | perl -wne '
 	BEGIN {
 	    $toc = do { local $/ = undef; <STDIN>; };
-	    $toc =~ s{\n+}{};
+	    $toc =~ s{\n+$}{}s;
 	}
 	print unless $skip;
 	if (m{^\Q<!--##toc##-->}) {
             $skip = 1;
-	    print $toc, "\n";
+	    print $toc, "\n\n";
 	    next;
     	}
 	if (!m{^ +\*}) {

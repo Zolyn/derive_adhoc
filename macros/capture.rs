@@ -87,6 +87,7 @@ pub fn derive_adhoc_derive_macro(
 
     let expand_macro = expand_macro_name()?;
 
+    // TODO DOCS
     let macro_export = vis_pub
         .map(|vis_pub| {
             let macro_export =

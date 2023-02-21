@@ -147,7 +147,7 @@ pub enum SubstDetails<O: SubstParseContext> {
     If(SubstIf<O>, O::NotInBool),
     select1(SubstIf<O>, O::NotInBool),
 
-    Crate(O::NotInPaste, O::NotInBool), // `${crate }`.  TODO DOCS
+    Crate(O::NotInPaste, O::NotInBool),
 }
 
 #[derive(Debug)]
