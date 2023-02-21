@@ -416,6 +416,10 @@ or just `VARIANTS` otherwise.
 Usually, it would contain a `$( )` repeating over the variants,
 expanding `$vdefbody` for each one.
 
+**`${fdefine FNAME}`** expands to `FNAME:` in the context of
+named fields (a "struct" or "struct variant"),
+or nothing otherwise.
+
 **`${vdefbody VNAME FIELDS}`** expands to the definition of a variant,
 with a appropriate delimiters.
 Usualy, it would contain a `$( )` repeating over the fields,
@@ -435,10 +439,6 @@ Specifically:
 `FIELDS` ought to expand to nothing;
 otherwise, the expansion of `$vdefbody`
 will probably be syntactically invalid in context.
-
-**`${fdefine FNAME}`** expands to `FNAME:` in the context of
-named fields (a "struct" or "struct variant"),
-or nothing otherwise.
 
 #### Example
 
