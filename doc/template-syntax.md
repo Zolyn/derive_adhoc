@@ -3,7 +3,8 @@
 **Table of contents**
 
 <!--##toc##-->
-   * [Template syntax overview](#template-syntax-overview)   * [Repetition and nesting](#repetition-and-nesting)
+   * [Template syntax overview](#template-syntax-overview)
+   * [Repetition and nesting](#repetition-and-nesting)
    * [Expansions](#expansions)
       * [`$fname`, `$vname`, `$tname` - names](#fname-vname-tname---names)
       * [`$fvis`, `$tvis` - visibility](#fvis-tvis---visibility)
