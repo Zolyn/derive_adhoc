@@ -357,6 +357,7 @@ and the path prefix and generics reproduced unaltered.
 Expands the content, and changes its case
 (eg. uppercase to lowercase, etc.
 See [Case changing](#case-changing).
+`CASE_CHANGE` is one of the values listed there.
 
 ### `${when CONDITION}` - filtering out repetitions by a predicate
 
