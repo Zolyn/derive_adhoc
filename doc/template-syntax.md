@@ -337,12 +337,12 @@ The contents may only contain identifer fragments, strings (`"..."`),
 and (certain) expansions.
 Supported expansions are `$ftype`, `$ttype`, `$tdeftype`, `$Xname`, `$Xmeta`,
 `${CASE_CHANGE}`,
-$tdefkwd,
+`$tdefkwd`,
 as well as conditionals and repetitions.
 
 The contents can contain at most one occurrence of
 a more complex type expansion `${Xtype}`
-(or `${}Xmeta as ty)`),
+(or `${Xmeta as ty)`),
 which must refer to a path (perhaps with generics).
 Then the pasting will be applied to the final path element identifier,
 and the path prefix and generics reproduced unaltered.
