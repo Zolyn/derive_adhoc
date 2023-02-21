@@ -422,13 +422,18 @@ using `$fdefine` to introduce each one.
 Specifically:
 
 ```text
- ${vdefbody VANME FIELDS)}   for unit              nothing;
+ ${vdefbody VANME FIELDS)}   for unit                FIELDS;          [*] ie  ;
  ${vdefbody VANME FIELDS)}   for tuple             ( FIELDS );
  ${vdefbody VANME FIELDS)}   for struct            { FIELDS }
- ${vdefbody VANME FIELDS)}   for unit variant      VNAME,
+ ${vdefbody VANME FIELDS)}   for unit variant      VNAME   FIELDS,    [*] ie  VNAME,
  ${vdefbody VANME FIELDS)}   for tuple variant     VNAME ( FIELDS ),
  ${vdefbody VANME FIELDS)}   for struct variant    VNAME { FIELDS }
 ```
+
+`[*]`: In the unit and unit variant cases,
+`FIELDS` ought to expand to nothing;
+otherwise, the expansion of `$vdefbody`
+will probably be syntactically invalid in context.
 
 **`${fdefine FNAME}`** expands to `FNAME:` in the context of
 named fields (a "struct" or "struct variant"),
