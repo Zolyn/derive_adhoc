@@ -9,7 +9,7 @@ We expect to increase it cautiously and only with good reason.
 
 ## Changelog
 
-### UNRELEASED
+### 0.2.0
 
 #### Breaking
 
