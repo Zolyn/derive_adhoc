@@ -746,6 +746,7 @@ you can write `$$`.
 
 
 
+
 > Coming sections:
 >
 >  ## Something something lifetimes
@@ -755,6 +756,11 @@ you can write `$$`.
 > ## Conditional compilation
 
 > ## Working with attributes
+>
+> ## visibility
+>
+> ## `$tdef*`, `$vdef*, `$fdef*` — what it's for and why.
+
 
 
 [reference]: crate::doc_template_syntax
