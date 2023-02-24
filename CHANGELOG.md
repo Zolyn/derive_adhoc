@@ -25,7 +25,7 @@ We expect to increase it cautiously and only with good reason.
 
 #### Added
 
- * `$fpatname` `$vpat` `$vtype` for value matching and construction
+ * `$fpatname` `$vpat` `$vtype`, for value matching and construction
    
  * `$fvis` `$tvis`, for visibility (also as booleans)
  * `is_struct` `is_union`
@@ -34,7 +34,7 @@ We expect to increase it cautiously and only with good reason.
  * `$tdefkwd` `$tdeftype` `$tdefvariants` `$vdefbody`
    `$fdefine` `$tdefgens`,
    for defining derived types,
- * `$select`, exactly-one conditional
+ * `$select1`, exactly-one conditional
  * Support exporting a template to other crates,
    and `$crate` expansion for referring to template crate items.
  * Support exporting a driver to other crates

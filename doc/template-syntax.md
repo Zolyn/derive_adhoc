@@ -379,7 +379,7 @@ Conditionals which insist on expanding exactly one of the branches.
 Syntax is identical to that of `${if }`.
 *All* of the `COND` are always evaluated.
 Exactly one of them must be true;
-or, none of them, bot only if an `else` is supplied -
+or, none of them, but only if an `else` is supplied -
 otherwise it is an error.
 
 ### `${for fields { ... }}`, `${for variants { ... }}`, `$( )` - repetition
