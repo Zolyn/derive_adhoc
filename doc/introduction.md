@@ -452,7 +452,6 @@ where
 ```
 
 
-
 > This time,
 > `derive_adhoc` has exactly _one_ piece cleverness at work.
 > It makes sure that either `$twheres` is empty,
@@ -622,12 +621,134 @@ for variants and fields:
 if we just have `$ftype` in a top-level repetition,
 `derive_adhoc` will iterate over all fields in all variants.
 
+# Some more advanced topics
+
+Now that we've our first basic example under our belt,
+let's look at some other things that `derive_adhoc` can do.
+
+## Transforming names and strings
+
+Often, it's useful to define new identifiers
+based on existing ones,
+or to convert identifiers into strings.
+
+You _could_ use the existing [`paste`] crate for this,
+or you can use a native facility provided by `derive_adhoc`.
+
+For example, suppose that you want
+to define a template that makes a "discriminant" type
+for your enumerations.
+You want the new type to be named `FooDiscriminant`,
+where `Foo` is the name of your existing type.
+While you're at it, you want to add an `is_` function
+to detect each variant.
+
+You can do that like this:
+```
+# use derive_adhoc::define_derive_adhoc;
+define_derive_adhoc! {
+    Discriminant =
+
+    #[derive(Copy,Clone,Eq,PartialEq,Debug)]
+    enum ${paste $tname Discriminant} {
+        $(
+            $vname,
+        )
+    }
+
+    impl<$tgens> $ttype where $twheres {
+       fn discriminant(&self) -> ${paste $tname Discriminant} {
+          match self {
+              $(
+                  $vpat => ${paste $tname Discriminant}::$vname,
+              )
+          }
+        }
+
+        $(
+            fn ${paste is_ ${snake_case $vname}} (&self) -> bool {
+                self.discriminant() ==
+                    ${paste $tname Discriminant} ::$vname
+            }
+        )
+    }
+}
+```
+
+Here we see a couple of new constructs.
+
+First, we're using `${paste}`
+to glue several identifiers together into one.
+When we say `${paste $tname Discriminant}`,
+we are generating a new identifier from `$tname`
+(the type name)
+and the word Discriminant.
+So if the type name is `Foo`,
+the new type will be called `FooDiscriminant`.
+
+Second, we're using `${snake_case}`
+to transform an identifier into `snake_case`
+(that is, lowercase words separated by underscores).
+We use this to turn the name of each variant (`$vname`)
+into a name suitable for use in a function name.
+So if a variant is called `ExampleVariant`,
+`${snake_case $vname}`  will be `example_variant`,
+and `${paste is_ ${snake_case $vname}}` will be
+`is_example_variant`.
+
+There are other case-changers:
+  * `${pascal_case my_ident}` becomes `MyIdent`.
+    You can also write this as
+    `${PascalCase ..}`,
+    `${upper_camel_case ..}`,
+    or `${UpperCamelCase ..}`.
+  * `${lower_camel_case my_ident}` becomes `myIdent`.
+    You can also write this as
+    `${lowerCamelCase .. }` or
+    `${LowerCamelCase ..}`
+  * `${shouty_snake_case MyIdent}` becomes `MY_IDENT`.
+    You can also write this as
+    `${SHOUTY_SNAKE_CASE ..}` or
+    `${ShoutySnakeCase ..}`.
+  * `${snake_case MyIdent}` becomes `my_ident`, as you've already seen.
+    You can also write it as
+    `${SnakeCase ..}`.
+
+### A note on syntax
+
+In this last section,
+you've seen a new syntax for the first time.
+Both `${paste ident ident..}` and `${snake_case ident}`
+are special cases of the following meta-syntax,
+which `derive_adhoc` uses everywhere:
+
+`${KEYWORD ARGS.. }`
+
+In fact, if you want,
+you can use this format
+for all of the expansion macros you have already seen:
+`$ttype` is just a shortened form for `${ttype}`,
+`$fname` is just `${fname}`,
+and so on.
+
+Some keywords,
+including some of those we've already seen,
+can take named arguments.
+The syntax for this is:
+
+`${KEYWORD ARGNAME=VALUE ARGNAME=VALUE...}`
+
+> For example, we can use this syntax to give optional arguments to `$vpat`;
+> see the template syntax reference for more information.
+
+If you ever need to write a literal `$`,
+you can write `$$`.
+
+
 
 > Coming sections:
 >
 >  ## Something something lifetimes
->
-> # More advanced techniques
 >
 > ## Explicit repetition
 
@@ -635,8 +756,7 @@ if we just have `$ftype` in a top-level repetition,
 
 > ## Working with attributes
 
-> ## Transforming names and strings
-
 
 [reference]: crate::doc_template_syntax
 [README]: crate
+[`paste`]: https://docs.rs/paste/latest/paste/
