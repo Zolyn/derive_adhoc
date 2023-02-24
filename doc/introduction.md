@@ -1,4 +1,4 @@
-# `derive_adhoc` and how to make it pay
+# Getting started with `derive_adhoc`.
 
 > Here I want to put an introduction about what derive_adhoc does.  For
 > now I'll just link to the [README].
