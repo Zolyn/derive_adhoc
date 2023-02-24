@@ -464,16 +464,168 @@ where
 > `where ,`
 > (which is also a syntax error).
 
+## Deriving for enumerations
 
+At this point, you've probably noticed
+that we've defined `MyClone` to apply to `struct`s only,
+but it won't (yet) work on `enum`s.
+Let's fix that!
+
+Suppose that we have enumeration defined like this:
+
+```
+enum AllTypes {
+    NoData,
+    Tuple(u8, u16),
+    Struct { a: String, b: String }
+}
+```
+We want to make sure that
+MyClone can recognize and re-construct
+each of the three variants.
+
+We can do that as follow
+(For simplicity, we're going to ignore generics for now.)
+```
+# use derive_adhoc::define_derive_adhoc;
+define_derive_adhoc! {
+    MyClone =
+
+    impl Clone for $ttype
+    {
+        fn clone(&self) -> Self {
+            match self {
+                $(
+                    $vpat => $vtype {
+                        $(
+                            $fname: $fpatname.clone(),
+                        )
+                    },
+                )
+            }
+        }
+    }
+}
+```
+
+Note that now we have two levels of nested repetition.
+First, we match once for each variant.
+(This is at the `$vpat` and `$vtype` level.)
+Then we match once for each field of each variant.
+(This is at the `$fname` and `$fpatname` level.)
+
+Let's go over the new expansions here.
+First, we have `$vpat`:
+that expands to a pattern that can match and deconstruct
+a single variant.
+Then, we have `$vtype`:
+that's the type of the variant,
+suitable for use as a constructor.
+Then, inside the variant, we have `$fname`:
+that's our field name, which we've seen it before.
+Finally, we have `$fpatname`:
+that is the name of the variable that we used for this field
+in the pattern that deconstructed it.
+
+When we apply `MyClone` to our enumeration,
+we get something like this:
+```
+# enum AllTypes { NoData, Tuple(u8, u16), Struct { a: String, b: String } }
+impl Clone for AllTypes {
+    fn clone(&self) -> Self {
+        match self {
+            AllTypes::NoData {} => AllTypes::NoData {},
+            AllTypes::Tuple {
+                0: f_0,
+                1: f_1,
+            } => AllTypes::Tuple {
+                0: f_0.clone(),
+                1: f_1.clone()
+            },
+            AllTypes::Struct {
+                a: f_a,
+                b: f_b,
+            } => AllTypes::Struct {
+                a: f_a.clone(),
+                b: f_b.clone()
+            },
+        }
+    }
+}
+```
+
+> ... Or we _would_ get that, if it weren't for
+> [bug #15](https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/issues/15).
+> It turns out that derive_adhoc doesn't work
+> for multi-field enum variants yet. ☹
+
+Note that our template above will still work fine on a regular struct,
+even though it's written for an `enum`.
+If we apply `MyClone` above
+to `struct Example { a: u8, b: String }`,
+we get this:
+
+```
+# struct Example { a: u8, b: String }
+impl Clone for Example {
+    fn clone(&self) -> Self {
+        match self {
+            Example {
+                a: f_a,
+                b: f_b,
+            } => Example {
+                a: f_a.clone(),
+                b: f_b.clone(),
+            }
+        }
+    }
+}
+```
+
+So (in this case at least)
+we were able to write a single template expansion
+that worked for both `struct`s and enum`s.
+
+### Putting the generics back into our enumeration-friendly template
+
+Now let's see how it works when we try to handle generics again.
+(It's surprisingly straightforward!)
+
+```
+# use derive_adhoc::define_derive_adhoc;
+define_derive_adhoc! {
+    MyClone =
+
+    impl<$tgens> Clone for $ttype
+    where $( $ftype: Clone, )
+          $twheres
+    {
+        fn clone(&self) -> Self {
+            match self {
+                $(
+                    $vpat => $vtype {
+                        $(
+                            $fname: $fpatname.clone(),
+                        )
+                    },
+                )
+            }
+        }
+    }
+}
+```
+
+
+Note that when we define our additional `where` clauses,
+we don't have to specify separate of repetition
+for variants and fields:
+if we just have `$ftype` in a top-level repetition,
+`derive_adhoc` will iterate over all fields in all variants.
 
 
 > Coming sections:
 >
 >  ## Something something lifetimes
->
->  ## Making MyClone apply to `enum`s
->
->
 >
 > # More advanced techniques
 >
