@@ -55,19 +55,64 @@ pub struct MyStruct;
 MyStruct::print_name();
 ```
 
-<!--
-
 ## Exporting templates
 
-Explain how to declare a template that can be used from another crate?
+But now suppose that you want to expose your template,
+so that people can use it from any crate.
 
-Do we even support that well?
+To do this, you use `pub` before the name of your macro.
+```
+pub trait NamePrinter {
+    fn print_name();
+}
 
-I don't want to have to tell people to manually `#[macro_export]` and `pub use`
-a thing with a funny name.
+derive_adhoc::define_derive_adhoc! {
+    pub NamePrinter =
+    impl $crate::NamePrinter for $ttype {
+        fn print_name() {
+            println!("The name of this type is {}", stringify!($ttype));
+        }
+    }
+}
+```
 
--->
+Note that this time,
+we've defined `NamePrinter` as a trait,
+and we've changed our template to refer to that trait as
+`$crate::NamePrinter`.
+The `$crate` syntax will expand to the name of the crate
+in which our template was defined,
+so that when later we expand this template,
+it can find the right template.
 
+Additionally, we need to re-export `derive_adhoc`
+from our crate, so that users get the correct version:
+
+```rust,ignore
+// you might want to apply #[doc(hidden)] to this.
+pub use derive_adhoc;
+```
+
+Now, when somebody wants to use our template,
+they can do it like this:
+
+```rust,ignore
+// Let's pretend our crate is called name_printer.
+use name_printer::{
+    // This is the trait we defined...
+    NamePrinter,
+    // This is the macro that makes our template work.
+    // (We might come up with a better syntax for this later).
+    derive_adhoc_template_NamePrinter.
+};
+use derive_adhoc::Adhoc;
+
+#[derive(Adhoc)]
+#[derive_adhoc(NamePrinter)]
+struct TheirStructure {
+    // ...
+}
+```
 
 ## If you're only deriving once...
 
