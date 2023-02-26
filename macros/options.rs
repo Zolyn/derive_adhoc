@@ -39,6 +39,7 @@ pub struct UnprocessedOptions(TokenStream);
 pub struct DaOptions {
     pub dbg: bool,
     pub driver_kind: Option<DaOptVal<ExpectedDriverKind>>,
+    pub expect_target: Option<DaOptVal<check::Target>>,
 }
 
 /// A single template option
@@ -57,6 +58,9 @@ enum OptionDetails {
     dbg,
     // TODO DOCS, in template-syntax.md I guess
     For(DaOptVal<ExpectedDriverKind>),
+    // TODO DOCS, in template-syntax.md I guess
+    // TODO should this be `producing` or something?
+    expect(DaOptVal<check::Target>),
 }
 
 /// Value for an option
@@ -98,7 +102,8 @@ impl OpContext {
     fn allowed(self, option: &DaOption) -> syn::Result<()> {
         use OpContext as OC;
         match &option.od {
-            OD::dbg => return Ok(()),
+            OD::dbg | //.
+            OD::expect(..) => return Ok(()),
             OD::For(..) => {}
         }
         match self {
@@ -197,6 +202,7 @@ impl Parse for DaOption {
 
         keyword! { dbg }
         keyword! { "for": For(input.parse()?) }
+        keyword! { expect(input.parse()?) }
 
         Err(kw.error("unknown derive-adhoc option"))
     }
@@ -259,6 +265,7 @@ impl DaOptions {
 
         Ok(match option.od {
             OD::dbg => self.dbg = true,
+            OD::expect(spec) => store(&mut self.expect_target, spec)?,
             OD::For(spec) => store(&mut self.driver_kind, spec)?,
         })
     }

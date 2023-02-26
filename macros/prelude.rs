@@ -4,7 +4,7 @@ pub use std::borrow::Cow;
 pub use std::cell::RefCell;
 pub use std::convert::{TryFrom, TryInto};
 pub use std::default::Default;
-pub use std::fmt::{self, Debug, Display};
+pub use std::fmt::{self, Debug, Display, Write as _};
 pub use std::iter;
 pub use std::marker::PhantomData;
 pub use std::mem;
@@ -30,6 +30,7 @@ pub use void::{ResultVoidErrExt as _, ResultVoidExt as _, Void};
 
 pub use TokenTree as TT;
 
+pub(crate) use crate::check;
 pub use crate::definition::escape_dollars;
 pub use crate::framework::TokenAccumulator;
 pub use crate::utils::expand_macro_name;

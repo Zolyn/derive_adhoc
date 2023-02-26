@@ -897,6 +897,7 @@ pub fn derive_adhoc_expand_func_macro(
     let DaOptions {
         dbg,
         driver_kind,
+        expect_target,
         //
     } = input.options;
 
@@ -954,6 +955,11 @@ pub fn derive_adhoc_expand_func_macro(
             &description, &output, &description,
         );
         eprint!("{}", dump);
+    }
+
+    let mut output = output;
+    if let Some(target) = expect_target {
+        check::check_expected_target_syntax(&mut output, target);
     }
 
     Ok(output)

@@ -29,6 +29,34 @@ mod paste;
 mod repeat;
 mod syntax;
 
+// "expect" feature; module named check.rs for tab completion reasons
+#[cfg(feature = "expect")]
+mod check;
+#[cfg(not(feature = "expect"))]
+mod check {
+    use crate::prelude::*;
+    #[derive(Debug, Clone, Copy, PartialEq)]
+    pub struct Target(Void);
+
+    impl FromStr for Target {
+        type Err = Void;
+        fn from_str(_: &str) -> Result<Self, Void> {
+            panic!("output syntax checking not supported, enable `expect` feature of `derive-adhoc`")
+        }
+    }
+
+    pub fn check_expected_target_syntax(
+        _output: &mut TokenStream,
+        target: DaOptVal<Target>,
+    ) {
+        void::unreachable(target.value.0)
+    }
+}
+impl DaOptValDescribable for check::Target {
+    const DESCRIPTION: &'static str =
+        "expected output syntax (`expect` option)";
+}
+
 #[doc=include_str!("NOTES.md")]
 mod _doc_notes {}
 
