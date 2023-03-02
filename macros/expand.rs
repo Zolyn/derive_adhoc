@@ -225,8 +225,8 @@ impl SubstVType {
 }
 
 impl SubstVPat {
-    // $vpat      for struct    $tname         { $( $fname: $fpatname ) }
-    // $vpat      for enum      $tname::$vname { $( $fname: $fpatname ) }
+    // $vpat      for struct    $tname         { $( $fname: $fpatname, ) }
+    // $vpat      for enum      $tname::$vname { $( $fname: $fpatname, ) }
     fn expand(
         &self,
         ctx: &Context,
@@ -254,6 +254,8 @@ impl SubstVPat {
                 paste.push_identfrag_toks(&field.fname(kw_span));
 
                 out.push_other_subst(&(), |out| paste.assemble(out))?;
+                out.write_tokens(Token![,](kw_span));
+
                 Ok::<_, syn::Error>(())
             })
         })?;
