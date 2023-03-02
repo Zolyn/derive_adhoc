@@ -44,6 +44,14 @@ enum Enum<F> {
     Struct { field: F },
 }
 
+#[derive(Adhoc)]
+#[derive_adhoc(PreciseClone)]
+enum AllTypes {
+   NoData,
+   Tuple(u16, u32),
+   Struct { a: String, b: String },
+}
+
 fn test<T: Clone>(value: &T) {
     let ours = value.clone();
     drop(ours);
