@@ -1,4 +1,4 @@
-# `derive_adhoc` and how to make it pay
+# Getting started with `derive_adhoc`.
 
 > Here I want to put an introduction about what derive_adhoc does.  For
 > now I'll just link to the [README].
@@ -55,19 +55,64 @@ pub struct MyStruct;
 MyStruct::print_name();
 ```
 
-<!--
-
 ## Exporting templates
 
-Explain how to declare a template that can be used from another crate?
+But now suppose that you want to expose your template,
+so that people can use it from any crate.
 
-Do we even support that well?
+To do this, you use `pub` before the name of your macro.
+```
+pub trait NamePrinter {
+    fn print_name();
+}
 
-I don't want to have to tell people to manually `#[macro_export]` and `pub use`
-a thing with a funny name.
+derive_adhoc::define_derive_adhoc! {
+    pub NamePrinter =
+    impl $crate::NamePrinter for $ttype {
+        fn print_name() {
+            println!("The name of this type is {}", stringify!($ttype));
+        }
+    }
+}
+```
 
--->
+Note that this time,
+we've defined `NamePrinter` as a trait,
+and we've changed our template to refer to that trait as
+`$crate::NamePrinter`.
+The `$crate` syntax will expand to the name of the crate
+in which our template was defined,
+so that when later we expand this template,
+it can find the right template.
 
+Additionally, we need to re-export `derive_adhoc`
+from our crate, so that users get the correct version:
+
+```rust,ignore
+// you might want to apply #[doc(hidden)] to this.
+pub use derive_adhoc;
+```
+
+Now, when somebody wants to use our template,
+they can do it like this:
+
+```rust,ignore
+// Let's pretend our crate is called name_printer.
+use name_printer::{
+    // This is the trait we defined...
+    NamePrinter,
+    // This is the macro that makes our template work.
+    // (We might come up with a better syntax for this later).
+    derive_adhoc_template_NamePrinter.
+};
+use derive_adhoc::Adhoc;
+
+#[derive(Adhoc)]
+#[derive_adhoc(NamePrinter)]
+struct TheirStructure {
+    // ...
+}
+```
 
 ## If you're only deriving once...
 
@@ -452,7 +497,6 @@ where
 ```
 
 
-
 > This time,
 > `derive_adhoc` has exactly _one_ piece cleverness at work.
 > It makes sure that either `$twheres` is empty,
@@ -464,6 +508,287 @@ where
 > `where ,`
 > (which is also a syntax error).
 
+## Deriving for enumerations
+
+At this point, you've probably noticed
+that we've defined `MyClone` to apply to `struct`s only,
+but it won't (yet) work on `enum`s.
+Let's fix that!
+
+Suppose that we have enumeration defined like this:
+
+```
+enum AllTypes {
+    NoData,
+    Tuple(u8, u16),
+    Struct { a: String, b: String }
+}
+```
+We want to make sure that
+MyClone can recognize and re-construct
+each of the three variants.
+
+We can do that as follow
+(For simplicity, we're going to ignore generics for now.)
+```
+# use derive_adhoc::define_derive_adhoc;
+define_derive_adhoc! {
+    MyClone =
+
+    impl Clone for $ttype
+    {
+        fn clone(&self) -> Self {
+            match self {
+                $(
+                    $vpat => $vtype {
+                        $(
+                            $fname: $fpatname.clone(),
+                        )
+                    },
+                )
+            }
+        }
+    }
+}
+```
+
+Note that now we have two levels of nested repetition.
+First, we match once for each variant.
+(This is at the `$vpat` and `$vtype` level.)
+Then we match once for each field of each variant.
+(This is at the `$fname` and `$fpatname` level.)
+
+Let's go over the new expansions here.
+First, we have `$vpat`:
+that expands to a pattern that can match and deconstruct
+a single variant.
+Then, we have `$vtype`:
+that's the type of the variant,
+suitable for use as a constructor.
+Then, inside the variant, we have `$fname`:
+that's our field name, which we've seen it before.
+Finally, we have `$fpatname`:
+that is the name of the variable that we used for this field
+in the pattern that deconstructed it.
+
+When we apply `MyClone` to our enumeration,
+we get something like this:
+```
+# enum AllTypes { NoData, Tuple(u8, u16), Struct { a: String, b: String } }
+impl Clone for AllTypes {
+    fn clone(&self) -> Self {
+        match self {
+            AllTypes::NoData {} => AllTypes::NoData {},
+            AllTypes::Tuple {
+                0: f_0,
+                1: f_1,
+            } => AllTypes::Tuple {
+                0: f_0.clone(),
+                1: f_1.clone()
+            },
+            AllTypes::Struct {
+                a: f_a,
+                b: f_b,
+            } => AllTypes::Struct {
+                a: f_a.clone(),
+                b: f_b.clone()
+            },
+        }
+    }
+}
+```
+
+> ... Or we _would_ get that, if it weren't for
+> [bug #15](https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/issues/15).
+> It turns out that derive_adhoc doesn't work
+> for multi-field enum variants yet. ☹
+
+Note that our template above will still work fine on a regular struct,
+even though it's written for an `enum`.
+If we apply `MyClone` above
+to `struct Example { a: u8, b: String }`,
+we get this:
+
+```
+# struct Example { a: u8, b: String }
+impl Clone for Example {
+    fn clone(&self) -> Self {
+        match self {
+            Example {
+                a: f_a,
+                b: f_b,
+            } => Example {
+                a: f_a.clone(),
+                b: f_b.clone(),
+            }
+        }
+    }
+}
+```
+
+So (in this case at least)
+we were able to write a single template expansion
+that worked for both `struct`s and enum`s.
+
+### Putting the generics back into our enumeration-friendly template
+
+Now let's see how it works when we try to handle generics again.
+(It's surprisingly straightforward!)
+
+```
+# use derive_adhoc::define_derive_adhoc;
+define_derive_adhoc! {
+    MyClone =
+
+    impl<$tgens> Clone for $ttype
+    where $( $ftype: Clone, )
+          $twheres
+    {
+        fn clone(&self) -> Self {
+            match self {
+                $(
+                    $vpat => $vtype {
+                        $(
+                            $fname: $fpatname.clone(),
+                        )
+                    },
+                )
+            }
+        }
+    }
+}
+```
+
+
+Note that when we define our additional `where` clauses,
+we don't have to specify separate of repetition
+for variants and fields:
+if we just have `$ftype` in a top-level repetition,
+`derive_adhoc` will iterate over all fields in all variants.
+
+# Some more advanced topics
+
+Now that we've our first basic example under our belt,
+let's look at some other things that `derive_adhoc` can do.
+
+## Transforming names and strings
+
+Often, it's useful to define new identifiers
+based on existing ones,
+or to convert identifiers into strings.
+
+You _could_ use the existing [`paste`] crate for this,
+or you can use a native facility provided by `derive_adhoc`.
+
+For example, suppose that you want
+to define a template that makes a "discriminant" type
+for your enumerations.
+You want the new type to be named `FooDiscriminant`,
+where `Foo` is the name of your existing type.
+While you're at it, you want to add an `is_` function
+to detect each variant.
+
+You can do that like this:
+```
+# use derive_adhoc::define_derive_adhoc;
+define_derive_adhoc! {
+    Discriminant =
+
+    #[derive(Copy,Clone,Eq,PartialEq,Debug)]
+    enum ${paste $tname Discriminant} {
+        $(
+            $vname,
+        )
+    }
+
+    impl<$tgens> $ttype where $twheres {
+       fn discriminant(&self) -> ${paste $tname Discriminant} {
+          match self {
+              $(
+                  $vpat => ${paste $tname Discriminant}::$vname,
+              )
+          }
+        }
+
+        $(
+            fn ${paste is_ ${snake_case $vname}} (&self) -> bool {
+                self.discriminant() ==
+                    ${paste $tname Discriminant} ::$vname
+            }
+        )
+    }
+}
+```
+
+Here we see a couple of new constructs.
+
+First, we're using `${paste}`
+to glue several identifiers together into one.
+When we say `${paste $tname Discriminant}`,
+we are generating a new identifier from `$tname`
+(the type name)
+and the word Discriminant.
+So if the type name is `Foo`,
+the new type will be called `FooDiscriminant`.
+
+Second, we're using `${snake_case}`
+to transform an identifier into `snake_case`
+(that is, lowercase words separated by underscores).
+We use this to turn the name of each variant (`$vname`)
+into a name suitable for use in a function name.
+So if a variant is called `ExampleVariant`,
+`${snake_case $vname}`  will be `example_variant`,
+and `${paste is_ ${snake_case $vname}}` will be
+`is_example_variant`.
+
+There are other case-changers:
+  * `${pascal_case my_ident}` becomes `MyIdent`.
+    You can also write this as
+    `${PascalCase ..}`,
+    `${upper_camel_case ..}`,
+    or `${UpperCamelCase ..}`.
+  * `${lower_camel_case my_ident}` becomes `myIdent`.
+    You can also write this as
+    `${lowerCamelCase .. }` or
+    `${LowerCamelCase ..}`
+  * `${shouty_snake_case MyIdent}` becomes `MY_IDENT`.
+    You can also write this as
+    `${SHOUTY_SNAKE_CASE ..}` or
+    `${ShoutySnakeCase ..}`.
+  * `${snake_case MyIdent}` becomes `my_ident`, as you've already seen.
+    You can also write it as
+    `${SnakeCase ..}`.
+
+### A note on syntax
+
+In this last section,
+you've seen a new syntax for the first time.
+Both `${paste ident ident..}` and `${snake_case ident}`
+are special cases of the following meta-syntax,
+which `derive_adhoc` uses everywhere:
+
+`${KEYWORD ARGS.. }`
+
+In fact, if you want,
+you can use this format
+for all of the expansion macros you have already seen:
+`$ttype` is just a shortened form for `${ttype}`,
+`$fname` is just `${fname}`,
+and so on.
+
+Some keywords,
+including some of those we've already seen,
+can take named arguments.
+The syntax for this is:
+
+`${KEYWORD ARGNAME=VALUE ARGNAME=VALUE...}`
+
+> For example, we can use this syntax to give optional arguments to `$vpat`;
+> see the template syntax reference for more information.
+
+If you ever need to write a literal `$`,
+you can write `$$`.
+
 
 
 
@@ -471,20 +796,18 @@ where
 >
 >  ## Something something lifetimes
 >
->  ## Making MyClone apply to `enum`s
->
->
->
-> # More advanced techniques
->
 > ## Explicit repetition
 
 > ## Conditional compilation
 
 > ## Working with attributes
+>
+> ## visibility
+>
+> ## `$tdef*`, `$vdef*, `$fdef*` — what it's for and why.
 
-> ## Transforming names and strings
 
 
 [reference]: crate::doc_template_syntax
 [README]: crate
+[`paste`]: https://docs.rs/paste/latest/paste/
