@@ -9,6 +9,17 @@ We expect to increase it cautiously and only with good reason.
 
 ## Changelog
 
+### 0.2.1
+
+#### Fixed
+
+ * `$vpat` expansion includes necessary post-field comma.  #15.
+ * Docs typo fixes.
+
+#### Improved
+
+ * docs: Much expanded tutorial (still a work in progress)
+
 ### 0.2.0
 
 #### Breaking
