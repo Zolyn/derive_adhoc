@@ -64,6 +64,37 @@ where
         }
     }
 }
+#[derive_adhoc(PreciseClone)]
+enum AllTypes {
+    NoData,
+    Tuple(u16, u32),
+    Struct { a: String, b: String },
+}
+impl Clone for AllTypes
+where
+    u16: Clone,
+    u32: Clone,
+    String: Clone,
+    String: Clone,
+{
+    fn clone(&self) -> Self {
+        match self {
+            AllTypes::NoData {} => AllTypes::NoData {},
+            AllTypes::Tuple { 0: f_0, 1: f_1 } => {
+                AllTypes::Tuple {
+                    0: f_0.clone(),
+                    1: f_1.clone(),
+                }
+            }
+            AllTypes::Struct { a: f_a, b: f_b } => {
+                AllTypes::Struct {
+                    a: f_a.clone(),
+                    b: f_b.clone(),
+                }
+            }
+        }
+    }
+}
 fn test<T: Clone>(value: &T) {
     let ours = value.clone();
     drop(ours);
