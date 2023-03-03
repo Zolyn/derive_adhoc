@@ -2,8 +2,6 @@
 //!
 //! These "combine"
 
-#![allow(unused_macros, unused_imports, unused_variables, dead_code)]
-
 use crate::prelude::*;
 
 use OptionDetails as OD;
@@ -17,6 +15,7 @@ pub struct UnprocessedOptions(TokenStream);
 /// All the template options, semantically resolved
 #[derive(Default, Debug, Clone)]
 pub struct DaOptions {
+    pub driver_kind: Option<(ExpectedDriverKind, Span)>,
 }
 
 /// A single template option
@@ -30,6 +29,22 @@ struct DaOption {
 #[derive(Debug, Clone)]
 #[allow(non_camel_case_types)] // clearer to use the exact ident
 enum OptionDetails {
+    // TODO DOCS, in template-syntax.md I guess
+    For(ExpectedDriverKind),
+}
+
+/// The (single) expected driver kind
+//
+// At some future point, we may want `for ...` keywords that
+// specify a range of possible drivers.  Then we'll need both
+// this enum, and a *set* of it, and calculate the intersection
+// in update_from_option.
+#[derive(Debug, Clone, Copy, Eq, PartialEq, EnumString, Display)]
+#[strum(serialize_all = "snake_case")]
+pub enum ExpectedDriverKind {
+    Struct,
+    Enum,
+    Union,
 }
 
 //---------- parsing ----------
@@ -76,7 +91,7 @@ impl Parse for DaOption {
         let kw = input.call(syn::Ident::parse_any)?;
 
         let from_od = |od| {
-            Ok::<_, syn::Error>(DaOption {
+            Ok(DaOption {
                 kw_span: kw.span(),
                 od,
             })
@@ -89,9 +104,18 @@ impl Parse for DaOption {
             keyword_general! { kw from_od OD; $($args)* }
         } }
 
-        // Keyword parsing will go here
+        keyword! { "for": For(input.parse()?) }
 
         Err(kw.error("unknown derive-adhoc option"))
+    }
+}
+
+impl Parse for ExpectedDriverKind {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let kw = input.call(Ident::parse_any)?;
+        kw.to_string()
+            .parse()
+            .map_err(|_| kw.error("unknown value for `for`"))
     }
 }
 
@@ -115,7 +139,35 @@ impl DaOptions {
     ///
     /// On error (eg, contradictory options), fails.
     fn update_from_option(&mut self, option: DaOption) -> syn::Result<()> {
+        fn store<T>(
+            already: &mut Option<(T, Span)>,
+            new: T,
+            span: Span,
+            on_contradiction: impl Display,
+        ) -> syn::Result<()>
+        where
+            T: PartialEq,
+        {
+            match already {
+                Some((already, _)) if already == &new => Ok(()),
+                Some((_, already)) => {
+                    Err([(*already, "first"), (span, "second")]
+                        .error(on_contradiction))
+                }
+                None => {
+                    *already = Some((new, span));
+                    Ok(())
+                }
+            }
+        }
+
         match option.od {
+            OD::For(spec) => store(
+                &mut self.driver_kind,
+                spec,
+                option.kw_span,
+                "contradictory `for` options",
+            ),
         }
     }
 }
