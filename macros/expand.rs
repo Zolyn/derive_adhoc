@@ -862,7 +862,30 @@ pub fn derive_adhoc_expand_func_macro(
     // eprintln!("derive_adhoc_expand! crate = {:?}", &input.template_crate);
 
     let DaOptions {
+        driver_kind,
     } = input.template_options;
+
+    if let Some((exp_kind, exp_span)) = driver_kind {
+        macro_rules! got_kind { { $($kind:ident)* } => {
+            match &input.driver.data {
+                $(
+                    syn::Data::$kind(..) => ExpectedDriverKind::$kind,
+                )*
+            }
+        } }
+
+        let got_kind = got_kind!(Struct Enum Union);
+        if got_kind != exp_kind {
+            return Err([
+                (exp_span, "expected kind"),
+                (input.driver.span(), "actual kind"),
+            ]
+            .error(format_args!(
+                "expected driver kind {}, but driver is {}",
+                exp_kind, got_kind,
+            )));
+        }
+    }
 
     let output = Context::call(&input.driver, &input.template_crate, |ctx| {
         let mut output = TokenAccumulator::new();
