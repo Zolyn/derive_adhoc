@@ -29,7 +29,6 @@ GetOptions(
 our $bizvsn = '0.0.666';
 our $found_differences = 0;
 
-# This is an anonymous 
 sub process_cargo_toml ($$$$) {
     my ($input, $output, $src_path, $before_lib) = @_;
 (sub { # anonymous subref has its own `...` operator state
