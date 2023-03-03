@@ -1,0 +1,19 @@
+# See tests/compat/README.md
+[package]
+name = "new-b"
+version = "0.0.1"
+edition = "2018"
+license="MIT"
+authors=["Ian Jackson <ijackson@chiark.greenend.org.uk>",
+         "and the contributors to Rust derive-adhoc"]
+description="compat testing crates - new part B, uses bizarre version"
+publish = false
+
+[dependencies]
+pub-a = { package = "old-a", path = "../old-a", version = "0.0.1" }
+derive-adhoc = { package = "bizarre-derive-adhoc", path = "../../pub-export/bizarre-facade", version = "0.0.666" }
+
+[lib]
+path = "../../pub-export/pub-b/pub-b.rs"
+doc = false
+doctest = false

@@ -26,10 +26,36 @@ dependencies = [
 
 [[package]]
 name = "derive-adhoc"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c524def97cf33ab9f9a7bc41c5392b4c1618fa9baea3d836c227b41c60de2abc"
+dependencies = [
+ "derive-adhoc-macros 0.2.0",
+ "heck",
+]
+
+[[package]]
+name = "derive-adhoc"
 version = "0.2.1"
 dependencies = [
- "derive-adhoc-macros",
+ "derive-adhoc-macros 0.2.1",
  "heck",
+]
+
+[[package]]
+name = "derive-adhoc-macros"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2d67b789c5749d46cca038603b02222a4d47ca2aab4433c50f953359808583e7"
+dependencies = [
+ "heck",
+ "itertools",
+ "proc-macro-crate",
+ "proc-macro2",
+ "quote",
+ "strum",
+ "syn",
+ "void",
 ]
 
 [[package]]
@@ -50,7 +76,7 @@ dependencies = [
 name = "derive-adhoc-tests"
 version = "0.1.0"
 dependencies = [
- "derive-adhoc",
+ "derive-adhoc 0.2.1",
  "easy-ext",
  "glob",
  "macrotest",
@@ -128,10 +154,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "new-b"
+version = "0.0.1"
+dependencies = [
+ "bizarre-derive-adhoc",
+ "old-a",
+]
+
+[[package]]
 name = "num-traits"
 version = "0.1.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "51eab148f171aefad295f8cece636fc488b9b392ef544da31ea4b8ef6b9e9c39"
+
+[[package]]
+name = "old-a"
+version = "0.0.1"
+dependencies = [
+ "derive-adhoc 0.2.0",
+]
+
+[[package]]
+name = "old-b"
+version = "0.0.1"
+dependencies = [
+ "derive-adhoc 0.2.0",
+ "pub-a",
+]
 
 [[package]]
 name = "proc-macro-crate"
@@ -156,7 +205,7 @@ dependencies = [
 name = "pub-a"
 version = "0.0.1"
 dependencies = [
- "derive-adhoc",
+ "derive-adhoc 0.2.1",
 ]
 
 [[package]]
