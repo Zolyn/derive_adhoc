@@ -24,6 +24,7 @@ mod invocation;
 // Implementation - specific areas
 mod boolean;
 mod expand;
+mod options;
 mod paste;
 mod repeat;
 mod syntax;

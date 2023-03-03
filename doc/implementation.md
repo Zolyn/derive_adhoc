@@ -64,7 +64,7 @@ Implemented in `invocation.rs::derive_adhoc_func_macro`.
 When applied like this
 ```rust,ignore
     derive_adhoc!{
-       StructName:
+       StructName TOPTIONS...:
        TEMPLATE...
     }
 ```
@@ -74,7 +74,7 @@ Expands to
     derive_adhoc_driver_StructName! {
        { TEMPLATE... }
        { ($) }
-       crate;
+       crate; (TOPTIONS...)
     }
 ```
 
@@ -89,7 +89,7 @@ The result of expanding the above is this:
         { pub struct StructName { /* original struct definition */ } }
         { }
         { TEMPLATE... }
-        { crate; }
+        { crate; (TOPTIONS...) }
     }
 ```
 
@@ -109,7 +109,7 @@ Implemented in `definition.rs::define_derive_adhoc_func_macro`.
 When used like this
 ```rust,ignore
     define_derive_adhoc! {
-        MyMacro =
+        MyMacro TOPTIONS... =
         TEMPLATE...
     }
 ```
@@ -124,7 +124,7 @@ Expands to
             { $($driver)* }
             { $($dpassthrough)* }
             { TEMPLATE... }
-            { $crate; }
+            { $crate; (TOPTIONS...) }
         }
     } }
 ```
