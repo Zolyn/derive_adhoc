@@ -1,0 +1,5 @@
+error: unknown derive-adhoc option
+ --> ui/badoptions.rs:8:14
+  |
+8 |     DataType with unknown option:
+  |              ^^^^
