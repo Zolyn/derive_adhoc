@@ -118,6 +118,24 @@ END
 })->()
 }
 
+sub process_pub_b_old_b () {
+    filter_start
+      'tests/pub-export/pub-b/pub-b.rs',
+      'tests/compat/old-b/old-b.rs',
+      <<END;
+/// Forward/backward compatibility tests
+/// See tests/compat/README.md
+END
+    while (<I>) {
+	s{^\s*//.*\n}{};
+	s{//.*}{};
+	s{_bizarre}{}g;
+	print O;
+    }
+
+    filter_finish();
+}
+
 process_cargo_toml('Cargo.toml',
 		   'tests/pub-export/bizarre-facade/Cargo.toml',
 		   'src/lib.rs', '');
@@ -130,6 +148,8 @@ bizarre = []
 default = ["bizarre"]
 
 END
+
+process_pub_b_old_b();
 
 if ($found_differences) {
     die "$0: --check, found differences.  Rerun $0 and commit.";
