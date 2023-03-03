@@ -635,28 +635,9 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         // keyword!{ KEYWORD [ {BLOCK WITH BINDINGS} ] [ CONSTRUCTOR-ARGS ] }
         // expands to   if ... { return ... }
         // KEYWORD can be "KEYWORD_STRING": CONSTRUCTOR
-        macro_rules! keyword {
-            { $kw:ident $( $rest:tt )* } => {
-                keyword!{ @ 1 stringify!($kw), $kw, $($rest)* }
-            };
-            { $kw:literal: $constr:ident $( $rest:tt )* } => {
-                keyword!{ @ 1 $kw, $constr, $($rest)* }
-            };
-            { @ 1 $kw:expr, $constr:ident, $( $ca:tt )? } => {
-                keyword!{ @ 2 $kw, $constr, { } $( $ca )? }
-            };
-            { @ 1 $kw:expr, $constr:ident, { $( $bindings:tt )* } $ca:tt } => {
-                keyword!{ @ 2 $kw, $constr, { $( $bindings )* } $ca }
-            };
-            { @ 2 $kw:expr, $constr:ident,
-              { $( $bindings:tt )* } $( $constr_args:tt )?
-            } => {
-                if kw == $kw {
-                    $( $bindings )*
-                    return from_sd(SD::$constr $( $constr_args )*);
-                }
-            };
-        }
+        macro_rules! keyword { { $($args:tt)* } => {
+            keyword_general! { kw from_sd SD; $($args)* }
+        } }
 
         let not_in_paste = O::not_in_paste(&kw);
         let not_in_case = O::not_in_case(&kw);
