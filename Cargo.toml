@@ -18,6 +18,9 @@ members = [
 	"tests",
 	"tests/pub-export/pub-a",
 	"tests/pub-export/pub-b",
+	"tests/compat/old-a",
+	"tests/compat/new-b",
+	"tests/compat/old-b",
 ]
 
 # After editing this file, you will probably need to run

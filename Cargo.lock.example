@@ -41,9 +41,19 @@ dependencies = [
 
 [[package]]
 name = "derive-adhoc"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c524def97cf33ab9f9a7bc41c5392b4c1618fa9baea3d836c227b41c60de2abc"
+dependencies = [
+ "derive-adhoc-macros 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "heck",
+]
+
+[[package]]
+name = "derive-adhoc"
 version = "0.2.1"
 dependencies = [
- "derive-adhoc-macros",
+ "derive-adhoc-macros 0.2.1",
  "heck",
 ]
 
@@ -62,10 +72,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "derive-adhoc-macros"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "00676802dacf35868b6e0b84ff4b98a13c58a7492bd272a41528e854cde3c924"
+dependencies = [
+ "heck",
+ "itertools",
+ "proc-macro-crate",
+ "proc-macro2",
+ "quote",
+ "strum",
+ "syn",
+ "void",
+]
+
+[[package]]
 name = "derive-adhoc-tests"
 version = "0.1.0"
 dependencies = [
- "derive-adhoc",
+ "derive-adhoc 0.2.1",
  "easy-ext",
  "glob",
  "macrotest",
@@ -155,6 +181,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2dffe52ecf27772e601905b7522cb4ef790d2cc203488bbd0e2fe85fcb74566d"
 
 [[package]]
+name = "new-b"
+version = "0.0.1"
+dependencies = [
+ "bizarre-derive-adhoc",
+ "old-a",
+]
+
+[[package]]
+name = "old-a"
+version = "0.0.1"
+dependencies = [
+ "derive-adhoc 0.2.0",
+]
+
+[[package]]
+name = "old-b"
+version = "0.0.1"
+dependencies = [
+ "derive-adhoc 0.2.0",
+ "pub-a",
+]
+
+[[package]]
 name = "once_cell"
 version = "1.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -193,7 +242,7 @@ dependencies = [
 name = "pub-a"
 version = "0.0.1"
 dependencies = [
- "derive-adhoc",
+ "derive-adhoc 0.2.1",
 ]
 
 [[package]]

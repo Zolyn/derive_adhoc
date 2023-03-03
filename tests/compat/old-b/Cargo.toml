@@ -1,0 +1,19 @@
+# See tests/compat/README.md
+[package]
+name = "old-b"
+version = "0.0.1"
+edition = "2018"
+license="MIT"
+authors=["Ian Jackson <ijackson@chiark.greenend.org.uk>",
+         "and the contributors to Rust derive-adhoc"]
+description="compat testing crates - old part B"
+publish = false
+
+[dependencies]
+pub-a = { path = "../../pub-export/pub-a", version = "0.0.1" }
+derive-adhoc = "=0.2.0"
+
+[lib]
+path = "old-b.rs"
+doc = false
+doctest = false
