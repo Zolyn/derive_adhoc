@@ -220,3 +220,51 @@ pub fn expand_macro_name() -> Result<TokenStream, syn::Error> {
         )),
     }
 }
+
+//---------- general keyword enum parsing ----------
+
+/// General-purpose keyword parser
+///
+/// ```ignore
+/// keyword_general!{
+///     KW_VAR FROM_ENUM ENUM;
+///     KEYWORD [ {BLOCK WITH BINDINGS} ] [ CONSTRUCTOR-ARGS ] }
+/// ```
+/// Expands to:
+/// ```ignore
+///     if KW_VAR = ... { return FROM_ENUM(ENUM::CONSTRUCTOR ...) }
+/// ```
+///
+/// `KEYWORD` can be `"KEYWORD_STRING": CONSTRUCTOR`
+macro_rules! keyword_general {
+    { $kw_var:ident $from_enum:ident $Enum:ident;
+      $kw:ident $( $rest:tt )* } => {
+        keyword_general!{ $kw_var $from_enum $Enum;
+                          @ 1 stringify!($kw), $kw, $($rest)* }
+    };
+    { $kw_var:ident $from_enum:ident $Enum:ident;
+      $kw:literal: $constr:ident $( $rest:tt )* } => {
+        keyword_general!{ $kw_var $from_enum $Enum;
+                          @ 1 $kw, $constr, $($rest)* }
+    };
+    { $kw_var:ident $from_enum:ident $Enum:ident;
+      @ 1 $kw:expr, $constr:ident, $( $ca:tt )? } => {
+        keyword_general!{ $kw_var $from_enum $Enum;
+                          @ 2 $kw, $constr, { } $( $ca )? }
+    };
+    { $kw_var:ident $from_enum:ident $Enum:ident;
+      @ 1 $kw:expr, $constr:ident, { $( $bindings:tt )* } $ca:tt } => {
+        keyword_general!{ $kw_var $from_enum $Enum;
+                          @ 2 $kw, $constr, { $( $bindings )* } $ca }
+    };
+    { $kw_var:ident $from_enum:ident $Enum:ident;
+      @ 2 $kw:expr, $constr:ident,
+      { $( $bindings:tt )* } $( $constr_args:tt )?
+    } => {
+        if $kw_var == $kw {
+            $( $bindings )*
+            return $from_enum($Enum::$constr $( $constr_args )*);
+        }
+    };
+    { $($x:tt)* } => { compile_error!(stringify!($($x)*)) };
+}

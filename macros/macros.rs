@@ -11,14 +11,15 @@ mod prelude;
 
 use prelude::*;
 
+// Implementation - common parts
+#[macro_use]
+mod utils;
+mod framework;
+
 // modules containing the actual implementations of our proc-macros
 mod capture;
 mod definition;
 mod invocation;
-
-// Implementation - common parts
-mod framework;
-mod utils;
 
 // Implementation - specific areas
 mod boolean;
