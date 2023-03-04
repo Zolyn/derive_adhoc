@@ -127,7 +127,7 @@ pub fn define_derive_adhoc_func_macro(
         macro_rules! #templ_mac_name {
             {
                 { $($driver:tt)* }
-                { $(future:tt)* }
+                { $($future:tt)* }
                 $($dpassthrough:tt)*
             } => {
                 #expand_macro! {
