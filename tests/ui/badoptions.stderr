@@ -28,3 +28,9 @@ error: expected driver kind union, but driver is struct (actual kind)
    | |_- in this macro invocation
    |
    = note: this error originates in the macro `derive_adhoc_driver_DataType` which comes from the expansion of the macro `derive_adhoc` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: expected one of `!` or `::`, found `error`
+  --> ui/badoptions.rs:25:12
+   |
+25 |     syntax error;
+   |            ^^^^^ expected one of `!` or `::`
