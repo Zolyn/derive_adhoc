@@ -27,9 +27,8 @@ mod list_names;
 #[cfg(test)]
 mod modules;
 
-// TODO enable this test case when we have completed the lockfile mgmt etc.
-//#[cfg(test)]
-//mod stderr;
+#[cfg(test)]
+mod stderr;
 
 #[ext(DebugExt)]
 pub impl<T: Debug> T {
