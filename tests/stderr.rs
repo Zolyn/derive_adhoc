@@ -105,15 +105,23 @@ fn stderr() {
     assert!(!status.success());
     eprintln!("exit status: {} (error, as expected)", status);
 
-    let mut scriptlet = Command::new("sh");
+    let mut scriptlet = Command::new("bash");
     scriptlet.arg("-ec");
     scriptlet.arg(
         r#"
+        set -o pipefail
         file="$1"; shift
 
-        egrep -v '^error: could not compile `derive-adhoc-stderr-test' \
-            "$file.new" >"$file.new.tmp"
-        mv -v "$file.new.tmp" "$file.new"
+        perl -e '
+            @l = <STDIN>;
+            @l = grep { !(
+                m{^error: could not compile `derive-adhoc-stderr-test} ||
+                m{^To learn more, run the command again with --verbose}
+           ) } @l;
+           while (@l && $l[$#l] !~ m/\S/) { pop @l; }
+           print @l or die $!;
+        ' <"$file.new" >"$file.new.tmp"
+        mv -- "$file.new.tmp" "$file.new"
 
         if diff -u -- "$file" "$file.new" >&2; then
             echo >&2 'stderr: no changes to stderr output.'
