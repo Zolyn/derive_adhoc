@@ -20,4 +20,9 @@ derive_adhoc! {
     DataType for struct:
 }
 
+derive_adhoc! {
+    DataType dbg:
+    syntax error;
+}
+
 fn main() {}
