@@ -3,3 +3,28 @@ error: unknown derive-adhoc option
   |
 8 |     DataType with unknown option:
   |              ^^^^
+
+error: unknown value for `for`
+  --> ui/badoptions.rs:12:18
+   |
+12 |     DataType for wombat:
+   |                  ^^^^^^
+
+error: expected driver kind union, but driver is struct (expected kind)
+  --> ui/badoptions.rs:16:14
+   |
+16 |     DataType for union:
+   |              ^^^
+
+error: expected driver kind union, but driver is struct (actual kind)
+  --> ui/badoptions.rs:5:1
+   |
+5  |   struct DataType;
+   |   ^^^^^^^^^^^^^^^^
+...
+15 | / derive_adhoc! {
+16 | |     DataType for union:
+17 | | }
+   | |_- in this macro invocation
+   |
+   = note: this error originates in the macro `derive_adhoc_driver_DataType` which comes from the expansion of the macro `derive_adhoc` (in Nightly builds, run with -Z macro-backtrace for more info)
