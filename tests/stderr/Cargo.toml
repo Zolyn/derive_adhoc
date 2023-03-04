@@ -1,0 +1,17 @@
+[package]
+name = "derive-adhoc-stderr-test"
+version = "0.0.1"
+edition = "2018"
+license="MIT"
+authors=["Ian Jackson <ijackson@chiark.greenend.org.uk>",
+         "and the contributors to Rust derive-adhoc"]
+description="stderr testing crates - does not build"
+publish = false
+
+[dependencies]
+derive-adhoc = { path = "../..", version = "0.2.1" }
+
+[workspace]
+
+[lib]
+path = "stderr-lib.rs"

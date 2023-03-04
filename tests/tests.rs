@@ -27,6 +27,9 @@ mod list_names;
 #[cfg(test)]
 mod modules;
 
+#[cfg(test)]
+mod stderr;
+
 #[ext(DebugExt)]
 pub impl<T: Debug> T {
     fn to_debug(&self) -> String {
