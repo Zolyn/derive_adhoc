@@ -15,6 +15,7 @@ pub struct UnprocessedOptions(TokenStream);
 /// All the template options, semantically resolved
 #[derive(Default, Debug, Clone)]
 pub struct DaOptions {
+    pub dbg: bool,
     pub driver_kind: Option<(ExpectedDriverKind, Span)>,
 }
 
@@ -30,6 +31,8 @@ struct DaOption {
 #[derive(Debug, Clone)]
 #[allow(non_camel_case_types)] // clearer to use the exact ident
 enum OptionDetails {
+    // TODO DOCS, in template-syntax.md I guess
+    dbg,
     // TODO DOCS, in template-syntax.md I guess
     For((ExpectedDriverKind, Span)),
 }
@@ -105,6 +108,7 @@ impl Parse for DaOption {
             keyword_general! { kw from_od OD; $($args)* }
         } }
 
+        keyword! { dbg }
         keyword! { "for": For(ExpectedDriverKind::parse(input)?) }
 
         Err(kw.error("unknown derive-adhoc option"))
@@ -163,12 +167,13 @@ impl DaOptions {
             }
         }
 
-        match option.od {
+        Ok(match option.od {
+            OD::dbg => self.dbg = true,
             OD::For(spec) => store(
                 &mut self.driver_kind,
                 spec,
                 "contradictory `for` options",
-            ),
-        }
+            )?,
+        })
     }
 }
