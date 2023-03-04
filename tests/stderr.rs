@@ -72,6 +72,8 @@ fn stderr() {
         "--target-dir=target".into(),
         "--message-format=json".into(),
         "--quiet".into(),
+        "--no-default-features".into(),
+        "--features=enable".into(),
     ];
 
     let xoptions = [

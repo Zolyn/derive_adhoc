@@ -11,9 +11,19 @@ description="stderr testing crates - does not build"
 publish = false
 
 [dependencies]
-derive-adhoc = { path = "../..", version = "0.2.1" }
+derive-adhoc = { path = "../..", version = "0.2.2", features = ["full"] }
 
-[workspace]
+[features]
+# The purpose of this crate is to fail the build, with error messages
+# that we collect.  But to avoid having multiple Cargo.lock, etc.,
+# we want it to be a member of the workspace.
+#
+# So we arrange that it is entirely empty unless properly enabled.
+# "properly enabled" means `enable` is enabled, *and* `disable` is disabled.
+# See the #![cfg] at the top of stderr-lib.rs.
+default = ["disable"]
+enable = []
+disable = []
 
 [lib]
 path = "stderr-lib.rs"

@@ -74,6 +74,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "derive-adhoc-stderr-test"
+version = "0.0.1"
+dependencies = [
+ "derive-adhoc 0.2.2",
+]
+
+[[package]]
 name = "derive-adhoc-tests"
 version = "0.0.1"
 dependencies = [

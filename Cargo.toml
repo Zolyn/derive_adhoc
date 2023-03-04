@@ -21,6 +21,7 @@ members = [
 	"tests/compat/old-a",
 	"tests/compat/new-b",
 	"tests/compat/old-b",
+	"tests/stderr",
 ]
 
 # After editing this file, you will probably need to run

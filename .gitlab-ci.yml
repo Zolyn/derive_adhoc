@@ -10,6 +10,8 @@ default:
     # Print version info for debugging
     - rustc --version ||true
     - cargo --version ||true
+    # See tests/stderr.rs
+    - export STDERRTEST_CARGO_OPTIONS=--locked
 
 # Official language image. Look for the different tagged releases at:
 # https://hub.docker.com/r/library/rust/tags/
