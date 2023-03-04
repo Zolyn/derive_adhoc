@@ -11,10 +11,10 @@ error: unknown value for `for`
    |                  ^^^^^^
 
 error: expected driver kind union, but driver is struct (expected kind)
-  --> ui/badoptions.rs:16:14
+  --> ui/badoptions.rs:16:18
    |
 16 |     DataType for union:
-   |              ^^^
+   |                  ^^^^^
 
 error: expected driver kind union, but driver is struct (actual kind)
   --> ui/badoptions.rs:5:1
