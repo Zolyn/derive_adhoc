@@ -133,7 +133,14 @@ pub fn derive_adhoc_derive_macro(
                     { $($template)* }
                     { $($tpassthrough)* }
                 }
-            }
+            };
+            { $($wrong:tt)* } => {
+                compile_error!{concat!(
+                    "wrong input to derive-adhoc driver inner macro ",
+                    stringify!(#driver_mac_name),
+                    "; might be due to incompatible derive-adhoc versions(s)",
+                )}
+            };
         }
     };
 
