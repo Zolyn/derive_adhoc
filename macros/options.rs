@@ -131,6 +131,7 @@ impl ToTokens for UnprocessedOptions {
 }
 
 impl UnprocessedOptions {
+    #[allow(dead_code)] // Currently unused, retain it in case we need it
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }

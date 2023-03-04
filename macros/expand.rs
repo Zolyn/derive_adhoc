@@ -55,14 +55,11 @@ impl Parse for DeriveAdhocExpandInput {
         let template_crate = template_passed.parse()?;
         let _: Token![;] = template_passed.parse()?;
 
-        let template_options = (!template_passed.is_empty())
-            .then(|| {
-                let tokens;
-                let _ = parenthesized!(tokens in template_passed);
-                DaOptions::parse(&tokens)
-            })
-            .transpose()?
-            .unwrap_or_default();
+        let template_options = {
+            let tokens;
+            let _ = parenthesized!(tokens in template_passed);
+            DaOptions::parse(&tokens)?
+        };
 
         let _: TokenStream = template_passed.parse()?;
 

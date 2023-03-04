@@ -63,36 +63,11 @@ pub fn derive_adhoc_func_macro(
         name
     };
 
-    // We must output the extra template arguments.
-    // But maybe the template engine we are speaking to is old.
-    // So any of the arguments that aren't "blank", we leave off.
-    // But we can only do that at the end.
-    enum Extra {
-        Required(TokenStream),
-        Blank(TokenStream),
-    }
-    impl ToTokens for Extra {
-        fn to_tokens(&self, out: &mut TokenStream) {
-            match self {
-                Extra::Required(v) => v.to_tokens(out),
-                Extra::Blank(v) => v.to_tokens(out),
-            }
-        }
-    }
-    let mut extras = vec![if options.is_empty() {
-        Extra::Blank(quote! { () })
-    } else {
-        Extra::Required(quote! { (#options) })
-    }];
-    while matches!(extras.last(), Some(Extra::Blank(_))) {
-        extras.pop();
-    }
-
     let output = quote! {
         #driver_mac_name !{
             { #template }
             { ($) }
-            crate; #(#extras)*
+            crate; (#options)
         }
     };
 
