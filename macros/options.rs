@@ -60,10 +60,18 @@ pub enum ExpectedDriverKind {
 
 //---------- parsing ----------
 
-impl Parse for UnprocessedOptions {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
+impl UnprocessedOptions {
+    /// Parse the options allowed in a template definition
+    pub fn parse_in_template(input: ParseStream) -> syn::Result<Self> {
+        Self::parse_general(input, |_| Ok(()))
+    }
+
+    fn parse_general(
+        input: ParseStream,
+        chk: impl Fn(&DaOption) -> syn::Result<()>,
+    ) -> syn::Result<Self> {
         // Scan ahead for a syntax check
-        DaOption::parse_several(&input.fork(), |_| Ok(()))?;
+        DaOption::parse_several(&input.fork(), |opt| chk(&opt))?;
 
         // Collect everything until the : or =
         let mut out = TokenStream::new();
