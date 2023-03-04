@@ -21,6 +21,7 @@ pub struct DaOptions {
 /// A single template option
 #[derive(Debug)]
 struct DaOption {
+    #[allow(dead_code)] // TODO maybe remove instead ?
     pub kw_span: Span,
     pub od: OptionDetails,
 }
@@ -30,7 +31,7 @@ struct DaOption {
 #[allow(non_camel_case_types)] // clearer to use the exact ident
 enum OptionDetails {
     // TODO DOCS, in template-syntax.md I guess
-    For(ExpectedDriverKind),
+    For((ExpectedDriverKind, Span)),
 }
 
 /// The (single) expected driver kind
@@ -104,18 +105,20 @@ impl Parse for DaOption {
             keyword_general! { kw from_od OD; $($args)* }
         } }
 
-        keyword! { "for": For(input.parse()?) }
+        keyword! { "for": For(ExpectedDriverKind::parse(input)?) }
 
         Err(kw.error("unknown derive-adhoc option"))
     }
 }
 
-impl Parse for ExpectedDriverKind {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
+impl ExpectedDriverKind {
+    fn parse(input: ParseStream) -> syn::Result<(Self, Span)> {
         let kw = input.call(Ident::parse_any)?;
-        kw.to_string()
+        let exp = kw.to_string()
             .parse()
-            .map_err(|_| kw.error("unknown value for `for`"))
+            .map_err(|_| kw.error("unknown value for `for`"))?;
+        let span = kw.span();
+        Ok((exp, span))
     }
 }
 
@@ -141,8 +144,7 @@ impl DaOptions {
     fn update_from_option(&mut self, option: DaOption) -> syn::Result<()> {
         fn store<T>(
             already: &mut Option<(T, Span)>,
-            new: T,
-            span: Span,
+            (new, span): (T, Span),
             on_contradiction: impl Display,
         ) -> syn::Result<()>
         where
@@ -165,7 +167,6 @@ impl DaOptions {
             OD::For(spec) => store(
                 &mut self.driver_kind,
                 spec,
-                option.kw_span,
                 "contradictory `for` options",
             ),
         }
