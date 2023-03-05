@@ -236,16 +236,18 @@ impl DaOptions {
         fn store<V>(
             already: &mut Option<DaOptVal<V>>,
             new: DaOptVal<V>,
-            on_contradiction: impl Display,
         ) -> syn::Result<()>
         where
-            V: PartialEq,
+            V: PartialEq + DaOptValDescribable,
         {
             match already {
                 Some(already) if already.value == new.value => Ok(()),
                 Some(already) => {
                     Err([(already.span, "first"), (new.span, "second")]
-                        .error(on_contradiction))
+                        .error(format_args!(
+                            "contradictory values for {}",
+                            V::DESCRIPTION,
+                        )))
                 }
                 None => {
                     *already = Some(new);
@@ -259,7 +261,6 @@ impl DaOptions {
             OD::For(spec) => store(
                 &mut self.driver_kind,
                 spec,
-                "contradictory `for` options",
             )?,
         })
     }
