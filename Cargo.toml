@@ -34,7 +34,7 @@ default = ["full"]
 full = ["case"]
 minimal-1 = []
 
-case = ["derive-adhoc-macros/case", "minimal-1"]
+case = ["derive-adhoc-macros/case", "heck", "minimal-1"]
 
 [dependencies]
 derive-adhoc-macros = { path = "macros", version = "=0.2.2", default_features = false }

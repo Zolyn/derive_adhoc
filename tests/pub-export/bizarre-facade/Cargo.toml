@@ -22,7 +22,7 @@ default = ["full"]
 full = ["case"]
 minimal-1 = []
 
-case = ["derive-adhoc-macros/case", "minimal-1"]
+case = ["derive-adhoc-macros/case", "heck", "minimal-1"]
 
 [dependencies]
 derive-adhoc-macros = { package = "bizarre-derive-adhoc-macros", path = "../bizarre-macros", version = "0.0.666" }
