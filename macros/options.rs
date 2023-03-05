@@ -60,6 +60,17 @@ pub enum ExpectedDriverKind {
 
 //---------- parsing ----------
 
+fn continue_options(input: ParseStream) -> Option<Lookahead1> {
+    if input.is_empty() {
+        return None;
+    }
+    let la = input.lookahead1();
+    if la.peek(Token![:]) || la.peek(Token![=]) {
+        return None;
+    }
+    Some(la)
+}
+
 impl UnprocessedOptions {
     /// Parse the options allowed in a template definition
     pub fn parse_in_template(input: ParseStream) -> syn::Result<Self> {
@@ -75,10 +86,7 @@ impl UnprocessedOptions {
 
         // Collect everything until the : or =
         let mut out = TokenStream::new();
-        while !(input.peek(Token![:])
-            || input.peek(Token![=])
-            || input.is_empty())
-        {
+        while continue_options(input).is_some() {
             let tt: TokenTree = input.parse()?;
             out.extend([tt]);
         }
