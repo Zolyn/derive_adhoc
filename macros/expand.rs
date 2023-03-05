@@ -64,23 +64,28 @@ impl Parse for DeriveAdhocExpandInput {
             let template_brace = braced!(template in input);
             let template = Template::parse(&template, ());
 
-            let template_passed;
-            let _ = braced!(template_passed in input);
-            let template_crate = template_passed.parse()?;
-            let _: Token![;] = template_passed.parse()?;
+            let template_crate;
+            let template_name;
+            {
+                let template_passed;
+                let _ = braced!(template_passed in input);
 
-            let tokens;
-            let _ = bracketed!(tokens in template_passed);
-            options.parse_update(&tokens, OpContext::Template)?;
+                template_crate = template_passed.parse()?;
+                let _: Token![;] = template_passed.parse()?;
 
-            let template_name = if template_passed.peek(Token![;]) {
-                None
-            } else {
-                Some(template_passed.parse()?)
-            };
-            let _: Token![;] = template_passed.parse()?;
+                let tokens;
+                let _ = bracketed!(tokens in template_passed);
+                options.parse_update(&tokens, OpContext::Template)?;
 
-            let _: TokenStream = template_passed.parse()?;
+                template_name = if template_passed.peek(Token![;]) {
+                    None
+                } else {
+                    Some(template_passed.parse()?)
+                };
+                let _: Token![;] = template_passed.parse()?;
+
+                let _: TokenStream = template_passed.parse()?;
+            }
 
             let _: TokenStream = input.parse()?;
 
