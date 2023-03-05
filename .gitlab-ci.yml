@@ -1,6 +1,10 @@
 # Template originally came from:
 # https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Rust.gitlab-ci.yml
 
+stages:
+  - test
+  - comprehensive
+
 default:
   before_script:
     # Print version info for debugging
@@ -28,8 +32,10 @@ maint-check-bizarre:
   script:
     - maint/update-bizarre --check
 
+# Check for FIXMEs.  This is in "comprehensive" so you can sabotage
+# the CI, but still get it all to run - useful for iterating through CI.
 maint-check-todos:
-  stage: test
+  stage: comprehensive
   script:
     - maint/check-blocking-todos
 
@@ -60,7 +66,7 @@ cargo-test:
 # compiler changes.  But we do enable the "recent" feature to test even new
 # features.
 stable:
-  stage: test
+  stage: comprehensive
   script:
     - mv Cargo.lock.example Cargo.lock
     - cargo test --locked --workspace --verbose --features=derive-adhoc-tests/recent
@@ -69,7 +75,7 @@ stable:
 #
 # We don't enable any of the optional fatures in derive-adhoc-tests.
 minimal-versions:
-  stage: test
+  stage: comprehensive
   image: "rust:1.54.0"
   script:
     - mv Cargo.lock.minimal Cargo.lock
