@@ -895,11 +895,16 @@ pub fn derive_adhoc_expand_func_macro(
         }
     }
 
-    let output = Context::call(&input.driver, &input.template_crate, |ctx| {
-        let mut output = TokenAccumulator::new();
-        input.template.expand(&ctx, &mut output);
-        output.tokens()
-    })?;
+    let output = Context::call(
+        &input.driver,
+        &input.template_crate,
+        //
+        |ctx| {
+            let mut output = TokenAccumulator::new();
+            input.template.expand(&ctx, &mut output);
+            output.tokens()
+        },
+    )?;
 
     //    dbg!(&&output);
     if dbg {
