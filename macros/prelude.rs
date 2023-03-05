@@ -17,7 +17,8 @@ pub use proc_macro2::{Delimiter, Ident, Literal, Punct};
 pub use proc_macro2::{Span, TokenStream, TokenTree};
 pub use quote::{format_ident, quote, quote_spanned, ToTokens};
 pub use strum::IntoEnumIterator as _;
-pub use strum::{AsRefStr, Display, EnumIter, EnumString};
+pub use strum::{AsRefStr, Display, EnumCount, EnumDiscriminants};
+pub use strum::{EnumIter, EnumString};
 pub use syn::ext::IdentExt;
 pub use syn::parse::{Lookahead1, Parse, ParseStream, Parser};
 pub use syn::punctuated::Punctuated;
@@ -38,3 +39,4 @@ pub use crate::utils::{ErrorLoc, MakeError};
 pub use crate::utils::{ToTokensPunctComposable, TokenPastesAsIdent};
 
 pub use crate::expand::*;
+pub use crate::options::*;
