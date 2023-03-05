@@ -4,6 +4,8 @@
 #
 # Run manually as needed.  The Cargo.lock.minimal is used by
 # the minimal-versions test in .gitlab-ci.yml.
+#
+# Any arguments are passed through to "cargo update".
 
 set -euo pipefail
 
@@ -18,6 +20,6 @@ trap '
 mv Cargo.lock.example Cargo.lock.example.aside # for nailing-cargo
 cp Cargo.lock.minimal Cargo.lock
 
-${CARGO-cargo} +nightly update -Z minimal-versions
+${CARGO-cargo} +nightly update -Z minimal-versions "$@"
 
 mv Cargo.lock Cargo.lock.minimal

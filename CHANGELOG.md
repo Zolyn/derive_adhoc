@@ -9,6 +9,20 @@ We expect to increase it cautiously and only with good reason.
 
 ## Changelog
 
+### 0.2.2
+
+#### Fixed (future compatibility)
+
+ * Pinned dependency from `derive-adhoc` to `derive-adhoc-macros`.
+ * Handling of certain supposedly-future-compatible options fixed.
+   ("future driver options" argument to `d_a_t_T`).
+
+#### Improved
+
+ * Better error messages with usupported combinations of features
+   with mixed derive-adhoc versions.  #10.
+ * Compatibility with derive-adhoc 0.2.0 tested in CI.
+
 ### 0.2.1
 
 #### Fixed
