@@ -205,10 +205,9 @@ impl Parse for DaOption {
 impl<V: FromStr + DaOptValDescribable> Parse for DaOptVal<V> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let kw = input.call(Ident::parse_any)?;
-        let value = kw
-            .to_string()
-            .parse()
-            .map_err(|_| kw.error(format_args!("unknown value for {}", V::DESCRIPTION)))?;
+        let value = kw.to_string().parse().map_err(|_| {
+            kw.error(format_args!("unknown value for {}", V::DESCRIPTION))
+        })?;
         let span = kw.span();
         Ok(DaOptVal { value, span })
     }
