@@ -63,7 +63,9 @@ impl Parse for DeriveAdhocExpandInput {
             let template_options = {
                 let tokens;
                 let _ = bracketed!(tokens in template_passed);
-                DaOptions::parse(&tokens)?
+                let mut options = DaOptions::default();
+                options.parse_update(&tokens, OpContext::Template)?;
+                options
             };
 
             let _: TokenStream = template_passed.parse()?;

@@ -106,13 +106,16 @@ impl UnprocessedOptions {
     }
 }
 
-impl Parse for DaOptions {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let mut self_ = DaOptions::default();
+impl DaOptions {
+    pub fn parse_update(
+        &mut self,
+        input: ParseStream,
+        opcontext: OpContext,
+    ) -> syn::Result<()> {
         DaOption::parse_several(input, |option| {
-            self_.update_from_option(option)
-        })?;
-        Ok(self_)
+            opcontext.check(&option)?;
+            self.update_from_option(option)
+        })
     }
 }
 
