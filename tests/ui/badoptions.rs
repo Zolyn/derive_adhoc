@@ -1,4 +1,4 @@
-#![allow(unused_macros)]
+// Tests involving driver and template options
 
 use derive_adhoc::{define_derive_adhoc, derive_adhoc, Adhoc};
 
@@ -8,7 +8,7 @@ define_derive_adhoc! {
 }
 
 #[derive(Adhoc)]
-// #[derive_adhoc(BadOptionsTemplate[dbg])]
+#[derive_adhoc(BadOptionsTemplate[dbg])]
 struct BadOptionsDriver;
 
 derive_adhoc! {
