@@ -1,0 +1,46 @@
+#!/bin/bash
+#
+usage() {
+    cat >&2 <<'END'
+Usage:
+    maint/update-versions VERSION
+
+Updates versions to VERSION, and then runs
+    cargo fetch --offline  # to update the lockfile
+    maint/update-bizarre
+END
+}
+# We're not using cargo-edit or cargo-version because our
+# multi-version tests make things weird.
+
+# CARGO='nailing-cargo -u' maint/update-version VERSION
+
+set -e -o pipefail
+
+case "$#/$1" in
+    1/0.*) ;;
+    *) usage; exit 12;;
+esac
+
+version=$1; shift
+
+process () {
+    perl -i~ -wpe '
+        use strict;
+        my $eligible = qr{"(=?)(?!0\.0\.)\d+\.\d+\.\d+"};
+	my $new = "'"$version"'";
+        if (m{^version *= }) {
+            s{$eligible}{"$1$new"};
+        } elsif (m{^derive-adhoc.*.*path = }) {
+            s{\bversion *= *$eligible}{version = "$1$new"}g;
+        }
+    ' "$1"
+}
+
+process Cargo.toml
+process macros/Cargo.toml
+process tests/Cargo.toml
+process tests/pub-export/pub-a/Cargo.toml
+
+${CARGO-cargo} fetch --offline
+maint/update-minimal-versions --offline
