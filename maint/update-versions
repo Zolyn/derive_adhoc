@@ -3,9 +3,9 @@
 usage() {
     cat >&2 <<'END'
 Usage:
-    maint/update-versions VERSION
+    maint/update-versions [VERSION]
 
-Updates versions to VERSION, and then runs
+Updates versions to VERSION, if supplied, and then runs
     cargo fetch --offline  # to update the lockfile
     maint/update-bizarre
 END
@@ -14,15 +14,17 @@ END
 # multi-version tests make things weird.
 
 # CARGO='nailing-cargo -u' maint/update-version VERSION
+# CARGO='nailing-cargo -EEu --git' maint/update-versions
 
 set -e -o pipefail
 
 case "$#/$1" in
+    0/) ;;
     1/0.*) ;;
     *) usage; exit 12;;
 esac
 
-version=$1; shift
+version=$1
 
 process () {
     perl -i~ -wpe '
@@ -37,10 +39,12 @@ process () {
     ' "$1"
 }
 
-process Cargo.toml
-process macros/Cargo.toml
-process tests/Cargo.toml
-process tests/pub-export/pub-a/Cargo.toml
+if [ "x$version" != x ]; then
+    process Cargo.toml
+    process macros/Cargo.toml
+    process tests/Cargo.toml
+    process tests/pub-export/pub-a/Cargo.toml
+fi
 
 ${CARGO-cargo} fetch --offline
 maint/update-minimal-versions --offline
