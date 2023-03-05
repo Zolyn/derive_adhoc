@@ -38,7 +38,7 @@ pub struct UnprocessedOptions(TokenStream);
 #[derive(Default, Debug, Clone)]
 pub struct DaOptions {
     pub dbg: bool,
-    pub driver_kind: Option<(ExpectedDriverKind, Span)>,
+    pub driver_kind: Option<DaOptVal<ExpectedDriverKind>>,
 }
 
 /// A single template option
@@ -56,7 +56,22 @@ enum OptionDetails {
     // TODO DOCS, in template-syntax.md I guess
     dbg,
     // TODO DOCS, in template-syntax.md I guess
-    For((ExpectedDriverKind, Span)),
+    For(DaOptVal<ExpectedDriverKind>),
+}
+
+/// Value for an option
+///
+/// If `V` is `FromStr` and `DaOptValDescribable`,
+/// this is `Parse`, taking a single keyword.
+#[derive(Debug, Clone, Copy)]
+pub struct DaOptVal<V> {
+    pub value: V,
+    pub span: Span,
+}
+
+/// Things that go into a `DaOptVal`
+pub trait DaOptValDescribable {
+    const DESCRIPTION: &'static str;
 }
 
 /// The (single) expected driver kind
@@ -71,6 +86,10 @@ pub enum ExpectedDriverKind {
     Struct,
     Enum,
     Union,
+}
+
+impl DaOptValDescribable for ExpectedDriverKind {
+    const DESCRIPTION: &'static str = "expected driver kind (in `for` option)";
 }
 
 //---------- parsing ----------
@@ -177,21 +196,21 @@ impl Parse for DaOption {
         } }
 
         keyword! { dbg }
-        keyword! { "for": For(ExpectedDriverKind::parse(input)?) }
+        keyword! { "for": For(input.parse()?) }
 
         Err(kw.error("unknown derive-adhoc option"))
     }
 }
 
-impl ExpectedDriverKind {
-    fn parse(input: ParseStream) -> syn::Result<(Self, Span)> {
+impl<V: FromStr + DaOptValDescribable> Parse for DaOptVal<V> {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
         let kw = input.call(Ident::parse_any)?;
-        let exp = kw
+        let value = kw
             .to_string()
             .parse()
-            .map_err(|_| kw.error("unknown value for expected driver kind (in `for` option)"))?;
+            .map_err(|_| kw.error(format_args!("unknown value for {}", V::DESCRIPTION)))?;
         let span = kw.span();
-        Ok((exp, span))
+        Ok(DaOptVal { value, span })
     }
 }
 
@@ -215,22 +234,22 @@ impl DaOptions {
     ///
     /// On error (eg, contradictory options), fails.
     fn update_from_option(&mut self, option: DaOption) -> syn::Result<()> {
-        fn store<T>(
-            already: &mut Option<(T, Span)>,
-            (new, span): (T, Span),
+        fn store<V>(
+            already: &mut Option<DaOptVal<V>>,
+            new: DaOptVal<V>,
             on_contradiction: impl Display,
         ) -> syn::Result<()>
         where
-            T: PartialEq,
+            V: PartialEq,
         {
             match already {
-                Some((already, _)) if already == &new => Ok(()),
-                Some((_, already)) => {
-                    Err([(*already, "first"), (span, "second")]
+                Some(already) if already.value == new.value => Ok(()),
+                Some(already) => {
+                    Err([(already.span, "first"), (new.span, "second")]
                         .error(on_contradiction))
                 }
                 None => {
-                    *already = Some((new, span));
+                    *already = Some(new);
                     Ok(())
                 }
             }

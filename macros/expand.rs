@@ -888,7 +888,7 @@ pub fn derive_adhoc_expand_func_macro(
         //
     } = input.options;
 
-    if let Some((exp_kind, exp_span)) = driver_kind {
+    if let Some(exp) = driver_kind {
         macro_rules! got_kind { { $($kind:ident)* } => {
             match &input.driver.data {
                 $(
@@ -898,14 +898,14 @@ pub fn derive_adhoc_expand_func_macro(
         } }
 
         let got_kind = got_kind!(Struct Enum Union);
-        if got_kind != exp_kind {
+        if got_kind != exp.value {
             return Err([
-                (exp_span, "expected kind"),
+                (exp.span, "expected kind"),
                 (input.driver.span(), "actual kind"),
             ]
             .error(format_args!(
                 "expected driver kind {}, but driver is {}",
-                exp_kind, got_kind,
+                exp.value, got_kind,
             )));
         }
     }
