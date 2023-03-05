@@ -1,6 +1,10 @@
 # Template originally came from:
 # https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Rust.gitlab-ci.yml
 
+stages:
+  - test
+  - comprehensive
+
 default:
   before_script:
     # Print version info for debugging
@@ -28,8 +32,10 @@ maint-check-bizarre:
   script:
     - maint/update-bizarre --check
 
+# Check for FIXMEs.  This is in "comprehensive" so you can sabotage
+# the CI, but still get it all to run - useful for iterating through CI.
 maint-check-todos:
-  stage: test
+  stage: comprehensive
   script:
     - maint/check-blocking-todos
 
@@ -53,6 +59,13 @@ cargo-test:
     paths:
       - cargo-expand
 
+cargo-test-minfeatures:
+  stage: comprehensive
+  image: rustlang/rust@sha256:415b7c22ab4a8a3ec3efc9cc8d7b018964f0c6757fff27bbd110e0ed92566321
+  script:
+    - mv Cargo.lock.example Cargo.lock
+    - cargo test --locked  -p derive-adhoc-tests --no-default-features --features=derive-adhoc-tests/recent
+
 # Test on Stable Rust
 #
 # We don't enable the ui and macrotest fatures in derive-adhoc-tests, since
@@ -60,17 +73,30 @@ cargo-test:
 # compiler changes.  But we do enable the "recent" feature to test even new
 # features.
 stable:
-  stage: test
+  stage: comprehensive
   script:
     - mv Cargo.lock.example Cargo.lock
-    - cargo test --locked --workspace --verbose --features=derive-adhoc-tests/recent
+    - cargo test --locked --workspace --verbose --features=derive-adhoc-tests/recent,derive-adhoc-tests/full
+
+stable-minfeatures:
+  stage: comprehensive
+  script:
+    - mv Cargo.lock.example Cargo.lock
+    - cargo test --locked  -p derive-adhoc-tests --no-default-features --features=derive-adhoc-tests/recent
 
 # Test our MSRV and Cargo.toml minimal versions
 #
 # We don't enable any of the optional fatures in derive-adhoc-tests.
 minimal-versions:
-  stage: test
+  stage: comprehensive
   image: "rust:1.54.0"
   script:
     - mv Cargo.lock.minimal Cargo.lock
-    - cargo +1.54.0 test --locked --workspace --no-default-features
+    - cargo +1.54.0 test --locked --workspace --no-default-features --features=derive-adhoc-tests/full
+
+minimal-versions-minfeatures:
+  stage: comprehensive
+  image: "rust:1.54.0"
+  script:
+    - mv Cargo.lock.minimal Cargo.lock
+    - cargo +1.54.0 test --locked  -p derive-adhoc-tests --no-default-features

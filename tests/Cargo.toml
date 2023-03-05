@@ -14,11 +14,12 @@ publish = false
 ui = []
 recent = [] # We're not running with the MWRV compiler
 default = []
-# We can't make macrotest, ui and recent default features because
+full = ["derive-adhoc/full"]
+# We can't make macrotest, ui, recent and full default features because
 # in 1.54 (which is why we want this) --no-default-features doesn't work.
 
 [dependencies]
-derive-adhoc = { path = "..", version = "0.2.2" }
+derive-adhoc = { path = "..", version = "0.2.2", default_features = false, features = ["minimal-1"] }
 easy-ext = "1"
 glob = "0.3"
 

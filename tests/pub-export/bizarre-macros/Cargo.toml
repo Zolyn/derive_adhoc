@@ -15,8 +15,12 @@ description="Bizarrely incompatible copy of derive-adhoc-macros, for testing"
 publish = false
 
 
+[features]
+bizarre = []
+default = ["bizarre"]
+case = ["heck"]
+
 [dependencies]
-heck = "0.4"
 itertools = "0.10.1"
 proc-macro-crate = "1.1.3"
 proc-macro2 = "1"
@@ -24,6 +28,8 @@ quote = "1"
 strum = { version = "0.24", features = ["derive"] }
 syn = "1.0.61"
 void = "1"
+
+heck = { version = "0.4", optional = true }
 
 # This dependency isn't required, but it causes cargo to
 # arrange that the crates tests/compat/old-*  get -macros 0.2.0.
@@ -37,11 +43,6 @@ void = "1"
 # actual derive-adhoc-macros it wants to use.
 # But, here, nothing looks at it.  So we can have it just for the side effect.
 dummy-derive-adhoc-macros = { package = "derive-adhoc-macros", version = "=0.2.0" }
-
-[features]
-bizarre = []
-default = ["bizarre"]
-
 [lib]
 path = "../../../macros/macros.rs"
 doc = false
