@@ -15,7 +15,7 @@ cargo-check:
     - mv Cargo.lock.example Cargo.lock
     - cargo check --locked --workspace --verbose --all-features
     - cargo fmt --verbose --check
-
+    - maint/check-blocking-todos
 
 # Warning-only checks
 check-doc-tocs:

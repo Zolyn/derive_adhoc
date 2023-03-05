@@ -1,0 +1,19 @@
+#!/bin/bash
+#
+# We fail CI if the word "F I X M E" is detedcted, as a whole word,
+# in any case.  The word is not matched if there are word-characters
+# abutted to it.
+
+set -e
+set -o pipefail
+
+set +e
+git grep -i '\bfixme\b'
+rc=$?
+set -e
+
+case $rc in
+1)	exit 0;;
+0)	echo >&2 'Found FIXMEs - RC TODS - in the codebase!'; exit 1;;
+*)	echo >&2 'grep failed!'; exit 16;;
+esac
