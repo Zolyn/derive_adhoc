@@ -4,7 +4,7 @@ use crate::prelude::*;
 
 /// Contents of an entry in a `#[derive_adhoc(..)]` attribute
 enum InvocationEntry {
-    Precanned(syn::Path),
+    Precanned(syn::Path, UnprocessedOptions),
     Pub(syn::VisPublic),
 }
 
@@ -26,7 +26,18 @@ impl Parse for InvocationEntry {
             InvocationEntry::Pub(vis)
         } else {
             let path = syn::Path::parse_mod_style(input)?;
-            InvocationEntry::Precanned(path)
+            // TODO DOCS document driver application option syntax
+            let options = if input.peek(syn::token::Bracket) {
+                let tokens;
+                let _bracket = bracketed!(tokens in input);
+                UnprocessedOptions::parse(
+                    &tokens,
+                    OpContext::DriverApplication,
+                )?
+            } else {
+                UnprocessedOptions::default()
+            };
+            InvocationEntry::Precanned(path, options)
         };
         Ok(entry)
     }
@@ -55,7 +66,7 @@ pub fn derive_adhoc_derive_macro(
 
     let mut vis_pub = None;
 
-    let precanned_paths: Vec<syn::Path> = driver
+    let precanned_paths: Vec<(syn::Path, UnprocessedOptions)> = driver
         .attrs
         .iter()
         .map(|attr| {
@@ -70,7 +81,7 @@ pub fn derive_adhoc_derive_macro(
         .flatten_ok()
         .filter_map(|entry| match entry {
             Err(e) => Some(Err(e)),
-            Ok(InvocationEntry::Precanned(path)) => Some(Ok(path)),
+            Ok(InvocationEntry::Precanned(path, options)) => Some(Ok((path, options))),
             Ok(InvocationEntry::Pub(vis)) => {
                 let this_span = vis.span();
                 if let Some(prev) = mem::replace(&mut vis_pub, Some(vis)) {
@@ -144,7 +155,7 @@ pub fn derive_adhoc_derive_macro(
         }
     };
 
-    for mut templ_path in precanned_paths {
+    for (mut templ_path, aoptions) in precanned_paths {
         if templ_path.segments.is_empty() {
             return Err(templ_path
                 .leading_colon
@@ -155,9 +166,44 @@ pub fn derive_adhoc_derive_macro(
         let last = templ_path.segments.last_mut().expect("became empty!");
         last.ident = format_ident!("derive_adhoc_template_{}", last.ident);
 
+        // We must output the driver-specified application options.
+        //
+        // But maybe the template engine we are speaking to is old,
+        // so if there aren't any we leave the whole clause out.
+        //
+        // If future things like this were to appear, we would need to
+        // emit the necessary prefix of them, to avoid parsing ambiguity.
+        // Hence this, which leaves off "blank" trailing clauses.
+        // The outer syntax means none of these these clauses are allowed
+        // to start with a curly bracket.
+        enum Extra {
+            Blank(TokenStream),
+            Required(TokenStream),
+        }
+        impl ToTokens for Extra {
+            fn to_tokens(&self, out: &mut TokenStream) {
+                match self {
+                    Extra::Required(v) => v.to_tokens(out),
+                    Extra::Blank(v) => v.to_tokens(out),
+                }
+            }
+        }
+        let aoptions = if aoptions.is_empty() {
+            Extra::Blank(quote! { [] })
+        } else {
+            Extra::Required(quote! { [#aoptions] })
+        };
+        let mut extras = vec![
+            aoptions,
+        ];
+        while matches!(extras.last(), Some(Extra::Blank(_))) {
+            extras.pop();
+        }
+
         output.extend(quote! {
             #templ_path !{
                 { #driver }
+                #( #extras )*
                 { }
             }
         });

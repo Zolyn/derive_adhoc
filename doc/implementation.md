@@ -117,11 +117,13 @@ Expands to
 ```rust,ignore
     macro_rules! derive_adhoc_template_MyDebug { {
         { $($driver:tt)* }
+     $( [ $($aoptions:tt)* ] )?
         { $($future:tt)* }
         $($dpassthrough:tt)*
     } => {
         derive_adhoc_expand! {
             { $($driver)* }
+         $( [ $(aoptions)* ] )?
             { $($dpassthrough)* }
             { TEMPLATE... }
             { $crate; [TOPTIONS...] }
@@ -149,7 +151,7 @@ This
 
 ```rust,ignore
     #[derive(Adhoc)]
-    #[derive_adhoc(Template)]
+    #[derive_adhoc(Template[AOPTIONS,...])]
     pub struct StructName { ... }
 ```
 
@@ -158,6 +160,7 @@ Generates (in addition to the `derive_adhoc_driver_StructName` definition)
 ```rust,ignore
     derive_adhoc_template_Template! {
         { #[derive_adhoc(Template)] struct StructName { ... } }
+        [AOPTIONS]    // but only if nonempty
         { }
     }
 ```

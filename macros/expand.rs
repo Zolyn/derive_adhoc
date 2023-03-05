@@ -49,6 +49,12 @@ impl Parse for DeriveAdhocExpandInput {
             let driver_brace = braced!(driver in input);
             let driver = driver.parse()?;
 
+            if input.peek(syn::token::Bracket) {
+                let tokens;
+                let _ = bracketed!(tokens in input);
+                options.parse_update(&tokens, OpContext::DriverApplication)?;
+            }
+
             let driver_passed;
             let _ = braced!(driver_passed in input);
             let _: TokenStream = driver_passed.parse()?;

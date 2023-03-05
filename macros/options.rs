@@ -18,6 +18,10 @@ pub enum OpContext {
     ///
     /// `define_derivae_adhoc!{ Template OPTIONS = ...`
     Template,
+    /// In the driver's application
+    ///
+    /// `#[derive_adhoc(Template[OPTIONS])]`
+    DriverApplication,
 }
 
 /// All the template options, as a tokenstream, but sanity-checked
@@ -72,8 +76,18 @@ pub enum ExpectedDriverKind {
 //---------- parsing ----------
 
 impl OpContext {
-    fn allowed(self, _option: &DaOption) -> syn::Result<()> {
-        Ok(())
+    fn allowed(self, option: &DaOption) -> syn::Result<()> {
+        use OpContext as OC;
+        match &option.od {
+            OD::dbg => return Ok(()),
+            OD::For(..) => {}
+        }
+        match self {
+            OC::Template => Ok(()),
+            OC::DriverApplication => Err(option.kw_span.error(
+                "this derive-adhoc option is only supported in templates",
+            )),
+        }
     }
 }
 
