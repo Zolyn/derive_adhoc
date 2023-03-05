@@ -243,11 +243,12 @@ impl DaOptions {
             match already {
                 Some(already) if already.value == new.value => Ok(()),
                 Some(already) => {
-                    Err([(already.span, "first"), (new.span, "second")]
-                        .error(format_args!(
+                    Err([(already.span, "first"), (new.span, "second")].error(
+                        format_args!(
                             "contradictory values for {}",
                             V::DESCRIPTION,
-                        )))
+                        ),
+                    ))
                 }
                 None => {
                     *already = Some(new);
@@ -258,10 +259,7 @@ impl DaOptions {
 
         Ok(match option.od {
             OD::dbg => self.dbg = true,
-            OD::For(spec) => store(
-                &mut self.driver_kind,
-                spec,
-            )?,
+            OD::For(spec) => store(&mut self.driver_kind, spec)?,
         })
     }
 }
