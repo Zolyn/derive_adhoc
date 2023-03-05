@@ -46,6 +46,11 @@ impl Parse for DeriveAdhocExpandInput {
         match (|| {
             let mut options = DaOptions::default();
 
+            // If `got` is an error, returns Some of what the outer closure
+            // should return.  Otherwise, return None.
+            let unadvised_err_of_unit =
+                |got: syn::Result<()>| got.err().map(Err).map(Ok);
+
             let driver;
             let driver_brace = braced!(driver in input);
             let driver = driver.parse()?;
@@ -53,7 +58,11 @@ impl Parse for DeriveAdhocExpandInput {
             if input.peek(syn::token::Bracket) {
                 let tokens;
                 let _ = bracketed!(tokens in input);
-                options.parse_update(&tokens, OpContext::DriverApplication)?;
+                let r = options
+                    .parse_update(&tokens, OpContext::DriverApplication);
+                if let Some(r) = unadvised_err_of_unit(r) {
+                    return r;
+                }
             }
 
             let driver_passed;
@@ -76,7 +85,10 @@ impl Parse for DeriveAdhocExpandInput {
 
                 let tokens;
                 let _ = bracketed!(tokens in input);
-                options.parse_update(&tokens, OpContext::Template)?;
+                let r = options.parse_update(&tokens, OpContext::Template);
+                if let Some(r) = unadvised_err_of_unit(r) {
+                    return r;
+                }
 
                 template_name = if input.peek(Token![;]) {
                     None
