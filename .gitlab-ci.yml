@@ -5,14 +5,14 @@
 # https://hub.docker.com/r/library/rust/tags/
 image: "rust:latest"
 
-# Syntax checks
+# Syntax checks and the like
 cargo-check:
   stage: test
   script:
     - rustc --version && cargo --version  # Print version info for debugging
-    - maint/update-bizarre --check
     - rustup component add rustfmt
     - mv Cargo.lock.example Cargo.lock
+    - maint/update-bizarre --check
     - cargo check --locked --workspace --verbose --all-features
     - cargo fmt --verbose --check
     - maint/check-blocking-todos
