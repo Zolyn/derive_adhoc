@@ -1,6 +1,12 @@
 # Template originally came from:
 # https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Rust.gitlab-ci.yml
 
+default:
+  before_script:
+    # Print version info for debugging
+    - rustc --version ||true
+    - cargo --version ||true
+
 # Official language image. Look for the different tagged releases at:
 # https://hub.docker.com/r/library/rust/tags/
 image: "rust:latest"
@@ -9,7 +15,6 @@ image: "rust:latest"
 cargo-check:
   stage: test
   script:
-    - rustc --version && cargo --version  # Print version info for debugging
     - rustup component add rustfmt
     - mv Cargo.lock.example Cargo.lock
     - maint/update-bizarre --check
@@ -30,7 +35,6 @@ cargo-test:
   # Pin to a particular nightly, so our macro expansions don't change.
   image: rustlang/rust@sha256:415b7c22ab4a8a3ec3efc9cc8d7b018964f0c6757fff27bbd110e0ed92566321
   script:
-    - rustc --version && cargo --version  # Print version info for debugging
     - ./maint/via-cargo-install-in-ci cargo-expand
     - mv Cargo.lock.example Cargo.lock
     - cargo test --locked --workspace --verbose --all-features
@@ -47,7 +51,6 @@ cargo-test:
 stable:
   stage: test
   script:
-    - rustc --version && cargo --version  # Print version info for debugging
     - mv Cargo.lock.example Cargo.lock
     - cargo test --locked --workspace --verbose --features=derive-adhoc-tests/recent
 
@@ -58,6 +61,5 @@ minimal-versions:
   stage: test
   image: "rust:1.54.0"
   script:
-    - rustc --version && cargo --version  # Print version info for debugging
     - mv Cargo.lock.minimal Cargo.lock
     - cargo +1.54.0 test --locked --workspace --no-default-features
