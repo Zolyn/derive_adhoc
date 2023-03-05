@@ -11,15 +11,26 @@ default:
 # https://hub.docker.com/r/library/rust/tags/
 image: "rust:latest"
 
-# Syntax checks and the like
 cargo-check:
   stage: test
   script:
-    - rustup component add rustfmt
     - mv Cargo.lock.example Cargo.lock
-    - maint/update-bizarre --check
     - cargo check --locked --workspace --verbose --all-features
+
+cargo-fmt:
+  stage: test
+  script:
+    - rustup component add rustfmt
     - cargo fmt --verbose --check
+
+maint-check-bizarre:
+  stage: test
+  script:
+    - maint/update-bizarre --check
+
+maint-check-todos:
+  stage: test
+  script:
     - maint/check-blocking-todos
 
 # Warning-only checks
