@@ -37,6 +37,11 @@ pub use AttrValue as AV;
 
 impl Parse for DeriveAdhocExpandInput {
     fn parse(input: ParseStream) -> syn::Result<Self> {
+        // This strange structure is to add a note to most of the errors that
+        // come out of syn parsing.  The braced! etc. macros insist that the
+        // calling scope throws syn::Error.
+        // See the match at the bottom for what the return values mean.
+      match (||{
         let driver;
         let driver_brace = braced!(driver in input);
         let driver = driver.parse()?;
@@ -47,7 +52,7 @@ impl Parse for DeriveAdhocExpandInput {
 
         let template;
         let template_brace = braced!(template in input);
-        let template = Template::parse(&template, ())?;
+        let template = Template::parse(&template, ());
 
         let template_passed;
         let _ = braced!(template_passed in input);
@@ -57,13 +62,29 @@ impl Parse for DeriveAdhocExpandInput {
 
         let _: TokenStream = input.parse()?;
 
-        Ok(DeriveAdhocExpandInput {
+        let template = match template {
+            Ok(template) => template,
+            Err(err_return_raw) => return Ok(Err(err_return_raw)),
+        };
+
+        Ok(Ok(DeriveAdhocExpandInput {
             driver_brace,
             driver,
             template_brace,
             template,
             template_crate,
-        })
+        }))
+      })() {
+            Ok(Ok(dae_input)) => Ok(dae_input),
+            Ok(Err(err_to_return_directly)) => Err(err_to_return_directly),
+            Err(err_needing_advice) => {
+                let mut advice = Span::call_site().error(
+ "bad input to derive_adhoc_expand inner template expansion proc macro; might be due to incompatible derive-adhoc versions(s)"
+                );
+                advice.combine(err_needing_advice);
+                Err(advice)
+            }
+        }
     }
 }
 
