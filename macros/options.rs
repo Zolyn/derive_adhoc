@@ -67,7 +67,7 @@ impl Parse for UnprocessedOptions {
 
         // Collect everything until the : or =
         let mut out = TokenStream::new();
-        while !(input.peek(Token![:]) || input.peek(Token![=])) {
+        while !(input.peek(Token![:]) || input.peek(Token![=]) || input.is_empty()) {
             let tt: TokenTree = input.parse()?;
             out.extend([tt]);
         }
