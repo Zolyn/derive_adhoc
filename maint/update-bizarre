@@ -143,6 +143,19 @@ process_cargo_toml('Cargo.toml',
 process_cargo_toml('macros/Cargo.toml',
 		   'tests/pub-export/bizarre-macros/Cargo.toml',
 		   'macros/macros.rs', <<END);
+# This dependency isn't required, but it causes cargo to
+# arrange that the crates tests/compat/old-*  get -macros 0.2.0.
+# (derive-adhoc 0.2.0 was published with a "0.2.0" dependency on -macros,
+# not "=0.2.0" as we do nowadays; but having *anything* that wants precisely
+# 0.2.0 means that cargo satisfies even "0.2.0" with preecisely 0.2.0.)
+#
+# This dependency could be *anywhere* in the workspace, but putting it
+# in a package that is actually using derive-adhoc macros (ie, a normal
+# crate) causes trouble for `proc_macro_crate`'s attempts to find the
+# actual derive-adhoc-macros it wants to use.
+# But, here, nothing looks at it.  So we can have it just for the side effect.
+dummy-derive-adhoc-macros = { package = "derive-adhoc-macros", version = "=0.2.0" }
+
 [features]
 bizarre = []
 default = ["bizarre"]
