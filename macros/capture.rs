@@ -81,7 +81,9 @@ pub fn derive_adhoc_derive_macro(
         .flatten_ok()
         .filter_map(|entry| match entry {
             Err(e) => Some(Err(e)),
-            Ok(InvocationEntry::Precanned(path, options)) => Some(Ok((path, options))),
+            Ok(InvocationEntry::Precanned(path, options)) => {
+                Some(Ok((path, options)))
+            }
             Ok(InvocationEntry::Pub(vis)) => {
                 let this_span = vis.span();
                 if let Some(prev) = mem::replace(&mut vis_pub, Some(vis)) {
@@ -195,6 +197,7 @@ pub fn derive_adhoc_derive_macro(
         };
         let mut extras = vec![
             aoptions,
+            //
         ];
         while matches!(extras.last(), Some(Extra::Blank(_))) {
             extras.pop();

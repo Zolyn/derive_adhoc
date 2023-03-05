@@ -870,6 +870,7 @@ pub fn derive_adhoc_expand_func_macro(
     let DaOptions {
         dbg,
         driver_kind,
+        //
     } = input.options;
 
     if let Some((exp_kind, exp_span)) = driver_kind {
