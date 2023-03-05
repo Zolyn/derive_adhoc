@@ -109,8 +109,21 @@ impl DaOption {
         input: ParseStream,
         mut each: impl FnMut(DaOption) -> syn::Result<()>,
     ) -> syn::Result<()> {
-        while input.peek(Ident::peek_any) {
+        while let Some(la) = continue_options(input) {
+            if !la.peek(Ident::peek_any) {
+                return Err(la.error());
+            }
             each(input.parse()?)?;
+
+            let la = if let Some(la) = continue_options(input) {
+                la
+            } else {
+                break;
+            };
+            if !la.peek(Token![,]) {
+                return Err(la.error());
+            }
+            let _: Token![,] = input.parse()?;
         }
         Ok(())
     }
