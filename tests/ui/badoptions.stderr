@@ -46,3 +46,15 @@ error: expected one of `!` or `::`, found `error`
    |
 32 |     syntax error;
    |            ^^^^^ expected one of `!` or `::`
+
+error: contradictory values for expected driver kind (in `for` option) (first)
+  --> ui/badoptions.rs:36:31
+   |
+36 |     BadOptionsDriver dbg, for struct, for union:
+   |                               ^^^^^^
+
+error: contradictory values for expected driver kind (in `for` option) (second)
+  --> ui/badoptions.rs:36:43
+   |
+36 |     BadOptionsDriver dbg, for struct, for union:
+   |                                           ^^^^^

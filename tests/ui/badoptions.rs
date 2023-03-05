@@ -32,4 +32,8 @@ derive_adhoc! {
     syntax error;
 }
 
+derive_adhoc! {
+    BadOptionsDriver dbg, for struct, for union:
+}
+
 fn main() {}
