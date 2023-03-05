@@ -74,7 +74,7 @@ Expands to
     derive_adhoc_driver_StructName! {
        { TEMPLATE... }
        { ($) }
-       crate; (TOPTIONS...)
+       crate; [TOPTIONS...]
     }
 ```
 
@@ -89,7 +89,7 @@ The result of expanding the above is this:
         { pub struct StructName { /* original struct definition */ } }
         { }
         { TEMPLATE... }
-        { crate; (TOPTIONS...) }
+        { crate; [TOPTIONS...] }
     }
 ```
 
@@ -124,7 +124,7 @@ Expands to
             { $($driver)* }
             { $($dpassthrough)* }
             { TEMPLATE... }
-            { $crate; (TOPTIONS...) }
+            { $crate; [TOPTIONS...] }
         }
     } }
 ```

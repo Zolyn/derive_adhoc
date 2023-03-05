@@ -139,7 +139,7 @@ pub fn define_derive_adhoc_func_macro(
                     { $( $driver )* }
                     { $($dpassthrough)* }
                     { # template }
-                    { $crate; (#options) }
+                    { $crate; [#options] }
                 }
             };
             { $($wrong:tt)* } => {
