@@ -1,6 +1,6 @@
----------- derive_adhoc_expand start for BadOptionsDriver ----------
+---------- derive-adhoc expansion of BadOptionsTemplate for BadOptionsDriver (start) ----------
 broken template ;
----------- derive_adhoc_expand end for BadOptionsDriver ----------
----------- derive_adhoc_expand start for BadOptionsDriver ----------
+---------- derive-adhoc expansion of BadOptionsTemplate for BadOptionsDriver (end) ----------
+---------- derive-adhoc expansion, for BadOptionsDriver (start) ----------
 syntax error ;
----------- derive_adhoc_expand end for BadOptionsDriver ----------
+---------- derive-adhoc expansion, for BadOptionsDriver (end) ----------
