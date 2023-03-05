@@ -136,7 +136,14 @@ pub fn define_derive_adhoc_func_macro(
                     { # template }
                     { $crate; }
                 }
-            }
+            };
+            { $($wrong:tt)* } => {
+                compile_error!{concat!(
+                    "wrong input to derive-adhoc template inner macro ",
+                    stringify!(#templ_mac_name),
+                    "; might be due to incompatible derive-adhoc versions(s)",
+                )}
+            };
         }
     };
 
