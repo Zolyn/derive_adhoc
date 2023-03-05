@@ -29,6 +29,7 @@ dependencies = [
 name = "bizarre-derive-adhoc-macros"
 version = "0.0.666"
 dependencies = [
+ "derive-adhoc-macros 0.2.0",
  "heck",
  "itertools",
  "proc-macro-crate",
@@ -45,7 +46,7 @@ version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c524def97cf33ab9f9a7bc41c5392b4c1618fa9baea3d836c227b41c60de2abc"
 dependencies = [
- "derive-adhoc-macros 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "derive-adhoc-macros 0.2.0",
  "heck",
 ]
 
@@ -59,7 +60,9 @@ dependencies = [
 
 [[package]]
 name = "derive-adhoc-macros"
-version = "0.2.1"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2d67b789c5749d46cca038603b02222a4d47ca2aab4433c50f953359808583e7"
 dependencies = [
  "heck",
  "itertools",
@@ -74,8 +77,6 @@ dependencies = [
 [[package]]
 name = "derive-adhoc-macros"
 version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "00676802dacf35868b6e0b84ff4b98a13c58a7492bd272a41528e854cde3c924"
 dependencies = [
  "heck",
  "itertools",

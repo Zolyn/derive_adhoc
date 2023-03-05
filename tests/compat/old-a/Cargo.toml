@@ -10,6 +10,10 @@ description="compat testing crates - old part A"
 publish = false
 
 [dependencies]
+# If and when we bump the earliest tested compatible version to
+# 0.2.2 or later, remove the `dummy-derive-adhoc-macros` entry
+# in tests/pub-export/bizarre-macros/Cargo.toml, which comes from
+# maint/update-bizarre.
 derive-adhoc = "=0.2.0"
 
 [lib]
