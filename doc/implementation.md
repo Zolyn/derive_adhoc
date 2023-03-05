@@ -117,7 +117,7 @@ Expands to
 ```rust,ignore
     macro_rules! derive_adhoc_template_MyDebug { {
         { $($driver:tt)* }
-        { $(future:tt)* }
+        { $($future:tt)* }
         $($dpassthrough:tt)*
     } => {
         derive_adhoc_expand! {
