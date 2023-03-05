@@ -28,7 +28,14 @@ members = [
 # to update the "bizarre" testing versions in tests/pub-export/bizarre-*
 
 [features]
+# TODO DOCS
+# The point of the features is just to get rid of dependencies.
+default = ["full"]
+full = ["case"]
+minimal-1 = []
+
+case = ["derive-adhoc-macros/case", "minimal-1"]
 
 [dependencies]
-derive-adhoc-macros = { path = "macros", version = "=0.2.2" }
-heck = "0.4"
+derive-adhoc-macros = { path = "macros", version = "=0.2.2", default_features = false }
+heck = { version = "0.4", optional = true }

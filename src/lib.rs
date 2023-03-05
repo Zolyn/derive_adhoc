@@ -30,3 +30,6 @@ pub mod doc_implementation {}
 
 #[doc=include_str!("../CHANGELOG.md")]
 pub mod doc_changelog {}
+
+#[cfg(not(feature = "minimal-1"))]
+compile_error! { "You must enable at least one derive-adhoc crate feature!" }
