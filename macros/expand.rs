@@ -41,40 +41,40 @@ impl Parse for DeriveAdhocExpandInput {
         // come out of syn parsing.  The braced! etc. macros insist that the
         // calling scope throws syn::Error.
         // See the match at the bottom for what the return values mean.
-      match (||{
-        let driver;
-        let driver_brace = braced!(driver in input);
-        let driver = driver.parse()?;
+        match (|| {
+            let driver;
+            let driver_brace = braced!(driver in input);
+            let driver = driver.parse()?;
 
-        let driver_passed;
-        let _ = braced!(driver_passed in input);
-        let _: TokenStream = driver_passed.parse()?;
+            let driver_passed;
+            let _ = braced!(driver_passed in input);
+            let _: TokenStream = driver_passed.parse()?;
 
-        let template;
-        let template_brace = braced!(template in input);
-        let template = Template::parse(&template, ());
+            let template;
+            let template_brace = braced!(template in input);
+            let template = Template::parse(&template, ());
 
-        let template_passed;
-        let _ = braced!(template_passed in input);
-        let template_crate = template_passed.parse()?;
-        let _: Token![;] = template_passed.parse()?;
-        let _: TokenStream = template_passed.parse()?;
+            let template_passed;
+            let _ = braced!(template_passed in input);
+            let template_crate = template_passed.parse()?;
+            let _: Token![;] = template_passed.parse()?;
+            let _: TokenStream = template_passed.parse()?;
 
-        let _: TokenStream = input.parse()?;
+            let _: TokenStream = input.parse()?;
 
-        let template = match template {
-            Ok(template) => template,
-            Err(err_return_raw) => return Ok(Err(err_return_raw)),
-        };
+            let template = match template {
+                Ok(template) => template,
+                Err(err_return_raw) => return Ok(Err(err_return_raw)),
+            };
 
-        Ok(Ok(DeriveAdhocExpandInput {
-            driver_brace,
-            driver,
-            template_brace,
-            template,
-            template_crate,
-        }))
-      })() {
+            Ok(Ok(DeriveAdhocExpandInput {
+                driver_brace,
+                driver,
+                template_brace,
+                template,
+                template_crate,
+            }))
+        })() {
             Ok(Ok(dae_input)) => Ok(dae_input),
             Ok(Err(err_to_return_directly)) => Err(err_to_return_directly),
             Err(err_needing_advice) => {
