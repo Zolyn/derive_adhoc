@@ -89,7 +89,7 @@ The result of expanding the above is this:
         { pub struct StructName { /* original struct definition */ } }
         { }
         { TEMPLATE... }
-        { crate; [TOPTIONS...] }
+        { crate; [TOPTIONS...] /*no template name*/; }
     }
 ```
 
@@ -126,7 +126,7 @@ Expands to
          $( [ $(aoptions)* ] )?
             { $($dpassthrough)* }
             { TEMPLATE... }
-            { $crate; [TOPTIONS...] }
+            { $crate; [TOPTIONS...] MyDebug; }
         }
     } }
 ```

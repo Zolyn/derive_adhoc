@@ -67,7 +67,7 @@ pub fn derive_adhoc_func_macro(
         #driver_mac_name !{
             { #template }
             { ($) }
-            crate; [#options]
+            crate; [#options] ;
         }
     };
 

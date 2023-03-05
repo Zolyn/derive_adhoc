@@ -141,7 +141,7 @@ pub fn define_derive_adhoc_func_macro(
                  $( [ $($aoptions)* ] )?
                     { $($dpassthrough)* }
                     { # template }
-                    { $crate; [#options] }
+                    { $crate; [#options] #templ_name; }
                 }
             };
             { $($wrong:tt)* } => {
