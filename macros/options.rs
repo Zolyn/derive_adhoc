@@ -94,7 +94,7 @@ impl UnprocessedOptions {
         opcontext: OpContext,
     ) -> syn::Result<Self> {
         // Scan ahead for a syntax check
-        DaOption::parse_several(&input.fork(), |opt| opcontext.allowed(&opt))?;
+        DaOption::parse_several(&input.fork(), opcontext, |_| Ok(()))?;
 
         // Collect everything until the : or =
         let mut out = TokenStream::new();
@@ -112,8 +112,7 @@ impl DaOptions {
         input: ParseStream,
         opcontext: OpContext,
     ) -> syn::Result<()> {
-        DaOption::parse_several(input, |option| {
-            opcontext.check(&option)?;
+        DaOption::parse_several(input, opcontext, |option| {
             self.update_from_option(option)
         })
     }
@@ -122,13 +121,16 @@ impl DaOptions {
 impl DaOption {
     fn parse_several(
         input: ParseStream,
+        opcontext: OpContext,
         mut each: impl FnMut(DaOption) -> syn::Result<()>,
     ) -> syn::Result<()> {
         while let Some(la) = continue_options(input) {
             if !la.peek(Ident::peek_any) {
                 return Err(la.error());
             }
-            each(input.parse()?)?;
+            let option = input.parse()?;
+            opcontext.allowed(&option)?;
+            each(option)?;
 
             let la = if let Some(la) = continue_options(input) {
                 la
