@@ -61,8 +61,8 @@ sub filter_finish () {
     $input = undef;
 }
 
-sub process_cargo_toml ($$$$) {
-    my ($input, $output, $src_path, $before_lib) = @_;
+sub process_cargo_toml ($$$$$) {
+    my ($input, $output, $src_path, $in_features, $before_lib) = @_;
 (sub { # anonymous subref has its own `...` operator state
 
     filter_start $input, $output, <<END;
@@ -99,6 +99,9 @@ END
 $1 = { package = "bizarre-$1", path = "../bizarre-$2", version = "$bizvsn" }
 END
         }
+	if (m{^\[features\]}) {
+	    $_ = $_.$in_features;
+	}
 	if (m{^\[lib\]}...m{^\[}) {
 	    if (m{^\[lib\]}) {
 		$had_lib = 1;
@@ -138,11 +141,14 @@ END
 
 process_cargo_toml('Cargo.toml',
 		   'tests/pub-export/bizarre-facade/Cargo.toml',
-		   'src/lib.rs', '');
+		   'src/lib.rs', '', '');
 
 process_cargo_toml('macros/Cargo.toml',
 		   'tests/pub-export/bizarre-macros/Cargo.toml',
-		   'macros/macros.rs', <<END);
+		   'macros/macros.rs', <<END_FEATURES, <<END);
+bizarre = []
+default = ["bizarre"]
+END_FEATURES
 # This dependency isn't required, but it causes cargo to
 # arrange that the crates tests/compat/old-*  get -macros 0.2.0.
 # (derive-adhoc 0.2.0 was published with a "0.2.0" dependency on -macros,
@@ -155,11 +161,6 @@ process_cargo_toml('macros/Cargo.toml',
 # actual derive-adhoc-macros it wants to use.
 # But, here, nothing looks at it.  So we can have it just for the side effect.
 dummy-derive-adhoc-macros = { package = "derive-adhoc-macros", version = "=0.2.0" }
-
-[features]
-bizarre = []
-default = ["bizarre"]
-
 END
 
 process_pub_b_old_b();

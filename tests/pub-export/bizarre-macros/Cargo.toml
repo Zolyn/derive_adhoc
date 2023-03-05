@@ -15,6 +15,10 @@ description="Bizarrely incompatible copy of derive-adhoc-macros, for testing"
 publish = false
 
 
+[features]
+bizarre = []
+default = ["bizarre"]
+
 [dependencies]
 heck = "0.4"
 itertools = "0.10.1"
@@ -37,11 +41,6 @@ void = "1"
 # actual derive-adhoc-macros it wants to use.
 # But, here, nothing looks at it.  So we can have it just for the side effect.
 dummy-derive-adhoc-macros = { package = "derive-adhoc-macros", version = "=0.2.0" }
-
-[features]
-bizarre = []
-default = ["bizarre"]
-
 [lib]
 path = "../../../macros/macros.rs"
 doc = false

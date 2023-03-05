@@ -14,6 +14,8 @@ repository = "https://gitlab.torproject.org/Diziet/rust-derive-adhoc"
 #   maint/update-bizarre
 # to update the "bizarre" testing versions in tests/pub-export/bizarre-*
 
+[features]
+
 [dependencies]
 heck = "0.4"
 itertools = "0.10.1"

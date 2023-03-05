@@ -17,6 +17,8 @@ rust-version = "1.54"
 
 autotests = false
 
+[features]
+
 [dependencies]
 derive-adhoc-macros = { package = "bizarre-derive-adhoc-macros", path = "../bizarre-macros", version = "0.0.666" }
 heck = "0.4"
