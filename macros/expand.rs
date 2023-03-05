@@ -15,7 +15,7 @@ pub struct DeriveAdhocExpandInput {
     pub driver: syn::DeriveInput,
     pub template_brace: token::Brace,
     pub template_crate: syn::Path,
-    pub template_options: DaOptions,
+    pub options: DaOptions,
     pub template: Template<TokenAccumulator>,
 }
 
@@ -43,6 +43,8 @@ impl Parse for DeriveAdhocExpandInput {
         // calling scope throws syn::Error.
         // See the match at the bottom for what the return values mean.
         match (|| {
+            let mut options = DaOptions::default();
+
             let driver;
             let driver_brace = braced!(driver in input);
             let driver = driver.parse()?;
@@ -60,13 +62,9 @@ impl Parse for DeriveAdhocExpandInput {
             let template_crate = template_passed.parse()?;
             let _: Token![;] = template_passed.parse()?;
 
-            let template_options = {
-                let tokens;
-                let _ = bracketed!(tokens in template_passed);
-                let mut options = DaOptions::default();
-                options.parse_update(&tokens, OpContext::Template)?;
-                options
-            };
+            let tokens;
+            let _ = bracketed!(tokens in template_passed);
+            options.parse_update(&tokens, OpContext::Template)?;
 
             let _: TokenStream = template_passed.parse()?;
 
@@ -83,7 +81,7 @@ impl Parse for DeriveAdhocExpandInput {
                 template_brace,
                 template,
                 template_crate,
-                template_options,
+                options,
             }))
         })() {
             Ok(Ok(dae_input)) => Ok(dae_input),
@@ -866,7 +864,7 @@ pub fn derive_adhoc_expand_func_macro(
     let DaOptions {
         dbg,
         driver_kind,
-    } = input.template_options;
+    } = input.options;
 
     if let Some((exp_kind, exp_span)) = driver_kind {
         macro_rules! got_kind { { $($kind:ident)* } => {
