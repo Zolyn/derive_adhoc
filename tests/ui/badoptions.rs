@@ -1,27 +1,34 @@
+#![allow(unused_macros)]
 
-use derive_adhoc::{derive_adhoc, Adhoc};
+use derive_adhoc::{define_derive_adhoc, derive_adhoc, Adhoc};
+
+define_derive_adhoc! {
+    BadOptionsTemplate =
+    broken template;
+}
 
 #[derive(Adhoc)]
-struct DataType;
+// #[derive_adhoc(BadOptionsTemplate[dbg])]
+struct BadOptionsDriver;
 
 derive_adhoc! {
-    DataType with unknown option:
+    BadOptionsDriver with unknown option:
 }
 
 derive_adhoc! {
-    DataType for wombat:
+    BadOptionsDriver for wombat:
 }
 
 derive_adhoc! {
-    DataType for union:
+    BadOptionsDriver for union:
 }
 
 derive_adhoc! {
-    DataType for struct:
+    BadOptionsDriver for struct:
 }
 
 derive_adhoc! {
-    DataType dbg:
+    BadOptionsDriver dbg:
     syntax error;
 }
 

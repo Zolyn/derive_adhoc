@@ -1,36 +1,36 @@
 error: unknown derive-adhoc option
- --> ui/badoptions.rs:8:14
-  |
-8 |     DataType with unknown option:
-  |              ^^^^
+  --> ui/badoptions.rs:15:22
+   |
+15 |     BadOptionsDriver with unknown option:
+   |                      ^^^^
 
 error: unknown value for `for`
-  --> ui/badoptions.rs:12:18
+  --> ui/badoptions.rs:19:26
    |
-12 |     DataType for wombat:
-   |                  ^^^^^^
+19 |     BadOptionsDriver for wombat:
+   |                          ^^^^^^
 
 error: expected driver kind union, but driver is struct (expected kind)
-  --> ui/badoptions.rs:16:18
+  --> ui/badoptions.rs:23:26
    |
-16 |     DataType for union:
-   |                  ^^^^^
+23 |     BadOptionsDriver for union:
+   |                          ^^^^^
 
 error: expected driver kind union, but driver is struct (actual kind)
-  --> ui/badoptions.rs:5:1
+  --> ui/badoptions.rs:12:1
    |
-5  |   struct DataType;
-   |   ^^^^^^^^^^^^^^^^
+12 |   struct BadOptionsDriver;
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^
 ...
-15 | / derive_adhoc! {
-16 | |     DataType for union:
-17 | | }
+22 | / derive_adhoc! {
+23 | |     BadOptionsDriver for union:
+24 | | }
    | |_- in this macro invocation
    |
-   = note: this error originates in the macro `derive_adhoc_driver_DataType` which comes from the expansion of the macro `derive_adhoc` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `derive_adhoc_driver_BadOptionsDriver` which comes from the expansion of the macro `derive_adhoc` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: expected one of `!` or `::`, found `error`
-  --> ui/badoptions.rs:25:12
+  --> ui/badoptions.rs:32:12
    |
-25 |     syntax error;
+32 |     syntax error;
    |            ^^^^^ expected one of `!` or `::`
