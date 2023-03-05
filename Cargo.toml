@@ -1,6 +1,6 @@
 [package]
 name = "derive-adhoc"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2018"
 license="MIT"
 authors=["Ian Jackson <ijackson@chiark.greenend.org.uk>",
@@ -28,5 +28,5 @@ members = [
 # to update the "bizarre" testing versions in tests/pub-export/bizarre-*
 
 [dependencies]
-derive-adhoc-macros = { path = "macros", version = "=0.2.1" }
+derive-adhoc-macros = { path = "macros", version = "=0.2.2" }
 heck = "0.4"
