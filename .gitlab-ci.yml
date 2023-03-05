@@ -59,6 +59,13 @@ cargo-test:
     paths:
       - cargo-expand
 
+cargo-test-minfeatures:
+  stage: comprehensive
+  image: rustlang/rust@sha256:415b7c22ab4a8a3ec3efc9cc8d7b018964f0c6757fff27bbd110e0ed92566321
+  script:
+    - mv Cargo.lock.example Cargo.lock
+    - cargo test --locked  -p derive-adhoc-tests --no-default-features --features=derive-adhoc-tests/recent
+
 # Test on Stable Rust
 #
 # We don't enable the ui and macrotest fatures in derive-adhoc-tests, since
@@ -69,7 +76,13 @@ stable:
   stage: comprehensive
   script:
     - mv Cargo.lock.example Cargo.lock
-    - cargo test --locked --workspace --verbose --features=derive-adhoc-tests/recent
+    - cargo test --locked --workspace --verbose --features=derive-adhoc-tests/recent,derive-adhoc-tests/full
+
+stable-minfeatures:
+  stage: comprehensive
+  script:
+    - mv Cargo.lock.example Cargo.lock
+    - cargo test --locked  -p derive-adhoc-tests --no-default-features --features=derive-adhoc-tests/recent
 
 # Test our MSRV and Cargo.toml minimal versions
 #
@@ -79,4 +92,11 @@ minimal-versions:
   image: "rust:1.54.0"
   script:
     - mv Cargo.lock.minimal Cargo.lock
-    - cargo +1.54.0 test --locked --workspace --no-default-features
+    - cargo +1.54.0 test --locked --workspace --no-default-features --features=derive-adhoc-tests/full
+
+minimal-versions-minfeatures:
+  stage: comprehensive
+  image: "rust:1.54.0"
+  script:
+    - mv Cargo.lock.minimal Cargo.lock
+    - cargo +1.54.0 test --locked  -p derive-adhoc-tests --no-default-features
