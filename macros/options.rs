@@ -189,7 +189,7 @@ impl ExpectedDriverKind {
         let exp = kw
             .to_string()
             .parse()
-            .map_err(|_| kw.error("unknown value for `for`"))?;
+            .map_err(|_| kw.error("unknown value for expected driver kind (in `for` option)"))?;
         let span = kw.span();
         Ok((exp, span))
     }
