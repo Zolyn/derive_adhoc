@@ -18,7 +18,7 @@ impl Parse for TemplateDefinition {
         // for example `#[derive_adhoc(pub)]` ought not to mean to apply
         // a template called `pub`.  See ticket #1.
         let templ_name = input.parse()?;
-        let options = UnprocessedOptions::parse_in_template(&input)?;
+        let options = UnprocessedOptions::parse(&input, OpContext::Template)?;
         let _equals: syn::Token![=] = input.parse()?;
         let template = input.parse()?;
         Ok(TemplateDefinition {

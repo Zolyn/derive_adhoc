@@ -9,6 +9,17 @@ use OptionDetails as OD;
 
 //---------- types, ordered from general to specific ----------
 
+/// Where are we finding these options?
+#[derive(Debug, Copy, Clone)]
+pub enum OpContext {
+    /// Just before the template
+    ///
+    /// `derivae_adhoc!{ Driver OPTIONS: ...`
+    ///
+    /// `define_derivae_adhoc!{ Template OPTIONS = ...`
+    Template,
+}
+
 /// All the template options, as a tokenstream, but sanity-checked
 ///
 /// These have been syntax checked, but not semantically checked.
@@ -60,6 +71,12 @@ pub enum ExpectedDriverKind {
 
 //---------- parsing ----------
 
+impl OpContext {
+    fn allowed(self, _option: &DaOption) -> syn::Result<()> {
+        Ok(())
+    }
+}
+
 fn continue_options(input: ParseStream) -> Option<Lookahead1> {
     if input.is_empty() {
         return None;
@@ -72,17 +89,12 @@ fn continue_options(input: ParseStream) -> Option<Lookahead1> {
 }
 
 impl UnprocessedOptions {
-    /// Parse the options allowed in a template definition
-    pub fn parse_in_template(input: ParseStream) -> syn::Result<Self> {
-        Self::parse_general(input, |_| Ok(()))
-    }
-
-    fn parse_general(
+    pub fn parse(
         input: ParseStream,
-        chk: impl Fn(&DaOption) -> syn::Result<()>,
+        opcontext: OpContext,
     ) -> syn::Result<Self> {
         // Scan ahead for a syntax check
-        DaOption::parse_several(&input.fork(), |opt| chk(&opt))?;
+        DaOption::parse_several(&input.fork(), |opt| opcontext.allowed(&opt))?;
 
         // Collect everything until the : or =
         let mut out = TokenStream::new();

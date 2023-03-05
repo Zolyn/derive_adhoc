@@ -24,7 +24,7 @@ pub use syn::parse::{Lookahead1, Parse, ParseStream, Parser};
 pub use syn::punctuated::Punctuated;
 pub use syn::spanned::Spanned;
 pub use syn::Token;
-pub use syn::{braced, parenthesized};
+pub use syn::{braced, bracketed, parenthesized};
 pub use syn::{parse_macro_input, token};
 pub use void::{ResultVoidErrExt as _, ResultVoidExt as _, Void};
 
