@@ -41,11 +41,17 @@ error: expected driver kind union, but driver is struct (actual kind)
    |
    = note: this error originates in the macro `derive_adhoc_driver_BadOptionsDriver` which comes from the expansion of the macro `derive_adhoc` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error: expected one of `!` or `::`, found `error`
+error: expected `!`
   --> ui/badoptions.rs:32:12
    |
 32 |     syntax error;
-   |            ^^^^^ expected one of `!` or `::`
+   |            ^^^^^
+
+error: expected one of `!` or `::`, found `error`
+ --> $OUT_DIR[derive-adhoc-macros]/derive-adhoc~expansions~/d-a-34d6acdcffc1f257392e77f3.rs
+  |
+  | syntax error ;
+  |        ^^^^^ expected one of `!` or `::`
 
 error: contradictory values for expected driver kind (in `for` option) (first)
   --> ui/badoptions.rs:36:31

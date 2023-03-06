@@ -28,7 +28,7 @@ derive_adhoc! {
 }
 
 derive_adhoc! {
-    BadOptionsDriver dbg:
+    BadOptionsDriver dbg, expect items:
     syntax error;
 }
 
