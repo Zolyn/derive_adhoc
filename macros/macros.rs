@@ -29,6 +29,11 @@ mod paste;
 mod repeat;
 mod syntax;
 
+#[doc=include_str!("NOTES.md")]
+mod _doc_notes {}
+
+//========== `expect`, the `check` module (or dummy version) ==========
+
 // "expect" feature; module named check.rs for tab completion reasons
 #[cfg(feature = "expect")]
 mod check;
@@ -57,8 +62,7 @@ impl DaOptValDescribable for check::Target {
         "expected output syntax (`expect` option)";
 }
 
-#[doc=include_str!("NOTES.md")]
-mod _doc_notes {}
+//========== actual macro entrypoints ==========
 
 /// Template expansion engine, internal
 ///
