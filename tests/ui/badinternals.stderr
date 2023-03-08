@@ -35,3 +35,31 @@ error: expected curly braces
    |
 18 | derive_adhoc::derive_adhoc_expand!{ GARBAGE -> INNARDS }
    |                                     ^^^^^^^
+
+error: bad input to derive_adhoc_expand inner template expansion proc macro; might be due to incompatible derive-adhoc versions(s)
+  --> ui/badinternals.rs:39:1
+   |
+39 | / derive_adhoc::derive_adhoc_expand!{
+40 | |     { pub struct StructName {} }
+41 | |     [200 0]
+42 | |     { }
+43 | |     { OUGHT NOT TO BE EXPANDED; }
+44 | |     { crate; [] Template; }
+45 | | }
+   | |_^
+   |
+   = note: this error originates in the macro `derive_adhoc::derive_adhoc_expand` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: Incompatible major version for AOPTIONS (driver 200, template/engine 1)
+  --> ui/badinternals.rs:39:1
+   |
+39 | / derive_adhoc::derive_adhoc_expand!{
+40 | |     { pub struct StructName {} }
+41 | |     [200 0]
+42 | |     { }
+43 | |     { OUGHT NOT TO BE EXPANDED; }
+44 | |     { crate; [] Template; }
+45 | | }
+   | |_^
+   |
+   = note: this error originates in the macro `derive_adhoc::derive_adhoc_expand` (in Nightly builds, run with -Z macro-backtrace for more info)
