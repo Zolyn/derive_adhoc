@@ -115,7 +115,7 @@ When used like this
 ```
 Expands to
 ```rust,ignore
-    macro_rules! derive_adhoc_template_MyDebug { {
+    macro_rules! derive_adhoc_template_Template { {
         { $($driver:tt)* }
      $( [ $($aoptions:tt)* ] )?
         { $($future:tt)* }
@@ -126,7 +126,7 @@ Expands to
          $( [ $(aoptions)* ] )?
             { $($dpassthrough)* }
             { TEMPLATE... }
-            { $crate; [TOPTIONS...] MyDebug; }
+            { $crate; [TOPTIONS...] Template; }
         }
     } }
 ```
