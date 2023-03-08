@@ -345,6 +345,20 @@ impl<'c> Context<'c> {
 
         f(ctx)
     }
+
+    /// Description of the whole expansion, suitable for `dbg` option, etc.
+    pub fn expansion_description(&self) -> impl Display {
+        let ident = &self.top.ident;
+        if let Some(templ) = &self.template_name {
+            format!(
+                "derive-adhoc expansion of {} for {}",
+                templ.to_token_stream(),
+                ident,
+            )
+        } else {
+            format!("derive-adhoc expansion, for {}", ident,)
+        }
+    }
 }
 
 impl Default for TokenAccumulator {

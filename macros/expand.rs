@@ -930,16 +930,7 @@ pub fn derive_adhoc_expand_func_macro(
 
             //    dbg!(&&output);
             if dbg {
-                let ident = &input.driver.ident;
-                let description = if let Some(templ) = &input.template_name {
-                    format!(
-                        "derive-adhoc expansion of {} for {}",
-                        templ.to_token_stream(),
-                        ident,
-                    )
-                } else {
-                    format!("derive-adhoc expansion, for {}", ident,)
-                };
+                let description = ctx.expansion_description();
                 let dump = format!(
                     concat!(
                         "---------- {} (start) ----------\n",
