@@ -21,7 +21,11 @@ pub enum OpContext {
     /// In the driver's application
     ///
     /// `#[derive_adhoc(Template[OPTIONS])]`
-    DriverApplication,
+    DriverApplicationCapture,
+    /// Driver's application options as they appear in the ultimate expansion
+    ///
+    /// With the versioning, so `1 1 AOPTIONS`.
+    DriverApplicationPassed,
 }
 
 /// All the template options, as a tokenstream, but sanity-checked
@@ -92,6 +96,35 @@ pub enum ExpectedDriverKind {
     Union,
 }
 
+#[derive(Debug, Copy, Clone)]
+pub struct OpCompatVersions {
+    /// Increased when we make a wholly-incompatible change
+    ///
+    /// Bumping this will cause rejection of AOPTIONS by old d-a engines.
+    /// Hopefully a newer d-a will able to cope with both.
+    major: OpCompatVersionNumber,
+
+    /// Increased when we make a more subtle change
+    ///
+    /// Current d-a versions will ignore this.
+    /// Bumping it can be used to psas information
+    /// from a newer capturing d-a to a newer template/driver d-a.
+    minor: OpCompatVersionNumber,
+
+    /// Span for error reporting
+    span: Span,
+}
+type OpCompatVersionNumber = u32;
+impl OpCompatVersions {
+    pub fn ours() -> Self {
+        OpCompatVersions {
+            major: 1,
+            minor: 0,
+            span: Span::call_site(),
+        }
+    }
+}
+
 impl DaOptValDescribable for ExpectedDriverKind {
     const DESCRIPTION: &'static str = "expected driver kind (in `for` option)";
 }
@@ -108,10 +141,51 @@ impl OpContext {
         }
         match self {
             OC::Template => Ok(()),
-            OC::DriverApplication => Err(option.kw_span.error(
-                "this derive-adhoc option is only supported in templates",
-            )),
+            OC::DriverApplicationCapture | OC::DriverApplicationPassed => {
+                Err(option.kw_span.error(
+                    "this derive-adhoc option is only supported in templates",
+                ))
+            }
         }
+    }
+
+    fn parse_versions(
+        self,
+        input: ParseStream,
+    ) -> syn::Result<OpCompatVersions> {
+        use OpContext as OC;
+        let ours = OpCompatVersions::ours();
+        let got = match self {
+            OC::Template | OC::DriverApplicationCapture => ours,
+            OC::DriverApplicationPassed => input.parse()?,
+        };
+        if got.major != ours.major {
+            return Err(got.error(format_args!(
+ "Incompatible major version for AOPTIONS (driver {}, template/engine {})",
+                got.major,
+                ours.major,
+            )));
+        }
+        Ok(got)
+    }
+}
+
+impl ToTokens for OpCompatVersions {
+    fn to_tokens(&self, out: &mut TokenStream) {
+        let OpCompatVersions { major, minor, span } = OpCompatVersions::ours();
+        out.extend(quote_spanned! {span=> #major #minor });
+    }
+}
+
+impl Parse for OpCompatVersions {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let number = move || {
+            let lit: syn::LitInt = input.parse()?;
+            Ok::<_, syn::Error>((lit.span(), lit.base10_parse()?))
+        };
+        let (span, major) = number()?;
+        let (_, minor) = number()?;
+        Ok(OpCompatVersions { major, minor, span })
     }
 }
 
@@ -157,11 +231,19 @@ impl DaOptions {
 }
 
 impl DaOption {
+    /// Parses zero or more options, in `opcontext`
+    ///
+    /// With `OpContext::DriverApplicationPassed`,
+    /// expects to find the version information too.
     fn parse_several(
         input: ParseStream,
         opcontext: OpContext,
         mut each: impl FnMut(DaOption) -> syn::Result<()>,
     ) -> syn::Result<()> {
+        let _versions = opcontext
+            .parse_versions(input)
+            .map_err(advise_incompatibility)?;
+
         while let Some(la) = continue_options(input) {
             if !la.peek(Ident::peek_any) {
                 return Err(la.error());

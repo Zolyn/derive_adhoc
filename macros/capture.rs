@@ -32,7 +32,7 @@ impl Parse for InvocationEntry {
                 let _bracket = bracketed!(tokens in input);
                 UnprocessedOptions::parse(
                     &tokens,
-                    OpContext::DriverApplication,
+                    OpContext::DriverApplicationCapture,
                 )?
             } else {
                 UnprocessedOptions::default()
@@ -190,10 +190,13 @@ pub fn derive_adhoc_derive_macro(
                 }
             }
         }
-        let aoptions = if aoptions.is_empty() {
-            Extra::Blank(quote! { [] })
-        } else {
-            Extra::Required(quote! { [#aoptions] })
+        let aoptions = {
+            let versions = OpCompatVersions::ours();
+            if aoptions.is_empty() {
+                Extra::Blank(quote! { [ #versions ] })
+            } else {
+                Extra::Required(quote! { [ #versions #aoptions ] })
+            }
         };
         let mut extras = vec![
             aoptions,

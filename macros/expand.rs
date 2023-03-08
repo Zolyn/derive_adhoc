@@ -59,7 +59,7 @@ impl Parse for DeriveAdhocExpandInput {
                 let tokens;
                 let _ = bracketed!(tokens in input);
                 let r = options
-                    .parse_update(&tokens, OpContext::DriverApplication);
+                    .parse_update(&tokens, OpContext::DriverApplicationPassed);
                 if let Some(r) = unadvised_err_of_unit(r) {
                     return r;
                 }
@@ -119,7 +119,9 @@ impl Parse for DeriveAdhocExpandInput {
         })() {
             Ok(Ok(dae_input)) => Ok(dae_input),
             Ok(Err(err_to_return_directly)) => Err(err_to_return_directly),
-            Err(err_needing_advice) => Err(advise_incompatibility(err_needing_advice)),
+            Err(err_needing_advice) => {
+                Err(advise_incompatibility(err_needing_advice))
+            }
         }
     }
 }

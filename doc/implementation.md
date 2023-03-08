@@ -160,7 +160,7 @@ Generates (in addition to the `derive_adhoc_driver_StructName` definition)
 ```rust,ignore
     derive_adhoc_template_Template! {
         { #[derive_adhoc(Template)] struct StructName { ... } }
-        [AOPTIONS]    // but only if nonempty
+        [1 0 AOPTIONS]    // but only if AOPTIONS is nonempty
         { }
     }
 ```
@@ -177,7 +177,7 @@ resulting in a call to `derive_adhoc_expand`:
 ```rust,ignore
     derive_adhoc_expand!{
         { pub struct StructName { /* original struct definition */ } }
-        [AOPTIONS]    // but only if AOPTIONS is nonempty
+        [1 0 AOPTIONS]    // but only if AOPTIONS is nonempty
         { }
         { TEMPLATE... }
         { $crate; [TOPTIONS...] Template; }
