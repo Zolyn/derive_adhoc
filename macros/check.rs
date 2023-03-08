@@ -35,8 +35,8 @@ pub enum Target {
 
 /// Local context for a syntax check operation
 struct Checking<'t> {
-    pub output: &'t mut TokenStream,
-    pub target: DaOptVal<Target>,
+    output: &'t mut TokenStream,
+    target: DaOptVal<Target>,
 }
 
 /// Main entrypoint
