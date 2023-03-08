@@ -33,6 +33,7 @@ pub use TokenTree as TT;
 pub(crate) use crate::check;
 pub use crate::definition::escape_dollars;
 pub use crate::framework::TokenAccumulator;
+pub use crate::utils::advise_incompatibility;
 pub use crate::utils::expand_macro_name;
 pub use crate::utils::ErrorAccumulator;
 pub use crate::utils::{braced_group, delimit_token_group};

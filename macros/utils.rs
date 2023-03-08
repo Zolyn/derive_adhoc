@@ -26,6 +26,15 @@ pub fn delimit_token_group(
     Ok(out)
 }
 
+/// Add a warning about derive-adhoc version incompatibility
+pub fn advise_incompatibility(err_needing_advice: syn::Error) -> syn::Error {
+    let mut advice = Span::call_site().error(
+        "bad input to derive_adhoc_expand inner template expansion proc macro; might be due to incompatible derive-adhoc versions(s)"
+    );
+    advice.combine(err_needing_advice);
+    advice
+}
+
 //---------- MakeErrorExt ----------
 
 use crate::prelude::*;

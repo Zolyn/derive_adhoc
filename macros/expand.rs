@@ -119,13 +119,7 @@ impl Parse for DeriveAdhocExpandInput {
         })() {
             Ok(Ok(dae_input)) => Ok(dae_input),
             Ok(Err(err_to_return_directly)) => Err(err_to_return_directly),
-            Err(err_needing_advice) => {
-                let mut advice = Span::call_site().error(
- "bad input to derive_adhoc_expand inner template expansion proc macro; might be due to incompatible derive-adhoc versions(s)"
-                );
-                advice.combine(err_needing_advice);
-                Err(advice)
-            }
+            Err(err_needing_advice) => Err(advise_incompatibility(err_needing_advice)),
         }
     }
 }
