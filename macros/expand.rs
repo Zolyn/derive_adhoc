@@ -919,44 +919,44 @@ pub fn derive_adhoc_expand_func_macro(
         }
     }
 
-    let output = Context::call(
+    Context::call(
         &input.driver,
         &input.template_crate,
         input.template_name.as_ref(),
         |ctx| {
             let mut output = TokenAccumulator::new();
             input.template.expand(&ctx, &mut output);
-            output.tokens()
+            let output = output.tokens()?;
+
+            //    dbg!(&&output);
+            if dbg {
+                let ident = &input.driver.ident;
+                let description = if let Some(templ) = &input.template_name {
+                    format!(
+                        "derive-adhoc expansion of {} for {}",
+                        templ.to_token_stream(),
+                        ident,
+                    )
+                } else {
+                    format!("derive-adhoc expansion, for {}", ident,)
+                };
+                let dump = format!(
+                    concat!(
+                        "---------- {} (start) ----------\n",
+                        "{}\n",
+                        "---------- {} (end) ----------\n",
+                    ),
+                    &description, &output, &description,
+                );
+                eprint!("{}", dump);
+            }
+
+            let mut output = output;
+            if let Some(target) = expect_target {
+                check::check_expected_target_syntax(&mut output, target);
+            }
+
+            Ok(output)
         },
-    )?;
-
-    //    dbg!(&&output);
-    if dbg {
-        let ident = &input.driver.ident;
-        let description = if let Some(templ) = &input.template_name {
-            format!(
-                "derive-adhoc expansion of {} for {}",
-                templ.to_token_stream(),
-                ident,
-            )
-        } else {
-            format!("derive-adhoc expansion, for {}", ident,)
-        };
-        let dump = format!(
-            concat!(
-                "---------- {} (start) ----------\n",
-                "{}\n",
-                "---------- {} (end) ----------\n",
-            ),
-            &description, &output, &description,
-        );
-        eprint!("{}", dump);
-    }
-
-    let mut output = output;
-    if let Some(target) = expect_target {
-        check::check_expected_target_syntax(&mut output, target);
-    }
-
-    Ok(output)
+    )
 }
