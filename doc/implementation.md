@@ -172,4 +172,14 @@ see above.
 
 The call to `derive_adhoc_template_Template!`
 is expanded according to the `macro_rules!` definition,
-resulting in a call to `derive_adhoc_expand`.
+resulting in a call to `derive_adhoc_expand`:
+
+```rust,ignore
+    derive_adhoc_expand!{
+        { pub struct StructName { /* original struct definition */ } }
+        [AOPTIONS]    // but only if AOPTIONS is nonempty
+        { }
+        { TEMPLATE... }
+        { $crate; [TOPTIONS...] Template; }
+    }
+```
