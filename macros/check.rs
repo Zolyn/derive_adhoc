@@ -35,6 +35,8 @@ pub enum Target {
 
 /// Local context for a syntax check operation
 struct Checking<'t> {
+    #[allow(dead_code)] // TODO
+    ctx: &'t framework::Context<'t>,
     output: &'t mut TokenStream,
     target: DaOptVal<Target>,
 }
@@ -50,10 +52,11 @@ struct Checking<'t> {
 ///    containing the text of the output,
 ///    so that the compiler will point to the actual error.
 pub fn check_expected_target_syntax(
+    ctx: &framework::Context,
     output: &mut TokenStream,
     target: DaOptVal<Target>,
 ) {
-    check::Checking { output, target }.check();
+    check::Checking { ctx, output, target }.check();
 }
 
 impl Target {
@@ -94,7 +97,7 @@ impl Checking<'_> {
 
         let broken = mem::replace(self.output, err.into_compile_error());
 
-        let expansion = expand_via_file(self.target.value, broken)
+        let expansion = expand_via_file(self.ctx, self.target.value, broken)
             .map_err(|e| {
                 Span::call_site()
                     .error(format!(
@@ -113,6 +116,8 @@ impl Checking<'_> {
 ///
 /// If this can't be done, reports why not.
 fn expand_via_file(
+    #[allow(dead_code)] // TODO
+    ctx: &framework::Context,
     target: Target,
     broken: TokenStream,
 ) -> Result<TokenStream, String> {

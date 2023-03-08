@@ -30,7 +30,6 @@ pub use void::{ResultVoidErrExt as _, ResultVoidExt as _, Void};
 
 pub use TokenTree as TT;
 
-pub(crate) use crate::check;
 pub use crate::definition::escape_dollars;
 pub use crate::framework::TokenAccumulator;
 pub use crate::utils::advise_incompatibility;
@@ -39,6 +38,7 @@ pub use crate::utils::ErrorAccumulator;
 pub use crate::utils::{braced_group, delimit_token_group};
 pub use crate::utils::{ErrorLoc, MakeError};
 pub use crate::utils::{ToTokensPunctComposable, TokenPastesAsIdent};
+pub(crate) use crate::{check, framework};
 
 pub use crate::expand::*;
 pub use crate::options::*;

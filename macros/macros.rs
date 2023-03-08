@@ -51,6 +51,7 @@ mod check {
     }
 
     pub fn check_expected_target_syntax(
+        _ctx: &framework::Context,
         _output: &mut TokenStream,
         target: DaOptVal<Target>,
     ) {

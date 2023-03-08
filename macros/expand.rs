@@ -944,7 +944,7 @@ pub fn derive_adhoc_expand_func_macro(
 
             let mut output = output;
             if let Some(target) = expect_target {
-                check::check_expected_target_syntax(&mut output, target);
+                check::check_expected_target_syntax(&ctx, &mut output, target);
             }
 
             Ok(output)
