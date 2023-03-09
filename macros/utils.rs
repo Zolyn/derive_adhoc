@@ -228,14 +228,20 @@ pub fn expand_macro_name() -> Result<TokenStream, syn::Error> {
 /// ```ignore
 /// keyword_general!{
 ///     KW_VAR FROM_ENUM ENUM;
-///     KEYWORD [ {BLOCK WITH BINDINGS} ] [ CONSTRUCTOR-ARGS ] }
+///     KEYWORD [ {BINDINGS} ] [ CONSTRUCTOR-ARGS ] }
 /// ```
 /// Expands to:
 /// ```ignore
-///     if KW_VAR = ... { return FROM_ENUM(ENUM::CONSTRUCTOR ...) }
+///     if KW_VAR = ... {
+///         BINDINGS
+///         return FROM_ENUM(ENUM::CONSTRUCTOR CONSTRUCTOR-ARGS)
+///     }
 /// ```
 ///
 /// `KEYWORD` can be `"KEYWORD_STRING": CONSTRUCTOR`
+///
+/// `CONSTRUCTOR-ARGS`, if present, should be in the `( )` or `{ }`
+/// as required by the variant's CONSTRUCTOR.
 macro_rules! keyword_general {
     { $kw_var:ident $from_enum:ident $Enum:ident;
       $kw:ident $( $rest:tt )* } => {

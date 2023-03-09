@@ -635,6 +635,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         // keyword!{ KEYWORD [ {BLOCK WITH BINDINGS} ] [ CONSTRUCTOR-ARGS ] }
         // expands to   if ... { return ... }
         // KEYWORD can be "KEYWORD_STRING": CONSTRUCTOR
+        // See `keyword_general!` in utils.rs for full details.
         macro_rules! keyword { { $($args:tt)* } => {
             keyword_general! { kw from_sd SD; $($args)* }
         } }
