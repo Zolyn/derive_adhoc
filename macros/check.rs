@@ -56,7 +56,12 @@ pub fn check_expected_target_syntax(
     output: &mut TokenStream,
     target: DaOptVal<Target>,
 ) {
-    check::Checking { ctx, output, target }.check();
+    check::Checking {
+        ctx,
+        output,
+        target,
+    }
+    .check();
 }
 
 impl Target {
