@@ -48,7 +48,7 @@ error: expected `!`
    |            ^^^^^
 
 error: expected one of `!` or `::`, found `error`
- --> $OUT_DIR[derive-adhoc-macros]/derive-adhoc~expansions~/d-a-34d6acdcffc1f257392e77f3.rs
+ --> $OUT_DIR[derive-adhoc-macros]/derive-adhoc~expansions~/d-a-3d116ce28698f5b3e5000583.rs
   |
   | syntax error ;
   |        ^^^^^ expected one of `!` or `::`

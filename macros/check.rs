@@ -35,7 +35,6 @@ pub enum Target {
 
 /// Local context for a syntax check operation
 struct Checking<'t> {
-    #[allow(dead_code)] // TODO
     ctx: &'t framework::Context<'t>,
     output: &'t mut TokenStream,
     target: DaOptVal<Target>,
@@ -121,7 +120,6 @@ impl Checking<'_> {
 ///
 /// If this can't be done, reports why not.
 fn expand_via_file(
-    #[allow(dead_code)] // TODO
     ctx: &framework::Context,
     target: Target,
     broken: TokenStream,
@@ -129,7 +127,7 @@ fn expand_via_file(
     use sha3::{Digest as _, Sha3_256};
     use std::{fs, io, path::PathBuf};
 
-    let text = format!("// derive-adhoc template expansion:\n{}\n", broken);
+    let text = format!("// {}:\n{}\n", ctx.expansion_description(), broken);
 
     let hash: String = {
         let mut hasher = Sha3_256::new();
