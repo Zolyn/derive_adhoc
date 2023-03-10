@@ -29,8 +29,6 @@ members = [
 # to update the "bizarre" testing versions in tests/pub-export/bizarre-*
 
 [features]
-# TODO DOCS
-# The point of the features is just to get rid of dependencies.
 default = ["full"]
 full = ["case", "expect", "minimal-1"]
 minimal-1 = []
