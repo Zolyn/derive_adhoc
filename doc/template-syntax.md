@@ -33,6 +33,7 @@
       * [`expect items`, `expect expr` -- syntax check the expansion](#expect-items-expect-expr---syntax-check-the-expansion)
       * [`for struct`, `for enum`, `for union` -- Insist on a particular driver kind](#for-struct-for-enum-for-union---insist-on-a-particular-driver-kind)
       * [`dbg` -- Print the expansion to stderr, for debugging](#dbg---print-the-expansion-to-stderr-for-debugging)
+      * [Expansion options example](#expansion-options-example)
    * [Structs used in examples](#structs-used-in-examples)
 
 ## Template syntax overview
@@ -633,6 +634,17 @@ for debugging purposes.
 
 You will not want to leave this option in production code,
 as it makes builds noisy.
+
+### Expansion options example
+
+```
+# use derive_adhoc::{define_derive_adhoc, Adhoc};
+define_derive_adhoc! { Nothing for struct, expect items = }
+
+#[derive(Adhoc)]
+#[derive_adhoc(Nothing[expect items, dbg])]
+struct Unit;
+```
 
 ## Structs used in examples
 
