@@ -93,20 +93,23 @@ pub fn derive_adhoc_expand(
 
 /// Expand an ad-hoc template, on a data structure decorated `#[derive(Adhoc)]`
 ///
-/// ```
+/// ```ignore
 /// # use derive_adhoc_macros::{Adhoc, derive_adhoc, derive_adhoc_expand};
 /// # #[derive(Adhoc)] struct DataStructureType;
 /// # fn main() {
 /// # const TEMPLATE: () = ();
 /// derive_adhoc! {
-///     DataStructureType:
+///     DataStructureType OPTIONS,..:
 ///     TEMPLATE
 /// }
 /// # ;
 /// # }
 /// ```
 ///
-/// Expands the template `TEMPLATE` for the type `DataStructureType`.
+/// Expands the template `TEMPLATE` for the type `DataStructureType`,
+///
+/// `OPTIONS,..` is an optional comma-separated list of
+/// [expansion options](doc_template_syntax/index.html#expansion-options).
 ///
 /// The definition of `DataStructureType` must have been decorated
 /// with [`#[derive(Adhoc)]`](crate::Adhoc),
@@ -126,7 +129,7 @@ pub fn derive_adhoc(
 ///
 /// ```ignore
 /// define_derive_adhoc! {
-///     [pub] MyMacro =
+///     [pub] MyMacro OPTIONS,.. =
 ///     TEMPLATE
 /// }
 /// ```
@@ -134,6 +137,10 @@ pub fn derive_adhoc(
 /// Then, `MyMacro` can be used with
 /// [`#[derive(Adhoc)]`](Adhoc)
 /// `#[derive_adhoc(MyMacro)]`.
+///
+/// `OPTIONS,..` is an optional comma-separated list of
+/// [expansion options](doc_template_syntax/index.html#expansion-options),
+/// which will be applied whenever this template is expanded.
 ///
 /// ## Captured template macro `derive_adhoc_template_MyMacro`
 ///
@@ -227,6 +234,14 @@ pub fn define_derive_adhoc(
 ///     they are taken to refer to reuseable templates
 ///     defined with [`define_derive_adhoc!`].
 ///     Each such `MyMacro` is applied to the data structure.
+///
+///     You can specify
+///     [expansion options](doc_template_syntax/index.html#expansion-options)
+///     for each such template application, by writing
+///     `#[derive_adhoc(MyMacro[OPTIONS,..])]`, where
+///     `[OPTIONS,..]` is a comma-separated list of expansion options
+///     contained within `[ ]`.
+///
 ///
 /// ## Applying a template (derive-adhoc macro) from another crate
 ///
