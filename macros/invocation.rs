@@ -5,6 +5,8 @@ use crate::prelude::*;
 #[derive(Debug, Clone)]
 struct TemplateInvocation {
     driver: syn::Path,
+    // TODO DOCS note specifying template opts in doc for derive_adhoc!
+    options: UnprocessedOptions,
     colon: Token![:],
     template: TokenStream,
 }
@@ -12,10 +14,12 @@ struct TemplateInvocation {
 impl Parse for TemplateInvocation {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let driver = input.parse()?;
+        let options = UnprocessedOptions::parse(&input, OpContext::Template)?;
         let colon = input.parse()?;
         let template = input.parse()?;
         Ok(TemplateInvocation {
             driver,
+            options,
             colon,
             template,
         })
@@ -39,6 +43,7 @@ pub fn derive_adhoc_func_macro(
 ) -> Result<TokenStream, syn::Error> {
     let TemplateInvocation {
         driver,
+        options,
         colon,
         template,
     } = syn::parse2(input)?;
@@ -62,7 +67,7 @@ pub fn derive_adhoc_func_macro(
         #driver_mac_name !{
             { #template }
             { ($) }
-            crate;
+            crate; [#options] ;
         }
     };
 

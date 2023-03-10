@@ -21,6 +21,7 @@ members = [
 	"tests/compat/old-a",
 	"tests/compat/new-b",
 	"tests/compat/old-b",
+	"tests/stderr",
 ]
 
 # After editing this file, you will probably need to run
@@ -31,10 +32,11 @@ members = [
 # TODO DOCS
 # The point of the features is just to get rid of dependencies.
 default = ["full"]
-full = ["case"]
+full = ["case", "expect"]
 minimal-1 = []
 
 case = ["derive-adhoc-macros/case", "heck", "minimal-1"]
+expect = ["derive-adhoc-macros/expect", "minimal-1"]
 
 [dependencies]
 derive-adhoc-macros = { path = "macros", version = "=0.2.2", default_features = false }

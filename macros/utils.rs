@@ -26,6 +26,15 @@ pub fn delimit_token_group(
     Ok(out)
 }
 
+/// Add a warning about derive-adhoc version incompatibility
+pub fn advise_incompatibility(err_needing_advice: syn::Error) -> syn::Error {
+    let mut advice = Span::call_site().error(
+        "bad input to derive_adhoc_expand inner template expansion proc macro; might be due to incompatible derive-adhoc versions(s)"
+    );
+    advice.combine(err_needing_advice);
+    advice
+}
+
 //---------- MakeErrorExt ----------
 
 use crate::prelude::*;
@@ -219,4 +228,58 @@ pub fn expand_macro_name() -> Result<TokenStream, syn::Error> {
             format_args!("Expected derive-adhoc or derive-adhoc-macro to be present in Cargo.toml: {}", e)
         )),
     }
+}
+
+//---------- general keyword enum parsing ----------
+
+/// General-purpose keyword parser
+///
+/// ```ignore
+/// keyword_general!{
+///     KW_VAR FROM_ENUM ENUM;
+///     KEYWORD [ {BINDINGS} ] [ CONSTRUCTOR-ARGS ] }
+/// ```
+/// Expands to:
+/// ```ignore
+///     if KW_VAR = ... {
+///         BINDINGS
+///         return FROM_ENUM(ENUM::CONSTRUCTOR CONSTRUCTOR-ARGS)
+///     }
+/// ```
+///
+/// `KEYWORD` can be `"KEYWORD_STRING": CONSTRUCTOR`
+///
+/// `CONSTRUCTOR-ARGS`, if present, should be in the `( )` or `{ }`
+/// as required by the variant's CONSTRUCTOR.
+macro_rules! keyword_general {
+    { $kw_var:ident $from_enum:ident $Enum:ident;
+      $kw:ident $( $rest:tt )* } => {
+        keyword_general!{ $kw_var $from_enum $Enum;
+                          @ 1 stringify!($kw), $kw, $($rest)* }
+    };
+    { $kw_var:ident $from_enum:ident $Enum:ident;
+      $kw:literal: $constr:ident $( $rest:tt )* } => {
+        keyword_general!{ $kw_var $from_enum $Enum;
+                          @ 1 $kw, $constr, $($rest)* }
+    };
+    { $kw_var:ident $from_enum:ident $Enum:ident;
+      @ 1 $kw:expr, $constr:ident, $( $ca:tt )? } => {
+        keyword_general!{ $kw_var $from_enum $Enum;
+                          @ 2 $kw, $constr, { } $( $ca )? }
+    };
+    { $kw_var:ident $from_enum:ident $Enum:ident;
+      @ 1 $kw:expr, $constr:ident, { $( $bindings:tt )* } $ca:tt } => {
+        keyword_general!{ $kw_var $from_enum $Enum;
+                          @ 2 $kw, $constr, { $( $bindings )* } $ca }
+    };
+    { $kw_var:ident $from_enum:ident $Enum:ident;
+      @ 2 $kw:expr, $constr:ident,
+      { $( $bindings:tt )* } $( $constr_args:tt )?
+    } => {
+        if $kw_var == $kw {
+            $( $bindings )*
+            return $from_enum($Enum::$constr $( $constr_args )*);
+        }
+    };
+    { $($x:tt)* } => { compile_error!(stringify!($($x)*)) };
 }

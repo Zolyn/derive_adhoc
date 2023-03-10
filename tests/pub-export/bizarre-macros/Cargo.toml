@@ -19,12 +19,14 @@ publish = false
 bizarre = []
 default = ["bizarre"]
 case = ["heck"]
+expect = ["sha3", "syn/full"]
 
 [dependencies]
 itertools = "0.10.1"
 proc-macro-crate = "1.1.3"
 proc-macro2 = "1"
 quote = "1"
+sha3 = { version = "0.10", optional = true }
 strum = { version = "0.24", features = ["derive"] }
 syn = "1.0.61"
 void = "1"

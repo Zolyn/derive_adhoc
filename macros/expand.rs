@@ -15,6 +15,8 @@ pub struct DeriveAdhocExpandInput {
     pub driver: syn::DeriveInput,
     pub template_brace: token::Brace,
     pub template_crate: syn::Path,
+    pub template_name: Option<syn::Path>,
+    pub options: DaOptions,
     pub template: Template<TokenAccumulator>,
 }
 
@@ -42,9 +44,26 @@ impl Parse for DeriveAdhocExpandInput {
         // calling scope throws syn::Error.
         // See the match at the bottom for what the return values mean.
         match (|| {
+            let mut options = DaOptions::default();
+
+            // If `got` is an error, returns Some of what the outer closure
+            // should return.  Otherwise, return None.
+            let unadvised_err_of_unit =
+                |got: syn::Result<()>| got.err().map(Err).map(Ok);
+
             let driver;
             let driver_brace = braced!(driver in input);
             let driver = driver.parse()?;
+
+            if input.peek(syn::token::Bracket) {
+                let tokens;
+                let _ = bracketed!(tokens in input);
+                let r = options
+                    .parse_update(&tokens, OpContext::DriverApplicationPassed);
+                if let Some(r) = unadvised_err_of_unit(r) {
+                    return r;
+                }
+            }
 
             let driver_passed;
             let _ = braced!(driver_passed in input);
@@ -54,11 +73,34 @@ impl Parse for DeriveAdhocExpandInput {
             let template_brace = braced!(template in input);
             let template = Template::parse(&template, ());
 
-            let template_passed;
-            let _ = braced!(template_passed in input);
-            let template_crate = template_passed.parse()?;
-            let _: Token![;] = template_passed.parse()?;
-            let _: TokenStream = template_passed.parse()?;
+            let template_crate;
+            let template_name;
+            {
+                let template_passed;
+                let _ = braced!(template_passed in input);
+                let input = template_passed;
+
+                template_crate = input.parse()?;
+                let _: Token![;] = input.parse()?;
+
+                let tokens;
+                let _ = bracketed!(tokens in input);
+                // TODO should these be in `[ ]`,
+                // like they are in #[derive_adhoc] ?
+                let r = options.parse_update(&tokens, OpContext::Template);
+                if let Some(r) = unadvised_err_of_unit(r) {
+                    return r;
+                }
+
+                template_name = if input.peek(Token![;]) {
+                    None
+                } else {
+                    Some(input.parse()?)
+                };
+                let _: Token![;] = input.parse()?;
+
+                let _: TokenStream = input.parse()?;
+            }
 
             let _: TokenStream = input.parse()?;
 
@@ -73,16 +115,14 @@ impl Parse for DeriveAdhocExpandInput {
                 template_brace,
                 template,
                 template_crate,
+                template_name,
+                options,
             }))
         })() {
             Ok(Ok(dae_input)) => Ok(dae_input),
             Ok(Err(err_to_return_directly)) => Err(err_to_return_directly),
             Err(err_needing_advice) => {
-                let mut advice = Span::call_site().error(
- "bad input to derive_adhoc_expand inner template expansion proc macro; might be due to incompatible derive-adhoc versions(s)"
-                );
-                advice.combine(err_needing_advice);
-                Err(advice)
+                Err(advise_incompatibility(err_needing_advice))
             }
         }
     }
@@ -852,24 +892,64 @@ pub fn derive_adhoc_expand_func_macro(
     let input: DeriveAdhocExpandInput = syn::parse2(input)?;
     // eprintln!("derive_adhoc_expand! crate = {:?}", &input.template_crate);
 
-    let output = Context::call(&input.driver, &input.template_crate, |ctx| {
-        let mut output = TokenAccumulator::new();
-        input.template.expand(&ctx, &mut output);
-        output.tokens()
-    })?;
+    let DaOptions {
+        dbg,
+        driver_kind,
+        expect_target,
+        //
+    } = input.options;
 
-    // obviously nothing should print to stderr
-    //    dbg!(&&output);
-    // let ident = input.driver.ident;
-    // eprintln!(
-    //     "---------- derive_adhoc_expand start for {} ----------",
-    //     ident
-    // );
-    // eprintln!("{}", &output);
-    // eprintln!(
-    //     "---------- derive_adhoc_expand end for {} ----------",
-    //     ident
-    // );
+    if let Some(exp) = driver_kind {
+        macro_rules! got_kind { { $($kind:ident)* } => {
+            match &input.driver.data {
+                $(
+                    syn::Data::$kind(..) => ExpectedDriverKind::$kind,
+                )*
+            }
+        } }
 
-    Ok(output)
+        let got_kind = got_kind!(Struct Enum Union);
+        if got_kind != exp.value {
+            return Err([
+                (exp.span, "expected kind"),
+                (input.driver.span(), "actual kind"),
+            ]
+            .error(format_args!(
+                "expected driver kind {}, but driver is {}",
+                exp.value, got_kind,
+            )));
+        }
+    }
+
+    Context::call(
+        &input.driver,
+        &input.template_crate,
+        input.template_name.as_ref(),
+        |ctx| {
+            let mut output = TokenAccumulator::new();
+            input.template.expand(&ctx, &mut output);
+            let output = output.tokens()?;
+
+            //    dbg!(&&output);
+            if dbg {
+                let description = ctx.expansion_description();
+                let dump = format!(
+                    concat!(
+                        "---------- {} (start) ----------\n",
+                        "{}\n",
+                        "---------- {} (end) ----------\n",
+                    ),
+                    &description, &output, &description,
+                );
+                eprint!("{}", dump);
+            }
+
+            let mut output = output;
+            if let Some(target) = expect_target {
+                check::check_expected_target_syntax(&ctx, &mut output, target);
+            }
+
+            Ok(output)
+        },
+    )
 }

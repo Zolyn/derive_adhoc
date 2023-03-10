@@ -19,6 +19,7 @@ pub(crate) use crate::paste;
 pub struct Context<'c> {
     pub top: &'c syn::DeriveInput,
     pub template_crate: &'c syn::Path,
+    pub template_name: Option<&'c syn::Path>,
     pub tattrs: &'c PreprocessedAttrs,
     pub variant: Option<&'c WithinVariant<'c>>,
     pub field: Option<&'c WithinField<'c>>,
@@ -292,6 +293,7 @@ impl<'c> Context<'c> {
     pub fn call<T>(
         driver: &syn::DeriveInput,
         template_crate: &syn::Path,
+        template_name: Option<&syn::Path>,
         f: impl FnOnce(Context) -> syn::Result<T>,
     ) -> Result<T, syn::Error> {
         let tattrs = preprocess_attrs(&driver.attrs)?;
@@ -334,6 +336,7 @@ impl<'c> Context<'c> {
         let ctx = Context {
             top: &driver,
             template_crate,
+            template_name,
             tattrs: &tattrs,
             field: None,
             variant: None,
@@ -341,6 +344,20 @@ impl<'c> Context<'c> {
         };
 
         f(ctx)
+    }
+
+    /// Description of the whole expansion, suitable for `dbg` option, etc.
+    pub fn expansion_description(&self) -> impl Display {
+        let ident = &self.top.ident;
+        if let Some(templ) = &self.template_name {
+            format!(
+                "derive-adhoc expansion of {} for {}",
+                templ.to_token_stream(),
+                ident,
+            )
+        } else {
+            format!("derive-adhoc expansion, for {}", ident,)
+        }
     }
 }
 

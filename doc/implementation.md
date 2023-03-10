@@ -64,7 +64,7 @@ Implemented in `invocation.rs::derive_adhoc_func_macro`.
 When applied like this
 ```rust,ignore
     derive_adhoc!{
-       StructName:
+       StructName TOPTIONS...:
        TEMPLATE...
     }
 ```
@@ -74,7 +74,7 @@ Expands to
     derive_adhoc_driver_StructName! {
        { TEMPLATE... }
        { ($) }
-       crate;
+       crate; [TOPTIONS...]
     }
 ```
 
@@ -89,7 +89,7 @@ The result of expanding the above is this:
         { pub struct StructName { /* original struct definition */ } }
         { }
         { TEMPLATE... }
-        { crate; }
+        { crate; [TOPTIONS...] /*no template name*/; }
     }
 ```
 
@@ -109,22 +109,24 @@ Implemented in `definition.rs::define_derive_adhoc_func_macro`.
 When used like this
 ```rust,ignore
     define_derive_adhoc! {
-        MyMacro =
+        MyMacro TOPTIONS... =
         TEMPLATE...
     }
 ```
 Expands to
 ```rust,ignore
-    macro_rules! derive_adhoc_template_MyDebug { {
+    macro_rules! derive_adhoc_template_Template { {
         { $($driver:tt)* }
+     $( [ $($aoptions:tt)* ] )?
         { $($future:tt)* }
         $($dpassthrough:tt)*
     } => {
         derive_adhoc_expand! {
             { $($driver)* }
+         $( [ $(aoptions)* ] )?
             { $($dpassthrough)* }
             { TEMPLATE... }
-            { $crate; }
+            { $crate; [TOPTIONS...] Template; }
         }
     } }
 ```
@@ -149,7 +151,7 @@ This
 
 ```rust,ignore
     #[derive(Adhoc)]
-    #[derive_adhoc(Template)]
+    #[derive_adhoc(Template[AOPTIONS,...])]
     pub struct StructName { ... }
 ```
 
@@ -158,6 +160,7 @@ Generates (in addition to the `derive_adhoc_driver_StructName` definition)
 ```rust,ignore
     derive_adhoc_template_Template! {
         { #[derive_adhoc(Template)] struct StructName { ... } }
+        [1 0 AOPTIONS]    // but only if AOPTIONS is nonempty
         { }
     }
 ```
@@ -169,4 +172,14 @@ see above.
 
 The call to `derive_adhoc_template_Template!`
 is expanded according to the `macro_rules!` definition,
-resulting in a call to `derive_adhoc_expand`.
+resulting in a call to `derive_adhoc_expand`:
+
+```rust,ignore
+    derive_adhoc_expand!{
+        { pub struct StructName { /* original struct definition */ } }
+        [1 0 AOPTIONS]    // but only if AOPTIONS is nonempty
+        { }
+        { TEMPLATE... }
+        { $crate; [TOPTIONS...] Template; }
+    }
+```

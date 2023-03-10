@@ -6,6 +6,8 @@ use crate::prelude::*;
 struct TemplateDefinition {
     vis: Option<syn::VisPublic>,
     templ_name: syn::Ident,
+    // TODO DOCS note specifying template opts in doc for define_derive_adhoc!
+    options: UnprocessedOptions,
     template: TokenStream,
 }
 
@@ -16,11 +18,13 @@ impl Parse for TemplateDefinition {
         // for example `#[derive_adhoc(pub)]` ought not to mean to apply
         // a template called `pub`.  See ticket #1.
         let templ_name = input.parse()?;
+        let options = UnprocessedOptions::parse(&input, OpContext::Template)?;
         let _equals: syn::Token![=] = input.parse()?;
         let template = input.parse()?;
         Ok(TemplateDefinition {
             vis: vis.map(|pub_token| syn::VisPublic { pub_token }),
             templ_name,
+            options,
             template,
         })
     }
@@ -98,6 +102,7 @@ pub fn define_derive_adhoc_func_macro(
     let TemplateDefinition {
         vis,
         templ_name,
+        options,
         template,
     } = syn::parse2(input)?;
 
@@ -127,14 +132,16 @@ pub fn define_derive_adhoc_func_macro(
         macro_rules! #templ_mac_name {
             {
                 { $($driver:tt)* }
+             $( [ $($aoptions:tt)* ] )?
                 { $($future:tt)* }
                 $($dpassthrough:tt)*
             } => {
                 #expand_macro! {
                     { $( $driver )* }
+                 $( [ $($aoptions)* ] )?
                     { $($dpassthrough)* }
                     { # template }
-                    { $crate; }
+                    { $crate; [#options] #templ_name; }
                 }
             };
             { $($wrong:tt)* } => {

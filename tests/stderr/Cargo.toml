@@ -1,0 +1,31 @@
+# See `tests/stderr.rs`
+
+[package]
+name = "derive-adhoc-stderr-test"
+version = "0.0.1"
+edition = "2018"
+license="MIT"
+authors=["Ian Jackson <ijackson@chiark.greenend.org.uk>",
+         "and the contributors to Rust derive-adhoc"]
+description="stderr testing crates - does not build"
+publish = false
+
+[dependencies]
+derive-adhoc = { path = "../..", version = "0.2.2", features = ["full"] }
+
+[features]
+# The purpose of this crate is to fail the build, with error messages
+# that we collect.  But to avoid having multiple Cargo.lock, etc.,
+# we want it to be a member of the workspace.
+#
+# So we arrange that it is entirely empty unless properly enabled.
+# "properly enabled" means `enable` is enabled, *and* `disable` is disabled.
+# See the #![cfg] at the top of stderr-lib.rs.
+default = ["disable"]
+enable = []
+disable = []
+
+[lib]
+path = "stderr-lib.rs"
+doc = false
+doctest = false

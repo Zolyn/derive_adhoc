@@ -11,24 +11,59 @@ mod prelude;
 
 use prelude::*;
 
+// Implementation - common parts
+#[macro_use]
+mod utils;
+mod framework;
+
 // modules containing the actual implementations of our proc-macros
 mod capture;
 mod definition;
 mod invocation;
 
-// Implementation - common parts
-mod framework;
-mod utils;
-
 // Implementation - specific areas
 mod boolean;
 mod expand;
+mod options;
 mod paste;
 mod repeat;
 mod syntax;
 
 #[doc=include_str!("NOTES.md")]
 mod _doc_notes {}
+
+//========== `expect`, the `check` module (or dummy version) ==========
+
+// "expect" feature; module named check.rs for tab completion reasons
+#[cfg(feature = "expect")]
+mod check;
+#[cfg(not(feature = "expect"))]
+mod check {
+    use crate::prelude::*;
+    #[derive(Debug, Clone, Copy, PartialEq)]
+    pub struct Target(Void);
+
+    impl FromStr for Target {
+        type Err = Void;
+        fn from_str(_: &str) -> Result<Self, Void> {
+            panic!("output syntax checking not supported, enable `expect` feature of `derive-adhoc`")
+        }
+    }
+
+    pub fn check_expected_target_syntax(
+        _ctx: &framework::Context,
+        _output: &mut TokenStream,
+        target: DaOptVal<Target>,
+    ) {
+        void::unreachable(target.value.0)
+    }
+}
+impl DaOptValDescribable for check::Target {
+    const DESCRIPTION: &'static str =
+        "expected output syntax (`expect` option)";
+}
+
+//========== actual macro entrypoints ==========
 
 /// Template expansion engine, internal
 ///

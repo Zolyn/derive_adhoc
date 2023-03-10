@@ -1,0 +1,66 @@
+error: expected one of `!` or `::`, found `template`
+  --> ui/badoptions.rs:7:12
+   |
+7  |     broken template;
+   |            ^^^^^^^^ expected one of `!` or `::`
+...
+10 | #[derive(Adhoc)]
+   |          ----- in this derive macro expansion
+   |
+   = note: this error originates in the macro `derive_adhoc_template_BadOptionsTemplate` which comes from the expansion of the derive macro `Adhoc` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: unknown derive-adhoc option
+  --> ui/badoptions.rs:15:22
+   |
+15 |     BadOptionsDriver with unknown option:
+   |                      ^^^^
+
+error: unknown value for expected driver kind (in `for` option)
+  --> ui/badoptions.rs:19:26
+   |
+19 |     BadOptionsDriver for wombat:
+   |                          ^^^^^^
+
+error: expected driver kind union, but driver is struct (expected kind)
+  --> ui/badoptions.rs:23:26
+   |
+23 |     BadOptionsDriver for union:
+   |                          ^^^^^
+
+error: expected driver kind union, but driver is struct (actual kind)
+  --> ui/badoptions.rs:11:1
+   |
+11 | / #[derive_adhoc(BadOptionsTemplate[dbg])]
+12 | | struct BadOptionsDriver;
+   | |________________________^
+...
+22 | / derive_adhoc! {
+23 | |     BadOptionsDriver for union:
+24 | | }
+   | |_- in this macro invocation
+   |
+   = note: this error originates in the macro `derive_adhoc_driver_BadOptionsDriver` which comes from the expansion of the macro `derive_adhoc` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: expected `!`
+  --> ui/badoptions.rs:32:12
+   |
+32 |     syntax error;
+   |            ^^^^^
+
+error: expected one of `!` or `::`, found `error`
+ --> $OUT_DIR[derive-adhoc-macros]/derive-adhoc~expansions~/d-a-3d116ce28698f5b3e5000583.rs
+  |
+  | syntax error ;
+  |        ^^^^^ expected one of `!` or `::`
+
+error: contradictory values for expected driver kind (in `for` option) (first)
+  --> ui/badoptions.rs:36:31
+   |
+36 |     BadOptionsDriver dbg, for struct, for union:
+   |                               ^^^^^^
+
+error: contradictory values for expected driver kind (in `for` option) (second)
+  --> ui/badoptions.rs:36:43
+   |
+36 |     BadOptionsDriver dbg, for struct, for union:
+   |                                           ^^^^^
