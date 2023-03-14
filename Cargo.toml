@@ -32,6 +32,11 @@ members = [
 default = ["full"]
 full = ["case", "expect", "minimal-1"]
 minimal-1 = []
+# The minimal-1 feature is mandatory.
+# This apporach will allow us to move things from "always enabled" to
+# "part of some feature that can be disabled" without a semver break:
+# Introduce "minimal-2" which excludes the newly-disablable code,
+# but retain it in "minimal-1".
 
 case = ["derive-adhoc-macros/case", "heck"]
 expect = ["derive-adhoc-macros/expect"]
