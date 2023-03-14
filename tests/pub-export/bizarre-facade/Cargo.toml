@@ -19,11 +19,11 @@ autotests = false
 
 [features]
 default = ["full"]
-full = ["case", "expect"]
+full = ["case", "expect", "minimal-1"]
 minimal-1 = []
 
-case = ["derive-adhoc-macros/case", "heck", "minimal-1"]
-expect = ["derive-adhoc-macros/expect", "minimal-1"]
+case = ["derive-adhoc-macros/case", "heck"]
+expect = ["derive-adhoc-macros/expect"]
 
 [dependencies]
 derive-adhoc-macros = { package = "bizarre-derive-adhoc-macros", path = "../bizarre-macros", version = "0.0.666" }
