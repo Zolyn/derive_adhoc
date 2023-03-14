@@ -29,14 +29,17 @@ members = [
 # to update the "bizarre" testing versions in tests/pub-export/bizarre-*
 
 [features]
-# TODO DOCS
-# The point of the features is just to get rid of dependencies.
 default = ["full"]
-full = ["case", "expect"]
+full = ["case", "expect", "minimal-1"]
 minimal-1 = []
+# The minimal-1 feature is mandatory.
+# This apporach will allow us to move things from "always enabled" to
+# "part of some feature that can be disabled" without a semver break:
+# Introduce "minimal-2" which excludes the newly-disablable code,
+# but retain it in "minimal-1".
 
-case = ["derive-adhoc-macros/case", "heck", "minimal-1"]
-expect = ["derive-adhoc-macros/expect", "minimal-1"]
+case = ["derive-adhoc-macros/case", "heck"]
+expect = ["derive-adhoc-macros/expect"]
 
 [dependencies]
 derive-adhoc-macros = { path = "macros", version = "=0.2.2", default_features = false }
