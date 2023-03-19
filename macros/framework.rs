@@ -128,13 +128,13 @@ pub trait ExpansionOutput: SubstParseContext {
     /// This could be an `str` for example.
     /// This is *not* suitable for `TokenTree::Literal` or `syn::Lit`
     /// because their `Display` impls produce the version with `" "`.
-    fn push_display<I: Display + Spanned + ToTokens>(&mut self, lit: &I);
+    fn append_display<I: Display + Spanned + ToTokens>(&mut self, lit: &I);
 
     /// An identifier (or fragment of one)
     ///
     /// Uses the `IdentFragment` for identifier pasting,
     /// and the `ToTokens` for general expansion.
-    fn push_identfrag_toks<I: quote::IdentFragment + ToTokens>(
+    fn append_identfrag_toks<I: quote::IdentFragment + ToTokens>(
         &mut self,
         ident: &I,
     );
@@ -147,7 +147,7 @@ pub trait ExpansionOutput: SubstParseContext {
     ///
     /// `template_entry_span` is the span of the part of the template
     /// which expanded into this identifier path.
-    fn push_idpath<A, B>(
+    fn append_idpath<A, B>(
         &mut self,
         template_entry_span: Span,
         pre: A,
@@ -162,15 +162,15 @@ pub trait ExpansionOutput: SubstParseContext {
     /// This is its own method because `syn::Lit` is not `Display`,
     /// and we don't want to unconditionally turn it into a string
     /// before retokenising it.
-    fn push_syn_lit(&mut self, v: &syn::Lit);
+    fn append_syn_lit(&mut self, v: &syn::Lit);
 
     /// [`syn::Type`]
-    fn push_syn_type(&mut self, te_span: Span, v: &syn::Type);
+    fn append_syn_type(&mut self, te_span: Span, v: &syn::Type);
 
     /// Meta item value without `as` clause
     ///
     /// Can fail, if the actual concrete value is not right
-    fn push_attr_value(
+    fn append_attr_value(
         &mut self,
         tspan: Span,
         lit: &syn::Lit,
@@ -184,7 +184,7 @@ pub trait ExpansionOutput: SubstParseContext {
     /// or to put it another way,
     /// it ensures that such an attempt would have been rejected
     /// during template parsing.
-    fn push_other_subst<F>(
+    fn append_other_subst<F>(
         &mut self,
         np: &Self::NotInPaste,
         f: F,
@@ -236,14 +236,14 @@ pub trait ExpansionOutput: SubstParseContext {
 
     /// Convenience method for writing a `ToTokens`
     ///
-    /// Dispatches to [`push_other_subst`](ExpansionOutput::push_other_subst)
+    /// Dispatches to [`append_other_subst`](ExpansionOutput::append_other_subst)
     /// Not supported within `${paste }`.
-    fn push_other_tokens(
+    fn append_other_tokens(
         &mut self,
         np: &Self::NotInPaste,
         tokens: impl ToTokens,
     ) -> syn::Result<()> {
-        self.push_other_subst(np, |out| {
+        self.append_other_subst(np, |out| {
             out.append(tokens);
             Ok(())
         })
@@ -407,16 +407,16 @@ impl SubstParseContext for TokenAccumulator {
 }
 
 impl ExpansionOutput for TokenAccumulator {
-    fn push_display<L: Display + Spanned + ToTokens>(&mut self, lit: &L) {
+    fn append_display<L: Display + Spanned + ToTokens>(&mut self, lit: &L) {
         self.append(lit)
     }
-    fn push_identfrag_toks<I: quote::IdentFragment + ToTokens>(
+    fn append_identfrag_toks<I: quote::IdentFragment + ToTokens>(
         &mut self,
         ident: &I,
     ) {
         self.append(ident)
     }
-    fn push_idpath<A, B>(
+    fn append_idpath<A, B>(
         &mut self,
         _te_span: Span,
         pre: A,
@@ -430,13 +430,13 @@ impl ExpansionOutput for TokenAccumulator {
         self.append(ident);
         post(self);
     }
-    fn push_syn_lit(&mut self, lit: &syn::Lit) {
+    fn append_syn_lit(&mut self, lit: &syn::Lit) {
         self.append(lit);
     }
-    fn push_syn_type(&mut self, _te_span: Span, ty: &syn::Type) {
+    fn append_syn_type(&mut self, _te_span: Span, ty: &syn::Type) {
         self.append(ty);
     }
-    fn push_attr_value(
+    fn append_attr_value(
         &mut self,
         tspan: Span,
         lit: &syn::Lit,
@@ -445,7 +445,7 @@ impl ExpansionOutput for TokenAccumulator {
         self.append(tokens);
         Ok(())
     }
-    fn push_other_subst<F>(
+    fn append_other_subst<F>(
         &mut self,
         _not_in_paste: &(),
         f: F,

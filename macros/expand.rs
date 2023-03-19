@@ -301,7 +301,7 @@ impl SubstVPat {
             WithinField::for_each(ctx, |ctx, field| {
                 SD::fname::<TokenAccumulator>(())
                     .expand(ctx, &mut out, kw_span)?;
-                out.push_other_tokens(&(), Token![:](kw_span))?;
+                out.append_other_tokens(&(), Token![:](kw_span))?;
 
                 // Do the expansion with the paste machinery, since
                 // that has a ready-made notion of what fprefix= might
@@ -310,11 +310,11 @@ impl SubstVPat {
                 if let Some(fprefix) = &self.fprefix {
                     fprefix.expand(ctx, &mut paste);
                 } else {
-                    paste.push_fixed_string("f_".into());
+                    paste.append_fixed_string("f_".into());
                 }
-                paste.push_identfrag_toks(&field.fname(kw_span));
+                paste.append_identfrag_toks(&field.fname(kw_span));
 
-                out.push_other_subst(&(), |out| paste.assemble(out))?;
+                out.append_other_subst(&(), |out| paste.assemble(out))?;
                 out.append(Token![,](kw_span));
 
                 Ok::<_, syn::Error>(())
@@ -451,7 +451,7 @@ where
         let do_ttype = |out: &mut O, colons: Option<()>, do_some_gens| {
             let _: &dyn Fn(&mut _) = do_some_gens; // specify type
             let colons = colons.map(|()| Token![::](kw_span));
-            out.push_idpath(
+            out.append_idpath(
                 kw_span,
                 |_| {},
                 &ctx.top.ident,
@@ -466,7 +466,7 @@ where
         let do_maybe_delimited_group = |out, np, delim, content| {
             let _: &mut O = out;
             let _: &Template<TokenAccumulator> = content;
-            out.push_other_subst(np, |out| {
+            out.append_other_subst(np, |out| {
                 if let Some(delim) = delim {
                     out.append(delimit_token_group(
                         delim,
@@ -483,39 +483,39 @@ where
         };
 
         match self {
-            SD::tname(_) => out.push_identfrag_toks(&ctx.top.ident),
+            SD::tname(_) => out.append_identfrag_toks(&ctx.top.ident),
             SD::ttype(_) => do_ttype(out, Some(()), &do_tgnames),
             SD::tdeftype(_) => do_ttype(out, None, &do_tgens),
             SD::vname(_) => {
-                out.push_identfrag_toks(&ctx.syn_variant(&kw_span)?.ident)
+                out.append_identfrag_toks(&ctx.syn_variant(&kw_span)?.ident)
             }
             SD::fname(_) => {
                 let fname = ctx.field(&kw_span)?.fname(kw_span);
-                out.push_identfrag_toks(&fname);
+                out.append_identfrag_toks(&fname);
             }
             SD::ftype(_) => {
                 let f = ctx.field(&kw_span)?;
-                out.push_syn_type(kw_span, &f.field.ty);
+                out.append_syn_type(kw_span, &f.field.ty);
             }
             SD::fpatname(_) => {
                 let f = ctx.field(&kw_span)?;
                 let fpatname =
                     format_ident!("f_{}", f.fname(kw_span), span = kw_span);
-                out.push_identfrag_toks(&fpatname);
+                out.append_identfrag_toks(&fpatname);
             }
             SD::tmeta(wa) => do_meta(wa, out, ctx.tattrs)?,
             SD::vmeta(wa) => do_meta(wa, out, ctx.variant(wa)?.pattrs)?,
             SD::fmeta(wa) => do_meta(wa, out, &ctx.field(wa)?.pfield.pattrs)?,
 
             SD::Vis(vis, np) => {
-                out.push_other_tokens(np, vis.syn_vis(ctx, kw_span)?)?
+                out.append_other_tokens(np, vis.syn_vis(ctx, kw_span)?)?
             }
             SD::tdefkwd(_) => {
                 fn w<O>(out: &mut O, t: impl ToTokens)
                 where
                     O: ExpansionOutput,
                 {
-                    out.push_identfrag_toks(&TokenPastesAsIdent(t))
+                    out.append_identfrag_toks(&TokenPastesAsIdent(t))
                 }
                 use syn::Data::*;
                 match &ctx.top.data {
@@ -525,31 +525,31 @@ where
                 };
             }
 
-            SD::tattrs(ra, np, ..) => out.push_other_subst(np, |out| {
+            SD::tattrs(ra, np, ..) => out.append_other_subst(np, |out| {
                 ra.expand(ctx, out, &ctx.top.attrs)
             })?,
-            SD::vattrs(ra, np, ..) => out.push_other_subst(np, |out| {
+            SD::vattrs(ra, np, ..) => out.append_other_subst(np, |out| {
                 let variant = ctx.variant(&kw_span)?.variant;
                 let attrs = variant.as_ref().map(|v| &*v.attrs);
                 ra.expand(ctx, out, attrs.unwrap_or_default())
             })?,
-            SD::fattrs(ra, np, ..) => out.push_other_subst(np, |out| {
+            SD::fattrs(ra, np, ..) => out.append_other_subst(np, |out| {
                 ra.expand(ctx, out, &ctx.field(&kw_span)?.field.attrs)
             })?,
 
-            SD::tgens(np, ..) => out.push_other_subst(np, |out| {
+            SD::tgens(np, ..) => out.append_other_subst(np, |out| {
                 do_tgens_nodefs(out);
                 Ok(())
             })?,
-            SD::tdefgens(np, ..) => out.push_other_subst(np, |out| {
+            SD::tdefgens(np, ..) => out.append_other_subst(np, |out| {
                 do_tgens(out);
                 Ok(())
             })?,
-            SD::tgnames(np, ..) => out.push_other_subst(np, |out| {
+            SD::tgnames(np, ..) => out.append_other_subst(np, |out| {
                 do_tgnames(out);
                 Ok(())
             })?,
-            SD::twheres(np, ..) => out.push_other_subst(np, |out| {
+            SD::twheres(np, ..) => out.append_other_subst(np, |out| {
                 if let Some(clause) = &ctx.top.generics.where_clause {
                     out.with_tokens(|out| {
                         clause.predicates.to_tokens_punct_composable(out);
@@ -558,11 +558,11 @@ where
                 Ok(())
             })?,
 
-            SD::vpat(v, np, ..) => out.push_other_subst(np, |out| {
+            SD::vpat(v, np, ..) => out.append_other_subst(np, |out| {
                 // This comment prevents rustfmt making this unlike the others
                 v.expand(ctx, out, kw_span)
             })?,
-            SD::vtype(v, np, ..) => out.push_other_subst(np, |out| {
+            SD::vtype(v, np, ..) => out.append_other_subst(np, |out| {
                 v.expand(ctx, out, kw_span, SD::ttype(Default::default()))
             })?,
 
@@ -575,7 +575,7 @@ where
                 do_maybe_delimited_group(out, np, delim, content)?;
             }
             SD::fdefine(spec_f, np, ..) => {
-                out.push_other_subst(np, |out| {
+                out.append_other_subst(np, |out| {
                     let field = ctx.field(&kw_span)?.field;
                     if let Some(driver_f) = &field.ident {
                         if let Some(spec_f) = spec_f {
@@ -608,9 +608,9 @@ where
                 }
                 .map(|()| {
                     if enum_variant.is_some() {
-                        out.push_other_tokens(np, Token![,](kw_span))
+                        out.append_other_tokens(np, Token![,](kw_span))
                     } else {
-                        out.push_other_tokens(np, Token![;](kw_span))
+                        out.append_other_tokens(np, Token![;](kw_span))
                     }
                 })
                 .transpose()?;
@@ -643,7 +643,7 @@ where
             SD::select1(conds, ..) => conds.expand_select1(ctx, out)?,
 
             SD::Crate(np, ..) => {
-                out.push_other_tokens(np, &ctx.template_crate)?
+                out.append_other_tokens(np, &ctx.template_crate)?
             }
         };
         Ok(())
@@ -740,11 +740,11 @@ impl<'l> AttrValue<'l> {
 
         use SubstAttrAs as SAS;
         match as_ {
-            Some(SAS::lit) => out.push_syn_lit(lit),
+            Some(SAS::lit) => out.append_syn_lit(lit),
             Some(as_ @ SAS::ty) => {
-                out.push_syn_type(tspan, &attrvalue_lit_as(lit, tspan, as_)?)
+                out.append_syn_type(tspan, &attrvalue_lit_as(lit, tspan, as_)?)
             }
-            None => out.push_attr_value(tspan, lit)?,
+            None => out.append_attr_value(tspan, lit)?,
         }
         Ok(())
     }
