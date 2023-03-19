@@ -184,13 +184,11 @@ pub trait ExpansionOutput: SubstParseContext {
     /// or to put it another way,
     /// it ensures that such an attempt would have been rejected
     /// during template parsing.
-    fn append_other_subst<F>(
+    fn append_tokens_with(
         &mut self,
         np: &Self::NotInPaste,
-        f: F,
-    ) -> syn::Result<()>
-    where
-        F: FnOnce(&mut TokenAccumulator) -> syn::Result<()>;
+        f: impl FnOnce(&mut TokenAccumulator) -> syn::Result<()>,
+    ) -> syn::Result<()>;
 
     /// A substitution which can only be used within a boolean.
     ///
@@ -236,14 +234,14 @@ pub trait ExpansionOutput: SubstParseContext {
 
     /// Convenience method for writing a `ToTokens`
     ///
-    /// Dispatches to [`append_other_subst`](ExpansionOutput::append_other_subst)
+    /// Dispatches to [`append_tokens_with`](ExpansionOutput::append_tokens_with)
     /// Not supported within `${paste }`.
-    fn append_other_tokens(
+    fn append_tokens(
         &mut self,
         np: &Self::NotInPaste,
         tokens: impl ToTokens,
     ) -> syn::Result<()> {
-        self.append_other_subst(np, |out| {
+        self.append_tokens_with(np, |out| {
             out.append(tokens);
             Ok(())
         })
@@ -445,13 +443,11 @@ impl ExpansionOutput for TokenAccumulator {
         self.append(tokens);
         Ok(())
     }
-    fn append_other_subst<F>(
+    fn append_tokens_with(
         &mut self,
         _not_in_paste: &(),
-        f: F,
+        f: impl FnOnce(&mut TokenAccumulator) -> syn::Result<()>,
     ) -> syn::Result<()>
-    where
-        F: FnOnce(&mut TokenAccumulator) -> syn::Result<()>,
     {
         f(self)
     }

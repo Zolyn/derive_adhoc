@@ -539,13 +539,11 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
         self.append_syn_lit(lit);
         Ok(())
     }
-    fn append_other_subst<F>(
+    fn append_tokens_with(
         &mut self,
         not_in_paste: &Void,
-        _: F,
+        _: impl FnOnce(&mut TokenAccumulator) -> syn::Result<()>,
     ) -> syn::Result<()>
-    where
-        F: FnOnce(&mut TokenAccumulator) -> syn::Result<()>,
     {
         void::unreachable(*not_in_paste)
     }
