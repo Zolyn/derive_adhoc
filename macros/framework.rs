@@ -171,7 +171,7 @@ pub trait ExpansionOutput: SubstParseContext {
     /// Append a meta item value (without `as` clause in the template)
     ///
     /// Can fail, if the actual concrete value is not right
-    fn append_attr_value(
+    fn append_meta_value(
         &mut self,
         tspan: Span,
         lit: &syn::Lit,
@@ -439,7 +439,7 @@ impl ExpansionOutput for TokenAccumulator {
     fn append_syn_type(&mut self, _te_span: Span, ty: &syn::Type) {
         self.append(ty);
     }
-    fn append_attr_value(
+    fn append_meta_value(
         &mut self,
         tspan: Span,
         lit: &syn::Lit,

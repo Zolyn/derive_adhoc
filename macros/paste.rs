@@ -531,7 +531,7 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
             ),
         }
     }
-    fn append_attr_value(
+    fn append_meta_value(
         &mut self,
         _tspan: Span,
         lit: &syn::Lit,

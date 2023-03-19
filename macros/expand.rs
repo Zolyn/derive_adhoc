@@ -399,7 +399,7 @@ where
     ) -> syn::Result<()> {
         // eprintln!("@@@@@@@@@@@@@@@@@@@@ EXPAND {:?}", self);
 
-        let do_meta = |wa: &SubstAttr<_>, out, meta| wa.expand(ctx, out, meta);
+        let do_meta = |wa: &SubstMeta<_>, out, meta| wa.expand(ctx, out, meta);
         let do_tgnames = |out: &mut TokenAccumulator| {
             for pair in ctx.top.generics.params.pairs() {
                 use syn::GenericParam as GP;
@@ -650,7 +650,7 @@ where
     }
 }
 
-impl<O> SubstAttr<O>
+impl<O> SubstMeta<O>
 where
     O: ExpansionOutput,
 {
@@ -720,7 +720,7 @@ impl<'l> AttrValue<'l> {
     fn expand<O>(
         &self,
         tspan: Span,
-        as_: Option<&SubstAttrAs>,
+        as_: Option<&SubstMetaAs>,
         out: &mut O,
     ) -> syn::Result<()>
     where
@@ -738,13 +738,13 @@ impl<'l> AttrValue<'l> {
             AttrValue::Lit(lit) => lit,
         };
 
-        use SubstAttrAs as SAS;
+        use SubstMetaAs as SMS;
         match as_ {
-            Some(SAS::lit) => out.append_syn_lit(lit),
-            Some(as_ @ SAS::ty) => {
+            Some(SMS::lit) => out.append_syn_lit(lit),
+            Some(as_ @ SMS::ty) => {
                 out.append_syn_type(tspan, &attrvalue_lit_as(lit, tspan, as_)?)
             }
-            None => out.append_attr_value(tspan, lit)?,
+            None => out.append_meta_value(tspan, lit)?,
         }
         Ok(())
     }

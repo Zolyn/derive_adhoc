@@ -78,9 +78,9 @@ pub enum SubstDetails<O: SubstParseContext> {
     tdefkwd(O::NotInBool),
 
     // attributes
-    tmeta(SubstAttr<O>),
-    vmeta(SubstAttr<O>),
-    fmeta(SubstAttr<O>),
+    tmeta(SubstMeta<O>),
+    vmeta(SubstMeta<O>),
+    fmeta(SubstMeta<O>),
     tattrs(RawAttr, O::NotInPaste, O::NotInBool),
     vattrs(RawAttr, O::NotInPaste, O::NotInBool),
     fattrs(RawAttr, O::NotInPaste, O::NotInBool),
@@ -170,23 +170,23 @@ pub enum SubstVis {
 }
 
 #[derive(Debug, Clone)]
-pub struct SubstAttr<O: SubstParseContext> {
-    pub path: SubstAttrPath,
-    pub as_: Option<(SubstAttrAs, O::NotInBool)>,
+pub struct SubstMeta<O: SubstParseContext> {
+    pub path: SubstMetaPath,
+    pub as_: Option<(SubstMetaAs, O::NotInBool)>,
     pub as_span: Span,
 }
 
 #[derive(Debug, Clone, AsRefStr, Display, EnumIter)]
 #[allow(non_camel_case_types)] // clearer to use the exact ident
-pub enum SubstAttrAs {
+pub enum SubstMetaAs {
     lit,
     ty,
 }
 
 #[derive(Debug, Clone)]
-pub struct SubstAttrPath {
+pub struct SubstMetaPath {
     pub path: syn::Path, // nonempty segments
-    pub deeper: Option<Box<SubstAttrPath>>,
+    pub deeper: Option<Box<SubstMetaPath>>,
 }
 
 /// Parses `(foo,bar(baz),zonk="value")`
@@ -233,13 +233,13 @@ impl<O: SubstParseContext> Spanned for Subst<O> {
     }
 }
 
-impl<O: SubstParseContext> Spanned for SubstAttr<O> {
+impl<O: SubstParseContext> Spanned for SubstMeta<O> {
     fn span(&self) -> Span {
         self.path.span()
     }
 }
 
-impl Spanned for SubstAttrPath {
+impl Spanned for SubstMetaPath {
     fn span(&self) -> Span {
         self.path.segments.first().expect("empty path!").span()
     }
@@ -372,9 +372,9 @@ impl Parse for AdhocAttrList {
     }
 }
 
-impl<O: SubstParseContext> Parse for SubstAttr<O> {
+impl<O: SubstParseContext> Parse for SubstMeta<O> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let path: SubstAttrPath = input.parse()?;
+        let path: SubstMetaPath = input.parse()?;
 
         let as_;
         let as_span;
@@ -383,7 +383,7 @@ impl<O: SubstParseContext> Parse for SubstAttr<O> {
             let as_token: Token![as] = input.parse()?;
             let kw = input.call(syn::Ident::parse_any)?;
             as_span = kw.span();
-            let as_ty = SubstAttrAs::iter().find(|as_| kw == as_).ok_or_else(
+            let as_ty = SubstMetaAs::iter().find(|as_| kw == as_).ok_or_else(
                 || kw.error("unknown derive-adhoc 'as' syntax type keyword"),
             )?;
             as_ = Some((as_ty, O::not_in_bool(&as_token)?));
@@ -392,11 +392,11 @@ impl<O: SubstParseContext> Parse for SubstAttr<O> {
             as_span = path.span();
         }
 
-        Ok(SubstAttr { path, as_, as_span })
+        Ok(SubstMeta { path, as_, as_span })
     }
 }
 
-impl Parse for SubstAttrPath {
+impl Parse for SubstMetaPath {
     fn parse(outer: ParseStream) -> syn::Result<Self> {
         let input;
         let paren = parenthesized!(input in outer);
@@ -414,7 +414,7 @@ impl Parse for SubstAttrPath {
             Some(Box::new(deeper))
         };
 
-        Ok(SubstAttrPath { path, deeper })
+        Ok(SubstMetaPath { path, deeper })
     }
 }
 
