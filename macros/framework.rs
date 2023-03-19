@@ -244,7 +244,7 @@ pub trait ExpansionOutput: SubstParseContext {
         tokens: impl ToTokens,
     ) -> syn::Result<()> {
         self.push_other_subst(np, |out| {
-            out.write_tokens(tokens);
+            out.append(tokens);
             Ok(())
         })
     }
@@ -377,7 +377,7 @@ impl TokenAccumulator {
     ) -> Option<R> {
         self.0.as_mut().ok().map(f)
     }
-    pub fn write_tokens(&mut self, t: impl ToTokens) {
+    pub fn append(&mut self, t: impl ToTokens) {
         self.with_tokens(|out| t.to_tokens(out));
     }
     pub fn tokens(self) -> syn::Result<TokenStream> {
@@ -408,13 +408,13 @@ impl SubstParseContext for TokenAccumulator {
 
 impl ExpansionOutput for TokenAccumulator {
     fn push_display<L: Display + Spanned + ToTokens>(&mut self, lit: &L) {
-        self.write_tokens(lit)
+        self.append(lit)
     }
     fn push_identfrag_toks<I: quote::IdentFragment + ToTokens>(
         &mut self,
         ident: &I,
     ) {
-        self.write_tokens(ident)
+        self.append(ident)
     }
     fn push_idpath<A, B>(
         &mut self,
@@ -427,14 +427,14 @@ impl ExpansionOutput for TokenAccumulator {
         B: FnOnce(&mut TokenAccumulator),
     {
         pre(self);
-        self.write_tokens(ident);
+        self.append(ident);
         post(self);
     }
     fn push_syn_lit(&mut self, lit: &syn::Lit) {
-        self.write_tokens(lit);
+        self.append(lit);
     }
     fn push_syn_type(&mut self, _te_span: Span, ty: &syn::Type) {
-        self.write_tokens(ty);
+        self.append(ty);
     }
     fn push_attr_value(
         &mut self,
@@ -442,7 +442,7 @@ impl ExpansionOutput for TokenAccumulator {
         lit: &syn::Lit,
     ) -> syn::Result<()> {
         let tokens: TokenStream = attrvalue_lit_as(lit, tspan, &"tokens")?;
-        self.write_tokens(tokens);
+        self.append(tokens);
         Ok(())
     }
     fn push_other_subst<F>(

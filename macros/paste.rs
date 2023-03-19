@@ -404,9 +404,9 @@ impl ItemsData {
                     post,
                     te_span: _,
                 } => {
-                    out.write_tokens(mem::take(pre));
-                    out.write_tokens(mk_ident_nt(text)?);
-                    out.write_tokens(/*mem::take(*/ post /*)*/);
+                    out.append(mem::take(pre));
+                    out.append(mk_ident_nt(text)?);
+                    out.append(/*mem::take(*/ post /*)*/);
                 }
                 Item::Path { path, .. } => {
                     let span = path.span();
@@ -421,12 +421,12 @@ impl ItemsData {
                         })?
                         .ident;
                     *last = mk_ident_nt(&last.to_string())?;
-                    out.write_tokens(path);
+                    out.append(path);
                 }
                 Item::Plain { .. } => panic!("trivial nontrivial"),
             }
         } else {
-            out.write_tokens(mk_ident(out_span, plain_strs(&self.items))?);
+            out.append(mk_ident(out_span, plain_strs(&self.items))?);
         }
 
         Ok(())

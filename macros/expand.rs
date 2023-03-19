@@ -260,8 +260,8 @@ impl SubstVType {
                 .arguments,
         );
 
-        out.write_tokens(self_ty);
-        out.write_tokens(Token![::](kw_span));
+        out.append(self_ty);
+        out.append(Token![::](kw_span));
         expand_spec_or_sd(out, &self.vname, SD::vname(Default::default()))?;
         let gen_content = match &mut generics {
             syn::PathArguments::AngleBracketed(content) => Some(content),
@@ -279,7 +279,7 @@ impl SubstVType {
             gen_content
                 .colon2_token
                 .get_or_insert_with(|| Token![::](kw_span));
-            out.write_tokens(&generics);
+            out.append(&generics);
         }
         Ok(())
     }
@@ -315,12 +315,12 @@ impl SubstVPat {
                 paste.push_identfrag_toks(&field.fname(kw_span));
 
                 out.push_other_subst(&(), |out| paste.assemble(out))?;
-                out.write_tokens(Token![,](kw_span));
+                out.append(Token![,](kw_span));
 
                 Ok::<_, syn::Error>(())
             })
         })?;
-        out.write_tokens(in_braces);
+        out.append(in_braces);
         Ok(())
     }
 }
@@ -346,9 +346,9 @@ impl Expand<TokenAccumulator> for TemplateElement<TokenAccumulator> {
         out: &mut TokenAccumulator,
     ) -> syn::Result<()> {
         match self {
-            TE::Ident(tt) => out.write_tokens(tt.clone()),
-            TE::Literal(tt) => out.write_tokens(tt.clone()),
-            TE::Punct(tt, _) => out.write_tokens(tt.clone()),
+            TE::Ident(tt) => out.append(tt.clone()),
+            TE::Literal(tt) => out.append(tt.clone()),
+            TE::Punct(tt, _) => out.append(tt.clone()),
             TE::Group {
                 delim_span,
                 delimiter,
@@ -360,7 +360,7 @@ impl Expand<TokenAccumulator> for TemplateElement<TokenAccumulator> {
                 template.expand(ctx, &mut content);
                 let mut group = Group::new(*delimiter, content.tokens()?);
                 group.set_span(*delim_span);
-                out.write_tokens(TT::Group(group));
+                out.append(TT::Group(group));
             }
             TE::Subst(exp) => {
                 exp.expand(ctx, out)?;
@@ -404,9 +404,9 @@ where
             for pair in ctx.top.generics.params.pairs() {
                 use syn::GenericParam as GP;
                 match pair.value() {
-                    GP::Type(t) => out.write_tokens(&t.ident),
-                    GP::Const(c) => out.write_tokens(&c.ident),
-                    GP::Lifetime(l) => out.write_tokens(&l.lifetime),
+                    GP::Type(t) => out.append(&t.ident),
+                    GP::Const(c) => out.append(&c.ident),
+                    GP::Lifetime(l) => out.append(&l.lifetime),
                 }
                 out.with_tokens(|out| {
                     pair.punct().to_tokens_punct_composable(out);
@@ -417,23 +417,23 @@ where
             for pair in ctx.top.generics.params.pairs() {
                 use syn::GenericParam as GP;
                 let out_attrs = |out: &mut TokenAccumulator, attrs: &[_]| {
-                    attrs.iter().for_each(|attr| out.write_tokens(attr));
+                    attrs.iter().for_each(|attr| out.append(attr));
                 };
                 match pair.value() {
                     GP::Type(t) => {
                         out_attrs(out, &t.attrs);
-                        out.write_tokens(&t.ident);
-                        out.write_tokens(&t.colon_token);
-                        out.write_tokens(&t.bounds);
+                        out.append(&t.ident);
+                        out.append(&t.colon_token);
+                        out.append(&t.bounds);
                     }
                     GP::Const(c) => {
                         out_attrs(out, &c.attrs);
-                        out.write_tokens(&c.const_token);
-                        out.write_tokens(&c.ident);
-                        out.write_tokens(&c.colon_token);
-                        out.write_tokens(&c.ty);
+                        out.append(&c.const_token);
+                        out.append(&c.ident);
+                        out.append(&c.colon_token);
+                        out.append(&c.ty);
                     }
-                    GP::Lifetime(l) => out.write_tokens(&l.lifetime),
+                    GP::Lifetime(l) => out.append(&l.lifetime),
                 }
                 out.with_tokens(|out| {
                     pair.punct().to_tokens_punct_composable(out);
@@ -441,7 +441,7 @@ where
             }
         };
         let do_tgens = |out: &mut TokenAccumulator| {
-            out.write_tokens(&ctx.top.generics.params);
+            out.append(&ctx.top.generics.params);
         };
         // There are three contexts where the top-level type
         // name might occur with generics, and two syntaxes:
@@ -456,10 +456,10 @@ where
                 |_| {},
                 &ctx.top.ident,
                 |out| {
-                    out.write_tokens(colons);
-                    out.write_tokens(Token![<](kw_span));
+                    out.append(colons);
+                    out.append(Token![<](kw_span));
                     do_some_gens(out);
-                    out.write_tokens(Token![>](kw_span));
+                    out.append(Token![>](kw_span));
                 },
             )
         };
@@ -468,7 +468,7 @@ where
             let _: &Template<TokenAccumulator> = content;
             out.push_other_subst(np, |out| {
                 if let Some(delim) = delim {
-                    out.write_tokens(delimit_token_group(
+                    out.append(delimit_token_group(
                         delim,
                         kw_span,
                         |inside: &mut TokenAccumulator| {
@@ -581,10 +581,10 @@ where
                         if let Some(spec_f) = spec_f {
                             spec_f.expand(ctx, out);
                         } else {
-                            out.write_tokens(driver_f);
+                            out.append(driver_f);
                         }
                     }
-                    out.write_tokens(&field.colon_token);
+                    out.append(&field.colon_token);
                     Ok(())
                 })?
             }
@@ -764,7 +764,7 @@ impl RawAttr {
                         .iter()
                         .all(|exclude| !attr.path.is_ident(exclude))
                     {
-                        out.write_tokens(attr);
+                        out.append(attr);
                     }
                 }
                 RawAttr::Include { entries } => {
@@ -775,7 +775,7 @@ impl RawAttr {
                 }
                 RawAttr::Exclude { exclusions } => {
                     if !exclusions.iter().any(|excl| excl == &attr.path) {
-                        out.write_tokens(attr);
+                        out.append(attr);
                     }
                 }
             }
@@ -795,7 +795,7 @@ impl RawAttrEntry {
         out: &mut TokenAccumulator,
         attr: &syn::Attribute,
     ) -> syn::Result<()> {
-        out.write_tokens(attr);
+        out.append(attr);
         Ok(())
     }
 }
