@@ -617,10 +617,10 @@ where
             }
 
             SD::paste(content, np, ..) => {
-                out.expand_paste(np, ctx, kw_span, content)?
+                out.append_paste_expansion(np, ctx, kw_span, content)?
             }
             SD::ChangeCase(content, case, nc, ..) => {
-                out.expand_case(nc, *case, ctx, kw_span, content)?
+                out.append_case_expansion(nc, *case, ctx, kw_span, content)?
             }
 
             SD::when(..) => out.write_error(
@@ -638,7 +638,7 @@ where
             | SD::True(bo)
             | SD::not(_, bo)
             | SD::any(_, bo)
-            | SD::all(_, bo) => out.expand_bool_only(bo),
+            | SD::all(_, bo) => out.append_bool_only(bo),
             SD::For(repeat, _) => repeat.expand(ctx, out),
             SD::select1(conds, ..) => conds.expand_select1(ctx, out)?,
 

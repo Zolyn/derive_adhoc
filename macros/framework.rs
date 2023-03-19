@@ -199,10 +199,10 @@ pub trait ExpansionOutput: SubstParseContext {
     ///
     /// And, then, this function can be called in expansion contexts
     /// to handle uninhabited variants.
-    fn expand_bool_only(&mut self, bool_only: &Self::BoolOnly) -> !;
+    fn append_bool_only(&mut self, bool_only: &Self::BoolOnly) -> !;
 
     /// Expand a `${paste }`
-    fn expand_paste(
+    fn append_paste_expansion(
         &mut self,
         np: &Self::NotInPaste,
         ctx: &Context,
@@ -211,7 +211,7 @@ pub trait ExpansionOutput: SubstParseContext {
     ) -> syn::Result<()>;
 
     /// Expand a `${case }`
-    fn expand_case(
+    fn append_case_expansion(
         &mut self,
         np: &Self::NotInCase,
         case: paste::ChangeCase,
@@ -452,7 +452,7 @@ impl ExpansionOutput for TokenAccumulator {
         f(self)
     }
 
-    fn expand_paste(
+    fn append_paste_expansion(
         &mut self,
         _not_in_paste: &(),
         ctx: &Context,
@@ -463,7 +463,7 @@ impl ExpansionOutput for TokenAccumulator {
         paste_body.expand(ctx, &mut items);
         items.assemble(self)
     }
-    fn expand_case(
+    fn append_case_expansion(
         &mut self,
         _not_in_case: &(),
         case: paste::ChangeCase,
@@ -475,7 +475,7 @@ impl ExpansionOutput for TokenAccumulator {
         paste_body.expand(ctx, &mut items)?;
         items.assemble(self)
     }
-    fn expand_bool_only(&mut self, bool_only: &Self::BoolOnly) -> ! {
+    fn append_bool_only(&mut self, bool_only: &Self::BoolOnly) -> ! {
         void::unreachable(*bool_only)
     }
 

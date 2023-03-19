@@ -550,7 +550,7 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
 
     // We forbid ${pate } inside itself, because when we do case
     // conversion this will get very fiddly to implement.
-    fn expand_paste(
+    fn append_paste_expansion(
         &mut self,
         not_in_paste: &Void,
         _ctx: &Context,
@@ -559,7 +559,7 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
     ) -> syn::Result<()> {
         void::unreachable(*not_in_paste)
     }
-    fn expand_case(
+    fn append_case_expansion(
         &mut self,
         not_in_case: &Self::NotInCase,
         case: paste::ChangeCase,
@@ -569,7 +569,7 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
     ) -> syn::Result<()> {
         C::expand_case(self, not_in_case, case, |out| content.expand(ctx, out))
     }
-    fn expand_bool_only(&mut self, bool_only: &Self::BoolOnly) -> ! {
+    fn append_bool_only(&mut self, bool_only: &Self::BoolOnly) -> ! {
         void::unreachable(*bool_only)
     }
 
