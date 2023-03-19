@@ -388,6 +388,9 @@ where
     O: ExpansionOutput,
     TemplateElement<O>: Expand<O>,
 {
+    /// Expand this template element, by adding it to `O`
+    ///
+    /// This is done using `O`'s [`ExpansionOutput`] methods.
     fn expand(
         &self,
         ctx: &Context,
