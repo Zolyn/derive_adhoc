@@ -633,8 +633,18 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         };
 
         // keyword!{ KEYWORD [ {BLOCK WITH BINDINGS} ] [ CONSTRUCTOR-ARGS ] }
-        // expands to   if ... { return ... }
-        // KEYWORD can be "KEYWORD_STRING": CONSTRUCTOR
+        // expands to something like:
+        //
+        //   if supplied_keyword = "KEYWORD" {
+        //       return Ok(Subst {
+        //           sd: SubstDetails::KEYWORD CONSTRUCTOR-ARGS,
+        //           ..
+        //       })
+        //   }
+        //
+        // KEYWORD can be "KEYWORD_STRING": CONSTRUCTOR,
+        // in case the enum variant name is not precisely the keyword.
+        //
         // See `keyword_general!` in utils.rs for full details.
         macro_rules! keyword { { $($args:tt)* } => {
             keyword_general! { kw from_sd SD; $($args)* }
