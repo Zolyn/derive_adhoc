@@ -286,7 +286,8 @@ impl<C: CaseContext> Items<C> {
         let case = C::push_case(self.case);
         self.data.items.push(ItemEntry { item, case });
     }
-    fn append_lit_pair<V: Display>(&mut self, v: &V) {
+    /// Like `ExpansionOutput::append_display` but doesn't need `Spanned`
+    fn append_display<V: Display>(&mut self, v: &V) {
         self.append_item(Item::Plain {
             text: v.to_string(),
         })
@@ -459,7 +460,7 @@ impl<C: CaseContext> SubstParseContext for Items<C> {
 
 impl<C: CaseContext> ExpansionOutput for Items<C> {
     fn append_display<S: Display + Spanned>(&mut self, plain: &S) {
-        self.append_lit_pair(plain);
+        self.append_display(plain);
     }
     fn append_identfrag_toks<I: quote::IdentFragment + ToTokens>(
         &mut self,
@@ -472,7 +473,7 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
                 QIF::fmt(&self.0, f)
             }
         }
-        self.append_lit_pair(&AsIdentFragment(ident));
+        self.append_display(&AsIdentFragment(ident));
     }
     fn append_idpath<A, B>(
         &mut self,
@@ -511,7 +512,7 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
                 text: s.value(),
             }),
             L::Int(v) => self.append_display(v),
-            L::Bool(v) => self.append_lit_pair(&v.value()),
+            L::Bool(v) => self.append_display(&v.value()),
             L::Verbatim(v) => self.append_display(v),
             x => self.write_error(
                 x,
