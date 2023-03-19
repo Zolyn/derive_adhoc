@@ -296,7 +296,7 @@ impl<C: CaseContext> Items<C> {
         self.append_item(Item::Plain { text });
     }
 
-    /// Combine the accumulated pieces and write them as tokens
+    /// Combine the accumulated pieces and append them, as tokens, to `out`
     pub fn assemble(self, out: &mut TokenAccumulator) -> syn::Result<()> {
         self.data.assemble(out)
     }

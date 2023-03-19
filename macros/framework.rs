@@ -123,7 +123,7 @@ pub trait SubstParseContext {
 /// The accumulating type (`Self` might be accumulating
 /// tokens ([`TokenStream`]) or strings ([`paste::Items`)).
 pub trait ExpansionOutput: SubstParseContext {
-    /// Some kind of thing, whose `Display` impl is to be used
+    /// Append something according to its `Display` impl
     ///
     /// This could be an `str` for example.
     /// This is *not* suitable for `TokenTree::Literal` or `syn::Lit`
@@ -139,14 +139,15 @@ pub trait ExpansionOutput: SubstParseContext {
         ident: &I,
     );
 
-    /// An identifier path
+    /// Append a Rust path (scoped identifier, perhaps with generics)
     ///
-    /// Consisting of some prefix tokens (perhaps a scoping path),
-    /// the actual identifer,
-    /// and some suffix tokens (perhaps generics).
+    /// To facilitate `${pawte }`, the path is provided as:
+    ///  * some prefix tokens (e.g., a scoping path),
+    ///  * the actual identifer,
+    ///  * some suffix tokens (e.g. generics).
     ///
-    /// `template_entry_span` is the span of the part of the template
-    /// which expanded into this identifier path.
+    /// `tspan` is the span of the part of the template
+    /// which expanded into this path.
     fn append_idpath<A, B>(
         &mut self,
         template_entry_span: Span,
@@ -157,17 +158,17 @@ pub trait ExpansionOutput: SubstParseContext {
         A: FnOnce(&mut TokenAccumulator),
         B: FnOnce(&mut TokenAccumulator);
 
-    /// [`syn::Lit`](enum@syn::Lit)
+    /// Append a [`syn::Lit`](enum@syn::Lit)
     ///
     /// This is its own method because `syn::Lit` is not `Display`,
     /// and we don't want to unconditionally turn it into a string
     /// before retokenising it.
     fn append_syn_lit(&mut self, v: &syn::Lit);
 
-    /// [`syn::Type`]
+    /// Append a [`syn::Type`]
     fn append_syn_type(&mut self, te_span: Span, v: &syn::Type);
 
-    /// Meta item value without `as` clause
+    /// Append a meta item value (without `as` clause in the template)
     ///
     /// Can fail, if the actual concrete value is not right
     fn append_attr_value(
@@ -176,7 +177,10 @@ pub trait ExpansionOutput: SubstParseContext {
         lit: &syn::Lit,
     ) -> syn::Result<()>;
 
-    /// Some other substitution which generates tokens
+    /// Append using a function which generates tokens
+    ///
+    /// If you have an `impl `[`ToTokens`],
+    /// use [`append_tokens`](ExpansionOutput::append_tokens) instead.
     ///
     /// Not supported within `${paste }`.
     /// The `NotInPaste` parameter makes this method unreachable
@@ -190,18 +194,19 @@ pub trait ExpansionOutput: SubstParseContext {
         f: impl FnOnce(&mut TokenAccumulator) -> syn::Result<()>,
     ) -> syn::Result<()>;
 
-    /// A substitution which can only be used within a boolean.
+    /// "Append" a substitution which can only be used within a boolean
     ///
-    /// This cannot be expanded, so this function must be unreachable.
+    /// Such a thing cannot be expanded, so it cannot be appended,
+    /// so this function must be unreachable.
+    /// `expand_bool_only` is called (in expansion contexts)
+    /// to handle uninhabited `SubstDetails` variants etc.
     ///
-    /// The requirement to implement it involves demonstrating that
-    /// either self, or BoolOnly, is uninhabited.
-    ///
-    /// And, then, this function can be called in expansion contexts
-    /// to handle uninhabited variants.
+    /// Implementing it involves demonstrating that
+    /// either `self`, or `Self::BoolOnly`, is uninhabited,
+    /// with a call to [`void::unreachable`].
     fn append_bool_only(&mut self, bool_only: &Self::BoolOnly) -> !;
 
-    /// Expand a `${paste }`
+    /// Append the expansion of a `${paste }`
     fn append_paste_expansion(
         &mut self,
         np: &Self::NotInPaste,
@@ -210,7 +215,7 @@ pub trait ExpansionOutput: SubstParseContext {
         paste_body: &Template<paste::Items>,
     ) -> syn::Result<()>;
 
-    /// Expand a `${case }`
+    /// Append the expansion of a `${case }`
     fn append_case_expansion(
         &mut self,
         np: &Self::NotInCase,
