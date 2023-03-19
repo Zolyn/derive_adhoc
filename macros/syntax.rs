@@ -973,7 +973,7 @@ impl<O: SubstParseContext> RepeatedTemplate<O> {
 
 pub fn preprocess_attrs(
     attrs: &[syn::Attribute],
-) -> syn::Result<PreprocessedAttrs> {
+) -> syn::Result<PreprocessedMetas> {
     attrs
         .iter()
         .filter_map(|attr| {

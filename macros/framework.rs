@@ -20,7 +20,7 @@ pub struct Context<'c> {
     pub top: &'c syn::DeriveInput,
     pub template_crate: &'c syn::Path,
     pub template_name: Option<&'c syn::Path>,
-    pub tattrs: &'c PreprocessedAttrs,
+    pub tattrs: &'c PreprocessedMetas,
     pub variant: Option<&'c WithinVariant<'c>>,
     pub field: Option<&'c WithinField<'c>>,
     pub pvariants: &'c [PreprocessedVariant<'c>],
@@ -29,23 +29,24 @@ pub struct Context<'c> {
 #[derive(Debug, Clone)]
 pub struct PreprocessedVariant<'f> {
     pub fields: &'f syn::Fields,
-    pub pattrs: PreprocessedAttrs,
+    pub pattrs: PreprocessedMetas,
     pub pfields: Vec<PreprocessedField>,
 }
 
 #[derive(Debug, Clone)]
 pub struct PreprocessedField {
-    pub pattrs: PreprocessedAttrs,
+    pub pattrs: PreprocessedMetas,
 }
 
-pub type PreprocessedAttr = syn::Meta;
-pub type PreprocessedAttrs = Vec<PreprocessedAttr>;
+/// `#[adhoc(...)]` helper attributes
+pub type PreprocessedMetas = Vec<PreprocessedMeta>;
+pub type PreprocessedMeta = syn::Meta;
 
 #[derive(Debug, Clone)]
 pub struct WithinVariant<'c> {
     pub variant: Option<&'c syn::Variant>,
     pub fields: &'c syn::Fields,
-    pub pattrs: &'c PreprocessedAttrs,
+    pub pattrs: &'c PreprocessedMetas,
     pub pfields: &'c [PreprocessedField],
 }
 

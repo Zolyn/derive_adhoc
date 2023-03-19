@@ -658,7 +658,7 @@ where
         &self,
         ctx: &Context,
         out: &mut O,
-        pattrs: &PreprocessedAttrs,
+        pattrs: &PreprocessedMetas,
     ) -> syn::Result<()> {
         let mut found = None;
         let error_loc = || [(self.span(), "expansion"), ctx.error_loc()];

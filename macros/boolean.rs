@@ -132,7 +132,7 @@ impl Subst<BooleanContext> {
 impl SubstMetaPath {
     fn search_eval_bool(
         &self,
-        pattrs: &PreprocessedAttrs,
+        pattrs: &PreprocessedMetas,
     ) -> Result<(), Found> {
         self.search(pattrs, &mut |_av| /* got it! */ Err(Found))
     }
@@ -140,7 +140,7 @@ impl SubstMetaPath {
     pub fn search<'a, A, F, E>(&self, pattrs: A, f: &mut F) -> Result<(), E>
     where
         F: FnMut(AttrValue<'a>) -> Result<(), E>,
-        A: IntoIterator<Item = &'a PreprocessedAttr>,
+        A: IntoIterator<Item = &'a PreprocessedMeta>,
     {
         for pattr in pattrs {
             self.search_1(pattr, &mut *f)?;
@@ -150,7 +150,7 @@ impl SubstMetaPath {
 
     fn search_1<'a, E, F>(
         &self,
-        pattr: &'a PreprocessedAttr,
+        pattr: &'a PreprocessedMeta,
         f: &mut F,
     ) -> Result<(), E>
     where
