@@ -149,6 +149,10 @@ pub trait ExpansionOutput: SubstParseContext {
     ///
     /// `tspan` is the span of the part of the template
     /// which expanded into this path.
+    ///
+    /// This is a "more complex" expansion,
+    /// in the terminology of the template reference: 
+    /// If a paste contains more than one, it is an error.
     fn append_idpath<A, B>(
         &mut self,
         template_entry_span: Span,
@@ -167,6 +171,10 @@ pub trait ExpansionOutput: SubstParseContext {
     fn append_syn_lit(&mut self, v: &syn::Lit);
 
     /// Append a [`syn::Type`]
+    ///
+    /// This is a "more complex" expansion,
+    /// in the terminology of the template reference: 
+    /// If a paste contains more than one, it is an error.
     fn append_syn_type(&mut self, te_span: Span, v: &syn::Type);
 
     /// Append a meta item value (without `as` clause in the template)
