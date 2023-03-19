@@ -171,7 +171,7 @@ pub trait CaseContext: Sized + Default + Debug {
     /// `<Items as SubstParseContext>::AllowNonterminal` delegates to this
     type AllowNonterminal: Debug + Copy + Sized;
     /// Whether and how, in fact, to change the case, when expanding.
-    fn push_case(case: Self::ChangeCase) -> Option<ChangeCase>;
+    fn case_for_append(case: Self::ChangeCase) -> Option<ChangeCase>;
     fn not_in_case(span: &impl Spanned) -> syn::Result<Self::NotInCase>;
     fn allow_nonterminal(
         span: &impl Spanned,
@@ -200,7 +200,7 @@ impl CaseContext for () {
     type ChangeCase = ();
     type NotInCase = ();
     type AllowNonterminal = ();
-    fn push_case((): Self::ChangeCase) -> Option<ChangeCase> {
+    fn case_for_append((): Self::ChangeCase) -> Option<ChangeCase> {
         None
     }
     fn not_in_case(_span: &impl Spanned) -> syn::Result<()> {
@@ -231,7 +231,7 @@ impl CaseContext for WithinCaseContext {
     type ChangeCase = ChangeCase;
     type NotInCase = Void;
     type AllowNonterminal = Void;
-    fn push_case(case: Self::ChangeCase) -> Option<ChangeCase> {
+    fn case_for_append(case: Self::ChangeCase) -> Option<ChangeCase> {
         Some(case)
     }
     fn not_in_case(span: &impl Spanned) -> syn::Result<Void> {
@@ -283,7 +283,7 @@ impl ItemsData {
 
 impl<C: CaseContext> Items<C> {
     fn append_item(&mut self, item: Item) {
-        let case = C::push_case(self.case);
+        let case = C::case_for_append(self.case);
         self.data.items.push(ItemEntry { item, case });
     }
     /// Like `ExpansionOutput::append_display` but doesn't need `Spanned`
