@@ -209,6 +209,12 @@ impl<T: ToTokens> quote::IdentFragment for TokenPastesAsIdent<T> {
 //---------- expand_macro_name ----------
 
 /// Return a full path to the location of `derive_adhoc_expand`.
+///
+/// (This may not work properly if the user
+/// imports the crate under a different name.
+/// This is a problem with the way cargo and rustc
+/// handle imports and proc-macro crates,
+/// which I think we can't properly solve here.)
 pub fn expand_macro_name() -> Result<TokenStream, syn::Error> {
     let name = crate_name("derive-adhoc-macros")
         .or_else(|_| crate_name("derive-adhoc"));
