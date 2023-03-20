@@ -122,7 +122,7 @@ pub trait SubstParseContext {
 /// that can be found in templates, or result from template expansion.
 ///
 /// The accumulating type (`Self` might be accumulating
-/// tokens ([`TokenStream`]) or strings ([`paste::Items`)).
+/// tokens ([`TokenStream`]) or strings ([`paste::Items`]).
 pub trait ExpansionOutput: SubstParseContext {
     /// Append something according to its `Display` impl
     ///
