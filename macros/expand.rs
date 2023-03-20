@@ -260,8 +260,8 @@ impl SubstVType {
                 .arguments,
         );
 
-        out.write_tokens(self_ty);
-        out.write_tokens(Token![::](kw_span));
+        out.append(self_ty);
+        out.append(Token![::](kw_span));
         expand_spec_or_sd(out, &self.vname, SD::vname(Default::default()))?;
         let gen_content = match &mut generics {
             syn::PathArguments::AngleBracketed(content) => Some(content),
@@ -279,7 +279,7 @@ impl SubstVType {
             gen_content
                 .colon2_token
                 .get_or_insert_with(|| Token![::](kw_span));
-            out.write_tokens(&generics);
+            out.append(&generics);
         }
         Ok(())
     }
@@ -301,7 +301,7 @@ impl SubstVPat {
             WithinField::for_each(ctx, |ctx, field| {
                 SD::fname::<TokenAccumulator>(())
                     .expand(ctx, &mut out, kw_span)?;
-                out.push_other_tokens(&(), Token![:](kw_span))?;
+                out.append_tokens(&(), Token![:](kw_span))?;
 
                 // Do the expansion with the paste machinery, since
                 // that has a ready-made notion of what fprefix= might
@@ -310,17 +310,17 @@ impl SubstVPat {
                 if let Some(fprefix) = &self.fprefix {
                     fprefix.expand(ctx, &mut paste);
                 } else {
-                    paste.push_fixed_string("f_".into());
+                    paste.append_fixed_string("f_".into());
                 }
-                paste.push_identfrag_toks(&field.fname(kw_span));
+                paste.append_identfrag_toks(&field.fname(kw_span));
 
-                out.push_other_subst(&(), |out| paste.assemble(out))?;
-                out.write_tokens(Token![,](kw_span));
+                out.append_tokens_with(&(), |out| paste.assemble(out))?;
+                out.append(Token![,](kw_span));
 
                 Ok::<_, syn::Error>(())
             })
         })?;
-        out.write_tokens(in_braces);
+        out.append(in_braces);
         Ok(())
     }
 }
@@ -346,9 +346,9 @@ impl Expand<TokenAccumulator> for TemplateElement<TokenAccumulator> {
         out: &mut TokenAccumulator,
     ) -> syn::Result<()> {
         match self {
-            TE::Ident(tt) => out.write_tokens(tt.clone()),
-            TE::Literal(tt) => out.write_tokens(tt.clone()),
-            TE::Punct(tt, _) => out.write_tokens(tt.clone()),
+            TE::Ident(tt) => out.append(tt.clone()),
+            TE::Literal(tt) => out.append(tt.clone()),
+            TE::Punct(tt, _) => out.append(tt.clone()),
             TE::Group {
                 delim_span,
                 delimiter,
@@ -360,7 +360,7 @@ impl Expand<TokenAccumulator> for TemplateElement<TokenAccumulator> {
                 template.expand(ctx, &mut content);
                 let mut group = Group::new(*delimiter, content.tokens()?);
                 group.set_span(*delim_span);
-                out.write_tokens(TT::Group(group));
+                out.append(TT::Group(group));
             }
             TE::Subst(exp) => {
                 exp.expand(ctx, out)?;
@@ -388,6 +388,9 @@ where
     O: ExpansionOutput,
     TemplateElement<O>: Expand<O>,
 {
+    /// Expand this template element, by adding it to `O`
+    ///
+    /// This is done using `O`'s [`ExpansionOutput`] methods.
     fn expand(
         &self,
         ctx: &Context,
@@ -396,14 +399,14 @@ where
     ) -> syn::Result<()> {
         // eprintln!("@@@@@@@@@@@@@@@@@@@@ EXPAND {:?}", self);
 
-        let do_meta = |wa: &SubstAttr<_>, out, meta| wa.expand(ctx, out, meta);
+        let do_meta = |wa: &SubstMeta<_>, out, meta| wa.expand(ctx, out, meta);
         let do_tgnames = |out: &mut TokenAccumulator| {
             for pair in ctx.top.generics.params.pairs() {
                 use syn::GenericParam as GP;
                 match pair.value() {
-                    GP::Type(t) => out.write_tokens(&t.ident),
-                    GP::Const(c) => out.write_tokens(&c.ident),
-                    GP::Lifetime(l) => out.write_tokens(&l.lifetime),
+                    GP::Type(t) => out.append(&t.ident),
+                    GP::Const(c) => out.append(&c.ident),
+                    GP::Lifetime(l) => out.append(&l.lifetime),
                 }
                 out.with_tokens(|out| {
                     pair.punct().to_tokens_punct_composable(out);
@@ -414,23 +417,23 @@ where
             for pair in ctx.top.generics.params.pairs() {
                 use syn::GenericParam as GP;
                 let out_attrs = |out: &mut TokenAccumulator, attrs: &[_]| {
-                    attrs.iter().for_each(|attr| out.write_tokens(attr));
+                    attrs.iter().for_each(|attr| out.append(attr));
                 };
                 match pair.value() {
                     GP::Type(t) => {
                         out_attrs(out, &t.attrs);
-                        out.write_tokens(&t.ident);
-                        out.write_tokens(&t.colon_token);
-                        out.write_tokens(&t.bounds);
+                        out.append(&t.ident);
+                        out.append(&t.colon_token);
+                        out.append(&t.bounds);
                     }
                     GP::Const(c) => {
                         out_attrs(out, &c.attrs);
-                        out.write_tokens(&c.const_token);
-                        out.write_tokens(&c.ident);
-                        out.write_tokens(&c.colon_token);
-                        out.write_tokens(&c.ty);
+                        out.append(&c.const_token);
+                        out.append(&c.ident);
+                        out.append(&c.colon_token);
+                        out.append(&c.ty);
                     }
-                    GP::Lifetime(l) => out.write_tokens(&l.lifetime),
+                    GP::Lifetime(l) => out.append(&l.lifetime),
                 }
                 out.with_tokens(|out| {
                     pair.punct().to_tokens_punct_composable(out);
@@ -438,7 +441,7 @@ where
             }
         };
         let do_tgens = |out: &mut TokenAccumulator| {
-            out.write_tokens(&ctx.top.generics.params);
+            out.append(&ctx.top.generics.params);
         };
         // There are three contexts where the top-level type
         // name might occur with generics, and two syntaxes:
@@ -448,24 +451,24 @@ where
         let do_ttype = |out: &mut O, colons: Option<()>, do_some_gens| {
             let _: &dyn Fn(&mut _) = do_some_gens; // specify type
             let colons = colons.map(|()| Token![::](kw_span));
-            out.push_idpath(
+            out.append_idpath(
                 kw_span,
                 |_| {},
                 &ctx.top.ident,
                 |out| {
-                    out.write_tokens(colons);
-                    out.write_tokens(Token![<](kw_span));
+                    out.append(colons);
+                    out.append(Token![<](kw_span));
                     do_some_gens(out);
-                    out.write_tokens(Token![>](kw_span));
+                    out.append(Token![>](kw_span));
                 },
             )
         };
         let do_maybe_delimited_group = |out, np, delim, content| {
             let _: &mut O = out;
             let _: &Template<TokenAccumulator> = content;
-            out.push_other_subst(np, |out| {
+            out.append_tokens_with(np, |out| {
                 if let Some(delim) = delim {
-                    out.write_tokens(delimit_token_group(
+                    out.append(delimit_token_group(
                         delim,
                         kw_span,
                         |inside: &mut TokenAccumulator| {
@@ -480,39 +483,39 @@ where
         };
 
         match self {
-            SD::tname(_) => out.push_identfrag_toks(&ctx.top.ident),
+            SD::tname(_) => out.append_identfrag_toks(&ctx.top.ident),
             SD::ttype(_) => do_ttype(out, Some(()), &do_tgnames),
             SD::tdeftype(_) => do_ttype(out, None, &do_tgens),
             SD::vname(_) => {
-                out.push_identfrag_toks(&ctx.syn_variant(&kw_span)?.ident)
+                out.append_identfrag_toks(&ctx.syn_variant(&kw_span)?.ident)
             }
             SD::fname(_) => {
                 let fname = ctx.field(&kw_span)?.fname(kw_span);
-                out.push_identfrag_toks(&fname);
+                out.append_identfrag_toks(&fname);
             }
             SD::ftype(_) => {
                 let f = ctx.field(&kw_span)?;
-                out.push_syn_type(kw_span, &f.field.ty);
+                out.append_syn_type(kw_span, &f.field.ty);
             }
             SD::fpatname(_) => {
                 let f = ctx.field(&kw_span)?;
                 let fpatname =
                     format_ident!("f_{}", f.fname(kw_span), span = kw_span);
-                out.push_identfrag_toks(&fpatname);
+                out.append_identfrag_toks(&fpatname);
             }
             SD::tmeta(wa) => do_meta(wa, out, ctx.tattrs)?,
             SD::vmeta(wa) => do_meta(wa, out, ctx.variant(wa)?.pattrs)?,
             SD::fmeta(wa) => do_meta(wa, out, &ctx.field(wa)?.pfield.pattrs)?,
 
             SD::Vis(vis, np) => {
-                out.push_other_tokens(np, vis.syn_vis(ctx, kw_span)?)?
+                out.append_tokens(np, vis.syn_vis(ctx, kw_span)?)?
             }
             SD::tdefkwd(_) => {
                 fn w<O>(out: &mut O, t: impl ToTokens)
                 where
                     O: ExpansionOutput,
                 {
-                    out.push_identfrag_toks(&TokenPastesAsIdent(t))
+                    out.append_identfrag_toks(&TokenPastesAsIdent(t))
                 }
                 use syn::Data::*;
                 match &ctx.top.data {
@@ -522,31 +525,31 @@ where
                 };
             }
 
-            SD::tattrs(ra, np, ..) => out.push_other_subst(np, |out| {
+            SD::tattrs(ra, np, ..) => out.append_tokens_with(np, |out| {
                 ra.expand(ctx, out, &ctx.top.attrs)
             })?,
-            SD::vattrs(ra, np, ..) => out.push_other_subst(np, |out| {
+            SD::vattrs(ra, np, ..) => out.append_tokens_with(np, |out| {
                 let variant = ctx.variant(&kw_span)?.variant;
                 let attrs = variant.as_ref().map(|v| &*v.attrs);
                 ra.expand(ctx, out, attrs.unwrap_or_default())
             })?,
-            SD::fattrs(ra, np, ..) => out.push_other_subst(np, |out| {
+            SD::fattrs(ra, np, ..) => out.append_tokens_with(np, |out| {
                 ra.expand(ctx, out, &ctx.field(&kw_span)?.field.attrs)
             })?,
 
-            SD::tgens(np, ..) => out.push_other_subst(np, |out| {
+            SD::tgens(np, ..) => out.append_tokens_with(np, |out| {
                 do_tgens_nodefs(out);
                 Ok(())
             })?,
-            SD::tdefgens(np, ..) => out.push_other_subst(np, |out| {
+            SD::tdefgens(np, ..) => out.append_tokens_with(np, |out| {
                 do_tgens(out);
                 Ok(())
             })?,
-            SD::tgnames(np, ..) => out.push_other_subst(np, |out| {
+            SD::tgnames(np, ..) => out.append_tokens_with(np, |out| {
                 do_tgnames(out);
                 Ok(())
             })?,
-            SD::twheres(np, ..) => out.push_other_subst(np, |out| {
+            SD::twheres(np, ..) => out.append_tokens_with(np, |out| {
                 if let Some(clause) = &ctx.top.generics.where_clause {
                     out.with_tokens(|out| {
                         clause.predicates.to_tokens_punct_composable(out);
@@ -555,11 +558,11 @@ where
                 Ok(())
             })?,
 
-            SD::vpat(v, np, ..) => out.push_other_subst(np, |out| {
+            SD::vpat(v, np, ..) => out.append_tokens_with(np, |out| {
                 // This comment prevents rustfmt making this unlike the others
                 v.expand(ctx, out, kw_span)
             })?,
-            SD::vtype(v, np, ..) => out.push_other_subst(np, |out| {
+            SD::vtype(v, np, ..) => out.append_tokens_with(np, |out| {
                 v.expand(ctx, out, kw_span, SD::ttype(Default::default()))
             })?,
 
@@ -572,16 +575,16 @@ where
                 do_maybe_delimited_group(out, np, delim, content)?;
             }
             SD::fdefine(spec_f, np, ..) => {
-                out.push_other_subst(np, |out| {
+                out.append_tokens_with(np, |out| {
                     let field = ctx.field(&kw_span)?.field;
                     if let Some(driver_f) = &field.ident {
                         if let Some(spec_f) = spec_f {
                             spec_f.expand(ctx, out);
                         } else {
-                            out.write_tokens(driver_f);
+                            out.append(driver_f);
                         }
                     }
-                    out.write_tokens(&field.colon_token);
+                    out.append(&field.colon_token);
                     Ok(())
                 })?
             }
@@ -605,19 +608,19 @@ where
                 }
                 .map(|()| {
                     if enum_variant.is_some() {
-                        out.push_other_tokens(np, Token![,](kw_span))
+                        out.append_tokens(np, Token![,](kw_span))
                     } else {
-                        out.push_other_tokens(np, Token![;](kw_span))
+                        out.append_tokens(np, Token![;](kw_span))
                     }
                 })
                 .transpose()?;
             }
 
             SD::paste(content, np, ..) => {
-                out.expand_paste(np, ctx, kw_span, content)?
+                out.append_paste_expansion(np, ctx, kw_span, content)?
             }
             SD::ChangeCase(content, case, nc, ..) => {
-                out.expand_case(nc, *case, ctx, kw_span, content)?
+                out.append_case_expansion(nc, *case, ctx, kw_span, content)?
             }
 
             SD::when(..) => out.write_error(
@@ -635,19 +638,17 @@ where
             | SD::True(bo)
             | SD::not(_, bo)
             | SD::any(_, bo)
-            | SD::all(_, bo) => out.expand_bool_only(bo),
+            | SD::all(_, bo) => out.append_bool_only(bo),
             SD::For(repeat, _) => repeat.expand(ctx, out),
             SD::select1(conds, ..) => conds.expand_select1(ctx, out)?,
 
-            SD::Crate(np, ..) => {
-                out.push_other_tokens(np, &ctx.template_crate)?
-            }
+            SD::Crate(np, ..) => out.append_tokens(np, &ctx.template_crate)?,
         };
         Ok(())
     }
 }
 
-impl<O> SubstAttr<O>
+impl<O> SubstMeta<O>
 where
     O: ExpansionOutput,
 {
@@ -655,7 +656,7 @@ where
         &self,
         ctx: &Context,
         out: &mut O,
-        pattrs: &PreprocessedAttrs,
+        pattrs: &PreprocessedMetas,
     ) -> syn::Result<()> {
         let mut found = None;
         let error_loc = || [(self.span(), "expansion"), ctx.error_loc()];
@@ -717,7 +718,7 @@ impl<'l> AttrValue<'l> {
     fn expand<O>(
         &self,
         tspan: Span,
-        as_: Option<&SubstAttrAs>,
+        as_: Option<&SubstMetaAs>,
         out: &mut O,
     ) -> syn::Result<()>
     where
@@ -735,13 +736,13 @@ impl<'l> AttrValue<'l> {
             AttrValue::Lit(lit) => lit,
         };
 
-        use SubstAttrAs as SAS;
+        use SubstMetaAs as SMS;
         match as_ {
-            Some(SAS::lit) => out.push_syn_lit(lit),
-            Some(as_ @ SAS::ty) => {
-                out.push_syn_type(tspan, &attrvalue_lit_as(lit, tspan, as_)?)
+            Some(SMS::lit) => out.append_syn_lit(lit),
+            Some(as_ @ SMS::ty) => {
+                out.append_syn_type(tspan, &attrvalue_lit_as(lit, tspan, as_)?)
             }
-            None => out.push_attr_value(tspan, lit)?,
+            None => out.append_meta_value(tspan, lit)?,
         }
         Ok(())
     }
@@ -761,7 +762,7 @@ impl RawAttr {
                         .iter()
                         .all(|exclude| !attr.path.is_ident(exclude))
                     {
-                        out.write_tokens(attr);
+                        out.append(attr);
                     }
                 }
                 RawAttr::Include { entries } => {
@@ -772,7 +773,7 @@ impl RawAttr {
                 }
                 RawAttr::Exclude { exclusions } => {
                     if !exclusions.iter().any(|excl| excl == &attr.path) {
-                        out.write_tokens(attr);
+                        out.append(attr);
                     }
                 }
             }
@@ -792,7 +793,7 @@ impl RawAttrEntry {
         out: &mut TokenAccumulator,
         attr: &syn::Attribute,
     ) -> syn::Result<()> {
-        out.write_tokens(attr);
+        out.append(attr);
         Ok(())
     }
 }

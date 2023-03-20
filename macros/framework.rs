@@ -20,7 +20,7 @@ pub struct Context<'c> {
     pub top: &'c syn::DeriveInput,
     pub template_crate: &'c syn::Path,
     pub template_name: Option<&'c syn::Path>,
-    pub tattrs: &'c PreprocessedAttrs,
+    pub tattrs: &'c PreprocessedMetas,
     pub variant: Option<&'c WithinVariant<'c>>,
     pub field: Option<&'c WithinField<'c>>,
     pub pvariants: &'c [PreprocessedVariant<'c>],
@@ -29,23 +29,24 @@ pub struct Context<'c> {
 #[derive(Debug, Clone)]
 pub struct PreprocessedVariant<'f> {
     pub fields: &'f syn::Fields,
-    pub pattrs: PreprocessedAttrs,
+    pub pattrs: PreprocessedMetas,
     pub pfields: Vec<PreprocessedField>,
 }
 
 #[derive(Debug, Clone)]
 pub struct PreprocessedField {
-    pub pattrs: PreprocessedAttrs,
+    pub pattrs: PreprocessedMetas,
 }
 
-pub type PreprocessedAttr = syn::Meta;
-pub type PreprocessedAttrs = Vec<PreprocessedAttr>;
+/// `#[adhoc(...)]` helper attributes
+pub type PreprocessedMetas = Vec<PreprocessedMeta>;
+pub type PreprocessedMeta = syn::Meta;
 
 #[derive(Debug, Clone)]
 pub struct WithinVariant<'c> {
     pub variant: Option<&'c syn::Variant>,
     pub fields: &'c syn::Fields,
-    pub pattrs: &'c PreprocessedAttrs,
+    pub pattrs: &'c PreprocessedMetas,
     pub pfields: &'c [PreprocessedField],
 }
 
@@ -123,31 +124,36 @@ pub trait SubstParseContext {
 /// The accumulating type (`Self` might be accumulating
 /// tokens ([`TokenStream`]) or strings ([`paste::Items`)).
 pub trait ExpansionOutput: SubstParseContext {
-    /// Some kind of thing, whose `Display` impl is to be used
+    /// Append something according to its `Display` impl
     ///
     /// This could be an `str` for example.
     /// This is *not* suitable for `TokenTree::Literal` or `syn::Lit`
     /// because their `Display` impls produce the version with `" "`.
-    fn push_display<I: Display + Spanned + ToTokens>(&mut self, lit: &I);
+    fn append_display<I: Display + Spanned + ToTokens>(&mut self, lit: &I);
 
     /// An identifier (or fragment of one)
     ///
     /// Uses the `IdentFragment` for identifier pasting,
     /// and the `ToTokens` for general expansion.
-    fn push_identfrag_toks<I: quote::IdentFragment + ToTokens>(
+    fn append_identfrag_toks<I: quote::IdentFragment + ToTokens>(
         &mut self,
         ident: &I,
     );
 
-    /// An identifier path
+    /// Append a Rust path (scoped identifier, perhaps with generics)
     ///
-    /// Consisting of some prefix tokens (perhaps a scoping path),
-    /// the actual identifer,
-    /// and some suffix tokens (perhaps generics).
+    /// To facilitate `${pawte }`, the path is provided as:
+    ///  * some prefix tokens (e.g., a scoping path),
+    ///  * the actual identifer,
+    ///  * some suffix tokens (e.g. generics).
     ///
-    /// `template_entry_span` is the span of the part of the template
-    /// which expanded into this identifier path.
-    fn push_idpath<A, B>(
+    /// `tspan` is the span of the part of the template
+    /// which expanded into this path.
+    ///
+    /// This is a "more complex" expansion,
+    /// in the terminology of the template reference:
+    /// If a paste contains more than one, it is an error.
+    fn append_idpath<A, B>(
         &mut self,
         template_entry_span: Span,
         pre: A,
@@ -157,26 +163,33 @@ pub trait ExpansionOutput: SubstParseContext {
         A: FnOnce(&mut TokenAccumulator),
         B: FnOnce(&mut TokenAccumulator);
 
-    /// [`syn::Lit`](enum@syn::Lit)
+    /// Append a [`syn::Lit`](enum@syn::Lit)
     ///
     /// This is its own method because `syn::Lit` is not `Display`,
     /// and we don't want to unconditionally turn it into a string
     /// before retokenising it.
-    fn push_syn_lit(&mut self, v: &syn::Lit);
+    fn append_syn_lit(&mut self, v: &syn::Lit);
 
-    /// [`syn::Type`]
-    fn push_syn_type(&mut self, te_span: Span, v: &syn::Type);
+    /// Append a [`syn::Type`]
+    ///
+    /// This is a "more complex" expansion,
+    /// in the terminology of the template reference:
+    /// If a paste contains more than one, it is an error.
+    fn append_syn_type(&mut self, te_span: Span, v: &syn::Type);
 
-    /// Meta item value without `as` clause
+    /// Append a meta item value (without `as` clause in the template)
     ///
     /// Can fail, if the actual concrete value is not right
-    fn push_attr_value(
+    fn append_meta_value(
         &mut self,
         tspan: Span,
         lit: &syn::Lit,
     ) -> syn::Result<()>;
 
-    /// Some other substitution which generates tokens
+    /// Append using a function which generates tokens
+    ///
+    /// If you have an `impl `[`ToTokens`],
+    /// use [`append_tokens`](ExpansionOutput::append_tokens) instead.
     ///
     /// Not supported within `${paste }`.
     /// The `NotInPaste` parameter makes this method unreachable
@@ -184,27 +197,26 @@ pub trait ExpansionOutput: SubstParseContext {
     /// or to put it another way,
     /// it ensures that such an attempt would have been rejected
     /// during template parsing.
-    fn push_other_subst<F>(
+    fn append_tokens_with(
         &mut self,
         np: &Self::NotInPaste,
-        f: F,
-    ) -> syn::Result<()>
-    where
-        F: FnOnce(&mut TokenAccumulator) -> syn::Result<()>;
+        f: impl FnOnce(&mut TokenAccumulator) -> syn::Result<()>,
+    ) -> syn::Result<()>;
 
-    /// A substitution which can only be used within a boolean.
+    /// "Append" a substitution which can only be used within a boolean
     ///
-    /// This cannot be expanded, so this function must be unreachable.
+    /// Such a thing cannot be expanded, so it cannot be appended,
+    /// so this function must be unreachable.
+    /// `expand_bool_only` is called (in expansion contexts)
+    /// to handle uninhabited `SubstDetails` variants etc.
     ///
-    /// The requirement to implement it involves demonstrating that
-    /// either self, or BoolOnly, is uninhabited.
-    ///
-    /// And, then, this function can be called in expansion contexts
-    /// to handle uninhabited variants.
-    fn expand_bool_only(&mut self, bool_only: &Self::BoolOnly) -> !;
+    /// Implementing it involves demonstrating that
+    /// either `self`, or `Self::BoolOnly`, is uninhabited,
+    /// with a call to [`void::unreachable`].
+    fn append_bool_only(&mut self, bool_only: &Self::BoolOnly) -> !;
 
-    /// Expand a `${paste }`
-    fn expand_paste(
+    /// Append the expansion of a `${paste }`
+    fn append_paste_expansion(
         &mut self,
         np: &Self::NotInPaste,
         ctx: &Context,
@@ -212,8 +224,8 @@ pub trait ExpansionOutput: SubstParseContext {
         paste_body: &Template<paste::Items>,
     ) -> syn::Result<()>;
 
-    /// Expand a `${case }`
-    fn expand_case(
+    /// Append the expansion of a `${case }`
+    fn append_case_expansion(
         &mut self,
         np: &Self::NotInCase,
         case: paste::ChangeCase,
@@ -236,15 +248,20 @@ pub trait ExpansionOutput: SubstParseContext {
 
     /// Convenience method for writing a `ToTokens`
     ///
-    /// Dispatches to [`push_other_subst`](ExpansionOutput::push_other_subst)
+    /// Dispatches to
+    /// [`append_tokens_with`](ExpansionOutput::append_tokens_with)
     /// Not supported within `${paste }`.
-    fn push_other_tokens(
+    //
+    // I experimented with unifying this with `append_tokens_with`
+    // using a `ToTokensFallible` trait, but it broke type inference
+    // rather badly and had other warts.
+    fn append_tokens(
         &mut self,
         np: &Self::NotInPaste,
         tokens: impl ToTokens,
     ) -> syn::Result<()> {
-        self.push_other_subst(np, |out| {
-            out.write_tokens(tokens);
+        self.append_tokens_with(np, |out| {
+            out.append(tokens);
             Ok(())
         })
     }
@@ -377,7 +394,7 @@ impl TokenAccumulator {
     ) -> Option<R> {
         self.0.as_mut().ok().map(f)
     }
-    pub fn write_tokens(&mut self, t: impl ToTokens) {
+    pub fn append(&mut self, t: impl ToTokens) {
         self.with_tokens(|out| t.to_tokens(out));
     }
     pub fn tokens(self) -> syn::Result<TokenStream> {
@@ -407,16 +424,16 @@ impl SubstParseContext for TokenAccumulator {
 }
 
 impl ExpansionOutput for TokenAccumulator {
-    fn push_display<L: Display + Spanned + ToTokens>(&mut self, lit: &L) {
-        self.write_tokens(lit)
+    fn append_display<L: Display + Spanned + ToTokens>(&mut self, lit: &L) {
+        self.append(lit)
     }
-    fn push_identfrag_toks<I: quote::IdentFragment + ToTokens>(
+    fn append_identfrag_toks<I: quote::IdentFragment + ToTokens>(
         &mut self,
         ident: &I,
     ) {
-        self.write_tokens(ident)
+        self.append(ident)
     }
-    fn push_idpath<A, B>(
+    fn append_idpath<A, B>(
         &mut self,
         _te_span: Span,
         pre: A,
@@ -427,36 +444,33 @@ impl ExpansionOutput for TokenAccumulator {
         B: FnOnce(&mut TokenAccumulator),
     {
         pre(self);
-        self.write_tokens(ident);
+        self.append(ident);
         post(self);
     }
-    fn push_syn_lit(&mut self, lit: &syn::Lit) {
-        self.write_tokens(lit);
+    fn append_syn_lit(&mut self, lit: &syn::Lit) {
+        self.append(lit);
     }
-    fn push_syn_type(&mut self, _te_span: Span, ty: &syn::Type) {
-        self.write_tokens(ty);
+    fn append_syn_type(&mut self, _te_span: Span, ty: &syn::Type) {
+        self.append(ty);
     }
-    fn push_attr_value(
+    fn append_meta_value(
         &mut self,
         tspan: Span,
         lit: &syn::Lit,
     ) -> syn::Result<()> {
         let tokens: TokenStream = attrvalue_lit_as(lit, tspan, &"tokens")?;
-        self.write_tokens(tokens);
+        self.append(tokens);
         Ok(())
     }
-    fn push_other_subst<F>(
+    fn append_tokens_with(
         &mut self,
         _not_in_paste: &(),
-        f: F,
-    ) -> syn::Result<()>
-    where
-        F: FnOnce(&mut TokenAccumulator) -> syn::Result<()>,
-    {
+        f: impl FnOnce(&mut TokenAccumulator) -> syn::Result<()>,
+    ) -> syn::Result<()> {
         f(self)
     }
 
-    fn expand_paste(
+    fn append_paste_expansion(
         &mut self,
         _not_in_paste: &(),
         ctx: &Context,
@@ -467,7 +481,7 @@ impl ExpansionOutput for TokenAccumulator {
         paste_body.expand(ctx, &mut items);
         items.assemble(self)
     }
-    fn expand_case(
+    fn append_case_expansion(
         &mut self,
         _not_in_case: &(),
         case: paste::ChangeCase,
@@ -479,7 +493,7 @@ impl ExpansionOutput for TokenAccumulator {
         paste_body.expand(ctx, &mut items)?;
         items.assemble(self)
     }
-    fn expand_bool_only(&mut self, bool_only: &Self::BoolOnly) -> ! {
+    fn append_bool_only(&mut self, bool_only: &Self::BoolOnly) -> ! {
         void::unreachable(*bool_only)
     }
 

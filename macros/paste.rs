@@ -171,7 +171,7 @@ pub trait CaseContext: Sized + Default + Debug {
     /// `<Items as SubstParseContext>::AllowNonterminal` delegates to this
     type AllowNonterminal: Debug + Copy + Sized;
     /// Whether and how, in fact, to change the case, when expanding.
-    fn push_case(case: Self::ChangeCase) -> Option<ChangeCase>;
+    fn case_for_append(case: Self::ChangeCase) -> Option<ChangeCase>;
     fn not_in_case(span: &impl Spanned) -> syn::Result<Self::NotInCase>;
     fn allow_nonterminal(
         span: &impl Spanned,
@@ -200,7 +200,7 @@ impl CaseContext for () {
     type ChangeCase = ();
     type NotInCase = ();
     type AllowNonterminal = ();
-    fn push_case((): Self::ChangeCase) -> Option<ChangeCase> {
+    fn case_for_append((): Self::ChangeCase) -> Option<ChangeCase> {
         None
     }
     fn not_in_case(_span: &impl Spanned) -> syn::Result<()> {
@@ -231,7 +231,7 @@ impl CaseContext for WithinCaseContext {
     type ChangeCase = ChangeCase;
     type NotInCase = Void;
     type AllowNonterminal = Void;
-    fn push_case(case: Self::ChangeCase) -> Option<ChangeCase> {
+    fn case_for_append(case: Self::ChangeCase) -> Option<ChangeCase> {
         Some(case)
     }
     fn not_in_case(span: &impl Spanned) -> syn::Result<Void> {
@@ -282,20 +282,21 @@ impl ItemsData {
 }
 
 impl<C: CaseContext> Items<C> {
-    fn push_item(&mut self, item: Item) {
-        let case = C::push_case(self.case);
+    fn append_item(&mut self, item: Item) {
+        let case = C::case_for_append(self.case);
         self.data.items.push(ItemEntry { item, case });
     }
-    fn push_lit_pair<V: Display>(&mut self, v: &V) {
-        self.push_item(Item::Plain {
+    /// Like `ExpansionOutput::append_display` but doesn't need `Spanned`
+    fn append_display<V: Display>(&mut self, v: &V) {
+        self.append_item(Item::Plain {
             text: v.to_string(),
         })
     }
-    pub fn push_fixed_string(&mut self, text: String) {
-        self.push_item(Item::Plain { text });
+    pub fn append_fixed_string(&mut self, text: String) {
+        self.append_item(Item::Plain { text });
     }
 
-    /// Combine the accumulated pieces and write them as tokens
+    /// Combine the accumulated pieces and append them, as tokens, to `out`
     pub fn assemble(self, out: &mut TokenAccumulator) -> syn::Result<()> {
         self.data.assemble(out)
     }
@@ -404,9 +405,9 @@ impl ItemsData {
                     post,
                     te_span: _,
                 } => {
-                    out.write_tokens(mem::take(pre));
-                    out.write_tokens(mk_ident_nt(text)?);
-                    out.write_tokens(/*mem::take(*/ post /*)*/);
+                    out.append(mem::take(pre));
+                    out.append(mk_ident_nt(text)?);
+                    out.append(/*mem::take(*/ post /*)*/);
                 }
                 Item::Path { path, .. } => {
                     let span = path.span();
@@ -421,12 +422,12 @@ impl ItemsData {
                         })?
                         .ident;
                     *last = mk_ident_nt(&last.to_string())?;
-                    out.write_tokens(path);
+                    out.append(path);
                 }
                 Item::Plain { .. } => panic!("trivial nontrivial"),
             }
         } else {
-            out.write_tokens(mk_ident(out_span, plain_strs(&self.items))?);
+            out.append(mk_ident(out_span, plain_strs(&self.items))?);
         }
 
         Ok(())
@@ -458,10 +459,10 @@ impl<C: CaseContext> SubstParseContext for Items<C> {
 }
 
 impl<C: CaseContext> ExpansionOutput for Items<C> {
-    fn push_display<S: Display + Spanned>(&mut self, plain: &S) {
-        self.push_lit_pair(plain);
+    fn append_display<S: Display + Spanned>(&mut self, plain: &S) {
+        self.append_display(plain);
     }
-    fn push_identfrag_toks<I: quote::IdentFragment + ToTokens>(
+    fn append_identfrag_toks<I: quote::IdentFragment + ToTokens>(
         &mut self,
         ident: &I,
     ) {
@@ -472,9 +473,9 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
                 QIF::fmt(&self.0, f)
             }
         }
-        self.push_lit_pair(&AsIdentFragment(ident));
+        self.append_display(&AsIdentFragment(ident));
     }
-    fn push_idpath<A, B>(
+    fn append_idpath<A, B>(
         &mut self,
         te_span: Span,
         pre_: A,
@@ -497,32 +498,32 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
         };
         let pre = handle_err(pre);
         let post = handle_err(post);
-        self.push_item(Item::IdPath {
+        self.append_item(Item::IdPath {
             pre,
             post,
             text,
             te_span,
         });
     }
-    fn push_syn_lit(&mut self, lit: &syn::Lit) {
+    fn append_syn_lit(&mut self, lit: &syn::Lit) {
         use syn::Lit as L;
         match lit {
-            L::Str(s) => self.push_item(Item::Plain {
+            L::Str(s) => self.append_item(Item::Plain {
                 text: s.value(),
             }),
-            L::Int(v) => self.push_display(v),
-            L::Bool(v) => self.push_lit_pair(&v.value()),
-            L::Verbatim(v) => self.push_display(v),
+            L::Int(v) => self.append_display(v),
+            L::Bool(v) => self.append_display(&v.value()),
+            L::Verbatim(v) => self.append_display(v),
             x => self.write_error(
                 x,
                 "derive-adhoc macro wanted to do identifier pasting, but inappropriate literal provided",
             ),
         }
     }
-    fn push_syn_type(&mut self, te_span: Span, ty: &syn::Type) {
+    fn append_syn_type(&mut self, te_span: Span, ty: &syn::Type) {
         match ty {
             syn::Type::Path(path) => {
-                self.push_item(Item::Path { te_span, path: path.clone() })
+                self.append_item(Item::Path { te_span, path: path.clone() })
             },
             x => self.write_error(
                 x,
@@ -530,28 +531,25 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
             ),
         }
     }
-    fn push_attr_value(
+    fn append_meta_value(
         &mut self,
         _tspan: Span,
         lit: &syn::Lit,
     ) -> syn::Result<()> {
-        self.push_syn_lit(lit);
+        self.append_syn_lit(lit);
         Ok(())
     }
-    fn push_other_subst<F>(
+    fn append_tokens_with(
         &mut self,
         not_in_paste: &Void,
-        _: F,
-    ) -> syn::Result<()>
-    where
-        F: FnOnce(&mut TokenAccumulator) -> syn::Result<()>,
-    {
+        _: impl FnOnce(&mut TokenAccumulator) -> syn::Result<()>,
+    ) -> syn::Result<()> {
         void::unreachable(*not_in_paste)
     }
 
     // We forbid ${pate } inside itself, because when we do case
     // conversion this will get very fiddly to implement.
-    fn expand_paste(
+    fn append_paste_expansion(
         &mut self,
         not_in_paste: &Void,
         _ctx: &Context,
@@ -560,7 +558,7 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
     ) -> syn::Result<()> {
         void::unreachable(*not_in_paste)
     }
-    fn expand_case(
+    fn append_case_expansion(
         &mut self,
         not_in_case: &Self::NotInCase,
         case: paste::ChangeCase,
@@ -570,7 +568,7 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
     ) -> syn::Result<()> {
         C::expand_case(self, not_in_case, case, |out| content.expand(ctx, out))
     }
-    fn expand_bool_only(&mut self, bool_only: &Self::BoolOnly) -> ! {
+    fn append_bool_only(&mut self, bool_only: &Self::BoolOnly) -> ! {
         void::unreachable(*bool_only)
     }
 
@@ -582,8 +580,8 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
 impl<C: CaseContext> Expand<Items<C>> for TemplateElement<Items<C>> {
     fn expand(&self, ctx: &Context, out: &mut Items<C>) -> syn::Result<()> {
         match self {
-            TE::Ident(ident) => out.push_identfrag_toks(&ident),
-            TE::Literal(lit) => out.push_syn_lit(&lit),
+            TE::Ident(ident) => out.append_identfrag_toks(&ident),
+            TE::Literal(lit) => out.append_syn_lit(&lit),
             TE::Subst(e) => e.expand(ctx, out)?,
             TE::Repeat(e) => e.expand(ctx, out),
             TE::Punct(_, not_in_paste) | TE::Group { not_in_paste, .. } => {
