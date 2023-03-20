@@ -36,3 +36,7 @@ path = "macrotest.rs"
 [[test]]
 name = "trybuild"
 path = "trybuild.rs"
+
+[[test]]
+name = "stderr"
+path = "stderr.rs"
