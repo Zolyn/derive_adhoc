@@ -543,8 +543,7 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
         &mut self,
         not_in_paste: &Void,
         _: impl FnOnce(&mut TokenAccumulator) -> syn::Result<()>,
-    ) -> syn::Result<()>
-    {
+    ) -> syn::Result<()> {
         void::unreachable(*not_in_paste)
     }
 

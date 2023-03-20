@@ -642,9 +642,7 @@ where
             SD::For(repeat, _) => repeat.expand(ctx, out),
             SD::select1(conds, ..) => conds.expand_select1(ctx, out)?,
 
-            SD::Crate(np, ..) => {
-                out.append_tokens(np, &ctx.template_crate)?
-            }
+            SD::Crate(np, ..) => out.append_tokens(np, &ctx.template_crate)?,
         };
         Ok(())
     }

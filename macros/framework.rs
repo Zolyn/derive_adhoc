@@ -151,7 +151,7 @@ pub trait ExpansionOutput: SubstParseContext {
     /// which expanded into this path.
     ///
     /// This is a "more complex" expansion,
-    /// in the terminology of the template reference: 
+    /// in the terminology of the template reference:
     /// If a paste contains more than one, it is an error.
     fn append_idpath<A, B>(
         &mut self,
@@ -173,7 +173,7 @@ pub trait ExpansionOutput: SubstParseContext {
     /// Append a [`syn::Type`]
     ///
     /// This is a "more complex" expansion,
-    /// in the terminology of the template reference: 
+    /// in the terminology of the template reference:
     /// If a paste contains more than one, it is an error.
     fn append_syn_type(&mut self, te_span: Span, v: &syn::Type);
 
@@ -466,8 +466,7 @@ impl ExpansionOutput for TokenAccumulator {
         &mut self,
         _not_in_paste: &(),
         f: impl FnOnce(&mut TokenAccumulator) -> syn::Result<()>,
-    ) -> syn::Result<()>
-    {
+    ) -> syn::Result<()> {
         f(self)
     }
 
