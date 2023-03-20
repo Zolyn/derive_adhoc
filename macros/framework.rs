@@ -248,8 +248,13 @@ pub trait ExpansionOutput: SubstParseContext {
 
     /// Convenience method for writing a `ToTokens`
     ///
-    /// Dispatches to [`append_tokens_with`](ExpansionOutput::append_tokens_with)
+    /// Dispatches to
+    /// [`append_tokens_with`](ExpansionOutput::append_tokens_with)
     /// Not supported within `${paste }`.
+    //
+    // I experimented with unifying this with `append_tokens_with`
+    // using a `ToTokensFallible` trait, but it broke type inference
+    // rather badly and had other warts.
     fn append_tokens(
         &mut self,
         np: &Self::NotInPaste,
