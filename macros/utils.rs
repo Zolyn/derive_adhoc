@@ -40,6 +40,7 @@ pub fn advise_incompatibility(err_needing_advice: syn::Error) -> syn::Error {
 use crate::prelude::*;
 use proc_macro_crate::{crate_name, FoundCrate};
 
+/// Provides `.error()` on `impl Spanned` and `[`[`ErrorLoc`]`]`
 pub trait MakeError {
     /// Convenience method to make an error
     fn error<M: Display>(&self, m: M) -> syn::Error;
@@ -53,8 +54,9 @@ impl<T: Spanned> MakeError for T {
 
 /// Error location: span and what role that span plays
 ///
-/// Includes string indicating to the user
-/// what kind of location this is.
+/// When `MakeError::error` is invoked on a slice of these,
+/// the strings are included to indicate to the user
+/// what role each `Span` location played.
 /// For example, `(tspan, "template")`.
 pub type ErrorLoc = (Span, &'static str);
 
