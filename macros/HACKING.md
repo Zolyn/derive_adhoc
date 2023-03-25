@@ -3,6 +3,21 @@
 Rust procedural macros are a somewhat awkward environment,
 and, especially, testing them can be complex.
 
+<!--##toc##-->
+   * [Required reading](#required-reading)
+   * [Generated and auto-updated files in the git tree](#generated-and-auto-updated-files-in-the-git-tree)
+      * [`tests/pub-export/bizarre-facade/*` etc., updated by `maint/update-bizarre`](#testspub-exportbizarre-facade-etc-updated-by-maintupdate-bizarre)
+      * [`Cargo.lock.example`, updated by `nailing-cargo update`.](#cargolockexample-updated-by-nailing-cargo-update)
+      * [`Cargo.lock.minimal`, updated by `update-minimal-versions`.](#cargolockminimal-updated-by-update-minimal-versions)
+      * [Tables of contents in various `*.md`, updated by `maint/update-tocs`.](#tables-of-contents-in-various-md-updated-by-maintupdate-tocs)
+   * [Testing](#testing)
+   * [Reporting errors during template parsing and expansion](#reporting-errors-during-template-parsing-and-expansion)
+   * [Adding an expansion keyword](#adding-an-expansion-keyword)
+      * [Accessing the driver](#accessing-the-driver)
+      * [Expansion keysords with content or arguments](#expansion-keysords-with-content-or-arguments)
+      * [Adding a keyword that can appear in `${paste }` and/or `${case }`](#adding-a-keyword-that-can-appear-in-paste--andor-case-)
+      * [Adding a boolean keyword](#adding-a-boolean-keyword)
+
 ## Required reading
 
 derive-adhoc uses types and traits from [`syn`] and [`mod@quote`],
@@ -55,7 +70,9 @@ used for CI testing of our MSRV, etc.
 `update-minimal-versions` runs `cargo +nightly update ...`,
 so you have to have a Rust Nightly installed.
 
-### Table of contents in `doc/template-syntax.md`, updated by `maint/update-tocs`.
+### Tables of contents in various `*.md`, updated by `maint/update-tocs`.
+
+These are inserted at the `<!--##toc##-->` marker.
 
 Checked by CI, but it's only a warning if it's not up to date.
 
