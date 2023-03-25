@@ -40,6 +40,7 @@ pub fn advise_incompatibility(err_needing_advice: syn::Error) -> syn::Error {
 use crate::prelude::*;
 use proc_macro_crate::{crate_name, FoundCrate};
 
+/// Provides `.error()` on `impl Spanned` and `[`[`ErrorLoc`]`]`
 pub trait MakeError {
     /// Convenience method to make an error
     fn error<M: Display>(&self, m: M) -> syn::Error;
@@ -53,8 +54,9 @@ impl<T: Spanned> MakeError for T {
 
 /// Error location: span and what role that span plays
 ///
-/// Includes string indicating to the user
-/// what kind of location this is.
+/// When `MakeError::error` is invoked on a slice of these,
+/// the strings are included to indicate to the user
+/// what role each `Span` location played.
 /// For example, `(tspan, "template")`.
 pub type ErrorLoc = (Span, &'static str);
 
@@ -209,6 +211,12 @@ impl<T: ToTokens> quote::IdentFragment for TokenPastesAsIdent<T> {
 //---------- expand_macro_name ----------
 
 /// Return a full path to the location of `derive_adhoc_expand`.
+///
+/// (This may not work properly if the user
+/// imports the crate under a different name.
+/// This is a problem with the way cargo and rustc
+/// handle imports and proc-macro crates,
+/// which I think we can't properly solve here.)
 pub fn expand_macro_name() -> Result<TokenStream, syn::Error> {
     let name = crate_name("derive-adhoc-macros")
         .or_else(|_| crate_name("derive-adhoc"));
