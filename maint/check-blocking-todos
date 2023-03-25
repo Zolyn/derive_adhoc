@@ -7,13 +7,26 @@
 set -e
 set -o pipefail
 
-set +e
-git grep -i '\bfixme\b'
-rc=$?
-set -e
+rcs=' '
+check1 () {
+    set +e
+    "$@"
+    rcs+="$? "
+    set -e
+}
+check1 git --no-pager grep -i '\bfixme\b'
+check1 git --no-pager grep '\bXXXX*\b'
 
-case $rc in
-1)	exit 0;;
-0)	echo >&2 'Found FIXMEs - RC TODS - in the codebase!'; exit 1;;
-*)	echo >&2 'grep failed!'; exit 16;;
+case "$rcs" in
+    " 1 1 ")
+	exit 0
+	;;
+    *" 0 "*)
+	echo >&2 'Found FIXMEs/XXXs - RC TODS - in the codebase!'
+	exit 1
+	;;
+    *)
+	echo >&2 'git grep failed!'
+	exit 16
+	;;
 esac
