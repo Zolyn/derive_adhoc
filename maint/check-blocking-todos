@@ -26,7 +26,7 @@ case "$rcs" in
 	exit 1
 	;;
     *)
-	echo >&2 'grep failed!'
+	echo >&2 'git grep failed!'
 	exit 16
 	;;
 esac
