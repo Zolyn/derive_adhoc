@@ -59,7 +59,7 @@ cargo-test:
     - cargo test --locked --workspace --verbose --all-features
   cache:
     paths:
-      - cargo-expand
+      - cache/*
 
 cargo-test-minfeatures:
   stage: comprehensive
