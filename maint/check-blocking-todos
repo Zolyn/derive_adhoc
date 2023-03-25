@@ -9,9 +9,9 @@ set -o pipefail
 
 rcs=' '
 set +e
-git grep -i '\bfixme\b'
+git --no-pager grep -i '\bfixme\b'
 rcs+="$? "
-git grep '\bXXXX*\b'
+git --no-pager grep '\bXXXX*\b'
 rcs+="$? "
 set -e
 
