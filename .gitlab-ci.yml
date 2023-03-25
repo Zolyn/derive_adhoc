@@ -54,7 +54,7 @@ cargo-test:
   # Pin to a particular nightly, so our macro expansions don't change.
   image: rustlang/rust@sha256:415b7c22ab4a8a3ec3efc9cc8d7b018964f0c6757fff27bbd110e0ed92566321
   script:
-    - ./maint/via-cargo-install-in-ci cargo-expand
+    - ./maint/via-cargo-install-in-ci cargo-expand --version=1.0.40 --features=prettyplease
     - mv Cargo.lock.example Cargo.lock
     - cargo test --locked --workspace --verbose --all-features
   cache:
