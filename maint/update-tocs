@@ -1,4 +1,12 @@
 #!/bin/bash
+#
+# Update the embedded Table of Contents in `doc/template-syntax.md`.
+#
+# We do it like this because we don't want to have this done by
+# a build.rs, which would have to run on every build.
+#
+# The CI will check that the TOC is up to date, but this is only
+# treated as a warning.
 
 set -e -o pipefail
 
