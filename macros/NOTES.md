@@ -1,4 +1,4 @@
-# **Internal notes document (`NOTES.md`)**
+# **Notes and plans (`NOTES.md`)**
 
 # Future improvements which are (currently) difficult
 

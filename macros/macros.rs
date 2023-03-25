@@ -29,6 +29,9 @@ mod paste;
 mod repeat;
 mod syntax;
 
+#[doc=include_str!("HACKING.md")]
+mod _doc_hacking {}
+
 #[doc=include_str!("NOTES.md")]
 mod _doc_notes {}
 

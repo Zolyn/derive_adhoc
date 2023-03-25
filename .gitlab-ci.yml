@@ -54,7 +54,7 @@ check-doc-tocs:
 #   https://github.com/dtolnay/cargo-expand/issues/179
 cargo-test:
   stage: test
-  # Pin to a particular nightly, so our macro expansions don't change.
+  # See "Using the proper Nightly Rust" in tests/tests.rs
   image: rustlang/rust@sha256:415b7c22ab4a8a3ec3efc9cc8d7b018964f0c6757fff27bbd110e0ed92566321
   script:
     - ./maint/via-cargo-install-in-ci cargo-expand --version=1.0.44 --features=prettyplease

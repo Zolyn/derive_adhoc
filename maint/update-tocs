@@ -1,4 +1,15 @@
 #!/bin/bash
+#
+# Update the embedded Table of Contents in the following files:
+process_files () {
+    process_file doc/template-syntax.md
+    process_file macros/HACKING.md
+}
+# We do it like this because we don't want to have this done by
+# a build.rs, which would have to run on every build.
+#
+# The CI will check that the TOC is up to date, but this is only
+# treated as a warning.
 
 set -e -o pipefail
 
@@ -54,7 +65,7 @@ process_file () {
     fi
 }
 
-process_file doc/template-syntax.md
+process_files
 
 if $problems; then
     echo 'Documentation TOC mismatch - rerun maint/update-tocs'
