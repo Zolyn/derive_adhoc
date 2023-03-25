@@ -58,6 +58,7 @@ cargo-test:
     - mv Cargo.lock.example Cargo.lock
     - cargo test --locked --workspace --verbose --all-features
   cache:
+    when: 'always'
     paths:
       - cache/*
 
