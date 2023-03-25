@@ -8,7 +8,7 @@ cmd="$1"; shift
 cache="${cache// /,}"
 cache="cache/$cache"
 
-if cp "$cache" "$CARGO_HOME"/bin/"$cmd"; then exit 0; fi
+if cp -v "$cache" "$CARGO_HOME"/bin/"$cmd"; then exit 0; fi
 
 mkdir -p cache
 cargo install "$@" "$cmd"
