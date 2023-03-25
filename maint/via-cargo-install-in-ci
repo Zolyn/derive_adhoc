@@ -2,9 +2,9 @@
 
 set -euo pipefail
 
-for cmd in "$@"; do
-    if cp "$cmd" "$CARGO_HOME"/bin/; then continue; fi
+cmd="$1"
 
-    cargo install "$cmd"
-    cp -v "$CARGO_HOME/bin/$cmd" .
-done
+if cp "$cmd" "$CARGO_HOME"/bin/; then exit 0; fi
+
+cargo install "$cmd"
+cp -v "$CARGO_HOME/bin/$cmd" .
