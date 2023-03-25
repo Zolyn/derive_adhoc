@@ -49,6 +49,9 @@ check-doc-tocs:
     - maint/update-tocs --check
 
 # Actual tests
+#
+# We pin to a particular cargo-expand:
+#   https://github.com/dtolnay/cargo-expand/issues/179
 cargo-test:
   stage: test
   # Pin to a particular nightly, so our macro expansions don't change.
