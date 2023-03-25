@@ -8,12 +8,14 @@ set -e
 set -o pipefail
 
 rcs=' '
-set +e
-git --no-pager grep -i '\bfixme\b'
-rcs+="$? "
-git --no-pager grep '\bXXXX*\b'
-rcs+="$? "
-set -e
+check1 () {
+    set +e
+    "$@"
+    rcs+="$? "
+    set -e
+}
+check1 git --no-pager grep -i '\bfixme\b'
+check1 git --no-pager grep '\bXXXX*\b'
 
 case "$rcs" in
     " 1 1 ")
