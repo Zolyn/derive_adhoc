@@ -2,9 +2,14 @@
 
 set -euo pipefail
 
-for cmd in "$@"; do
-    if cp "$cmd" "$CARGO_HOME"/bin/; then continue; fi
+cache="$*"
+cmd="$1"; shift
 
-    cargo install "$cmd"
-    cp -v "$CARGO_HOME/bin/$cmd" .
-done
+cache="${cache// /,}"
+cache="cache/$cache"
+
+if cp -v "$cache" "$CARGO_HOME"/bin/"$cmd"; then exit 0; fi
+
+mkdir -p cache
+cargo install "$@" "$cmd"
+cp -v "$CARGO_HOME/bin/$cmd" "$cache"
