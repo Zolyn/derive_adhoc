@@ -10,7 +10,7 @@ and, especially, testing them can be complex.
       * [`Cargo.lock.example`, updated by `nailing-cargo update`.](#cargolockexample-updated-by-nailing-cargo-update)
       * [`Cargo.lock.minimal`, updated by `update-minimal-versions`.](#cargolockminimal-updated-by-update-minimal-versions)
       * [Tables of contents in various `*.md`, updated by `maint/update-tocs`.](#tables-of-contents-in-various-md-updated-by-maintupdate-tocs)
-   * [Testing](#testing)
+   * [Testing - see `tests/tests.rs`](#testing---see-teststestsrs)
    * [Reporting errors during template parsing and expansion](#reporting-errors-during-template-parsing-and-expansion)
    * [Adding an expansion keyword](#adding-an-expansion-keyword)
       * [Accessing the driver](#accessing-the-driver)
@@ -76,7 +76,7 @@ These are inserted at the `<!--##toc##-->` marker.
 
 Checked by CI, but it's only a warning if it's not up to date.
 
-## Testing
+## Testing - see `tests/tests.rs`
 
 derive-adhoc has comprehensive tests.
 
