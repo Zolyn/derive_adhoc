@@ -7,17 +7,20 @@
 set -e
 set -o pipefail
 
+rcs=' '
 set +e
 git grep -i '\bfixme\b'
-rc=$?
+rcs+="$? "
+git grep '\bXXXX*\b'
+rcs+="$? "
 set -e
 
-case $rc in
-    1)
+case "$rcs" in
+    " 1 1 ")
 	exit 0
 	;;
-    0)
-	echo >&2 'Found FIXMEs - RC TODS - in the codebase!'
+    *" 0 "*)
+	echo >&2 'Found FIXMEs/XXXs - RC TODS - in the codebase!'
 	exit 1
 	;;
     *)
