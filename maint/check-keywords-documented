@@ -290,12 +290,20 @@ foreach my $disc (@discrepant) {
 		   "Information and properties found in docs and source code:",
 		   $disc->{Got}
 		  );
-    $print_notes->(
-		   "Entry in exceptions table (__DATA__) -- expected to find:",
-		   $disc->{Exp}
-		  );
+    if ($disc->{Exp}) {
+	$print_notes->(
+            "Entry in exceptions table -- expected to find:",
+            $disc->{Exp}
+        );
+    } else {
+	print STDERR "No entry in exceptions table.\n";
+    }
     printf STDERR "|\n";
 }
+printf STDERR <<END;
+Docs and code should be fixed to match up,
+or an entry added to the exception table_(__DATA__).
+END
 
 exit 4;
 
