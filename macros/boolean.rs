@@ -97,6 +97,7 @@ impl Subst<BooleanContext> {
                 _ => false,
             },
 
+            // ## maint/check-keywords-documented NotInBool ##
             SD::tname(not_in_bool)
             | SD::ttype(not_in_bool)
             | SD::tdeftype(not_in_bool)

@@ -123,6 +123,8 @@ The examples each show the expansions for (elements of)
 the same example `Unit`, `Tuple`, `Struct` and `Enum`,
 shown below.
 
+<!-- ## maint/check-keywords-documented expansions ## -->
+
 ### `$fname`, `$vname`, `$tname` - names
 
 The name of the field, variant, or toplevel type.
@@ -482,6 +484,8 @@ Within-crate visibility, e.g. `pub(crate)`, is treated as "not visible"
 for the purposes of `fvis` and `tvis`
 (although the `$fvis` and `$tvis` expansions will handle those faithfully).
 
+<!-- ## maint/check-keywords-documented conditions ## -->
+
 ### `fmeta(NAME)`, `vmeta(NAME)`, `tmeta(NAME)` - `#[adhoc]` attributes
 
 Looks for `#[adhoc(NAME)]`.
@@ -548,6 +552,8 @@ This table shows the supported case styles.
 Note that changing the case can add and remove underscores.
 The precise details are as for [`heck`],
 which is used to implement the actual case changing.
+
+<!-- ## maint/check-keywords-documented cases ## -->
 
 | `CASE_CHANGE`        | `CASE_CHANGE` aliases            | Name in [`heck`] (also an alias)  | Example of results    |
 |----------------------|----------------------------------|-----------------------------------|-----------------------|

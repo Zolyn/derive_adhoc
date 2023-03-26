@@ -632,6 +632,7 @@ where
             SD::select1(conds, ..) => conds.expand_select1(ctx, out)?,
             SD::For(repeat, _) => repeat.expand(ctx, out),
 
+            // ## maint/check-keywords-documented BoolOnly ##
             SD::is_struct(bo)
             | SD::is_enum(bo)
             | SD::is_union(bo)
