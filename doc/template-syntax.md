@@ -555,9 +555,9 @@ which is used to implement the actual case changing.
 
 <!-- ## maint/check-keywords-documented cases ## -->
 
-| `CASE_CHANGE`        | `CASE_CHANGE` aliases            | Name in [`heck`] (also an alias)  | Example of results    |
+| `CASE_CHANGE`        | `CASE_CHANGE` aliases            | Name in [`heck`]  | Example of results    |
 |----------------------|----------------------------------|-----------------------------------|-----------------------|
-| `pascal_case`        | `PascalCase` `upper_camel_case`  | `UpperCamelCase`                  | `PascalCase`          |
+| `pascal_case`        | `PascalCase` `upper_camel_case` `UpperCamelCase` | `UpperCamelCase`                  | `PascalCase`          |
 | `snake_case`         |                                  | `SnakeCase`                       | `snake_case`          |
 | `shouty_snake_case`  | `SHOUTY_SNAKE_CASE`              | `ShoutySnakeCase`                 | `SHOUTY_SNAKE_CASE`   |
 | `lower_camel_case`   | `lowerCamelCase`                 | `LowerCamelCase`                  | `lowerCamelCase`      |
