@@ -275,6 +275,13 @@ foreach my $disc (@discrepant) {
 		printf STDERR "    %s\n",
 		  $note_descriptions{$note} // "UNDESCRIBED `$note`";
 	    }
+	    foreach my $note (keys %note_descriptions) {
+		next if $notes =~ m/$note/;
+		# elide "not:" for case changing stuff if there's no
+		# hint that this is going to be relevant
+		next if $note =~ m/[hc]/i and $notes !~ m/[hc]/i;
+		printf STDERR "    not: %s\n", $note_descriptions{$note};
+	    }
 	} else {
 	    printf STDERR "    None.\n";
 	}
