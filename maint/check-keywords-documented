@@ -1,0 +1,338 @@
+#!/usr/bin/perl -w
+#
+# This script checks that everything that exists is documented,
+# and vice versa.
+#
+# It does some pretty grotty ad-hoc parsing of both Rust sources,
+# and the markdown in the reference manual.
+#
+# At the bottom of the file, in __DATA__, is a table of expected
+# exceptions.
+#
+#
+# Implementation note:
+#
+# (I experimented with a more formal approach, including having the
+# `bizarre` version of d-a-macros collect the fixed strings that a keyword
+# was compared with during parsing.  It was difficult to properly
+# categorise the keyword and the mechanism was confusing and invasive.)
+
+use strict;
+
+die "no arguments supported" if @ARGV;
+
+our ($whole, $file);
+
+sub open_file ($) {
+    ($file) = @_;
+    open F, '<', $file or die "$file: $!";
+    print "  reading $file\n";
+}
+
+sub end_file () {
+    F->error and die "$file: $!";
+}
+
+sub read_file ($) {
+    open_file $_[0];
+    local $/ = undef;
+    $whole = <F> // die "$file: $!";
+    end_file();
+}
+
+our %grokked;
+
+sub grokked ($$@) {
+    my ($info, $note, @out) = @_;
+
+    print "    grokked $info [$note]\n      @out\n\n";
+    foreach my $kw (@out) {
+	$grokked{$kw} .= $note;
+    }
+}
+
+sub grok_match ($$$$) {
+    my ($file, $tag, $note, $unreach) = @_;
+
+    read_file($file);
+    my @out;
+    my $any;
+
+    while ($whole =~ m{
+( \ + ) // .* \#\# \ maint/check-keywords-documented \ $tag \ \#\# .* \n
+(
+  (?: \1 .* \n ) +
+)
+    }gmx) {
+	$any++;
+	my $arm = $2;
+	$arm =~ s{ \=\> .* $unreach .* \n }{}x
+	  or die "$tag arm not => $unreach";
+	$arm !~ m{\=\>}
+	  or die
+	  "----- ARM -----\n$arm\n----- ARM -----\n".
+	  "multiple arms pasted together, parsing failed?";
+	push @out, $arm =~ m{ SD :: (\w+) }gmx;
+    }
+    die "// ## maint/check-keywords-documented $tag ## not fund"
+      unless $any;
+
+    grokked $tag, $note, map { lc } @out;
+}
+
+sub grok_not_in_bool () {
+    grok_match('macros/boolean.rs', 'NotInBool', 'e', qr{void::unreachable});
+}
+
+sub grok_bool_only () {
+    grok_match('macros/expand.rs', 'BoolOnly', 'b', qr{append_bool_only});
+}
+
+sub grok_enum () {
+    read_file('macros/syntax.rs');
+    $whole =~ m{
+^ pub \ enum \ SubstDetails\b .* \{ \n
+(
+    (?: \ {4} .* \n | \n )*
+)
+^ \} $
+    }mx or die "pub enum SubstDetails not found";
+
+    my $enum_body = $1;
+    my @out = $enum_body =~ m{^ \ {4} (\w+) \b}gmx;
+
+    grokked 'enum variants', 'v', map { lc } @out;
+}
+
+sub grok_cases () {
+    open_file('macros/paste.rs');
+    my (@outk, @outh);
+    while (<F>) {
+	next unless m/^define_cases\! *\{$/..m/^\}$/;
+	push @outk, m{\"(\w+)\"}g;
+	push @outh, m{\bAs(\w+)\b}g;
+    }
+    grokked 'define_cases (kwd)', 'c', @outk;
+    grokked 'define_cases (heck)', 'h', @outh;
+    end_file();
+}
+
+sub grok_document () {
+    open_file 'doc/template-syntax.md';
+    my $in;
+    my %out;
+    my @case_cols;
+    while (<F>) {
+	if (m{\#\# maint/check-keywords-documented (\w+) \#\#}) {
+	    $in = $1;
+	    next;
+	}
+	if (m{^\#\# }) {
+	    $in = undef;
+	    next;
+	}
+	next unless defined $in;
+
+	my $out = \@{ $out{$in} };
+	if ($in eq 'cases') {
+	    next unless m{^\|};
+	    my @cols = split m{\|};
+	    if (!@case_cols) {
+		@case_cols = @cols;
+		next;
+	    }
+	    next if m{^\|-----};
+
+	    foreach my $i (0..$#cols) {
+		my @l = $cols[$i] =~ m{\`(\w+)\`}g;
+		if ($case_cols[$i] =~ m{\`heck\`}) {
+		    push @{ $out{heck} }, @l;
+		} else {
+		    push @$out, @l;
+		}
+	    }
+	} elsif ($in eq 'conditions') {
+	    next unless m{^\#\#\# };
+	    push @$out, m{\`(\w+)[^\`]*\`}g;
+	} elsif ($in eq 'expansions') {
+	    next unless m{^\#\#\# };
+	    # remove inner { }, repeatedly
+	    while (s{ ( \{ [^{}]* ) \{ [^{}]* \} ( .* \} ) }{$1 $2}x) { }
+	    push @$out, m{\`\$(\w+)\`}g;
+	    push @$out, m{\`\$\{(\w+)[^\}]+\}\`}g;
+	} else {
+	    die "bad maint/check-keywords-documented $in !";
+	}
+    }
+    end_file();
+
+    my $grokked = sub {
+	my ($note, $in) = @_;
+	grokked $in, $note, @{ $out{$in} };
+    };
+    $grokked->('E', 'expansions');
+    $grokked->('C', 'cases');
+    $grokked->('H', 'heck');
+    $grokked->('B', 'conditions');
+}
+
+our @discrepant;
+our %note_descriptions;
+
+sub correspondences () {
+    my %expected;
+    while (<DATA>) {
+	s{^\s+}{};
+	s{\s+$}{};
+	next if m{^\#};
+	next unless m{\S};
+
+	if (m{^\: \s+ (\S) \s+ (\S.*)}x) {
+	    $note_descriptions{$1} = $2;
+	    next;
+	}
+
+	my ($exp, @l) = split /\s+/;
+	die unless @l;
+	foreach my $kw (@l) {
+	    die "duplicate exception for $kw " if $expected{$kw};
+	    $expected{$kw} = $exp;
+	}
+    }
+
+    foreach my $kw (sort keys %grokked) {
+	$_ = $grokked{$kw};
+
+	# Expected combinations, which are not troubling:
+
+	next if m{^vbB$}; # ordinary bool-only keyword
+	next if m{^veE$}; # ordinary expansion-only keyword
+	next if m{^vEB$}; # ordinary keyword, both bool and expansion
+
+	next if m{^hH$}; # heck keyword (only)
+	next if m{^cCC?$}; # case changing (possibly also example)
+	next if m{^chCH$}; # case changing and heck keyword
+
+	# This one is unusual, is it in the expected exception table?
+
+	my $exp = $expected{$kw};
+	if ($exp) {
+	    delete $expected{$kw};
+	    next if $_ eq $exp;
+	}
+	push @discrepant, { Kw => $kw, Got => $_, Exp => $exp };
+    }
+
+    foreach my $kw (keys %expected) {
+	push @discrepant, { Kw => $kw, Exp => $expected{$kw} };
+    }
+}
+
+sub print_divider () {
+    print "------------------------------------------------------------\n";
+}
+
+print_divider();
+print "reading source and documentation files\n";
+grok_enum();
+grok_not_in_bool();
+grok_cases();
+grok_bool_only();
+grok_document();
+
+correspondences();
+
+if (!@discrepant) {
+    print "ok.\n";
+    print_divider();
+    exit 0;
+}
+
+print "discrepancies\n";
+foreach my $disc (@discrepant) {
+    printf "    keyword %-20s  found %s", $disc->{Kw}, $disc->{Got};
+    if ($disc->{Exp}) {
+	printf " expected %s", $disc->{Exp};
+    }
+    print "\n";
+}
+print_divider();
+flush STDOUT;
+
+print STDERR <<END;
+|
+** Discrepancies detected between code and documentation **
+|
+END
+
+foreach my $disc (@discrepant) {
+    printf STDERR "Keyword (or enum variant) `%s`\n", $disc->{Kw};
+    my $print_notes = sub {
+	my ($heading, $notes) = @_;
+	printf STDERR "%s\n", $heading;
+	if ($notes) {
+	    foreach my $note (split //, $notes) {
+		printf STDERR "    %s\n",
+		  $note_descriptions{$note} // "UNDESCRIBED `$note`";
+	    }
+	    foreach my $note (keys %note_descriptions) {
+		next if $notes =~ m/$note/;
+		# elide "not:" for case changing stuff if there's no
+		# hint that this is going to be relevant
+		next if $note =~ m/[hc]/i and $notes !~ m/[hc]/i;
+		printf STDERR "    not: %s\n", $note_descriptions{$note};
+	    }
+	} else {
+	    printf STDERR "    None.\n";
+	}
+    };
+    $print_notes->(
+		   "Information and properties found in docs and source code:",
+		   $disc->{Got}
+		  );
+    if ($disc->{Exp}) {
+	$print_notes->(
+            "Entry in exceptions table -- expected to find:",
+            $disc->{Exp}
+        );
+    } else {
+	print STDERR "No entry in exceptions table.\n";
+    }
+    printf STDERR "|\n";
+}
+printf STDERR <<END;
+Docs and code should be fixed to match up,
+or an entry added to the exception table_(__DATA__).
+END
+
+exit 4;
+
+__DATA__
+# Expected exceptions table
+# Each line is  <notechars>  <kw> [<kw> ...]
+# (The lines starting `:` are used for text in the discrepancy reports.)
+#
+# Note characters have the following meanings:
+#   Found in source code:
+:     v    enum SubstDetails variant, in syntax.rs
+:     e    expansion-only variant, ie NotInBool, according to boolean.rs
+:     c    case change keyword, according to from define_cases! in paste.rs
+:     h    heck name for a case change, according to define_cases! in paste.rs
+:     b    BoolOnly variant, according to expand.rs
+#   Found in reference documentation:
+:     E    Documented as expansion keyword
+:     C    Documented as case change keyword
+:     H    Documented as heck name of a case change
+:     B    Documented as condition (BoolOnly keyword)
+
+# we use placeholders in the docs, and handle case changing
+# with its own combined SubstDetails variant
+E	CASE_CHANGE
+ve	changecase
+
+# These are one SD variant
+E	fvis tvis
+v	vis
+
+# Doc has both ${for fields ...} and ${for variants ...}, so E is repeated
+veEE	for

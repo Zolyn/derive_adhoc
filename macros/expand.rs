@@ -615,6 +615,7 @@ where
                 })
                 .transpose()?;
             }
+            SD::Crate(np, ..) => out.append_tokens(np, &ctx.template_crate)?,
 
             SD::paste(content, np, ..) => {
                 out.append_paste_expansion(np, ctx, kw_span, content)?
@@ -628,6 +629,10 @@ where
                 "${when } only allowed in toplevel of $( )",
             ),
             SD::If(conds, ..) => conds.expand(ctx, out)?,
+            SD::select1(conds, ..) => conds.expand_select1(ctx, out)?,
+            SD::For(repeat, _) => repeat.expand(ctx, out),
+
+            // ## maint/check-keywords-documented BoolOnly ##
             SD::is_struct(bo)
             | SD::is_enum(bo)
             | SD::is_union(bo)
@@ -639,10 +644,6 @@ where
             | SD::not(_, bo)
             | SD::any(_, bo)
             | SD::all(_, bo) => out.append_bool_only(bo),
-            SD::For(repeat, _) => repeat.expand(ctx, out),
-            SD::select1(conds, ..) => conds.expand_select1(ctx, out)?,
-
-            SD::Crate(np, ..) => out.append_tokens(np, &ctx.template_crate)?,
         };
         Ok(())
     }
