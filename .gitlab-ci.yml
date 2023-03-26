@@ -48,6 +48,13 @@ check-doc-tocs:
   script:
     - maint/update-tocs --check
 
+# Warning-only checks
+check-keywords-documented:
+  stage: test
+  allow_failure: true
+  script:
+    - maint/check-keywords-documented
+
 # Actual tests
 #
 # We pin to a particular cargo-expand:
