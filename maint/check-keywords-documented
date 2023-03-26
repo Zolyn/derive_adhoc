@@ -260,9 +260,9 @@ print_divider();
 flush STDOUT;
 
 print STDERR <<END;
-
+|
 ** Discrepancies detected between code and documentation **
-
+|
 END
 
 foreach my $disc (@discrepant) {
@@ -294,7 +294,7 @@ foreach my $disc (@discrepant) {
 		   "Entry in exceptions table (__DATA__) -- expected to find:",
 		   $disc->{Exp}
 		  );
-    printf STDERR "\n";
+    printf STDERR "|\n";
 }
 
 exit 4;
