@@ -237,7 +237,7 @@ to name related (derived) types and variants.
    for enum variant:
    `EnumReference::RefTupleVariant::<'a, 'l, T, C>`
 
-### `$tgens`, `$tgens`, `$twheres`, `$tdefgens` - generics
+### `$tgens`, `$tgnames`, `$twheres`, `$tdefgens` - generics
 
 Generic parameters and bounds, from the toplevel type,
 in various forms.
@@ -555,9 +555,9 @@ which is used to implement the actual case changing.
 
 <!-- ## maint/check-keywords-documented cases ## -->
 
-| `CASE_CHANGE`        | `CASE_CHANGE` aliases            | Name in [`heck`] (also an alias)  | Example of results    |
+| `CASE_CHANGE`        | `CASE_CHANGE` aliases            | Name in [`heck`]  | Example of results    |
 |----------------------|----------------------------------|-----------------------------------|-----------------------|
-| `pascal_case`        | `PascalCase` `upper_camel_case`  | `UpperCamelCase`                  | `PascalCase`          |
+| `pascal_case`        | `PascalCase` `upper_camel_case` `UpperCamelCase` | `UpperCamelCase`                  | `PascalCase`          |
 | `snake_case`         |                                  | `SnakeCase`                       | `snake_case`          |
 | `shouty_snake_case`  | `SHOUTY_SNAKE_CASE`              | `ShoutySnakeCase`                 | `SHOUTY_SNAKE_CASE`   |
 | `lower_camel_case`   | `lowerCamelCase`                 | `LowerCamelCase`                  | `lowerCamelCase`      |
