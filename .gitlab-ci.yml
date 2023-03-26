@@ -53,7 +53,7 @@ check-keywords-documented:
   stage: test
   allow_failure: true
   script:
-    - maint/check-keywords-documented
+    - maint/check-keywords-documented >&2
 
 # Actual tests
 #
