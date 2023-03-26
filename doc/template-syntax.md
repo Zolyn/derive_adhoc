@@ -237,7 +237,7 @@ to name related (derived) types and variants.
    for enum variant:
    `EnumReference::RefTupleVariant::<'a, 'l, T, C>`
 
-### `$tgens`, `$tgens`, `$twheres`, `$tdefgens` - generics
+### `$tgens`, `$tgnames`, `$twheres`, `$tdefgens` - generics
 
 Generic parameters and bounds, from the toplevel type,
 in various forms.
