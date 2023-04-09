@@ -785,22 +785,358 @@ If you ever need to write a literal `$`,
 you can write `$$`.
 
 
+# Another example: Defining a constructor function.
+
+In this section,
+we'll be using another example to demonstrate
+more of what `derive_adhoc` can do.
+
+We'll be building a `Constructor` template
+to define a `new()` function for a struct,
+without having to write out all of its arguments.
+
+Let's start with the following (struct-only) template:
+
+```
+# use derive_adhoc::define_derive_adhoc;
+define_derive_adhoc! {
+   Constructor =
+
+   impl<$tgens> $ttype where $twheres {
+      pub fn new( $( $fname: $ftype , ) ) -> Self {
+          Self {
+              $( $fname , )
+          }
+      }
+   }
+}
+```
+
+When you apply the above template to a type like this:
+
+```
+# use derive_adhoc::define_derive_adhoc;
+# define_derive_adhoc! {
+#   Constructor =
+#
+#   impl<$tgens> $ttype where $twheres {
+#       pub fn new( $( $fname: $ftype , ) ) -> Self {
+#           Self {
+#               $( $fname , )
+#           }
+#       }
+#   }
+# }
+use derive_adhoc::Adhoc;
+#[derive(Adhoc)]
+#[derive_adhoc(Constructor)]
+struct Ex<A> {
+  a: f64,
+  b: A,
+  c: String
+}
+```
+
+You'll get a constructor like this:
+```
+# struct Ex<A> { a: f64, b: A, c: String }
+impl<A> Ex<A> {
+    pub fn new( a: f64, b: A, c: String ) -> Self {
+        Self { a, b, c }
+    }
+}
+```
+
+So far, there aren't any new techniques at work here.
+We'll add some more down below.
+
+
+## Marking a template's limitations
+
+The template above doesn't work for enumerations.
+If you try to apply it to one, you'll get
+a not-entirely-helpful error message.
+
+In earlier examples,
+we've shown how to make templates
+that apply to enums as well as structs.
+But let's say that in this case,
+we want our template to be struct-only.
+
+We can tell `derive_adhoc` about this restriction,
+to help it generate more useful error messages:
+
+```
+# use derive_adhoc::define_derive_adhoc;
+define_derive_adhoc! {
+   Constructor for struct = // (1)
+
+   impl<$tgens> $ttype where $twheres {
+      pub fn new( $( $fname: $ftype , ) ) -> Self {
+          Self {
+              $( $fname , )
+          }
+      }
+   }
+}
+```
+
+(Note the use of `for struct` above at `// (1)`.)
+
+Now if we try to apply our template to an enum,
+we'll get a more useful error:
+
+
+```text,ignore
+error: expected driver kind struct, but driver is enum (expected kind)
+```
+
+
+> Actually, that error message isn't all that helpful IMO.
+> Maybe it would be better to say something like:
+> "Template `Constructor` only applies to structs,
+> but we're trying to apply it to an enum."
+>
+> IOW, I think that it's not so helpful to refer to "drivers"
+> in the error message. -nickm
+
+## Working with visibility
+
+Our `Constructor` template above doesn't really make sense
+if it's applied to a non-public type:
+Rust may even complain that we're declaring
+a public function that ruturns a private type!
+
+Let's fix this, and have it give our constructor
+the same visibility as the type itself:
+
+```
+# use derive_adhoc::define_derive_adhoc;
+define_derive_adhoc! {
+   Constructor for struct =
+
+   impl<$tgens> $ttype where $twheres {
+      $tvis fn new( $( $fname: $ftype , ) ) -> Self {
+          Self {
+              $( $fname , )
+          }
+      }
+   }
+}
+```
+
+Here instead of saying `pub fn new`,
+we said `$tvis fn new`.
+The `$tvis` keyword will expand
+to the visibility of the top-level type.
+
+There is a similar similar `$fvis`
+that expands to the visibility of the current field.
+
+(Since enums variants are always visible, there is no `$vvis`.)
+
+
+> TODO: Document `${if is_enum { $tvis } else { $fvis }}`.
+>
+> Or maybe change it so $fvis is `pub` for enums? -nickm
+
+
+## Using attributes to make a template take arguments
+
+Let's suppose we want to make our `Constructor` template
+a little more flexible:
+we'd like to be able to give the `new` function a different name.
+
+We could do this as follows:
+
+```
+# use derive_adhoc::define_derive_adhoc;
+define_derive_adhoc! {
+   Constructor for struct =
+
+   impl<$tgens> $ttype where $twheres {
+      pub fn ${tmeta(newfn)} // (1)
+      ( $( $fname: $ftype , ) ) -> Self {
+          Self {
+              $( $fname , )
+          }
+      }
+   }
+}
+
+use derive_adhoc::Adhoc;
+#[derive(Adhoc)]
+#[derive_adhoc(Constructor)]
+#[adhoc(newfn="construct_example")]
+struct Example {
+    a: f64,
+    b: String
+}
+```
+
+Here, instead of specifying "new"
+for the method name in our template,
+we give the name as `${tmeta(newfn)}`.
+This tells the template to look for an
+`#[adhoc(newfn="...")]` attribute on the type,
+and to use the value of that attribute
+in place of the keyword.
+
+If we want our attribute to be more namespaced,
+we can instead say something like
+`${tmeta(Constructor(newfn = "..."))}`.
+If we do, the template will look for an attribute like
+`#[adhoc(Constructor(newfn = "..."))]`.
+
+
+The `$tmeta` keyword that we used here
+tells the template
+to look at the `#[adhoc]` attributes for the _type_.
+We can, instead, use `$vmeta`
+to look for `#[adhoc]` attributes for the current _variant_,
+or `$fmeta` to
+to look for `#[adhoc]` attributes for the current _field_.
+
+
+> TODO: Is this the right way to talk about "as lit" and "as ty"?
+> I'm thinking not yet.
+
+## Getting started with conditionals
+
+In the example above,
+we made it possible to rename the "new" function
+generated by our template.
+But our approach is flawed:
+if the user _doesn't_ provide
+the `#[adhoc(newfn)]` adhoc attribute,
+the template won't make a function name at all!
+
+Let's show how to fix that:
+```
+# use derive_adhoc::define_derive_adhoc;
+define_derive_adhoc! {
+   Constructor for struct =
+
+   impl<$tgens> $ttype where $twheres {
+   pub fn
+        ${if tmeta(newfn) { ${tmeta(newfn)} } else { new } } // (1)
+     ( $( $fname: $ftype , ) ) -> Self {
+          Self {
+              $( $fname , )
+          }
+      }
+   }
+}
+```
+
+Have a look at the line marked with `// (1)`.
+It introduces a new concept: _conditional expansion_.
+The `${if ...}` keyword checks whether a given _condition_ is true.
+If it is, then it expands to one of its arguments.
+Otherwise, it expands to an "else" argument (if any).
+
+> Also, you can chain `$if`s, as in
+> `${if COND1 { ... } else if COND2 { ... } else { ... }`
+> and so on!
+
+Here, the condition is `tmeta(newfn)`.
+That condition is true if the current type
+has an `#[adhoc(newfn)]` attribute,
+and false otherwise.
+There are also `vmeta` and `fmeta` attributes
+to detect `#[adhoc(..)]` attributes
+on variants and fields respectively.
+
+## More complicated conditionals
+
+Frequently, we'd like our template
+to behave in different ways different fields.
+For example, let's suppose that we want our template
+to be able to set fields to their default values,
+and not take them as arguments.
+
+We could do this with an explicit conditional for each field:
+```
+# use derive_adhoc::define_derive_adhoc;
+define_derive_adhoc! {
+   Constructor =
+
+   impl<$tgens> $ttype where $twheres {
+     pub fn new
+     ( $(
+          ${when not(fmeta(Constructor(default))) } // (1)
+          $fname: $ftype ,
+        ) ) -> Self {
+          Self {
+              $( $fname:
+                  ${if fmeta(Constructor(default)) { Default::default() }
+                  else { $fname } }
+                 , )
+          }
+      }
+   }
+}
+
+use derive_adhoc::Adhoc;
+#[derive(Adhoc)]
+#[derive_adhoc(Constructor)]
+struct Foo {
+    #[adhoc(Constructor(default))]
+    s: Vec<String>,
+    n: u32,
+}
+```
+
+Here we're using a new construct: `$when`.
+It's only valid inside a loop like `$( ... )`.
+It causes the output of the loop to be surpressed
+whenever the condition is not true.
+
+The condition in this cases is `not(fmeta(Constructor(default)))`.
+You've seen `fmeta` before;
+`not` is just how we express negation.
+All together, this `$when` keyword causes each field
+that has `#[adhoc(Constructor(default))]` applied to it
+to be omitted from the list of arguments
+to the `new()` function.
+
+You can use other boolean operators in conditions too:
+there is an `any(...)` that is true
+whenever at least one of its arguments is true,
+and an `all(...)` that is true
+when _all_ of its arguments are true.
+
+
 
 
 > Coming sections:
 >
->  ## Something something lifetimes
+> ## More conditions
+>
+>  is_enum, is_struct, etc
+>  v_is_unit etc
+>  vfis, tvis
+>
+>  `${select1}`
 >
 > ## Explicit repetition
-
-> ## Conditional compilation
-
+>
+>   (When to use `${for}`?)
+>
 > ## Working with attributes
 >
-> ## visibility
+>   (When do we want to use $xattrs?)
 >
 > ## `$tdef*`, `$vdef*, `$fdef*` — what it's for and why.
-
+>
+> ## What else am I missing?
+>
+> ## Links
+>
+>  - Link to more worked and commented examples.
+>    - Try to clone some proc-macros that we use a lot, and see
+>      if we can.
+>  - Link to each reference section.
 
 
 [reference]: crate::doc_template_syntax
