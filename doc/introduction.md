@@ -435,7 +435,7 @@ where
 ## Making MyClone apply conditionally
 
 Now, for the first time, we will make MyClone do something
-that Rust's `#[derive(Clone]` does not:
+that Rust's `#[derive(Clone)]` does not:
 it will apply only when the fields of a struct are `Clone`.
 
 For example, suppose have a struct like this:
