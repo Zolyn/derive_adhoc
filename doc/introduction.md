@@ -598,11 +598,6 @@ impl Clone for AllTypes {
 }
 ```
 
-> ... Or we _would_ get that, if it weren't for
-> [bug #15](https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/issues/15).
-> It turns out that derive_adhoc doesn't work
-> for multi-field enum variants yet. ☹
-
 Note that our template above will still work fine on a regular struct,
 even though it's written for an `enum`.
 If we apply `MyClone` above
