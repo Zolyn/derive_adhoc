@@ -10,7 +10,7 @@
       * [`$fvis`, `$tvis` - visibility](#fvis-tvis---visibility)
       * [`$vpat`, `$fpatname` - pattern matching and value deconstruction](#vpat-fpatname---pattern-matching-and-value-deconstruction)
       * [`$ftype`, `$vtype`, `$ttype`, `$tdeftype` - types](#ftype-vtype-ttype-tdeftype---types)
-      * [`$tgens`, `$tgens`, `$twheres`, `$tdefgens` - generics](#tgens-tgens-twheres-tdefgens---generics)
+      * [`$tgens`, `$tgnames`, `$twheres`, `$tdefgens` - generics](#tgens-tgnames-twheres-tdefgens---generics)
       * [`${tmeta(...)}` `${vmeta(...)}` `${fmeta(...)}` - `#[adhoc]` attributes](#tmeta-vmeta-fmeta---adhoc-attributes)
       * [`${fattrs ...}` `${vattrs ...}` `${tattrs ...}` - other attributes](#fattrs--vattrs--tattrs----other-attributes)
       * [`${paste ...}` - identifier pasting](#paste----identifier-pasting)
