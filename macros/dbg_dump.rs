@@ -11,20 +11,12 @@ pub fn dump(ctx: &Context) {
     let w = (|| {
         let mut w = String::new();
 
-        let description = ctx.expansion_description();
-        writeln!(
-            w,
-            "---------- expansions dump from {} (start) ----------",
-            description
-        )?;
+        let description =
+            format!("derive-adhoc expansions dump for {}", ctx.top.ident);
 
+        writeln!(w, "---------- {} (start) ----------", description)?;
         dump_whole(&mut w, ctx)?;
-
-        writeln!(
-            w,
-            "---------- expansions dump from {} (end) ----------",
-            description
-        )?;
+        writeln!(w, "---------- {} (end) ----------", description)?;
 
         Ok::<_, E>(w)
     })()
