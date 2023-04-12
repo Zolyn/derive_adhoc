@@ -69,4 +69,5 @@ process_files
 
 if $problems; then
     echo 'Documentation TOC mismatch - rerun maint/update-tocs'
+    exit 1
 fi
