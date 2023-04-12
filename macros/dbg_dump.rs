@@ -54,8 +54,18 @@ fn dump_expand_one(w: &mut Out, ctx: &Context, templ: TokenStream) -> R {
     Ok(())
 }
 
+fn dump_bool_one(w: &mut Out, ctx: &Context, templ: TokenStream) -> R {
+    let lh = format!("{:12} =", templ.to_string());
+    let templ = quote!{ ${if #templ { true } else { false }} };
+    writeln!(w, "        {:16} {}", lh, template_result(ctx, templ))?;
+    Ok(())
+}
+
 macro_rules! expand { { $w_ctx:expr, $($t:tt)* } => {
     dump_expand_one($w_ctx.0, $w_ctx.1, quote!{ $($t)* })?;
+} }
+macro_rules! bool { { $w_ctx:expr, $($t:tt)* } => {
+    dump_bool_one($w_ctx.0, $w_ctx.1, quote!{ $($t)* })?;
 } }
 
 fn dump_whole(mut w: &mut Out, ctx: &Context) -> R {
@@ -72,6 +82,8 @@ fn dump_whole(mut w: &mut Out, ctx: &Context) -> R {
     expand! { c, $tdefgens }
     expand! { c, $tdefkwd }
     expand! { c, ${tdefvariants VARIANTS} }
+
+    bool! { c, is_enum }
 
     WithinVariant::for_each(ctx, |ctx, wv| dump_variant(w, ctx, wv))?;
 
