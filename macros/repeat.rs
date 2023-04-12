@@ -172,6 +172,7 @@ impl<O: SubstParseContext> Subst<O> {
             // Has a RepeatOver, but does not imply anything about its context.
             SD::For(..) => None,
             SD::False(..) | SD::True(..) => None, // condition: ignore.
+            SD::derive_adhoc_internal_dbg_dump(..) => None,
             SD::Crate(..) => None,
         };
         if let Some(over) = over {

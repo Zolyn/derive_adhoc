@@ -38,7 +38,7 @@ pub use crate::utils::ErrorAccumulator;
 pub use crate::utils::{braced_group, delimit_token_group};
 pub use crate::utils::{ErrorLoc, MakeError};
 pub use crate::utils::{ToTokensPunctComposable, TokenPastesAsIdent};
-pub(crate) use crate::{check, framework};
+pub(crate) use crate::{check, dbg_dump, framework};
 
 pub use crate::expand::*;
 pub use crate::options::*;

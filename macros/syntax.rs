@@ -147,6 +147,8 @@ pub enum SubstDetails<O: SubstParseContext> {
     If(SubstIf<O>, O::NotInBool),
     select1(SubstIf<O>, O::NotInBool),
 
+    derive_adhoc_internal_dbg_dump(O::NotInBool),
+
     Crate(O::NotInPaste, O::NotInBool),
 }
 
@@ -744,6 +746,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         keyword! { "true": True(bool_only?) }
         keyword! { "if": If(parse_if(input)?, not_in_bool?) }
         keyword! { select1(parse_if(input)?, not_in_bool?) }
+        keyword! { derive_adhoc_internal_dbg_dump(not_in_bool?) }
         keyword! { "crate": Crate(not_in_paste?, not_in_bool?) }
 
         keyword! { "for": For(

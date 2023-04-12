@@ -124,6 +124,7 @@ impl Subst<BooleanContext> {
             | SD::For(_, not_in_bool)
             | SD::If(_, not_in_bool)
             | SD::select1(_, not_in_bool)
+            | SD::derive_adhoc_internal_dbg_dump(not_in_bool)
             | SD::Crate(_, not_in_bool) => void::unreachable(*not_in_bool),
         };
         Ok(r)
