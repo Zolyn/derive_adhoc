@@ -1,4 +1,4 @@
-# **Template syntax reference**
+# **Template syntax (and expansion options) reference**
 
 **Table of contents**
 
@@ -35,6 +35,9 @@
       * [`dbg` -- Print the expansion to stderr, for debugging](#dbg---print-the-expansion-to-stderr-for-debugging)
       * [Expansion options example](#expansion-options-example)
    * [Structs used in examples](#structs-used-in-examples)
+
+**Reference documentation for the actual proc macros** is in
+the [crate-level docs for derive-adhoc](../index.html#macros).
 
 ## Template syntax overview
 
@@ -568,8 +571,6 @@ which is used to implement the actual case changing.
 | `lower_camel_case`   | `lowerCamelCase`                 | `LowerCamelCase`                  | `lowerCamelCase`      |
 
 ## Expansion options
-
-<!-- TODO DOCS now this file has this, it should be renamed/retitled ? -->
 
 You can pass options,
 which will be applied to each relevant template expansion:
