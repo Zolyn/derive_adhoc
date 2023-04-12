@@ -29,6 +29,11 @@
       * [`v_is_unit`, `v_is_tuple`, `v_is_named`](#v_is_unit-v_is_tuple-v_is_named)
       * [`false`, `true`, `not(CONDITION)`, `any(COND1,COND2,...)`, `all(COND1,COND2,...)` -- boolean logic](#false-true-notcondition-anycond1cond2-allcond1cond2---boolean-logic)
    * [Case changing](#case-changing)
+   * [Expansion options](#expansion-options)
+      * [`expect items`, `expect expr` -- syntax check the expansion](#expect-items-expect-expr---syntax-check-the-expansion)
+      * [`for struct`, `for enum`, `for union` -- Insist on a particular driver kind](#for-struct-for-enum-for-union---insist-on-a-particular-driver-kind)
+      * [`dbg` -- Print the expansion to stderr, for debugging](#dbg---print-the-expansion-to-stderr-for-debugging)
+      * [Expansion options example](#expansion-options-example)
    * [Structs used in examples](#structs-used-in-examples)
 
 ## Template syntax overview
@@ -561,6 +566,95 @@ which is used to implement the actual case changing.
 | `snake_case`         |                                  | `SnakeCase`                       | `snake_case`          |
 | `shouty_snake_case`  | `SHOUTY_SNAKE_CASE`              | `ShoutySnakeCase`                 | `SHOUTY_SNAKE_CASE`   |
 | `lower_camel_case`   | `lowerCamelCase`                 | `LowerCamelCase`                  | `lowerCamelCase`      |
+
+## Expansion options
+
+<!-- TODO DOCS now this file has this, it should be renamed/retitled ? -->
+
+You can pass options,
+which will be applied to each relevant template expansion:
+
+```rust,ignore
+// Expand TEMPLATE for DataStructureType, with OPTIONS
+derive_adhoc! { DataStructureType OPTIONS,... : TEMPLATE }
+
+// Define a template Template which always expands with OPTIONS
+define_derive_adhoc! { Template OPTIONS,... = TEMPLATE }
+
+// Expand Template for DataStructureType, with OPTIONS
+#[derive(Adhoc)]
+#[derive_adhoc(Template[OPTIONS,...])]
+struct DataStructureType {
+# }
+```
+
+Multiple options, perhaps specified in different places,
+may apply to a single expansion.
+Even multiple occurrences of the same option are fine,
+so long as they don't contradict each other.
+
+The following expansion options are recognised:
+
+### `expect items`, `expect expr` -- syntax check the expansion
+
+Syntax checks the expansion,
+checking that it can be parsed as items, or as an expression.
+
+If not, it is an error.
+Also, then, an attempt is made to produce
+compiler error message(s) pointing to the syntax error
+*in a copy of the template expansion*,
+as well as reporting the error at
+the part of the template or driver which generated
+that part of the expansiuon.
+
+This is useful for debugging.
+
+### `for struct`, `for enum`, `for union` -- Insist on a particular driver kind
+
+Checks the driver data structure kind
+against the `for` option value.
+If it doesn't match, it is an error.
+
+This is useful to produce good error messages:
+Normally, derive-adhoc does not explicitly check the driver kind,
+and simply makes it available to the template via expansion variables.
+But, often,
+a template is written only with a particular driver kind in mind,
+and otherwise produces syntactically invalid output
+leading to confusing compiler errors.
+
+This option is only allowed in a template,
+not in a driver's `#[derive_adhoc]` attribute.
+
+### `dbg` -- Print the expansion to stderr, for debugging
+
+Prints the template's expansion to stderr, during compilation,
+for debugging purposes.
+
+You will not want to leave this option in production code,
+as it makes builds noisy.
+
+### Expansion options example
+
+```
+# use derive_adhoc::{define_derive_adhoc, Adhoc};
+define_derive_adhoc! { Nothing for struct, expect items = }
+
+#[derive(Adhoc)]
+#[derive_adhoc(Nothing[expect items, dbg])]
+struct Unit;
+```
+
+This defines a reuseable template `Nothing`
+which can be applied only to structs,
+and whose output is syntax checked as item(s).
+(The template's actual expansion is empty,
+so it does indeed expand to zero items.)
+
+Then it applies that to template to `struct Unit`,
+restating the requirement that the expansion should be item(s).
+and dumping the expansion to stderr during compilation.
 
 ## Structs used in examples
 

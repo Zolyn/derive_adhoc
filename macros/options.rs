@@ -58,11 +58,8 @@ struct DaOption {
 #[derive(Debug, Clone)]
 #[allow(non_camel_case_types)] // clearer to use the exact ident
 enum OptionDetails {
-    // TODO DOCS, in template-syntax.md I guess
     dbg,
-    // TODO DOCS, in template-syntax.md I guess
     For(DaOptVal<ExpectedDriverKind>),
-    // TODO DOCS, in template-syntax.md I guess
     // TODO should this be `producing` or something?
     expect(DaOptVal<check::Target>),
 }
