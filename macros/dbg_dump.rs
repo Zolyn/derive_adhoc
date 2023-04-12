@@ -92,7 +92,10 @@ fn dump_whole(mut w: &mut Out, ctx: &Context) -> R {
     expand! { c, $tdefkwd }
     expand! { c, ${tdefvariants VARIANTS} }
 
+    bool! { c, is_struct }
     bool! { c, is_enum }
+    bool! { c, is_union }
+    bool! { c, tvis }
 
     WithinVariant::for_each(ctx, |ctx, wv| dump_variant(w, ctx, wv))?;
 
@@ -117,6 +120,10 @@ fn dump_variant(mut w: &mut Out, ctx: &Context, wv: &WithinVariant) -> R {
     expand! { c, $vpat }
     expand! { c, ${vdefbody VNAME FIELDS..} }
 
+    bool! { c, v_is_unit }
+    bool! { c, v_is_tuple }
+    bool! { c, v_is_named }
+
     WithinField::for_each(ctx, |ctx, wf| dump_field(w, ctx, wf))?;
 
     Ok(())
@@ -133,6 +140,8 @@ fn dump_field(mut w: &mut Out, ctx: &Context, wf: &WithinField) -> R {
     expand! { c, $fvis }
     expand! { c, $fpatname }
     expand! { c, $fdefine }
+
+    bool! { c, fvis }
 
     Ok(())
 }
