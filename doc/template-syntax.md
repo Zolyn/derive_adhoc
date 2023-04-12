@@ -646,6 +646,16 @@ define_derive_adhoc! { Nothing for struct, expect items = }
 struct Unit;
 ```
 
+This defines a reuseable template `Nothing`
+which can be applied only to structs,
+and whose output is syntax checked as item(s).
+(The template's actual expansion is empty,
+so it does indeed expand to zero items.)
+
+Then it applies that to template to `struct Unit`,
+restating the requirement that the expansion should be item(s).
+and dumping the expansion to stderr during compilation.
+
 ## Structs used in examples
 
 The example expansions in the syntax reference 
