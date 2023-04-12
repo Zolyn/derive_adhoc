@@ -20,7 +20,7 @@ pub use strum::IntoEnumIterator as _;
 pub use strum::{AsRefStr, Display, EnumCount, EnumDiscriminants};
 pub use strum::{EnumIter, EnumString};
 pub use syn::ext::IdentExt;
-pub use syn::parse::{Lookahead1, Parse, ParseStream, Parser};
+pub use syn::parse::{Lookahead1, Parse, ParseBuffer, ParseStream, Parser};
 pub use syn::punctuated::Punctuated;
 pub use syn::spanned::Spanned;
 pub use syn::Token;
