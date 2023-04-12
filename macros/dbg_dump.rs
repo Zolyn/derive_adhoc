@@ -49,8 +49,8 @@ fn template_result(ctx: &Context, templ: TokenStream) -> String {
 }
 
 fn dump_expand_one(w: &mut Out, ctx: &Context, templ: TokenStream) -> R {
-    write!(w, "        {:16}", templ.to_string())?;
-    writeln!(w, " =>   {}", template_result(ctx, templ))?;
+    let lh = format!("{:12} =>", templ.to_string());
+    writeln!(w, "        {:16} {}", lh, template_result(ctx, templ))?;
     Ok(())
 }
 
