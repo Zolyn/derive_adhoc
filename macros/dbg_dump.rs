@@ -89,6 +89,8 @@ fn dump_whole(mut w: &mut Out, ctx: &Context) -> R {
     bool! { c, is_union }
     bool! { c, tvis }
 
+    expand! { c, $tattrs }
+
     WithinVariant::for_each(ctx, |ctx, wv| dump_variant(w, ctx, wv))?;
 
     Ok(())
@@ -116,6 +118,8 @@ fn dump_variant(mut w: &mut Out, ctx: &Context, wv: &WithinVariant) -> R {
     bool! { c, v_is_tuple }
     bool! { c, v_is_named }
 
+    expand! { c, $vattrs }
+
     WithinField::for_each(ctx, |ctx, wf| dump_field(w, ctx, wf))?;
 
     Ok(())
@@ -134,6 +138,8 @@ fn dump_field(mut w: &mut Out, ctx: &Context, wf: &WithinField) -> R {
     expand! { c, $fdefine }
 
     bool! { c, fvis }
+
+    expand! { c, $fattrs }
 
     Ok(())
 }
