@@ -63,6 +63,15 @@ fn dump_whole(mut w: &mut Out, ctx: &Context) -> R {
     let c = (&mut w, ctx);
 
     expand! { c, $tname }
+    expand! { c, $ttype }
+    expand! { c, $tvis }
+    expand! { c, $tgens }
+    expand! { c, $tgnames }
+    expand! { c, $twheres }
+    expand! { c, $tdeftype }
+    expand! { c, $tdefgens }
+    expand! { c, $tdefkwd }
+    expand! { c, ${tdefvariants VARIANTS} }
 
     WithinVariant::for_each(ctx, |ctx, wv| dump_variant(w, ctx, wv))?;
 
@@ -83,6 +92,9 @@ fn dump_variant(mut w: &mut Out, ctx: &Context, wv: &WithinVariant) -> R {
     let c = (&mut w, ctx);
 
     expand! { c, $vname }
+    expand! { c, $vtype }
+    expand! { c, $vpat }
+    expand! { c, ${vdefbody VNAME FIELDS..} }
 
     WithinField::for_each(ctx, |ctx, wf| dump_field(w, ctx, wf))?;
 
@@ -95,6 +107,10 @@ fn dump_field(mut w: &mut Out, ctx: &Context, wf: &WithinField) -> R {
     let c = (&mut w, ctx);
 
     expand! { c, $fname }
+    expand! { c, $ftype }
+    expand! { c, $fvis }
+    expand! { c, $fpatname }
+    expand! { c, $fdefine }
 
     Ok(())
 }
