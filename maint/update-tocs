@@ -2,7 +2,7 @@
 #
 # Update the embedded Table of Contents in the following files:
 process_files () {
-    process_file doc/template-syntax.md
+    process_file doc/reference.md
     process_file macros/HACKING.md
 }
 # We do it like this because we don't want to have this done by

@@ -118,7 +118,7 @@ sub grok_cases () {
 }
 
 sub grok_document () {
-    open_file 'doc/template-syntax.md';
+    open_file 'doc/reference.md';
     my $in;
     my %out;
     my @case_cols;

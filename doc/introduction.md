@@ -808,6 +808,6 @@ you can write `$$`.
 
 
 
-[reference]: crate::doc_template_syntax
+[reference]: crate::doc_reference
 [README]: crate
 [`paste`]: https://docs.rs/paste/latest/paste/
