@@ -58,11 +58,43 @@ macro_rules! expand { { $w_ctx:expr, $($t:tt)* } => {
     dump_expand_one($w_ctx.0, $w_ctx.1, quote!{ $($t)* })?;
 } }
 
-fn dump_whole(w: &mut Out, ctx: &Context) -> R {
+fn dump_whole(mut w: &mut Out, ctx: &Context) -> R {
     writeln!(w, "top-level:")?;
+    let c = (&mut w, ctx);
 
-    let c = (w, ctx);
     expand! { c, $tname }
+
+    WithinVariant::for_each(ctx, |ctx, wv| dump_variant(w, ctx, wv))?;
+
+    Ok(())
+}
+
+fn variant_heading(w: &mut Out, wv: &WithinVariant) -> R {
+    match wv.variant {
+        None => write!(w, "value")?,
+        Some(v) => write!(w, "variant {}", v.ident)?,
+    };
+    Ok(())
+}
+
+fn dump_variant(mut w: &mut Out, ctx: &Context, wv: &WithinVariant) -> R {
+    variant_heading(w, wv)?;
+    writeln!(w, ":")?;
+    let c = (&mut w, ctx);
+
+    expand! { c, $vname }
+
+    WithinField::for_each(ctx, |ctx, wf| dump_field(w, ctx, wf))?;
+
+    Ok(())
+}
+
+fn dump_field(mut w: &mut Out, ctx: &Context, wf: &WithinField) -> R {
+    variant_heading(w, ctx.variant.expect("in field but not variant!"))?;
+    writeln!(w, ", field {}:", wf.fname(Span::call_site()).to_token_stream())?;
+    let c = (&mut w, ctx);
+
+    expand! { c, $fname }
 
     Ok(())
 }
