@@ -48,17 +48,26 @@ fn template_result(ctx: &Context, templ: TokenStream) -> String {
     }
 }
 
-fn dump_expand_one(w: &mut Out, ctx: &Context, templ: TokenStream) -> R {
-    let lh = format!("{:12} =>", templ.to_string());
+fn dump_any_one(
+    w: &mut Out,
+    ctx: &Context,
+    show_templ: TokenStream,
+    show_op: &str,
+    make_real_templ: &dyn Fn(TokenStream) -> TokenStream,
+) -> R {
+    let lh = format!("{:12} {}", show_templ.to_string(), show_op);
+    let templ = make_real_templ(show_templ);
     writeln!(w, "        {:16} {}", lh, template_result(ctx, templ))?;
     Ok(())
 }
 
+fn dump_expand_one(w: &mut Out, ctx: &Context, templ: TokenStream) -> R {
+    dump_any_one(w, ctx, templ, "=>", &|t| t)
+}
+
 fn dump_bool_one(w: &mut Out, ctx: &Context, templ: TokenStream) -> R {
-    let lh = format!("{:12} =", templ.to_string());
-    let templ = quote!{ ${if #templ { true } else { false }} };
-    writeln!(w, "        {:16} {}", lh, template_result(ctx, templ))?;
-    Ok(())
+    let make_real = |templ| quote! { ${if #templ { true } else { false }} };
+    dump_any_one(w, ctx, templ, "=", &make_real)
 }
 
 macro_rules! expand { { $w_ctx:expr, $($t:tt)* } => {
