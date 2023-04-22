@@ -370,6 +370,3 @@ v	vis
 
 # Doc has both ${for fields ...} and ${for variants ...}, so E is repeated
 veEE	for
-
-# This is an undocumented internal keyword
-ve	derive_adhoc_internal_dbg_dump
