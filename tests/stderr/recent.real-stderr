@@ -1,0 +1,158 @@
+---------- derive-adhoc expansions dump for Enum (start) ----------
+top-level:
+        $tname       =>  Enum
+        $ttype       =>  Enum :: < >
+        $tvis        =>  
+        $tgens       =>  
+        $tgnames     =>  
+        $twheres     =>  
+        $tdeftype    =>  Enum < >
+        $tdefgens    =>  
+        $tdefkwd     =>  enum
+        ${ tdefvariants VARIANTS } => { VARIANTS }
+        is_struct    =   false
+        is_enum      =   true
+        is_union     =   false
+        tvis         =   false
+        $tattrs      =>  #[allow(dead_code)]
+variant Unit:
+        $vname       =>  Unit
+        $vtype       =>  Enum :: Unit :: < >
+        $vpat        =>  Enum :: Unit {}
+        ${ vdefbody VNAME FIELDS .. } => VNAME FIELDS ..,
+        v_is_unit    =   true
+        v_is_tuple   =   false
+        v_is_named   =   false
+        $vattrs      =>  
+variant Tuple:
+        $vname       =>  Tuple
+        $vtype       =>  Enum :: Tuple :: < >
+        $vpat        =>  Enum :: Tuple { 0 : f_0, }
+        ${ vdefbody VNAME FIELDS .. } => VNAME(FIELDS ..),
+        v_is_unit    =   false
+        v_is_tuple   =   true
+        v_is_named   =   false
+        $vattrs      =>  
+variant Tuple, field 0:
+        $fname       =>  0
+        $ftype       =>  usize
+        $fvis        =>  
+        $fpatname    =>  f_0
+        $fdefine     =>  
+        fvis         =   false
+        $fattrs      =>  
+variant Struct:
+        $vname       =>  Struct
+        $vtype       =>  Enum :: Struct :: < >
+        $vpat        =>  Enum :: Struct { field : f_field, }
+        ${ vdefbody VNAME FIELDS .. } => VNAME { FIELDS .. }
+        v_is_unit    =   false
+        v_is_tuple   =   false
+        v_is_named   =   true
+        $vattrs      =>  
+variant Struct, field field:
+        $fname       =>  field
+        $ftype       =>  String
+        $fvis        =>  
+        $fpatname    =>  f_field
+        $fdefine     =>  field :
+        fvis         =   false
+        $fattrs      =>  
+---------- derive-adhoc expansions dump for Enum (end) ----------
+---------- derive-adhoc expansions dump for Unit (start) ----------
+top-level:
+        $tname       =>  Unit
+        $ttype       =>  Unit :: < >
+        $tvis        =>  
+        $tgens       =>  
+        $tgnames     =>  
+        $twheres     =>  
+        $tdeftype    =>  Unit < >
+        $tdefgens    =>  
+        $tdefkwd     =>  struct
+        ${ tdefvariants VARIANTS } => VARIANTS
+        is_struct    =   true
+        is_enum      =   false
+        is_union     =   false
+        tvis         =   false
+        $tattrs      =>  #[allow(dead_code)]
+value:
+        $vname       =>  <error>
+        $vtype       =>  Unit :: < >
+        $vpat        =>  Unit {}
+        ${ vdefbody VNAME FIELDS .. } => FIELDS .. ;
+        v_is_unit    =   true
+        v_is_tuple   =   false
+        v_is_named   =   false
+        $vattrs      =>  
+---------- derive-adhoc expansions dump for Unit (end) ----------
+---------- derive-adhoc expansions dump for Tuple (start) ----------
+top-level:
+        $tname       =>  Tuple
+        $ttype       =>  Tuple :: < >
+        $tvis        =>  
+        $tgens       =>  
+        $tgnames     =>  
+        $twheres     =>  
+        $tdeftype    =>  Tuple < >
+        $tdefgens    =>  
+        $tdefkwd     =>  struct
+        ${ tdefvariants VARIANTS } => VARIANTS
+        is_struct    =   true
+        is_enum      =   false
+        is_union     =   false
+        tvis         =   false
+        $tattrs      =>  #[allow(dead_code)]
+value:
+        $vname       =>  <error>
+        $vtype       =>  Tuple :: < >
+        $vpat        =>  Tuple { 0 : f_0, }
+        ${ vdefbody VNAME FIELDS .. } => (FIELDS ..) ;
+        v_is_unit    =   false
+        v_is_tuple   =   true
+        v_is_named   =   false
+        $vattrs      =>  
+value, field 0:
+        $fname       =>  0
+        $ftype       =>  usize
+        $fvis        =>  
+        $fpatname    =>  f_0
+        $fdefine     =>  
+        fvis         =   false
+        $fattrs      =>  
+---------- derive-adhoc expansions dump for Tuple (end) ----------
+---------- derive-adhoc expansions dump for Struct (start) ----------
+top-level:
+        $tname       =>  Struct
+        $ttype       =>  Struct :: < >
+        $tvis        =>  
+        $tgens       =>  
+        $tgnames     =>  
+        $twheres     =>  
+        $tdeftype    =>  Struct < >
+        $tdefgens    =>  
+        $tdefkwd     =>  struct
+        ${ tdefvariants VARIANTS } => VARIANTS
+        is_struct    =   true
+        is_enum      =   false
+        is_union     =   false
+        tvis         =   false
+        $tattrs      =>  #[allow(dead_code)]
+value:
+        $vname       =>  <error>
+        $vtype       =>  Struct :: < >
+        $vpat        =>  Struct { field : f_field, }
+        ${ vdefbody VNAME FIELDS .. } => { FIELDS .. }
+        v_is_unit    =   false
+        v_is_tuple   =   false
+        v_is_named   =   true
+        $vattrs      =>  
+value, field field:
+        $fname       =>  field
+        $ftype       =>  String
+        $fvis        =>  
+        $fpatname    =>  f_field
+        $fdefine     =>  field :
+        fvis         =   false
+        $fattrs      =>  
+---------- derive-adhoc expansions dump for Struct (end) ----------

@@ -26,6 +26,7 @@ derive-adhoc = { path = "../..", version = "0.2.2", features = ["full"] }
 # The stderr from each COLLECTION is in COLLECTION.real-stderr.
 default = ["disable"]
 enable-main = []
+enable-recent = []
 disable = []
 
 [lib]

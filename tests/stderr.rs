@@ -155,3 +155,9 @@ fn one_collection(coll: &str, compiles: Result<(), ()>) {
 fn stderr_main() {
     one_collection("main", Err(()));
 }
+
+#[cfg(feature = "recent")]
+#[test]
+fn stderr_recent() {
+    one_collection("recent", Ok(()));
+}
