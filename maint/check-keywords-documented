@@ -298,6 +298,9 @@ foreach my $disc (@discrepant) {
     } else {
 	print STDERR "No entry in exceptions table.\n";
     }
+    printf STDERR "To suppress, add exceptions with note chars `%s`.\n",
+        $disc->{Got}
+	if $disc->{Got};
     printf STDERR "|\n";
 }
 printf STDERR <<END;
