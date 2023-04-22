@@ -268,7 +268,11 @@ END
 foreach my $disc (@discrepant) {
     printf STDERR "Keyword (or enum variant) `%s`\n", $disc->{Kw};
     my $print_notes = sub {
-	my ($heading, $notes) = @_;
+	my ($heading, $notes, $if_none) = @_;
+	if (!$notes) {
+	    printf STDERR "%s\n", $if_none;
+	    return;
+	}
 	printf STDERR "%s\n", $heading;
 	if ($notes) {
 	    foreach my $note (split //, $notes) {
@@ -288,21 +292,22 @@ foreach my $disc (@discrepant) {
     };
     $print_notes->(
 		   "Information and properties found in docs and source code:",
-		   $disc->{Got}
+		   $disc->{Got},
+		   'Keyword does not exist.'
 		  );
-    if ($disc->{Exp}) {
-	$print_notes->(
-            "Entry in exceptions table -- expected to find:",
-            $disc->{Exp}
-        );
-    } else {
-	print STDERR "No entry in exceptions table.\n";
-    }
+    $print_notes->(
+		   "Entry in exceptions table -- expected to find:",
+		   $disc->{Exp},
+		   "No entry in exceptions table.\n",
+		  );
+    printf STDERR "To suppress, add exceptions with note chars `%s`.\n",
+        $disc->{Got}
+	if $disc->{Got};
     printf STDERR "|\n";
 }
 printf STDERR <<END;
 Docs and code should be fixed to match up,
-or an entry added to the exception table_(__DATA__).
+or the exception table (__DATA__) adjusted.
 END
 
 exit 4;
