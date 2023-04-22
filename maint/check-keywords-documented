@@ -307,7 +307,7 @@ foreach my $disc (@discrepant) {
 }
 printf STDERR <<END;
 Docs and code should be fixed to match up,
-or an entry added to the exception table_(__DATA__).
+or the exception table (__DATA__) adjusted.
 END
 
 exit 4;
