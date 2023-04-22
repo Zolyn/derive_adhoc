@@ -91,6 +91,35 @@ fn dump_whole(mut w: &mut Out, ctx: &Context) -> R {
 
     expand! { c, $tattrs }
 
+    // Don't debug dump these.  But list them here, so that
+    // check-keywords-documented is happy.  (That is nicer than
+    // using the check-keywords-documented exception table.)
+    if false {
+        // TODO: search attributes and dump what would work
+        expand! { c, $tmeta }
+        expand! { c, $vmeta }
+        expand! { c, $fmeta }
+        bool! { c, tmeta }
+        bool! { c, vmeta }
+        bool! { c, fmeta }
+        // Too complex to demonstrate
+        expand! { c, $paste }
+        // Too subtle to demonstrate
+        expand! { c, $crate }
+        // Recursive, would be silly
+        expand! { c, $dbg_all_keywords }
+        // Control flow, can't sensibly be dumped
+        expand! { c, $when }
+        expand! { c, $if }
+        expand! { c, $select1 }
+        bool! { c, not }
+        bool! { c, all }
+        bool! { c, any }
+        // Vacuous
+        bool! { c, true }
+        bool! { c, false }
+    }
+
     WithinVariant::for_each(ctx, |ctx, wv| dump_variant(w, ctx, wv))?;
 
     Ok(())

@@ -117,6 +117,31 @@ sub grok_cases () {
     end_file();
 }
 
+sub grok_dbg_allkw () {
+    open_file('macros/dbg_allkw.rs');
+    my (@out_kw, @out_bool);
+    while (<F>) {
+	my $dollar_re;
+	my $out;
+	if (m/^\s* expand\!/x) {
+	    $dollar_re = qr{\$};
+	    $out = \@out_kw;
+	} elsif (m/^\s* (bool)\!/x) {
+	    $dollar_re = qr{};
+	    $out = \@out_bool;
+	} else {
+	    next;
+	}
+	die "couldn't grok dbg_allkw macro invocation ($dollar_re) $_ ?" unless
+	  m/^\ * \w+\! \ * \{ \ * c, \ * $dollar_re (\w+) \ * \}$/x ||
+	  m/^\ * \w+\! \ * \{ \ * c, \ * $dollar_re \{ (\w+) [^{}]* \} \ * \}$/x;
+	push @$out, $1;
+    }
+    grokked 'dbg_all_keywords (expand!)', 'd', @out_kw;
+    grokked 'dbg_all_keywords (bool!)', 'D', @out_bool;
+    end_file();
+}
+
 sub grok_document () {
     open_file 'doc/reference.md';
     my $in;
@@ -205,9 +230,9 @@ sub correspondences () {
 
 	# Expected combinations, which are not troubling:
 
-	next if m{^vbB$}; # ordinary bool-only keyword
-	next if m{^veE$}; # ordinary expansion-only keyword
-	next if m{^vEB$}; # ordinary keyword, both bool and expansion
+	next if m{^vbDB$}; # ordinary bool-only keyword
+	next if m{^vedE$}; # ordinary expansion-only keyword
+	next if m{^vdDEB$}; # ordinary keyword, both bool and expansion
 
 	next if m{^hH$}; # heck keyword (only)
 	next if m{^cCC?$}; # case changing (possibly also example)
@@ -238,6 +263,7 @@ grok_enum();
 grok_not_in_bool();
 grok_cases();
 grok_bool_only();
+grok_dbg_allkw();
 grok_document();
 
 correspondences();
@@ -329,6 +355,9 @@ __DATA__
 :     C    Documented as case change keyword
 :     H    Documented as heck name of a case change
 :     B    Documented as condition (BoolOnly keyword)
+#   Found in dbg_all_keywords:
+:     d    $dbg_all_keywords dumps the expansion
+:     D    $dbg_all_keywords dumps as a boolean
 
 # we use placeholders in the docs, and handle case changing
 # with its own combined SubstDetails variant
@@ -336,7 +365,7 @@ E	CASE_CHANGE
 ve	changecase
 
 # These are one SD variant
-E	fvis tvis
+dDE	fvis tvis
 v	vis
 
 # Doc has both ${for fields ...} and ${for variants ...}, so E is repeated
