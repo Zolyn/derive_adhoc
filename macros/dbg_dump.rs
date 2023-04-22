@@ -124,7 +124,8 @@ fn dump_variant(mut w: &mut Out, ctx: &Context, wv: &WithinVariant) -> R {
 
 fn dump_field(mut w: &mut Out, ctx: &Context, wf: &WithinField) -> R {
     variant_heading(w, ctx.variant.expect("in field but not variant!"))?;
-    writeln!(w, ", field {}:", wf.fname(Span::call_site()).to_token_stream())?;
+    let fname = wf.fname(Span::call_site()).to_token_stream();
+    writeln!(w, ", field {}:", fname)?;
     let c = (&mut w, ctx);
 
     expand! { c, $fname }
