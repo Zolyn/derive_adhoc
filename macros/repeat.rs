@@ -267,6 +267,10 @@ impl<'w> WithinRepeatLevel<'w> for WithinField<'w> {
             for (index, (field, pfield)) in
                 izip!(variant.fields, variant.pfields,).enumerate()
             {
+                // Ideally WithinField would contain a within_variant field
+                // but the genercity of the lifetimes is hard to express.
+                // I haven't found a version that compiles, unless we
+                // *copy* the WithinVariant for each field.
                 let index = index.try_into().expect(">=2^32 fields!");
                 let wf = WithinField {
                     field,
