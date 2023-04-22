@@ -632,7 +632,7 @@ where
             SD::select1(conds, ..) => conds.expand_select1(ctx, out)?,
             SD::For(repeat, _) => repeat.expand(ctx, out),
 
-            SD::dbg_all_keywords(_) => dbg_dump::dump(ctx),
+            SD::dbg_all_keywords(_) => dbg_allkw::dump(ctx),
 
             // ## maint/check-keywords-documented BoolOnly ##
             SD::is_struct(bo)
