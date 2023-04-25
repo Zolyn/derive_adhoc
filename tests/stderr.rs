@@ -38,7 +38,7 @@ fn env(name: &str) -> Option<String> {
         .unwrap()
 }
 
-fn one_collection(coll: &str) {
+fn one_collection(coll: &str, compiles: Result<(), ()>) {
     let outer_cwd = env::current_dir().unwrap();
     let outer_cwd = outer_cwd.to_str().unwrap();
     eprintln!("outer cwd {}", outer_cwd);
@@ -102,7 +102,7 @@ fn one_collection(coll: &str) {
 
     let status = command.status().unwrap();
 
-    assert!(!status.success());
+    assert_eq!(status.success(), compiles.is_ok());
     eprintln!("exit status: {} (error, as expected)", status);
 
     let mut scriptlet = Command::new("bash");
@@ -153,5 +153,5 @@ fn one_collection(coll: &str) {
 
 #[test]
 fn stderr_main() {
-    one_collection("main");
+    one_collection("main", Err(()));
 }
