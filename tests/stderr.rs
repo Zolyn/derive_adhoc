@@ -38,8 +38,7 @@ fn env(name: &str) -> Option<String> {
         .unwrap()
 }
 
-#[test]
-fn stderr() {
+fn one_collection(coll: &str) {
     let outer_cwd = env::current_dir().unwrap();
     let outer_cwd = outer_cwd.to_str().unwrap();
     eprintln!("outer cwd {}", outer_cwd);
@@ -52,11 +51,12 @@ fn stderr() {
     let build_cwd = outer_cwd.rsplit_once('/').unwrap().0;
     eprintln!("build cwd {}", build_cwd);
 
-    let inner_cwd = format!("{}/target/tests/derive-adhoc-stderr", build_cwd);
+    let inner_cwd =
+        format!("{}/target/tests/derive-adhoc-stderr-{}", build_cwd, coll);
     eprintln!("inner cwd {}", inner_cwd);
 
     let stderr_file =
-        format!("{}/stderr/combined.real-stderr", outer_manifest_dir);
+        format!("{}/stderr/{}.real-stderr", outer_manifest_dir, coll);
     let stderr_file_new = format!("{}.new", stderr_file);
     eprintln!("stderr file {}", &stderr_file);
 
@@ -73,7 +73,7 @@ fn stderr() {
         "--message-format=json".into(),
         "--quiet".into(),
         "--no-default-features".into(),
-        "--features=enable".into(),
+        format!("--features=enable-{}", coll),
     ];
 
     let xoptions = [
@@ -149,4 +149,9 @@ fn stderr() {
         status if status.code() == Some(1) => process::exit(1),
         other => panic!("scriptlet crashed {}", other),
     }
+}
+
+#[test]
+fn stderr_main() {
+    one_collection("main");
 }
