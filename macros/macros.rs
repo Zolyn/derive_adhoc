@@ -23,6 +23,7 @@ mod invocation;
 
 // Implementation - specific areas
 mod boolean;
+mod dbg_allkw;
 mod expand;
 mod options;
 mod paste;

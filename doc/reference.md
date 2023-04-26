@@ -22,6 +22,7 @@
       * [`$crate` - root of template crate](#crate---root-of-template-crate)
       * [`$tdefkwd` - keyword introducing the new data structure](#tdefkwd---keyword-introducing-the-new-data-structure)
       * [`$tdefvariants`, `$vdefbody`, `$fdefine` - tools for defining types](#tdefvariants-vdefbody-fdefine---tools-for-defining-types)
+      * [`$dbg_all_keywords` -- Dump expansions of all keywords to compiler stderr](#dbg_all_keywords---dump-expansions-of-all-keywords-to-compiler-stderr)
    * [Conditions](#conditions)
       * [`fvis`, `tvis` - test for public visibility](#fvis-tvis---test-for-public-visibility)
       * [`fmeta(NAME)`, `vmeta(NAME)`, `tmeta(NAME)` - `#[adhoc]` attributes](#fmetaname-vmetaname-tmetaname---adhoc-attributes)
@@ -475,6 +476,41 @@ pub(crate) enum EnumCopy<'a, 'l: 'a, T: Display = usize, const C: usize = 1,> {
 }
 ```
 
+### `$dbg_all_keywords` -- Dump expansions of all keywords to compiler stderr
+
+Prints a listing of all the available expansion keywords,
+and conditions,
+along with their expansions and values.
+(The output goes to the compiler's stderr;
+the actual expansion is empty.)
+
+This can be helpful to see which expansion keywords
+might be useful for a particular task.
+(Before making a final selection of keyword
+you probably want to refer to this reference manual.)
+
+You will not want to leave this option in production code,
+as it makes builds noisy.
+
+See also the [`dbg` expansion option](#dbg--print-the-expansion-to-stderr-for-debugging).
+
+#### Example
+
+```rust
+# use derive_adhoc::{Adhoc, derive_adhoc};
+#[derive(Adhoc)]
+enum Enum {
+    Unit,
+    Tuple(usize),
+    Struct { field: String },
+}
+derive_adhoc! {
+    Enum:
+    $dbg_all_keywords
+    // ... rest of the template you're developing ...
+}
+```
+
 ## Conditions
 
 Conditions all start with a `KEYWORD`.
@@ -635,6 +671,8 @@ for debugging purposes.
 
 You will not want to leave this option in production code,
 as it makes builds noisy.
+
+See also the [`$dbg_all_keywords` expansion](#dbg_all_keywords--dump-expansions-of-all-keywords-to-compiler-stderr).
 
 ### Expansion options example
 

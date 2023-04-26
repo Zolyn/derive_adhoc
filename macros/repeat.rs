@@ -172,6 +172,7 @@ impl<O: SubstParseContext> Subst<O> {
             // Has a RepeatOver, but does not imply anything about its context.
             SD::For(..) => None,
             SD::False(..) | SD::True(..) => None, // condition: ignore.
+            SD::dbg_all_keywords(..) => None,
             SD::Crate(..) => None,
         };
         if let Some(over) = over {

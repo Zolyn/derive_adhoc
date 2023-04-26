@@ -20,7 +20,7 @@ pub use strum::IntoEnumIterator as _;
 pub use strum::{AsRefStr, Display, EnumCount, EnumDiscriminants};
 pub use strum::{EnumIter, EnumString};
 pub use syn::ext::IdentExt;
-pub use syn::parse::{Lookahead1, Parse, ParseStream, Parser};
+pub use syn::parse::{Lookahead1, Parse, ParseBuffer, ParseStream, Parser};
 pub use syn::punctuated::Punctuated;
 pub use syn::spanned::Spanned;
 pub use syn::Token;
@@ -38,7 +38,7 @@ pub use crate::utils::ErrorAccumulator;
 pub use crate::utils::{braced_group, delimit_token_group};
 pub use crate::utils::{ErrorLoc, MakeError};
 pub use crate::utils::{ToTokensPunctComposable, TokenPastesAsIdent};
-pub(crate) use crate::{check, framework};
+pub(crate) use crate::{check, dbg_allkw, framework};
 
 pub use crate::expand::*;
 pub use crate::options::*;
