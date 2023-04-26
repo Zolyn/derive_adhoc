@@ -12,3 +12,8 @@ mod badoptions;
 #[cfg(feature = "enable-recent")]
 #[path = "../expand/dbg-all-keywords.rs"]
 mod dbg_all_keywords;
+
+// Again, minimal-versions produces slightly different output
+#[cfg(feature = "enable-recent")]
+#[path = "../expand/ref-version.rs"]
+mod ref_version;

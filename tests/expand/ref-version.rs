@@ -12,7 +12,8 @@
 use derive_adhoc::{define_derive_adhoc, Adhoc};
 
 define_derive_adhoc! {
-    ReferenceVersion =
+    // The output from this `dbg` is tested via tests/stderr/stderr-lib.rs
+    ReferenceVersion dbg =
 
     $tvis $tdefkwd ${paste $tname Reference}<'reference, $tdefgens>
     ${tdefvariants $(
