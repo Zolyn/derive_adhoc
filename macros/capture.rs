@@ -26,7 +26,6 @@ impl Parse for InvocationEntry {
             InvocationEntry::Pub(vis)
         } else {
             let path = syn::Path::parse_mod_style(input)?;
-            // TODO DOCS document driver application option syntax
             let options = if input.peek(syn::token::Bracket) {
                 let tokens;
                 let _bracket = bracketed!(tokens in input);
