@@ -1,11 +1,5 @@
 # Changelog, MSRV policy and cargo features
 
-<!-- TODO DOCS this file now has features too,
-     maybe needs a new name, symlink, and/or title?
-     I think the cargo features do sit nicely with the other packaging
-     stuff here.
-     -->
-
 ## cargo features
 
 Features are provided to allow for a build with reduced dependencies.
