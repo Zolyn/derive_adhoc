@@ -928,7 +928,7 @@ impl<O: SubstParseContext> RepeatedTemplate<O> {
         let allow_nonterminal = O::allow_nonterminal(&span)?;
         let mut template = Template::parse(input, allow_nonterminal)?;
 
-        // split `when` (and [todo] `for`) off
+        // split `when` off
         let mut whens = vec![];
         let mut elements = Vec::with_capacity(template.elements.len());
         let mut beginning = true;

@@ -5,7 +5,6 @@ use crate::prelude::*;
 #[derive(Debug, Clone)]
 struct TemplateInvocation {
     driver: syn::Path,
-    // TODO DOCS note specifying template opts in doc for derive_adhoc!
     options: UnprocessedOptions,
     colon: Token![:],
     template: TokenStream,

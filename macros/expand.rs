@@ -85,8 +85,6 @@ impl Parse for DeriveAdhocExpandInput {
 
                 let tokens;
                 let _ = bracketed!(tokens in input);
-                // TODO should these be in `[ ]`,
-                // like they are in #[derive_adhoc] ?
                 let r = options.parse_update(&tokens, OpContext::Template);
                 if let Some(r) = unadvised_err_of_unit(r) {
                     return r;

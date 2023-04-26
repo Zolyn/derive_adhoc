@@ -6,7 +6,6 @@ use crate::prelude::*;
 struct TemplateDefinition {
     vis: Option<syn::VisPublic>,
     templ_name: syn::Ident,
-    // TODO DOCS note specifying template opts in doc for define_derive_adhoc!
     options: UnprocessedOptions,
     template: TokenStream,
 }
