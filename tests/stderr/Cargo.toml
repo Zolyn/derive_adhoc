@@ -18,11 +18,14 @@ derive-adhoc = { path = "../..", version = "0.2.2", features = ["full"] }
 # that we collect.  But to avoid having multiple Cargo.lock, etc.,
 # we want it to be a member of the workspace.
 #
-# So we arrange that it is entirely empty unless properly enabled.
-# "properly enabled" means `enable` is enabled, *and* `disable` is disabled.
-# See the #![cfg] at the top of stderr-lib.rs.
+# So we arrange that it is entirely empty unless enabled, meaning
+# `disable` is disabled, *and* `enable-COLLECTION` is enabled.
+# (Only one COLLECTION is enabled at a time.)
+# See the #![cfg]s in stderr-lib.rs.
+#
+# The stderr from each COLLECTION is in COLLECTION.real-stderr.
 default = ["disable"]
-enable = []
+enable-main = []
 disable = []
 
 [lib]
