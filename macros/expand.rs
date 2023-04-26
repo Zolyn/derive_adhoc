@@ -917,7 +917,7 @@ pub fn derive_adhoc_expand_func_macro(
                 (input.driver.span(), "actual kind"),
             ]
             .error(format_args!(
-                "expected driver kind {}, but driver is {}",
+                "template defined for {}, but applied to {}",
                 exp.value, got_kind,
             )));
         }
