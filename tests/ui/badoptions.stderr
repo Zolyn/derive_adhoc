@@ -21,13 +21,13 @@ error: unknown value for expected driver kind (in `for` option)
 19 |     BadOptionsDriver for wombat:
    |                          ^^^^^^
 
-error: expected driver kind union, but driver is struct (expected kind)
+error: template defined for union, but applied to struct (expected kind)
   --> ui/badoptions.rs:23:26
    |
 23 |     BadOptionsDriver for union:
    |                          ^^^^^
 
-error: expected driver kind union, but driver is struct (actual kind)
+error: template defined for union, but applied to struct (actual kind)
   --> ui/badoptions.rs:11:1
    |
 11 | / #[derive_adhoc(BadOptionsTemplate[dbg])]
