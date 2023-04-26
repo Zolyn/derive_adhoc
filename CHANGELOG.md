@@ -65,7 +65,6 @@ We expect to increase it cautiously and only with good reason.
 #### Added
 
  * `$fpatname` `$vpat` `$vtype`, for value matching and construction
-   
  * `$fvis` `$tvis`, for visibility (also as booleans)
  * `is_struct` `is_union`
    `v_is_unit` `v_is_tuple` `v_is_named`,
