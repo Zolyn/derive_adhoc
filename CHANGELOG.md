@@ -23,6 +23,39 @@ We expect to increase it cautiously and only with good reason.
 
 ## Changelog
 
+### UNRELEASED
+
+#### Breaking
+
+ * cargo features introduced.
+   Currently, all enabled by default -
+   no breakage if default features enabled.
+   - Case conversion (and `heck` dependency) now behind `case`.
+   - `minimal-1` introduced; it must be enabled.
+
+#### Added
+
+ * Expansion options facility
+ * `expect items`, `expect expr` option, for improved errors
+   when template expands to invalid Rust syntax.
+   (`expect` cargo feature.)
+ * `for struct`, `for enum`, `for union` option,
+   for improved errors due to misue of a template.
+ * `dbg` option, for dumping template expansions to compiler stderr.
+ * `$dbg_all_keywords` keyword, for dumping keyword expansions.
+ * `full` and `minimal-1` cargo meta features.
+
+#### Improved
+
+ * docs: Much expanded and improved tutorial (still a work in progress).
+ * docs: Various corrections to reference docs.
+ * docs: Reference documentation retitled and module renamed.
+ * error handling: Better messages from certain situations involving
+   multiple (incompatible) derive-adhoc versions.
+ * tests: Made less fragile (more pinning of test dependencies).
+ * tests: Improved CI checks on documentation, TODOs, etc.
+ * internal: new HACKING.md file for helping develop derive-adhoc.
+
 ### 0.2.2
 
 #### Fixed (future compatibility)
@@ -65,7 +98,6 @@ We expect to increase it cautiously and only with good reason.
 #### Added
 
  * `$fpatname` `$vpat` `$vtype`, for value matching and construction
-   
  * `$fvis` `$tvis`, for visibility (also as booleans)
  * `is_struct` `is_union`
    `v_is_unit` `v_is_tuple` `v_is_named`,
