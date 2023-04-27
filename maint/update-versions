@@ -30,7 +30,7 @@ version=$1
 process () {
     perl -i~ -wpe '
         use strict;
-        my $eligible = qr{"(=?)(?!0\.0\.)\d+\.\d+\.\d+"};
+        my $eligible = qr{"([=^]?)(?!0\.0\.)\d+\.\d+\.\d+"};
 	my $new = "'"$version"'";
         if (m{^version *= }) {
             s{$eligible}{"$1$new"};
@@ -45,6 +45,7 @@ if [ "x$version" != x ]; then
     process macros/Cargo.toml
     process tests/Cargo.toml
     process tests/pub-export/pub-a/Cargo.toml
+    process tests/stderr/Cargo.toml
 fi
 
 ${CARGO-cargo} fetch --offline
