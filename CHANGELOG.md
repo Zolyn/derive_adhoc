@@ -23,7 +23,7 @@ We expect to increase it cautiously and only with good reason.
 
 ## Changelog
 
-### UNRELEASED
+### 0.3.0
 
 #### Breaking
 
