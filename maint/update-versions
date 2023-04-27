@@ -48,5 +48,5 @@ if [ "x$version" != x ]; then
     process tests/stderr/Cargo.toml
 fi
 
-${CARGO-cargo} fetch --offline
-maint/update-minimal-versions --offline
+${CARGO-cargo} fetch
+maint/update-minimal-versions
