@@ -12,52 +12,6 @@
 
 # Future template features
 
-## Tuple vs unit vs struct (variant) agility
-
-Precise design TBD.
-
-`${vconstructor}` or `${vbody}` should perhaps not implicity
-establish iteration over fields, so that other fields can be added?
-(Would break with unit structs/variants.)
-
-Expansion prefix char `v` may come to mean both `value` and `variant`.
-
- * Full constructor with delimiters
-```text
-        ${vconstructor ... }    Struct { ... }  struct [variant] or union
-                                Struct( ... )   tuple struct/variant
-                                Struct          unit struct/variant
-        // What if the struct name is a path?  Do we need expansions
-        // which just produce the name, or just the full path, or what?
-```
-
- * Variant (or value) body and delimiter
-```text
-        ${vbody ... }           { ... }         struct [variant] or union
-                                ( ... )         tuple struct/variant
-                                nothing         unit struct/variant
-```
-
-  * Field specifier
-```text
-
-        $fspec                  $fname :        in struct [variant] or union
-                                nothing         in tuple variant/struct
-```
-
-In the this the syntax, we have `$v___` work for structs -
-treating structs as if they had only a single variant.
-
-### Deconstructing/matching and then accessing the resulting bindings
-
-```text
- $vpat : A pattern to match and deconstruct the variant.  On a non-enum
-         struct, this matches and deconstructs the struct.
-
- $fpname: The identifier of a field within a pattern made by $vpat.  This is
-          _0, _1, if this is a tuple struct or tuple variant.
-```
-
 ## Abbreviated syntax for `${paste ...}`
 
 Options include
