@@ -458,7 +458,7 @@ impl ExpansionOutput for TokenAccumulator {
         tspan: Span,
         lit: &syn::Lit,
     ) -> syn::Result<()> {
-        let tokens: TokenStream = attrvalue_lit_as(lit, tspan, &"tokens")?;
+        let tokens: TokenStream = metavalue_lit_as(lit, tspan, &"tokens")?;
         self.append(tokens);
         Ok(())
     }

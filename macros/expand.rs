@@ -687,14 +687,14 @@ where
     }
 }
 
-fn attrvalue_spans(tspan: Span, vspan: Span) -> [ErrorLoc; 2] {
+fn metavalue_spans(tspan: Span, vspan: Span) -> [ErrorLoc; 2] {
     [(vspan, "attribute value"), (tspan, "template")]
 }
 
 /// Convert a literal found in a meta item into `T`
 ///
 /// `into_what` is used only for error reporting
-pub fn attrvalue_lit_as<T>(
+pub fn metavalue_lit_as<T>(
     lit: &syn::Lit,
     tspan: Span,
     into_what: &dyn Display,
@@ -706,7 +706,7 @@ where
         syn::Lit::Str(s) => Ok(s),
         // having checked derive_builder, it doesn't handle
         // Lit::Verbatim so I guess we don't need to either.
-        _ => Err(attrvalue_spans(tspan, lit.span()).error(format_args!(
+        _ => Err(metavalue_spans(tspan, lit.span()).error(format_args!(
             "expected string literal, for conversion to {}",
             into_what,
         ))),
@@ -726,7 +726,7 @@ impl<'l> MetaValue<'l> {
     where
         O: ExpansionOutput,
     {
-        let spans = |vspan| attrvalue_spans(tspan, vspan);
+        let spans = |vspan| metavalue_spans(tspan, vspan);
 
         let lit = match self {
             MetaValue::Unit(vspan) => return Err(spans(*vspan).error(
@@ -742,7 +742,7 @@ impl<'l> MetaValue<'l> {
         match as_ {
             Some(SMS::lit) => out.append_syn_lit(lit),
             Some(as_ @ SMS::ty) => {
-                out.append_syn_type(tspan, &attrvalue_lit_as(lit, tspan, as_)?)
+                out.append_syn_type(tspan, &metavalue_lit_as(lit, tspan, as_)?)
             }
             None => out.append_meta_value(tspan, lit)?,
         }
