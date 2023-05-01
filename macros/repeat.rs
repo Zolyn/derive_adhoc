@@ -221,12 +221,12 @@ impl<'w> WithinRepeatLevel<'w> for WithinVariant<'w> {
     {
         let mut within_variant = |variant, ppv: &'c PreprocessedVariant| {
             let fields = &ppv.fields;
-            let pattrs = &ppv.pattrs;
+            let pmetas = &ppv.pmetas;
             let pfields = &ppv.pfields;
             let wv = WithinVariant {
                 variant,
                 fields,
-                pattrs,
+                pmetas,
                 pfields,
             };
             let wv = &wv;

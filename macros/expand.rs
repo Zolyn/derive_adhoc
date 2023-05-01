@@ -502,9 +502,9 @@ where
                     format_ident!("f_{}", f.fname(kw_span), span = kw_span);
                 out.append_identfrag_toks(&fpatname);
             }
-            SD::tmeta(wa) => do_meta(wa, out, ctx.tattrs)?,
-            SD::vmeta(wa) => do_meta(wa, out, ctx.variant(wa)?.pattrs)?,
-            SD::fmeta(wa) => do_meta(wa, out, &ctx.field(wa)?.pfield.pattrs)?,
+            SD::tmeta(wa) => do_meta(wa, out, ctx.tmetas)?,
+            SD::vmeta(wa) => do_meta(wa, out, ctx.variant(wa)?.pmetas)?,
+            SD::fmeta(wa) => do_meta(wa, out, &ctx.field(wa)?.pfield.pmetas)?,
 
             SD::Vis(vis, np) => {
                 out.append_tokens(np, vis.syn_vis(ctx, kw_span)?)?
@@ -658,12 +658,12 @@ where
         &self,
         ctx: &Context,
         out: &mut O,
-        pattrs: &PreprocessedMetas,
+        pmetas: &PreprocessedMetas,
     ) -> syn::Result<()> {
         let mut found = None;
         let error_loc = || [(self.span(), "expansion"), ctx.error_loc()];
 
-        self.path.search(pattrs, &mut |av: MetaValue| {
+        self.path.search(pmetas, &mut |av: MetaValue| {
             if found.is_some() {
                 return Err(error_loc().error(
  "tried to expand just attribute value, but it was specified multiple times"

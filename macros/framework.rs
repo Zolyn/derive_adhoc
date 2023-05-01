@@ -20,7 +20,7 @@ pub struct Context<'c> {
     pub top: &'c syn::DeriveInput,
     pub template_crate: &'c syn::Path,
     pub template_name: Option<&'c syn::Path>,
-    pub tattrs: &'c PreprocessedMetas,
+    pub tmetas: &'c PreprocessedMetas,
     pub variant: Option<&'c WithinVariant<'c>>,
     pub field: Option<&'c WithinField<'c>>,
     pub pvariants: &'c [PreprocessedVariant<'c>],
@@ -29,13 +29,13 @@ pub struct Context<'c> {
 #[derive(Debug, Clone)]
 pub struct PreprocessedVariant<'f> {
     pub fields: &'f syn::Fields,
-    pub pattrs: PreprocessedMetas,
+    pub pmetas: PreprocessedMetas,
     pub pfields: Vec<PreprocessedField>,
 }
 
 #[derive(Debug, Clone)]
 pub struct PreprocessedField {
-    pub pattrs: PreprocessedMetas,
+    pub pmetas: PreprocessedMetas,
 }
 
 /// `#[adhoc(...)]` helper attributes
@@ -46,7 +46,7 @@ pub type PreprocessedMeta = syn::Meta;
 pub struct WithinVariant<'c> {
     pub variant: Option<&'c syn::Variant>,
     pub fields: &'c syn::Fields,
-    pub pattrs: &'c PreprocessedMetas,
+    pub pmetas: &'c PreprocessedMetas,
     pub pfields: &'c [PreprocessedField],
 }
 
@@ -313,14 +313,14 @@ impl<'c> Context<'c> {
         template_name: Option<&syn::Path>,
         f: impl FnOnce(Context) -> syn::Result<T>,
     ) -> Result<T, syn::Error> {
-        let tattrs = preprocess_attrs(&driver.attrs)?;
+        let tmetas = preprocess_attrs(&driver.attrs)?;
 
         let pvariants_one = |fields| {
-            let pattrs = tattrs.clone(); // TODO Cow maybe?
+            let pmetas = tmetas.clone(); // TODO Cow maybe?
             let pfields = preprocess_fields(fields)?;
             let pvariant = PreprocessedVariant {
                 fields,
-                pattrs,
+                pmetas,
                 pfields,
             };
             syn::Result::Ok(vec![pvariant])
@@ -339,11 +339,11 @@ impl<'c> Context<'c> {
                 .iter()
                 .map(|variant| {
                     let fields = &variant.fields;
-                    let pattrs = preprocess_attrs(&variant.attrs)?;
+                    let pmetas = preprocess_attrs(&variant.attrs)?;
                     let pfields = preprocess_fields(&variant.fields)?;
                     Ok(PreprocessedVariant {
                         fields,
-                        pattrs,
+                        pmetas,
                         pfields,
                     })
                 })
@@ -354,7 +354,7 @@ impl<'c> Context<'c> {
             top: &driver,
             template_crate,
             template_name,
-            tattrs: &tattrs,
+            tmetas: &tmetas,
             field: None,
             variant: None,
             pvariants: &pvariants,

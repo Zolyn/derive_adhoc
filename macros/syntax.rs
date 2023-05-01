@@ -1013,8 +1013,8 @@ pub fn preprocess_fields(
     fields
         .into_iter()
         .map(|field| {
-            let pattrs = preprocess_attrs(&field.attrs)?;
-            Ok(PreprocessedField { pattrs })
+            let pmetas = preprocess_attrs(&field.attrs)?;
+            Ok(PreprocessedField { pmetas })
         })
         .collect()
 }
