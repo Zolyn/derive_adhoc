@@ -20,7 +20,8 @@ pub struct DeriveAdhocExpandInput {
     pub template: Template<TokenAccumulator>,
 }
 
-pub enum AttrValue<'l> {
+/// Value found in driver `#[adhoc(some(thing))]`
+pub enum MetaValue<'l> {
     Unit(Span),
     Deeper(Span),
     Lit(&'l syn::Lit),
@@ -35,7 +36,7 @@ pub enum Fname<'r> {
     Index(syn::Index),
 }
 
-pub use AttrValue as AV;
+pub use MetaValue as MV;
 
 impl Parse for DeriveAdhocExpandInput {
     fn parse(input: ParseStream) -> syn::Result<Self> {
@@ -126,12 +127,12 @@ impl Parse for DeriveAdhocExpandInput {
     }
 }
 
-impl Spanned for AttrValue<'_> {
+impl Spanned for MetaValue<'_> {
     fn span(&self) -> Span {
         match self {
-            AV::Unit(span) => *span,
-            AV::Deeper(span) => *span,
-            AV::Lit(lit) => lit.span(),
+            MV::Unit(span) => *span,
+            MV::Deeper(span) => *span,
+            MV::Lit(lit) => lit.span(),
         }
     }
 }
@@ -662,7 +663,7 @@ where
         let mut found = None;
         let error_loc = || [(self.span(), "expansion"), ctx.error_loc()];
 
-        self.path.search(pattrs, &mut |av: AttrValue| {
+        self.path.search(pattrs, &mut |av: MetaValue| {
             if found.is_some() {
                 return Err(error_loc().error(
  "tried to expand just attribute value, but it was specified multiple times"
@@ -715,7 +716,7 @@ where
     Ok(thing)
 }
 
-impl<'l> AttrValue<'l> {
+impl<'l> MetaValue<'l> {
     fn expand<O>(
         &self,
         tspan: Span,
@@ -728,13 +729,13 @@ impl<'l> AttrValue<'l> {
         let spans = |vspan| attrvalue_spans(tspan, vspan);
 
         let lit = match self {
-            AttrValue::Unit(vspan) => return Err(spans(*vspan).error(
+            MetaValue::Unit(vspan) => return Err(spans(*vspan).error(
  "tried to expand attribute which is just a unit, not a literal"
             )),
-            AttrValue::Deeper(vspan) => return Err(spans(*vspan).error(
+            MetaValue::Deeper(vspan) => return Err(spans(*vspan).error(
  "tried to expand attribute which is nested list, not a value",
             )),
-            AttrValue::Lit(lit) => lit,
+            MetaValue::Lit(lit) => lit,
         };
 
         use SubstMetaAs as SMS;

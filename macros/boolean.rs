@@ -141,7 +141,7 @@ impl SubstMetaPath {
 
     pub fn search<'a, A, F, E>(&self, pattrs: A, f: &mut F) -> Result<(), E>
     where
-        F: FnMut(AttrValue<'a>) -> Result<(), E>,
+        F: FnMut(MetaValue<'a>) -> Result<(), E>,
         A: IntoIterator<Item = &'a PreprocessedMeta>,
     {
         for pattr in pattrs {
@@ -156,7 +156,7 @@ impl SubstMetaPath {
         f: &mut F,
     ) -> Result<(), E>
     where
-        F: FnMut(AttrValue<'a>) -> Result<(), E>,
+        F: FnMut(MetaValue<'a>) -> Result<(), E>,
     {
         #![allow(non_camel_case_types)]
         use syn::Meta as sM;
@@ -167,9 +167,9 @@ impl SubstMetaPath {
 
         let vspan = pattr.span();
         match (&self.deeper, pattr) {
-            (None, sM::Path(_)) => f(AV::Unit(vspan))?,
-            (None, sM::List(_)) => f(AV::Deeper(vspan))?,
-            (None, sM::NameValue(nv)) => f(AV::Lit(&nv.lit))?,
+            (None, sM::Path(_)) => f(MV::Unit(vspan))?,
+            (None, sM::List(_)) => f(MV::Deeper(vspan))?,
+            (None, sM::NameValue(nv)) => f(MV::Lit(&nv.lit))?,
             (Some(_), sM::NameValue(_)) => {}
             (Some(_), sM::Path(_)) => {} // self is deeper than pattr
             (Some(d), sM::List(l)) => {
