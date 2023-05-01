@@ -547,17 +547,6 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
         void::unreachable(*not_in_paste)
     }
 
-    // We forbid ${pate } inside itself, because when we do case
-    // conversion this will get very fiddly to implement.
-    fn append_paste_expansion(
-        &mut self,
-        not_in_paste: &Void,
-        _ctx: &Context,
-        _span: Span,
-        _paste_body: &Template<paste::Items>,
-    ) -> syn::Result<()> {
-        void::unreachable(*not_in_paste)
-    }
     fn append_case_expansion(
         &mut self,
         not_in_case: &Self::NotInCase,
