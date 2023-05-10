@@ -88,7 +88,7 @@ pub trait SubstParseContext {
     type NotInCase: Debug + Copy + Sized;
     /// Uninhabited iff this lexical context is within a condition.
     type NotInBool: Debug + Copy + Sized;
-    /// Uninhabited unless lexical context allows other than a single subst
+    /// Inhabited iff lexical context allows other than a single subst
     ///
     /// Used for `${case }`; could be used in other places where we
     /// accept the `${...}` syntax for an expansion, but want to
