@@ -35,7 +35,7 @@ pub fn advise_incompatibility(err_needing_advice: syn::Error) -> syn::Error {
     advice
 }
 
-//---------- MakeErrorExt ----------
+//---------- MakeError ----------
 
 use crate::prelude::*;
 use proc_macro_crate::{crate_name, FoundCrate};
