@@ -93,6 +93,15 @@ pub trait SubstParseContext {
     /// Used for `${case }`; could be used in other places where we
     /// accept the `${...}` syntax for an expansion, but want to
     /// reject repetitions, `${if }`, and so on.
+    ///
+    /// We reject nonterminals inside `${case }` because in the
+    /// current implementation the semantics of allowing them would be
+    /// confusing: each literal token or terminal expansion result
+    /// would be case-changed separately.
+    //
+    // TODO this limitation makes things less orthogonal, and the
+    // implementation approach isn't very pretty, so this should
+    // be changed.
     type AllowNonterminal: Debug + Copy + Sized;
     /// Uninhabited unless this lexical context is within a condition.
     type BoolOnly: Debug + Copy + Sized;
