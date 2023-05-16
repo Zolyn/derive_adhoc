@@ -160,14 +160,16 @@ pub enum SubstVis {
 #[derive(Debug, Clone)]
 pub struct SubstMeta<O: SubstParseContext> {
     pub path: SubstMetaPath,
-    pub as_: Option<(SubstMetaAs, O::NotInBool)>,
+    pub as_: Option<(SubstMetaAs<O>, O::NotInBool)>,
 }
 
 #[derive(Debug, Clone, AsRefStr, Display)]
 #[allow(non_camel_case_types)] // clearer to use the exact ident
-pub enum SubstMetaAs {
+pub enum SubstMetaAs<O: SubstParseContext> {
     lit,
     ty,
+    #[allow(dead_code)] // TODO remove
+    Dummy((Void, PhantomData<O>)),
 }
 
 #[derive(Debug, Clone)]
@@ -354,10 +356,10 @@ impl Parse for AdhocAttrList {
     }
 }
 
-impl SubstMetaAs {
+impl<O: SubstParseContext> SubstMetaAs<O> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let kw = input.call(syn::Ident::parse_any)?;
-        let from_sma = |sma: SubstMetaAs| Ok(sma);
+        let from_sma = |sma: SubstMetaAs<_>| Ok(sma);
 
         // See keyword_general! in utils.rs
         macro_rules! keyword { { $($args:tt)* } => {

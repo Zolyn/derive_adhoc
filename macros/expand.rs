@@ -724,7 +724,7 @@ impl<'l> MetaNode<'l> {
     fn expand<O>(
         &self,
         tspan: Span,
-        as_: Option<&SubstMetaAs>,
+        as_: Option<&SubstMetaAs<O>>,
         out: &mut O,
     ) -> syn::Result<()>
     where
@@ -748,6 +748,7 @@ impl<'l> MetaNode<'l> {
             Some(as_ @ SMS::ty) => {
                 out.append_syn_type(tspan, &metavalue_lit_as(lit, tspan, as_)?)
             }
+            Some(SMS::Dummy((v,_))) => void::unreachable(*v),
             None => out.append_meta_value(tspan, lit)?,
         }
         Ok(())
