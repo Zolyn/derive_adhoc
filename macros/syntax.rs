@@ -354,6 +354,16 @@ impl Parse for AdhocAttrList {
     }
 }
 
+impl SubstMetaAs {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let kw = input.call(syn::Ident::parse_any)?;
+        let as_ = SubstMetaAs::iter().find(|as_| kw == as_).ok_or_else(
+            || kw.error("unknown derive-adhoc 'as' syntax type keyword"),
+        )?;
+        Ok(as_)
+    }
+}
+
 impl<O: SubstParseContext> Parse for SubstMeta<O> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let path: SubstMetaPath = input.parse()?;
@@ -362,11 +372,9 @@ impl<O: SubstParseContext> Parse for SubstMeta<O> {
 
         if input.peek(Token![as]) {
             let as_token: Token![as] = input.parse()?;
-            let kw = input.call(syn::Ident::parse_any)?;
-            let as_ty = SubstMetaAs::iter().find(|as_| kw == as_).ok_or_else(
-                || kw.error("unknown derive-adhoc 'as' syntax type keyword"),
-            )?;
-            as_ = Some((as_ty, O::not_in_bool(&as_token)?));
+            let nb = O::not_in_bool(&as_token)?;
+            let as_spec = SubstMetaAs::parse(input)?;
+            as_ = Some((as_spec, nb));
         } else {
             as_ = None;
         }
