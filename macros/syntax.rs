@@ -163,7 +163,7 @@ pub struct SubstMeta<O: SubstParseContext> {
     pub as_: Option<(SubstMetaAs, O::NotInBool)>,
 }
 
-#[derive(Debug, Clone, AsRefStr, Display, EnumIter)]
+#[derive(Debug, Clone, AsRefStr, Display)]
 #[allow(non_camel_case_types)] // clearer to use the exact ident
 pub enum SubstMetaAs {
     lit,
@@ -357,10 +357,17 @@ impl Parse for AdhocAttrList {
 impl SubstMetaAs {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let kw = input.call(syn::Ident::parse_any)?;
-        let as_ = SubstMetaAs::iter().find(|as_| kw == as_).ok_or_else(
-            || kw.error("unknown derive-adhoc 'as' syntax type keyword"),
-        )?;
-        Ok(as_)
+        let from_sma = |sma: SubstMetaAs| Ok(sma);
+
+        // See keyword_general! in utils.rs
+        macro_rules! keyword { { $($args:tt)* } => {
+            keyword_general! { kw from_sma SubstMetaAs; $($args)* }
+        } }
+
+        keyword! { lit }
+        keyword! { ty }
+
+        Err(kw.error("unknown derive-adhoc 'as' syntax type keyword"))
     }
 }
 
