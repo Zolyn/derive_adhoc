@@ -175,7 +175,6 @@ pub enum SubstVis {
 pub struct SubstMeta<O: SubstParseContext> {
     pub path: SubstMetaPath,
     pub as_: Option<(SubstMetaAs, O::NotInBool)>,
-    pub as_span: Span,
 }
 
 #[derive(Debug, Clone, AsRefStr, Display, EnumIter)]
@@ -379,22 +378,19 @@ impl<O: SubstParseContext> Parse for SubstMeta<O> {
         let path: SubstMetaPath = input.parse()?;
 
         let as_;
-        let as_span;
 
         if input.peek(Token![as]) {
             let as_token: Token![as] = input.parse()?;
             let kw = input.call(syn::Ident::parse_any)?;
-            as_span = kw.span();
             let as_ty = SubstMetaAs::iter().find(|as_| kw == as_).ok_or_else(
                 || kw.error("unknown derive-adhoc 'as' syntax type keyword"),
             )?;
             as_ = Some((as_ty, O::not_in_bool(&as_token)?));
         } else {
             as_ = None;
-            as_span = path.span();
         }
 
-        Ok(SubstMeta { path, as_, as_span })
+        Ok(SubstMeta { path, as_ })
     }
 }
 

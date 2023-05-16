@@ -49,7 +49,7 @@ impl Subst<BooleanContext> {
         // eprintln!("@@@@@@@@@@@@@@@@@@@@ EVAL {:?}", self);
 
         macro_rules! eval_meta { { $wa:expr, $lev:ident, $($pmetas:tt)* } => { {
-            let SubstMeta { path, as_, as_span: _ } = $wa;
+            let SubstMeta { path, as_} = $wa;
             if let Some(as_) = as_ {
                 void::unreachable(as_.1)
             }
