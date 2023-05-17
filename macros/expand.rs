@@ -20,8 +20,8 @@ pub struct DeriveAdhocExpandInput {
     pub template: Template<TokenAccumulator>,
 }
 
-/// Value found in driver `#[adhoc(some(thing))]`
-pub enum MetaValue<'l> {
+/// Node in tree structure found in driver `#[adhoc(some(thing))]`
+pub enum MetaNode<'l> {
     Unit(Span),
     Deeper(Span),
     Lit(&'l syn::Lit),
@@ -36,7 +36,7 @@ pub enum Fname<'r> {
     Index(syn::Index),
 }
 
-pub use MetaValue as MV;
+pub use MetaNode as MN;
 
 impl Parse for DeriveAdhocExpandInput {
     fn parse(input: ParseStream) -> syn::Result<Self> {
@@ -127,12 +127,12 @@ impl Parse for DeriveAdhocExpandInput {
     }
 }
 
-impl Spanned for MetaValue<'_> {
+impl Spanned for MetaNode<'_> {
     fn span(&self) -> Span {
         match self {
-            MV::Unit(span) => *span,
-            MV::Deeper(span) => *span,
-            MV::Lit(lit) => lit.span(),
+            MN::Unit(span) => *span,
+            MN::Deeper(span) => *span,
+            MN::Lit(lit) => lit.span(),
         }
     }
 }
@@ -666,7 +666,7 @@ where
         let mut found = None;
         let error_loc = || [(self.span(), "expansion"), ctx.error_loc()];
 
-        self.path.search(pmetas, &mut |av: MetaValue| {
+        self.path.search(pmetas, &mut |av: MetaNode| {
             if found.is_some() {
                 return Err(error_loc().error(
  "tried to expand just attribute value, but it was specified multiple times"
@@ -719,7 +719,7 @@ where
     Ok(thing)
 }
 
-impl<'l> MetaValue<'l> {
+impl<'l> MetaNode<'l> {
     fn expand<O>(
         &self,
         tspan: Span,
@@ -732,13 +732,13 @@ impl<'l> MetaValue<'l> {
         let spans = |vspan| metavalue_spans(tspan, vspan);
 
         let lit = match self {
-            MetaValue::Unit(vspan) => return Err(spans(*vspan).error(
+            MN::Unit(vspan) => return Err(spans(*vspan).error(
  "tried to expand attribute which is just a unit, not a literal"
             )),
-            MetaValue::Deeper(vspan) => return Err(spans(*vspan).error(
+            MN::Deeper(vspan) => return Err(spans(*vspan).error(
  "tried to expand attribute which is nested list, not a value",
             )),
-            MetaValue::Lit(lit) => lit,
+            MN::Lit(lit) => lit,
         };
 
         use SubstMetaAs as SMS;
