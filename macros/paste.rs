@@ -52,9 +52,6 @@ enum Item {
     },
 }
 
-#[derive(Debug, Default)]
-pub struct WithinCaseContext;
-
 /// Define cases using heck
 ///
 /// heck doesn't provide standard names for case conversions,
@@ -182,22 +179,6 @@ impl CaseContext for () {
     }
     fn allow_nonterminal(_span: &impl Spanned) -> syn::Result<()> {
         Ok(())
-    }
-}
-
-impl CaseContext for WithinCaseContext {
-    type ChangeCase = ChangeCase;
-    type NotInCase = Void;
-    type AllowNonterminal = Void;
-    fn case_for_append(case: Self::ChangeCase) -> Option<ChangeCase> {
-        Some(case)
-    }
-    fn not_in_case(span: &impl Spanned) -> syn::Result<Void> {
-        Err(span.error("${case } may not be nested"))
-    }
-    fn allow_nonterminal(span: &impl Spanned) -> syn::Result<Void> {
-        Err(span
-            .error("${case } may contain only a single expansion (or token)"))
     }
 }
 
