@@ -148,38 +148,10 @@ define_cases! {
 ///  * `()` for `${paste }`
 ///  * `WithinCase` for `${case }`
 pub trait CaseContext: Sized + Default + Debug {
-    /// The type representing what case change to perform, as parsed.
-    type ChangeCase: Debug + Copy + Sized;
-    /// Uninhabited iff this lexical context is within `${case }`
-    ///
-    /// `<Items as SubstParseContext>::NotInCase` delegates to this
-    type NotInCase: Debug + Copy + Sized;
-    /// Uninhabited unless lexical context allows other than a single subst
-    ///
-    /// `<Items as SubstParseContext>::AllowNonterminal` delegates to this
-    type AllowNonterminal: Debug + Copy + Sized;
-    /// Whether and how, in fact, to change the case, when expanding.
-    fn case_for_append(case: Self::ChangeCase) -> Option<ChangeCase>;
-    fn not_in_case(span: &impl Spanned) -> syn::Result<Self::NotInCase>;
-    fn allow_nonterminal(
-        span: &impl Spanned,
-    ) -> syn::Result<Self::AllowNonterminal>;
 }
 
 /// XXXX remove
 impl CaseContext for () {
-    type ChangeCase = ();
-    type NotInCase = ();
-    type AllowNonterminal = ();
-    fn case_for_append((): Self::ChangeCase) -> Option<ChangeCase> {
-        None
-    }
-    fn not_in_case(_span: &impl Spanned) -> syn::Result<()> {
-        Ok(())
-    }
-    fn allow_nonterminal(_span: &impl Spanned) -> syn::Result<()> {
-        Ok(())
-    }
 }
 
 impl Items<()> {
