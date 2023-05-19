@@ -10,13 +10,8 @@ use crate::framework::*;
 #[derive(Debug)]
 pub struct Items {
     tspan: Span,
-    items: Vec<ItemEntry>,
+    items: Vec<Item>,
     errors: Vec<syn::Error>,
-}
-
-#[derive(Debug)]
-struct ItemEntry {
-    item: Item,
 }
 
 #[derive(Debug)]
@@ -138,7 +133,7 @@ impl Items {
 
 impl Items {
     fn append_item(&mut self, item: Item) {
-        self.items.push(ItemEntry { item });
+        self.items.push(item);
     }
     /// Like `ExpansionOutput::append_display` but doesn't need `Spanned`
     fn append_display<V: Display>(&mut self, v: &V) {
@@ -191,7 +186,7 @@ impl Items {
             .items
             .iter()
             .enumerate()
-            .filter_map(|(pos, it)| match it.item {
+            .filter_map(|(pos, it)| match it {
                 Item::Plain { .. } => None,
                 Item::IdPath { te_span, .. } => {
                     Some((pos, te_span))
@@ -210,9 +205,9 @@ impl Items {
             .map(|(pos, _)| pos);
 
         fn plain_strs(
-            items: &[ItemEntry],
+            items: &[Item],
         ) -> impl Iterator<Item = &str> {
-            items.iter().map(|item| match &item.item {
+            items.iter().map(|item| match item {
                 Item::Plain { text, .. } => text.as_str(),
                 _ => panic!("non plain item"),
             })
@@ -256,7 +251,7 @@ impl Items {
                 )
             };
 
-            match &mut nontrivial.item {
+            match nontrivial {
                 Item::IdPath {
                     pre,
                     text,
