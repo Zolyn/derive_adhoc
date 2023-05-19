@@ -20,7 +20,8 @@ pub struct DeriveAdhocExpandInput {
     pub template: Template<TokenAccumulator>,
 }
 
-pub enum AttrValue<'l> {
+/// Value found in driver `#[adhoc(some(thing))]`
+pub enum MetaValue<'l> {
     Unit(Span),
     Deeper(Span),
     Lit(&'l syn::Lit),
@@ -35,7 +36,7 @@ pub enum Fname<'r> {
     Index(syn::Index),
 }
 
-pub use AttrValue as AV;
+pub use MetaValue as MV;
 
 impl Parse for DeriveAdhocExpandInput {
     fn parse(input: ParseStream) -> syn::Result<Self> {
@@ -126,12 +127,12 @@ impl Parse for DeriveAdhocExpandInput {
     }
 }
 
-impl Spanned for AttrValue<'_> {
+impl Spanned for MetaValue<'_> {
     fn span(&self) -> Span {
         match self {
-            AV::Unit(span) => *span,
-            AV::Deeper(span) => *span,
-            AV::Lit(lit) => lit.span(),
+            MV::Unit(span) => *span,
+            MV::Deeper(span) => *span,
+            MV::Lit(lit) => lit.span(),
         }
     }
 }
@@ -501,9 +502,9 @@ where
                     format_ident!("f_{}", f.fname(kw_span), span = kw_span);
                 out.append_identfrag_toks(&fpatname);
             }
-            SD::tmeta(wa) => do_meta(wa, out, ctx.tattrs)?,
-            SD::vmeta(wa) => do_meta(wa, out, ctx.variant(wa)?.pattrs)?,
-            SD::fmeta(wa) => do_meta(wa, out, &ctx.field(wa)?.pfield.pattrs)?,
+            SD::tmeta(wa) => do_meta(wa, out, ctx.tmetas)?,
+            SD::vmeta(wa) => do_meta(wa, out, ctx.variant(wa)?.pmetas)?,
+            SD::fmeta(wa) => do_meta(wa, out, &ctx.field(wa)?.pfield.pmetas)?,
 
             SD::Vis(vis, np) => {
                 out.append_tokens(np, vis.syn_vis(ctx, kw_span)?)?
@@ -657,12 +658,12 @@ where
         &self,
         ctx: &Context,
         out: &mut O,
-        pattrs: &PreprocessedMetas,
+        pmetas: &PreprocessedMetas,
     ) -> syn::Result<()> {
         let mut found = None;
         let error_loc = || [(self.span(), "expansion"), ctx.error_loc()];
 
-        self.path.search(pattrs, &mut |av: AttrValue| {
+        self.path.search(pmetas, &mut |av: MetaValue| {
             if found.is_some() {
                 return Err(error_loc().error(
  "tried to expand just attribute value, but it was specified multiple times"
@@ -686,14 +687,14 @@ where
     }
 }
 
-fn attrvalue_spans(tspan: Span, vspan: Span) -> [ErrorLoc; 2] {
+fn metavalue_spans(tspan: Span, vspan: Span) -> [ErrorLoc; 2] {
     [(vspan, "attribute value"), (tspan, "template")]
 }
 
 /// Convert a literal found in a meta item into `T`
 ///
 /// `into_what` is used only for error reporting
-pub fn attrvalue_lit_as<T>(
+pub fn metavalue_lit_as<T>(
     lit: &syn::Lit,
     tspan: Span,
     into_what: &dyn Display,
@@ -705,7 +706,7 @@ where
         syn::Lit::Str(s) => Ok(s),
         // having checked derive_builder, it doesn't handle
         // Lit::Verbatim so I guess we don't need to either.
-        _ => Err(attrvalue_spans(tspan, lit.span()).error(format_args!(
+        _ => Err(metavalue_spans(tspan, lit.span()).error(format_args!(
             "expected string literal, for conversion to {}",
             into_what,
         ))),
@@ -715,7 +716,7 @@ where
     Ok(thing)
 }
 
-impl<'l> AttrValue<'l> {
+impl<'l> MetaValue<'l> {
     fn expand<O>(
         &self,
         tspan: Span,
@@ -725,23 +726,23 @@ impl<'l> AttrValue<'l> {
     where
         O: ExpansionOutput,
     {
-        let spans = |vspan| attrvalue_spans(tspan, vspan);
+        let spans = |vspan| metavalue_spans(tspan, vspan);
 
         let lit = match self {
-            AttrValue::Unit(vspan) => return Err(spans(*vspan).error(
+            MetaValue::Unit(vspan) => return Err(spans(*vspan).error(
  "tried to expand attribute which is just a unit, not a literal"
             )),
-            AttrValue::Deeper(vspan) => return Err(spans(*vspan).error(
+            MetaValue::Deeper(vspan) => return Err(spans(*vspan).error(
  "tried to expand attribute which is nested list, not a value",
             )),
-            AttrValue::Lit(lit) => lit,
+            MetaValue::Lit(lit) => lit,
         };
 
         use SubstMetaAs as SMS;
         match as_ {
             Some(SMS::lit) => out.append_syn_lit(lit),
             Some(as_ @ SMS::ty) => {
-                out.append_syn_type(tspan, &attrvalue_lit_as(lit, tspan, as_)?)
+                out.append_syn_type(tspan, &metavalue_lit_as(lit, tspan, as_)?)
             }
             None => out.append_meta_value(tspan, lit)?,
         }

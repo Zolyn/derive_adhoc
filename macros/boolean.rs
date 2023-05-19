@@ -48,22 +48,22 @@ impl Subst<BooleanContext> {
     pub fn eval_bool(&self, ctx: &Context) -> syn::Result<bool> {
         // eprintln!("@@@@@@@@@@@@@@@@@@@@ EVAL {:?}", self);
 
-        macro_rules! eval_attr { { $wa:expr, $lev:ident, $($pattrs:tt)* } => { {
-            let SubstMeta { path, as_, as_span: _ } = $wa;
+        macro_rules! eval_meta { { $wa:expr, $lev:ident, $($pmetas:tt)* } => { {
+            let SubstMeta { path, as_} = $wa;
             if let Some(as_) = as_ {
                 void::unreachable(as_.1)
             }
             is_found(ctx.for_with_within::<$lev,_,_>(|_ctx, within| {
-                path.search_eval_bool(&within . $($pattrs)*)
+                path.search_eval_bool(&within . $($pmetas)*)
             }))
         } } }
         let v_fields = || ctx.variant(&self.kw_span).map(|v| &v.fields);
         use syn::Fields as SF;
 
         let r = match &self.sd {
-            SD::tmeta(wa) => is_found(wa.path.search_eval_bool(ctx.tattrs)),
-            SD::vmeta(wa) => eval_attr! { wa, WithinVariant, pattrs },
-            SD::fmeta(wa) => eval_attr! { wa, WithinField, pfield.pattrs },
+            SD::tmeta(wa) => is_found(wa.path.search_eval_bool(ctx.tmetas)),
+            SD::vmeta(wa) => eval_meta! { wa, WithinVariant, pmetas },
+            SD::fmeta(wa) => eval_meta! { wa, WithinField, pfield.pmetas },
             SD::is_enum(..) => ctx.is_enum(),
             SD::is_struct(..) => matches!(ctx.top.data, syn::Data::Struct(_)),
             SD::is_union(..) => matches!(ctx.top.data, syn::Data::Union(_)),
@@ -134,44 +134,44 @@ impl Subst<BooleanContext> {
 impl SubstMetaPath {
     fn search_eval_bool(
         &self,
-        pattrs: &PreprocessedMetas,
+        pmetas: &PreprocessedMetas,
     ) -> Result<(), Found> {
-        self.search(pattrs, &mut |_av| /* got it! */ Err(Found))
+        self.search(pmetas, &mut |_av| /* got it! */ Err(Found))
     }
 
-    pub fn search<'a, A, F, E>(&self, pattrs: A, f: &mut F) -> Result<(), E>
+    pub fn search<'a, A, F, E>(&self, pmetas: A, f: &mut F) -> Result<(), E>
     where
-        F: FnMut(AttrValue<'a>) -> Result<(), E>,
+        F: FnMut(MetaValue<'a>) -> Result<(), E>,
         A: IntoIterator<Item = &'a PreprocessedMeta>,
     {
-        for pattr in pattrs {
-            self.search_1(pattr, &mut *f)?;
+        for pmeta in pmetas {
+            self.search_1(pmeta, &mut *f)?;
         }
         Ok(())
     }
 
     fn search_1<'a, E, F>(
         &self,
-        pattr: &'a PreprocessedMeta,
+        pmeta: &'a PreprocessedMeta,
         f: &mut F,
     ) -> Result<(), E>
     where
-        F: FnMut(AttrValue<'a>) -> Result<(), E>,
+        F: FnMut(MetaValue<'a>) -> Result<(), E>,
     {
         #![allow(non_camel_case_types)]
         use syn::Meta as sM;
 
-        if pattr.path() != &self.path {
+        if pmeta.path() != &self.path {
             return Ok(());
         }
 
-        let vspan = pattr.span();
-        match (&self.deeper, pattr) {
-            (None, sM::Path(_)) => f(AV::Unit(vspan))?,
-            (None, sM::List(_)) => f(AV::Deeper(vspan))?,
-            (None, sM::NameValue(nv)) => f(AV::Lit(&nv.lit))?,
+        let vspan = pmeta.span();
+        match (&self.deeper, pmeta) {
+            (None, sM::Path(_)) => f(MV::Unit(vspan))?,
+            (None, sM::List(_)) => f(MV::Deeper(vspan))?,
+            (None, sM::NameValue(nv)) => f(MV::Lit(&nv.lit))?,
             (Some(_), sM::NameValue(_)) => {}
-            (Some(_), sM::Path(_)) => {} // self is deeper than pattr
+            (Some(_), sM::Path(_)) => {} // self is deeper than pmeta
             (Some(d), sM::List(l)) => {
                 for nm in &l.nested {
                     let m = match nm {
