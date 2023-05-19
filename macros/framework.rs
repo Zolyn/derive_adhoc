@@ -88,11 +88,20 @@ pub trait SubstParseContext {
     type NotInCase: Debug + Copy + Sized;
     /// Uninhabited iff this lexical context is within a condition.
     type NotInBool: Debug + Copy + Sized;
-    /// Uninhabited unless lexical context allows other than a single subst
+    /// Inhabited iff lexical context allows other than a single subst
     ///
     /// Used for `${case }`; could be used in other places where we
     /// accept the `${...}` syntax for an expansion, but want to
     /// reject repetitions, `${if }`, and so on.
+    ///
+    /// We reject nonterminals inside `${case }` because in the
+    /// current implementation the semantics of allowing them would be
+    /// confusing: each literal token or terminal expansion result
+    /// would be case-changed separately.
+    //
+    // TODO this limitation makes things less orthogonal, and the
+    // implementation approach isn't very pretty, so this should
+    // be changed.
     type AllowNonterminal: Debug + Copy + Sized;
     /// Uninhabited unless this lexical context is within a condition.
     type BoolOnly: Debug + Copy + Sized;
@@ -214,15 +223,6 @@ pub trait ExpansionOutput: SubstParseContext {
     /// either `self`, or `Self::BoolOnly`, is uninhabited,
     /// with a call to [`void::unreachable`].
     fn append_bool_only(&mut self, bool_only: &Self::BoolOnly) -> !;
-
-    /// Append the expansion of a `${paste }`
-    fn append_paste_expansion(
-        &mut self,
-        np: &Self::NotInPaste,
-        ctx: &Context,
-        span: Span,
-        paste_body: &Template<paste::Items>,
-    ) -> syn::Result<()>;
 
     /// Append the expansion of a `${case }`
     fn append_case_expansion(
@@ -470,17 +470,6 @@ impl ExpansionOutput for TokenAccumulator {
         f(self)
     }
 
-    fn append_paste_expansion(
-        &mut self,
-        _not_in_paste: &(),
-        ctx: &Context,
-        tspan: Span,
-        paste_body: &Template<paste::Items>,
-    ) -> syn::Result<()> {
-        let mut items = paste::Items::new(tspan);
-        paste_body.expand(ctx, &mut items);
-        items.assemble(self)
-    }
     fn append_case_expansion(
         &mut self,
         _not_in_case: &(),
