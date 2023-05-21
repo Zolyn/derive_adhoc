@@ -110,14 +110,11 @@ pub enum SubstDetails<O: SubstParseContext> {
     // expansion manipulation
     paste(
         Template<paste::Items>,
-        O::NotInPaste,
-        O::NotInCase,
         O::NotInBool,
     ),
     ChangeCase(
         Template<paste::Items>,
         paste::ChangeCase,
-        O::NotInCase,
         O::NotInBool,
     ),
 
@@ -650,7 +647,6 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         } }
 
         let not_in_paste = O::not_in_paste(&kw);
-        let not_in_case = O::not_in_case(&kw);
         let not_in_bool = O::not_in_bool(&kw);
         let bool_only = O::bool_only(&kw);
         let allow_nonterminal = O::allow_nonterminal(&kw);
@@ -735,7 +731,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
             paste {
                 let template = Template::parse(input, ())?;
             }
-            (template, not_in_paste?, not_in_case?, not_in_bool?)
+            (template, not_in_bool?)
         }
         keyword! { when(input.parse()?, not_in_bool?, allow_nonterminal?) }
 
@@ -762,7 +758,6 @@ impl<O: SubstParseContext> Parse for Subst<O> {
             return from_sd(SD::ChangeCase(
                 Template::parse(input, ())?,
                 case,
-                not_in_case?,
                 not_in_bool?,
             ));
         }
