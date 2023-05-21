@@ -20,17 +20,9 @@ fn is_found(r: Result<(), Found>) -> bool {
 
 impl SubstParseContext for BooleanContext {
     type NotInPaste = ();
-    type NotInCase = ();
     type NotInBool = Void;
-    type AllowNonterminal = ();
     type BoolOnly = ();
     fn not_in_paste(_: &impl Spanned) -> syn::Result<()> {
-        Ok(())
-    }
-    fn not_in_case(_: &impl Spanned) -> syn::Result<()> {
-        Ok(())
-    }
-    fn allow_nonterminal(_: &impl Spanned) -> syn::Result<()> {
         Ok(())
     }
     fn bool_only(_: &impl Spanned) -> syn::Result<()> {
@@ -120,7 +112,7 @@ impl Subst<BooleanContext> {
             | SD::vdefbody(_, _, _, not_in_bool)
             | SD::paste(_, not_in_bool)
             | SD::ChangeCase(_, _, not_in_bool)
-            | SD::when(_, not_in_bool, _)
+            | SD::when(_, not_in_bool)
             | SD::For(_, not_in_bool)
             | SD::If(_, not_in_bool)
             | SD::select1(_, not_in_bool)

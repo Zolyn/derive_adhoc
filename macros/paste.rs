@@ -361,19 +361,9 @@ impl<C: CaseContext> SubstParseContext for Items<C> {
     type NotInPaste = Void;
     type NotInBool = ();
     type BoolOnly = Void;
-    type AllowNonterminal = C::AllowNonterminal;
-    type NotInCase = C::NotInCase;
 
     fn not_in_bool(_: &impl Spanned) -> syn::Result<()> {
         Ok(())
-    }
-    fn not_in_case(span: &impl Spanned) -> syn::Result<Self::NotInCase> {
-        C::not_in_case(span)
-    }
-    fn allow_nonterminal(
-        span: &impl Spanned,
-    ) -> syn::Result<C::AllowNonterminal> {
-        C::allow_nonterminal(span)
     }
 
     fn not_in_paste(span: &impl Spanned) -> syn::Result<Void> {

@@ -72,7 +72,7 @@ impl Parse for DeriveAdhocExpandInput {
 
             let template;
             let template_brace = braced!(template in input);
-            let template = Template::parse(&template, ());
+            let template = Template::parse(&template);
 
             let template_crate;
             let template_name;
