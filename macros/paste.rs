@@ -164,6 +164,8 @@ impl Items {
             }
             return Ok(());
         }
+        let tspan = self.tspan;
+        let items = self.items;
 
         // We must always use a similar span when we emit identifiers
         // that are going to be used to bind variables, or the hygiene
@@ -180,10 +182,9 @@ impl Items {
         // us $vpat to bind fields, not $fname, since $fname risks clashes
         // with other variables that might be in scope.  But the rustc error
         // messages for identifiers with the wrong span are rather poor.
-        let out_span = self.tspan;
+        let out_span = tspan;
 
-        let nontrivial = self
-            .items
+        let nontrivial = items
             .iter()
             .enumerate()
             .filter_map(|(pos, it)| match it {
@@ -234,7 +235,7 @@ impl Items {
         }
 
         if let Some(nontrivial) = nontrivial {
-            let mut items = self.items;
+            let mut items = items;
             let (items, items_after) = items.split_at_mut(nontrivial + 1);
             let (items_before, items) = items.split_at_mut(nontrivial);
             let nontrivial = &mut items[0];
@@ -259,7 +260,7 @@ impl Items {
                     te_span: _,
                 } => {
                     out.append_idpath(
-                        self.tspan,
+                        tspan,
                         |ta| ta.append(pre),
                         &mk_ident_nt(text)?,
                         |ta| ta.append(post),
@@ -269,7 +270,7 @@ impl Items {
             }
         } else {
             out.append_identfrag_toks(
-                &mk_ident(out_span, change_case, plain_strs(&self.items))?
+                &mk_ident(out_span, change_case, plain_strs(&items))?
             );
         }
 
