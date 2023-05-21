@@ -30,4 +30,5 @@ struct PreExpandNamePost {
     attr_f_24: FieldType,
     k: String,
 }
+struct WomExpandNameBat;
 fn main() {}
