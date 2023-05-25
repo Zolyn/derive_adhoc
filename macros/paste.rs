@@ -378,36 +378,44 @@ impl ExpansionOutput for Items {
         }
     }
     fn append_syn_type(&mut self, te_span: Span, ty: &syn::Type) {
-        (||{
-        match ty {
-            syn::Type::Path(path) => {
-                let mut path = path.clone();
-                let (last_segment, last_punct) = path
-                    .path
-                    .segments
-                    .pop()
-                    .ok_or_else(|| {
-                        te_span.error(
-               "derive-adhoc token pasting applied to path with no components"
-                        )
-                    })?
-                    .into_tuple();
-                let syn::PathSegment { ident, arguments } = last_segment;
-                let mut pre = TokenStream::new();
-                path.to_tokens(&mut pre);
-                let text = ident.to_string();
-                let mut post = TokenStream::new();
-                arguments.to_tokens(&mut post);
-                last_punct.to_tokens(&mut post);
-                let item = Item::IdPath { pre, text, post, te_span };
-                self.append_item(item)
-            },
-            x => return Err(x.error(
-                "derive-adhoc macro wanted to do identifier pasting, but complex type provided"
-            )),
-        }
-        Ok::<_, syn::Error>(())
-      })().unwrap_or_else(|e| self.record_error(e));
+        (|| {
+            match ty {
+                syn::Type::Path(path) => {
+                    let mut path = path.clone();
+                    let (last_segment, last_punct) = path
+                        .path
+                        .segments
+                        .pop()
+                        .ok_or_else(|| {
+                            te_span.error(
+                                "derive-adhoc token pasting applied to path with no components",
+                            )
+                        })?
+                        .into_tuple();
+                    let syn::PathSegment { ident, arguments } = last_segment;
+                    let mut pre = TokenStream::new();
+                    path.to_tokens(&mut pre);
+                    let text = ident.to_string();
+                    let mut post = TokenStream::new();
+                    arguments.to_tokens(&mut post);
+                    last_punct.to_tokens(&mut post);
+                    let item = Item::IdPath {
+                        pre,
+                        text,
+                        post,
+                        te_span,
+                    };
+                    self.append_item(item)
+                }
+                x => {
+                    return Err(x.error(
+                        "derive-adhoc macro wanted to do identifier pasting, but complex type provided",
+                    ))
+                }
+            }
+            Ok::<_, syn::Error>(())
+        })()
+        .unwrap_or_else(|e| self.record_error(e));
     }
     fn append_meta_value(
         &mut self,
