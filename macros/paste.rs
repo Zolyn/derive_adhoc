@@ -13,8 +13,8 @@ where
     C: CaseContext,
 {
     data: ItemsData,
-    /// The case change requested by the surrounding syntactic context.
-    case: C::ChangeCase,
+    /// TODO CASE NEST remove
+    case: PhantomData<C>,
 }
 
 /// Accumulator for things to be pasted
@@ -31,12 +31,6 @@ pub struct ItemsData {
 #[derive(Debug)]
 struct ItemEntry {
     item: Item,
-    /// The case change to make to this identifier fragment
-    ///
-    /// We accumulate these, and apply them during assembly, because it is
-    /// the assembly code which actually figures out what part of each
-    /// `Item` is even a string for pasting (and case conversion).
-    case: Option<ChangeCase>,
 }
 
 #[derive(Debug)]
@@ -173,26 +167,9 @@ pub trait CaseContext: Sized + Default + Debug {
     fn allow_nonterminal(
         span: &impl Spanned,
     ) -> syn::Result<Self::AllowNonterminal>;
-    /// Expand a `${case }`
-    ///
-    /// `<Items as SubstParseContext>::expand_case` delegates to this
-    ///
-    /// `content` is a function which "expands" the contents of the
-    /// `${paste }` using the content's `.expand()` method on the
-    /// `Items`, so that the `push_*` methods on `Items` accumulate
-    /// the identifier fragments to be pasted.
-    ///
-    /// The implementation for `WithinCase` is unreachable, because we
-    /// lexically forbid nested `${case }`, since chained case
-    /// conversions are a bad idea that we don't want to implement.
-    fn expand_case<R>(
-        outer: &mut Items<Self>,
-        not_in_case: &Self::NotInCase,
-        case: ChangeCase,
-        content: impl FnOnce(&mut Items<WithinCaseContext>) -> R,
-    ) -> R;
 }
 
+/// XXXX remove
 impl CaseContext for () {
     type ChangeCase = ();
     type NotInCase = ();
@@ -205,22 +182,6 @@ impl CaseContext for () {
     }
     fn allow_nonterminal(_span: &impl Spanned) -> syn::Result<()> {
         Ok(())
-    }
-    fn expand_case<R>(
-        Items {
-            data: outer,
-            case: (),
-        }: &mut Items,
-        _not_in_case: &(),
-        case: ChangeCase,
-        f: impl FnOnce(&mut Items<WithinCaseContext>) -> R,
-    ) -> R {
-        let placeholder = ItemsData::new(outer.tspan);
-        let inner = mem::replace(outer, placeholder);
-        let mut inner = Items { data: inner, case };
-        let r = catch_unwind(AssertUnwindSafe(|| f(&mut inner))).unwrap();
-        *outer = inner.data;
-        r
     }
 }
 
@@ -238,32 +199,13 @@ impl CaseContext for WithinCaseContext {
         Err(span
             .error("${case } may contain only a single expansion (or token)"))
     }
-    // We forbid ${pate } inside itself, because when we do case
-    // conversion this will get very fiddly to implement.
-    fn expand_case<R>(
-        _: &mut Items<Self>,
-        not_in_case: &Void,
-        _case: ChangeCase,
-        _f: impl FnOnce(&mut Items<WithinCaseContext>) -> R,
-    ) -> R {
-        void::unreachable(*not_in_case)
-    }
 }
 
 impl Items<()> {
     pub fn new(tspan: Span) -> Items<()> {
         Items {
             data: ItemsData::new(tspan),
-            case: (),
-        }
-    }
-}
-
-impl Items<WithinCaseContext> {
-    pub fn new_case(tspan: Span, case: ChangeCase) -> Self {
-        Items {
-            data: ItemsData::new(tspan),
-            case,
+            case: PhantomData,
         }
     }
 }
@@ -280,8 +222,7 @@ impl ItemsData {
 
 impl<C: CaseContext> Items<C> {
     fn append_item(&mut self, item: Item) {
-        let case = C::case_for_append(self.case);
-        self.data.items.push(ItemEntry { item, case });
+        self.data.items.push(ItemEntry { item });
     }
     /// Like `ExpansionOutput::append_display` but doesn't need `Spanned`
     fn append_display<V: Display>(&mut self, v: &V) {
@@ -293,19 +234,28 @@ impl<C: CaseContext> Items<C> {
         self.append_item(Item::Plain { text });
     }
 
-    /// Combine the accumulated pieces and append them, as tokens, to `out`
+    /// Combine the accumulated pieces and append them to `out`
+    ///
+    /// Calls
+    /// [`append_idpath`](ExpansionOutput::append_idpath)
+    /// if the content contained a nontrivial expansion
+    /// or
+    /// [`append_identfrag_toks`](ExpansionOutput::append_identfrag_toks)
+    /// otherwise.
     pub fn assemble(
         self,
-        out: &mut TokenAccumulator,
+        out: &mut impl ExpansionOutput,
+        case: Option<ChangeCase>,
     ) -> syn::Result<()> {
-        self.data.assemble(out)
+        self.data.assemble(out, case)
     }
 }
 
 impl ItemsData {
     fn assemble(
         self,
-        out: &mut TokenAccumulator,
+        out: &mut impl ExpansionOutput,
+        change_case: Option<ChangeCase>,
     ) -> syn::Result<()> {
         if !self.errors.is_empty() {
             for error in self.errors {
@@ -355,25 +305,24 @@ impl ItemsData {
 
         fn plain_strs(
             items: &[ItemEntry],
-        ) -> impl Iterator<Item = (&str, Option<ChangeCase>)> {
+        ) -> impl Iterator<Item = &str> {
             items.iter().map(|item| match &item.item {
-                Item::Plain { text, .. } => (text.as_str(), item.case),
+                Item::Plain { text, .. } => text.as_str(),
                 _ => panic!("non plain item"),
             })
         }
 
         fn mk_ident<'i>(
             out_span: Span,
-            items: impl Iterator<Item = (&'i str, Option<ChangeCase>)>,
+            change_case: Option<ChangeCase>,
+            items: impl Iterator<Item = &'i str>,
         ) -> syn::Result<syn::Ident> {
-            let items = items.map(|(s, case)| {
-                if let Some(case) = case {
-                    case.apply(s).into()
-                } else {
-                    Cow::Borrowed(s)
-                }
-            });
             let ident = items.collect::<String>();
+            let ident = if let Some(change_case) = change_case {
+                change_case.apply(&ident)
+            } else {
+                ident
+            };
             catch_unwind(|| format_ident!("{}", ident, span = out_span))
                 .map_err(|_| {
                     out_span.error(format_args!(
@@ -388,14 +337,14 @@ impl ItemsData {
             let (items, items_after) = items.split_at_mut(nontrivial + 1);
             let (items_before, items) = items.split_at_mut(nontrivial);
             let nontrivial = &mut items[0];
-            let nontrivial_case = nontrivial.case;
 
             let mk_ident_nt = |text: &str| {
                 mk_ident(
                     out_span,
+                    change_case,
                     chain!(
                         plain_strs(items_before),
-                        iter::once((text, nontrivial_case)),
+                        iter::once(text),
                         plain_strs(items_after),
                     ),
                 )
@@ -408,14 +357,19 @@ impl ItemsData {
                     post,
                     te_span: _,
                 } => {
-                    out.append(mem::take(pre));
-                    out.append(mk_ident_nt(text)?);
-                    out.append(/*mem::take(*/ post /*)*/);
+                    out.append_idpath(
+                        self.tspan,
+                        |ta| ta.append(pre),
+                        &mk_ident_nt(text)?,
+                        |ta| ta.append(post),
+                    );
                 }
                 Item::Plain { .. } => panic!("trivial nontrivial"),
             }
         } else {
-            out.append(mk_ident(out_span, plain_strs(&self.items))?);
+            out.append_identfrag_toks(
+                &mk_ident(out_span, change_case, plain_strs(&self.items))?
+            );
         }
 
         Ok(())
@@ -556,16 +510,6 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
         void::unreachable(*not_in_paste)
     }
 
-    fn append_case_expansion(
-        &mut self,
-        not_in_case: &Self::NotInCase,
-        case: paste::ChangeCase,
-        ctx: &Context,
-        _span: Span,
-        content: &Subst<paste::Items<WithinCaseContext>>,
-    ) -> syn::Result<()> {
-        C::expand_case(self, not_in_case, case, |out| content.expand(ctx, out))
-    }
     fn append_bool_only(&mut self, bool_only: &Self::BoolOnly) -> ! {
         void::unreachable(*bool_only)
     }

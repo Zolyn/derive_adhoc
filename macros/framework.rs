@@ -224,16 +224,6 @@ pub trait ExpansionOutput: SubstParseContext {
     /// with a call to [`void::unreachable`].
     fn append_bool_only(&mut self, bool_only: &Self::BoolOnly) -> !;
 
-    /// Append the expansion of a `${case }`
-    fn append_case_expansion(
-        &mut self,
-        np: &Self::NotInCase,
-        case: paste::ChangeCase,
-        ctx: &Context,
-        span: Span,
-        paste_body: &Subst<paste::Items<paste::WithinCaseContext>>,
-    ) -> syn::Result<()>;
-
     /// Note that an error occurred
     ///
     /// This must arrange to
@@ -470,18 +460,6 @@ impl ExpansionOutput for TokenAccumulator {
         f(self)
     }
 
-    fn append_case_expansion(
-        &mut self,
-        _not_in_case: &(),
-        case: paste::ChangeCase,
-        ctx: &Context,
-        tspan: Span,
-        paste_body: &Subst<paste::Items<paste::WithinCaseContext>>,
-    ) -> syn::Result<()> {
-        let mut items = paste::Items::new_case(tspan, case);
-        paste_body.expand(ctx, &mut items)?;
-        items.assemble(self)
-    }
     fn append_bool_only(&mut self, bool_only: &Self::BoolOnly) -> ! {
         void::unreachable(*bool_only)
     }

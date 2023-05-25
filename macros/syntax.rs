@@ -115,7 +115,7 @@ pub enum SubstDetails<O: SubstParseContext> {
         O::NotInBool,
     ),
     ChangeCase(
-        Box<Subst<paste::Items<paste::WithinCaseContext>>>,
+        Template<paste::Items>,
         paste::ChangeCase,
         O::NotInCase,
         O::NotInBool,
@@ -563,6 +563,7 @@ impl ParseUsingSubkeywords for SubstVPat {
 
 impl<O: SubstParseContext> Subst<O> {
     /// Parses everything including a `$` (which we insist on)
+    #[allow(dead_code)] // This was once used for ${paste }
     fn parse_entire(input: ParseStream) -> syn::Result<Self> {
         let _dollar: Token![$] = input.parse()?;
         let deescaped = deescape_orig_dollar(input)?;
@@ -759,7 +760,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
 
         if let Ok(case) = kw.to_string().parse() {
             return from_sd(SD::ChangeCase(
-                Box::new(Subst::parse_entire(input)?),
+                Template::parse(input, ())?,
                 case,
                 not_in_case?,
                 not_in_bool?,
