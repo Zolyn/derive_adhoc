@@ -27,7 +27,7 @@ cargo-fmt:
   stage: test
   script:
     - rustup component add rustfmt
-    - cargo fmt --verbose --check
+    - maint/rustfmt --verbose --check
 
 maint-check-bizarre:
   stage: test
