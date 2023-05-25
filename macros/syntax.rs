@@ -107,21 +107,11 @@ pub enum SubstDetails<O: SubstParseContext> {
     ),
 
     // expansion manipulation
-    paste(
-        Template<paste::Items>,
-        O::NotInBool,
-    ),
-    ChangeCase(
-        Template<paste::Items>,
-        paste::ChangeCase,
-        O::NotInBool,
-    ),
+    paste(Template<paste::Items>, O::NotInBool),
+    ChangeCase(Template<paste::Items>, paste::ChangeCase, O::NotInBool),
 
     // special
-    when(
-        Box<Subst<BooleanContext>>,
-        O::NotInBool,
-    ),
+    when(Box<Subst<BooleanContext>>, O::NotInBool),
 
     // expressions
     False(O::BoolOnly),
@@ -242,9 +232,7 @@ impl Spanned for SubstMetaPath {
 }
 
 impl<O: SubstParseContext> Template<O> {
-    pub fn parse(
-        input: ParseStream,
-    ) -> syn::Result<Self> {
+    pub fn parse(input: ParseStream) -> syn::Result<Self> {
         // eprintln!("@@@@@@@@@@ PARSE {}", &input);
         let mut good = vec![];
         let mut errors = ErrorAccumulator::default();
@@ -255,9 +243,7 @@ impl<O: SubstParseContext> Template<O> {
                 Ok(())
             });
         }
-        errors.finish_with(Template {
-            elements: good,
-        })
+        errors.finish_with(Template { elements: good })
     }
 
     /// Parses one of
@@ -319,9 +305,7 @@ impl<O: SubstParseContext> Parse for TemplateElement<O> {
             TT::Group(group) => {
                 let delim_span = group.span_open();
                 let delimiter = group.delimiter();
-                let t_parser = |input: ParseStream| {
-                    Template::parse(input)
-                };
+                let t_parser = |input: ParseStream| Template::parse(input);
                 let template = t_parser.parse2(group.stream())?;
                 TE::Group {
                     delim_span,
@@ -643,9 +627,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         let not_in_bool = O::not_in_bool(&kw);
         let bool_only = O::bool_only(&kw);
 
-        let parse_if = |input| {
-            SubstIf::parse(input, kw.span())
-        };
+        let parse_if = |input| SubstIf::parse(input, kw.span());
 
         let in_parens = |input: ParseStream<'i>| {
             let inner;
@@ -759,10 +741,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
 }
 
 impl<O: SubstParseContext> SubstIf<O> {
-    fn parse(
-        input: ParseStream,
-        kw_span: Span,
-    ) -> syn::Result<Self> {
+    fn parse(input: ParseStream, kw_span: Span) -> syn::Result<Self> {
         let mut tests = Vec::new();
         let mut otherwise = None;
 
@@ -801,9 +780,7 @@ impl<O: SubstParseContext> SubstIf<O> {
             } else if lookahead.peek(token::Brace) {
                 let content;
                 let _br = braced![ content in input ];
-                otherwise = Some(
-                    Template::parse(&content)?.into(),
-                );
+                otherwise = Some(Template::parse(&content)?.into());
                 break;
                 // No more input allowed.
                 // Subst::parse_after_dollar will detect any remaining

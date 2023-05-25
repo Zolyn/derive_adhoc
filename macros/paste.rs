@@ -218,9 +218,7 @@ impl Items {
             .enumerate()
             .filter_map(|(pos, it)| match it {
                 Item::Plain { .. } => None,
-                Item::IdPath { te_span, .. } => {
-                    Some((pos, te_span))
-                }
+                Item::IdPath { te_span, .. } => Some((pos, te_span)),
             })
             .at_most_one()
             .map_err(|several| {
@@ -234,9 +232,7 @@ impl Items {
             })?
             .map(|(pos, _)| pos);
 
-        fn plain_strs(
-            items: &[Item],
-        ) -> impl Iterator<Item = &str> {
+        fn plain_strs(items: &[Item]) -> impl Iterator<Item = &str> {
             items.iter().map(|item| match item {
                 Item::Plain { text, .. } => text.as_str(),
                 _ => panic!("non plain item"),
@@ -382,7 +378,7 @@ impl ExpansionOutput for Items {
         }
     }
     fn append_syn_type(&mut self, te_span: Span, ty: &syn::Type) {
-      (||{
+        (||{
         match ty {
             syn::Type::Path(path) => {
                 let mut path = path.clone();
