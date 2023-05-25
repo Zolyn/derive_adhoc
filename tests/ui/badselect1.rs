@@ -20,9 +20,9 @@ struct Both {
     c: usize,
 }
 
-derive_adhoc!{
+derive_adhoc! {
     Both:
-    
+
     #[derive(Default, Debug)]
     struct Left {
         $(
@@ -44,8 +44,5 @@ derive_adhoc!{
 }
 
 fn main() {
-    assert_eq!(
-        format!("{:?}", &Left::default()),
-        "Left { a: 0 }",
-    )
+    assert_eq!(format!("{:?}", &Left::default()), "Left { a: 0 }",)
 }

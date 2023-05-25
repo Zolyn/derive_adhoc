@@ -1,11 +1,11 @@
 error: multiple nontrivial entries in ${paste ...}
-  --> ui/badpaste.rs:14:18
+  --> ui/badpaste.rs:13:18
    |
-14 |         ${paste $ttype _ $ftype}
+13 |         ${paste $ttype _ $ftype}
    |                  ^^^^^
 
 error: multiple nontrivial entries in ${paste ...}
-  --> ui/badpaste.rs:14:27
+  --> ui/badpaste.rs:13:27
    |
-14 |         ${paste $ttype _ $ftype}
+13 |         ${paste $ttype _ $ftype}
    |                           ^^^^^

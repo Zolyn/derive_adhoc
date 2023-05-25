@@ -12,7 +12,7 @@ use std::sync::Arc;
 // Only works on `struct { }` structs.
 //
 // (This does a small subset of what the educe crate's `Clone` does.)
-define_derive_adhoc!{
+define_derive_adhoc! {
     MyClone =
 
     impl<$tgens> Clone for $ttype {

@@ -13,12 +13,12 @@ define_derive_adhoc! {
     Template =
 }
 
-derive_adhoc_driver_Driver!{ GARBAGE -> DRIVER }
-derive_adhoc_template_Template!{ GARBAGE -> TEMPLATE }
-derive_adhoc::derive_adhoc_expand!{ GARBAGE -> INNARDS }
+derive_adhoc_driver_Driver! { GARBAGE -> DRIVER }
+derive_adhoc_template_Template! { GARBAGE -> TEMPLATE }
+derive_adhoc::derive_adhoc_expand! { GARBAGE -> INNARDS }
 
 // OpCompatVersions 1.0, ie our own, and the earliest released
-derive_adhoc::derive_adhoc_expand!{
+derive_adhoc::derive_adhoc_expand! {
     { pub struct StructName {} }
     [1 0]
     { }
@@ -27,7 +27,7 @@ derive_adhoc::derive_adhoc_expand!{
 }
 
 // OpCompatVersions 1.200, some imaginary future compatible one
-derive_adhoc::derive_adhoc_expand!{
+derive_adhoc::derive_adhoc_expand! {
     { pub struct StructName {} }
     [1 200]
     { }
@@ -36,7 +36,7 @@ derive_adhoc::derive_adhoc_expand!{
 }
 
 // OpCompatVersions 200.1, some imaginary future incompatible one
-derive_adhoc::derive_adhoc_expand!{
+derive_adhoc::derive_adhoc_expand! {
     { pub struct StructName {} }
     [200 0]
     { }

@@ -1,42 +1,42 @@
 error: unknown derive-adhoc keyword
-  --> ui/badargs.rs:14:9
+  --> ui/badargs.rs:13:9
    |
-14 |     fn $unknown() { }
+13 |     fn $unknown() { }
    |         ^^^^^^^
 
 error: no contained expansion field determined what to repeat here
-  --> ui/badargs.rs:16:6
+  --> ui/badargs.rs:15:6
    |
-16 |       $(
+15 |       $(
    |  ______^
-17 | |     )
+16 | |     )
    | |_____^
 
 error: unexpected arguments to expansion keyword
-  --> ui/badargs.rs:20:19
+  --> ui/badargs.rs:19:19
    |
-20 |         f ${fname junk}() { }
+19 |         f ${fname junk}() { }
    |                   ^^^^
 
 error: unexpected arguments to expansion keyword
-  --> ui/badargs.rs:23:29
+  --> ui/badargs.rs:22:29
    |
-23 |     ${if false { } else { } forbidden}
+22 |     ${if false { } else { } forbidden}
    |                             ^^^^^^^^^
 
 error: derive-adhoc construct is an expansion - not valid in a condition
-  --> ui/badargs.rs:25:27
+  --> ui/badargs.rs:24:27
    |
-25 |     ${if tmeta(some_path) as lit { }}
+24 |     ${if tmeta(some_path) as lit { }}
    |                           ^^
 
 error: unexpected arguments to expansion keyword
-  --> ui/badargs.rs:31:26
+  --> ui/badargs.rs:30:26
    |
-31 |     type Alias = ${ttype $junk};
+30 |     type Alias = ${ttype $junk};
    |                          ^
 ...
-34 | #[derive(Adhoc)]
+33 | #[derive(Adhoc)]
    |          ----- in this derive macro expansion
    |
    = note: this error originates in the macro `derive_adhoc_template_Broken` which comes from the expansion of the derive macro `Adhoc` (in Nightly builds, run with -Z macro-backtrace for more info)

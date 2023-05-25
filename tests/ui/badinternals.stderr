@@ -4,8 +4,8 @@ error: wrong input to derive-adhoc driver inner macro derive_adhoc_driver_Driver
 9  | #[derive(Adhoc)]
    |          ^^^^^
 ...
-16 | derive_adhoc_driver_Driver!{ GARBAGE -> DRIVER }
-   | ------------------------------------------------ in this macro invocation
+16 | derive_adhoc_driver_Driver! { GARBAGE -> DRIVER }
+   | ------------------------------------------------- in this macro invocation
    |
    = note: this error originates in the macro `derive_adhoc_driver_Driver` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -17,29 +17,29 @@ error: wrong input to derive-adhoc template inner macro derive_adhoc_template_Te
 14 | | }
    | |_^
 ...
-17 |   derive_adhoc_template_Template!{ GARBAGE -> TEMPLATE }
-   |   ------------------------------------------------------ in this macro invocation
+17 |   derive_adhoc_template_Template! { GARBAGE -> TEMPLATE }
+   |   ------------------------------------------------------- in this macro invocation
    |
    = note: this error originates in the macro `derive_adhoc_template_Template` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: bad input to derive_adhoc_expand inner template expansion proc macro; might be due to incompatible derive-adhoc versions(s)
   --> ui/badinternals.rs:18:1
    |
-18 | derive_adhoc::derive_adhoc_expand!{ GARBAGE -> INNARDS }
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+18 | derive_adhoc::derive_adhoc_expand! { GARBAGE -> INNARDS }
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
    = note: this error originates in the macro `derive_adhoc::derive_adhoc_expand` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: expected curly braces
-  --> ui/badinternals.rs:18:37
+  --> ui/badinternals.rs:18:38
    |
-18 | derive_adhoc::derive_adhoc_expand!{ GARBAGE -> INNARDS }
-   |                                     ^^^^^^^
+18 | derive_adhoc::derive_adhoc_expand! { GARBAGE -> INNARDS }
+   |                                      ^^^^^^^
 
 error: bad input to derive_adhoc_expand inner template expansion proc macro; might be due to incompatible derive-adhoc versions(s)
   --> ui/badinternals.rs:39:1
    |
-39 | / derive_adhoc::derive_adhoc_expand!{
+39 | / derive_adhoc::derive_adhoc_expand! {
 40 | |     { pub struct StructName {} }
 41 | |     [200 0]
 42 | |     { }
@@ -53,7 +53,7 @@ error: bad input to derive_adhoc_expand inner template expansion proc macro; mig
 error: Incompatible major version for AOPTIONS (driver 200, template/engine 1)
   --> ui/badinternals.rs:39:1
    |
-39 | / derive_adhoc::derive_adhoc_expand!{
+39 | / derive_adhoc::derive_adhoc_expand! {
 40 | |     { pub struct StructName {} }
 41 | |     [200 0]
 42 | |     { }

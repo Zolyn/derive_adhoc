@@ -4,7 +4,7 @@
 
 use derive_adhoc::{define_derive_adhoc, Adhoc};
 
-define_derive_adhoc!{
+define_derive_adhoc! {
     PreciseClone =
 
     impl<$tgens> Clone for $ttype
@@ -47,9 +47,9 @@ enum Enum<F> {
 #[derive(Adhoc)]
 #[derive_adhoc(PreciseClone)]
 enum AllTypes {
-   NoData,
-   Tuple(u16, u32),
-   Struct { a: String, b: String },
+    NoData,
+    Tuple(u16, u32),
+    Struct { a: String, b: String },
 }
 
 fn test<T: Clone>(value: &T) {

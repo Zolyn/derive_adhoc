@@ -44,7 +44,7 @@ derive_adhoc! {
 
 #[derive(Adhoc)]
 struct ExpandName {
-    #[adhoc(prefix="attr", suffix=24)]
+    #[adhoc(prefix = "attr", suffix = 24)]
     f: FieldType,
 
     k: String,
@@ -64,5 +64,4 @@ derive_adhoc! {
     }
 }
 
-fn main() {
-}
+fn main() {}

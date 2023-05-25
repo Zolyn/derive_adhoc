@@ -1,4 +1,3 @@
-
 use derive_adhoc::{derive_adhoc, Adhoc};
 
 #[derive(Adhoc)]
@@ -15,5 +14,4 @@ derive_adhoc! {
     }}
 }
 
-fn main() {
-}
+fn main() {}
