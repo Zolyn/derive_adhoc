@@ -297,13 +297,19 @@ impl<C: CaseContext> Items<C> {
     }
 
     /// Combine the accumulated pieces and append them, as tokens, to `out`
-    pub fn assemble(self, out: &mut TokenAccumulator) -> syn::Result<()> {
+    pub fn assemble(
+        self,
+        out: &mut TokenAccumulator,
+    ) -> syn::Result<()> {
         self.data.assemble(out)
     }
 }
 
 impl ItemsData {
-    fn assemble(self, out: &mut TokenAccumulator) -> syn::Result<()> {
+    fn assemble(
+        self,
+        out: &mut TokenAccumulator,
+    ) -> syn::Result<()> {
         if !self.errors.is_empty() {
             for error in self.errors {
                 out.record_error(error);
