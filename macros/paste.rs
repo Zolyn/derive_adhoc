@@ -24,8 +24,7 @@ enum Item {
     Plain {
         text: String,
     },
-    // XXXX rename to Complex
-    IdPath {
+    Complex {
         pre: TokenStream,
         text: String,
         post: TokenStream,
@@ -218,7 +217,7 @@ impl Items {
             .enumerate()
             .filter_map(|(pos, it)| match it {
                 Item::Plain { .. } => None,
-                Item::IdPath { te_span, .. } => Some((pos, te_span)),
+                Item::Complex { te_span, .. } => Some((pos, te_span)),
             })
             .at_most_one()
             .map_err(|several| {
@@ -278,7 +277,7 @@ impl Items {
             };
 
             match nontrivial {
-                Item::IdPath {
+                Item::Complex {
                     pre,
                     text,
                     post,
@@ -355,7 +354,7 @@ impl ExpansionOutput for Items {
         };
         let pre = handle_err(pre);
         let post = handle_err(post);
-        self.append_item(Item::IdPath {
+        self.append_item(Item::Complex {
             pre,
             post,
             text,
@@ -399,7 +398,7 @@ impl ExpansionOutput for Items {
                     let mut post = TokenStream::new();
                     arguments.to_tokens(&mut post);
                     last_punct.to_tokens(&mut post);
-                    let item = Item::IdPath {
+                    let item = Item::Complex {
                         pre,
                         text,
                         post,
