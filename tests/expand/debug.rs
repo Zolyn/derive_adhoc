@@ -50,9 +50,11 @@ define_derive_adhoc! {
 mod custom {
     use super::*;
 
-    pub fn fmt(ds: &mut fmt::DebugStruct, name: &'static str, value: &char)
-               -> fmt::Result
-    {
+    pub fn fmt(
+        ds: &mut fmt::DebugStruct,
+        name: &'static str,
+        value: &char,
+    ) -> fmt::Result {
         ds.field(name, &(*value as u32));
         Ok(())
     }
@@ -78,7 +80,7 @@ struct DataType {
     bar: Vec<String>,
     #[adhoc(debug(skip))]
     opaque: Opaque,
-    #[adhoc(debug(call="custom::fmt"))]
+    #[adhoc(debug(call = "custom::fmt"))]
     custom: char,
 }
 

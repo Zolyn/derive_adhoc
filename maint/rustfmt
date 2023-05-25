@@ -1,0 +1,27 @@
+#!/bin/bash
+#
+# Run rustfmt on all the files.  This script is needed because cargo
+# fmt doesn't do the ones in tests/* (that are tested via trybuild and
+# macrotest), because those aren't visible to cargo in the usual way.
+#
+# Any arguments are passed through to *both* "cargo fmt" and "rustfmt"
+
+set -euo pipefail
+
+# CARGO='nailing-cargo -E' maint/rustfmt
+
+case "${CARGO-}" in
+*nailing-cargo*)	NAILING_CARGO=${CARGO} ;;
+*)			NAILING_CARGO= ;;
+esac
+
+${CARGO-cargo} fmt "$@"
+
+# *.expanded.rs is managed by macrotest and mustn't be reformatted
+# (the grep is because git-ls-files -x doesn't do what you'd think it would -
+# it only applies if the file is untracked.)
+git ls-files tests/{ui,expand}/'*.rs' |
+    grep -v '\.expanded\.rs$' |
+    xargs \
+	${NAILING_CARGO} ${NAILING_CARGO:+---} \
+	rustfmt "$@"

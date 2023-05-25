@@ -1,4 +1,3 @@
-
 #![allow(dead_code)]
 
 use derive_adhoc::{define_derive_adhoc, derive_adhoc, Adhoc};
@@ -31,4 +30,4 @@ derive_adhoc! {
     $tattrs struct AdhocTwoDollars;
 }
 
-fn main(){}
+fn main() {}

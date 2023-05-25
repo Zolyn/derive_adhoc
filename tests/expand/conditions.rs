@@ -78,7 +78,9 @@ enum Enum {
     Unit,
     #[adhoc(hello(there(inner)))]
     Tuple(usize),
-    Named { field: usize },
+    Named {
+        field: usize,
+    },
 }
 
 #[derive(Adhoc)]

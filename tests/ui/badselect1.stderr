@@ -6,7 +6,7 @@ error: multiple conditions matched (in this field)
 20 | |     c: usize,
    | |____________^
 ...
-23 | / derive_adhoc!{
+23 | / derive_adhoc! {
 24 | |     Both:
 25 | |
 26 | |     #[derive(Default, Debug)]
@@ -36,7 +36,7 @@ error: no conditions matched, and no else clause (in this field)
 15 | |     a: usize,
    | |____________^
 ...
-23 | / derive_adhoc!{
+23 | / derive_adhoc! {
 24 | |     Both:
 25 | |
 26 | |     #[derive(Default, Debug)]
@@ -54,18 +54,18 @@ error: no conditions matched, and no else clause (select1 expansion)
    |               ^^^^^^^
 
 error[E0433]: failed to resolve: use of undeclared type `Left`
-  --> ui/badselect1.rs:48:26
+  --> ui/badselect1.rs:47:33
    |
-48 |         format!("{:?}", &Left::default()),
-   |                          ^^^^ use of undeclared type `Left`
+47 |     assert_eq!(format!("{:?}", &Left::default()), "Left { a: 0 }",)
+   |                                 ^^^^ use of undeclared type `Left`
    |
 help: there is an enum variant `core::fmt::Alignment::Left` and 4 others; try using the variant's enum
    |
-48 |         format!("{:?}", &core::fmt::Alignment()),
-   |                          ~~~~~~~~~~~~~~~~~~~~
-48 |         format!("{:?}", &core::fmt::rt::v1::Alignment()),
-   |                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-48 |         format!("{:?}", &std::fmt::Alignment()),
-   |                          ~~~~~~~~~~~~~~~~~~~
-48 |         format!("{:?}", &std::fmt::rt::v1::Alignment()),
-   |                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+47 |     assert_eq!(format!("{:?}", &core::fmt::Alignment()), "Left { a: 0 }",)
+   |                                 ~~~~~~~~~~~~~~~~~~~~
+47 |     assert_eq!(format!("{:?}", &core::fmt::rt::v1::Alignment()), "Left { a: 0 }",)
+   |                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+47 |     assert_eq!(format!("{:?}", &std::fmt::Alignment()), "Left { a: 0 }",)
+   |                                 ~~~~~~~~~~~~~~~~~~~
+47 |     assert_eq!(format!("{:?}", &std::fmt::rt::v1::Alignment()), "Left { a: 0 }",)
+   |                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~

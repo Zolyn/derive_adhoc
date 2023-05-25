@@ -1,4 +1,3 @@
-
 use derive_adhoc::{define_derive_adhoc, derive_adhoc, Adhoc};
 
 #[derive(Adhoc)]
@@ -35,5 +34,4 @@ define_derive_adhoc! {
 #[derive_adhoc(Broken)]
 struct ForBroken;
 
-fn main() {
-}
+fn main() {}
