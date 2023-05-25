@@ -9,15 +9,6 @@ use crate::framework::*;
 /// and collects the identifier fragments being pasted.
 #[derive(Debug)]
 pub struct Items {
-    data: ItemsData,
-}
-
-/// Accumulator for things to be pasted
-///
-/// This contains the actual fragments to be pasted.
-/// Any case changing is done during assembly.
-#[derive(Debug)]
-pub struct ItemsData {
     tspan: Span,
     items: Vec<ItemEntry>,
     errors: Vec<syn::Error>,
@@ -136,16 +127,8 @@ define_cases! {
 }
 
 impl Items {
-    pub fn new(tspan: Span) -> Items {
+    pub fn new(tspan: Span) -> Self {
         Items {
-            data: ItemsData::new(tspan),
-        }
-    }
-}
-
-impl ItemsData {
-    fn new(tspan: Span) -> Self {
-        ItemsData {
             tspan,
             items: vec![],
             errors: vec![],
@@ -155,7 +138,7 @@ impl ItemsData {
 
 impl Items {
     fn append_item(&mut self, item: Item) {
-        self.data.items.push(ItemEntry { item });
+        self.items.push(ItemEntry { item });
     }
     /// Like `ExpansionOutput::append_display` but doesn't need `Spanned`
     fn append_display<V: Display>(&mut self, v: &V) {
@@ -176,16 +159,6 @@ impl Items {
     /// [`append_identfrag_toks`](ExpansionOutput::append_identfrag_toks)
     /// otherwise.
     pub fn assemble(
-        self,
-        out: &mut impl ExpansionOutput,
-        case: Option<ChangeCase>,
-    ) -> syn::Result<()> {
-        self.data.assemble(out, case)
-    }
-}
-
-impl ItemsData {
-    fn assemble(
         self,
         out: &mut impl ExpansionOutput,
         change_case: Option<ChangeCase>,
@@ -438,7 +411,7 @@ impl ExpansionOutput for Items {
     }
 
     fn record_error(&mut self, err: syn::Error) {
-        self.data.errors.push(err);
+        self.errors.push(err);
     }
 }
 
