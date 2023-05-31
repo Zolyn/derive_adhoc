@@ -368,9 +368,6 @@ impl ExpansionOutput for Items {
             L::Str(s) => self.append_item(Item::Plain {
                 text: s.value(),
             }),
-            L::Int(v) => self.append_display(v),
-            L::Bool(v) => self.append_display(&v.value()),
-            L::Verbatim(v) => self.append_display(v),
             x => self.write_error(
                 x,
                 "derive-adhoc macro wanted to do identifier pasting, but inappropriate literal provided",
