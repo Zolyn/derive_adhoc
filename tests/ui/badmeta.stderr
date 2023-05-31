@@ -1,0 +1,20 @@
+error: this file contains an unclosed delimiter
+  --> ui/badmeta.rs:3:10
+   |
+3  |   #[derive(Adhoc)]
+   |            ^^^^^ unclosed delimiter
+...
+7  | / derive_adhoc! {
+8  | |     DataType:
+9  | |
+10 | |     const K: () = ${tmeta(wrong)}
+11 | | }
+   | |_- in this macro invocation
+   |
+   = note: this error originates in the macro `::derive_adhoc::derive_adhoc_expand` which comes from the expansion of the macro `derive_adhoc` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: expected one of `.`, `;`, `?`, or an operator, found `<eof>`
+ --> ui/badmeta.rs:4:17
+  |
+4 | #[adhoc(wrong = "{")]
+  |                 ^^^ expected one of `.`, `;`, `?`, or an operator
