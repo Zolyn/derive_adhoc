@@ -18,7 +18,8 @@ pub struct Template<O: SubstParseContext> {
 #[derive(Debug)]
 pub enum TemplateElement<O: SubstParseContext> {
     Ident(Ident),
-    Literal(syn::Lit),
+    LitStr(syn::LitStr),
+    Literal(syn::Lit, O::NotInPaste),
     Punct(Punct, O::NotInPaste),
     Group {
         /// Sadly Group's constructors let us only set *both* delimiters
@@ -315,7 +316,13 @@ impl<O: SubstParseContext> Parse for TemplateElement<O> {
                 }
             }
             TT::Ident(tt) => TE::Ident(tt),
-            tt @ TT::Literal(_) => TE::Literal(syn::parse2(tt.into())?),
+            tt @ TT::Literal(..) => {
+                let span = tt.span();
+                match syn::parse2(tt.into())? {
+                    syn::Lit::Str(s) => TE::LitStr(s),
+                    other => TE::Literal(other, O::not_in_paste(&span)?),
+                }
+            }
             TT::Punct(tok) if tok.as_char() != '$' => {
                 let span = tok.span();
                 TE::Punct(tok, O::not_in_paste(&span)?)
@@ -894,7 +901,7 @@ impl<O: SubstParseContext> RepeatedTemplate<O> {
         for elem in template.elements.drain(..) {
             let not_special = match elem {
                 _ if !beginning => elem,
-                TE::Ident(_) | TE::Literal(_) | TE::Punct(..) => elem,
+                TE::Ident(_) | TE::Literal(..) | TE::Punct(..) => elem,
 
                 TE::Subst(subst) => match subst.sd {
                     SD::when(when, ..) => {

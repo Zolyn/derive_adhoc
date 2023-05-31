@@ -10,7 +10,7 @@ error: multiple nontrivial entries in ${paste ...}
 13 |         ${paste $ttype _ $ftype}
    |                           ^^^^^
 
-error: derive-adhoc macro wanted to do identifier pasting, but inappropriate literal provided
+error: not allowed in within ${paste ...} (or case_changing)
   --> ui/badpaste.rs:20:29
    |
 20 |     struct ${paste $tname _ 42};

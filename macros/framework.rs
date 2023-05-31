@@ -156,7 +156,16 @@ pub trait ExpansionOutput: SubstParseContext {
     /// This is its own method because `syn::Lit` is not `Display`,
     /// and we don't want to unconditionally turn it into a string
     /// before retokenising it.
+    //
+    // XXXX abolish this method and have callers use _litstr or _tokens.
     fn append_syn_lit(&mut self, v: &syn::Lit);
+
+    /// Append a [`syn::LitStr`](struct@syn::LitStr)
+    ///
+    /// This is its own method because `syn::LitStr` is not `Display`,
+    /// and we don't want to unconditionally turn it into a string
+    /// before retokenising it.
+    fn append_syn_litstr(&mut self, v: &syn::LitStr);
 
     /// Append a [`syn::Type`]
     ///
@@ -409,6 +418,9 @@ impl ExpansionOutput for TokenAccumulator {
         post(self);
     }
     fn append_syn_lit(&mut self, lit: &syn::Lit) {
+        self.append(lit);
+    }
+    fn append_syn_litstr(&mut self, lit: &syn::LitStr) {
         self.append(lit);
     }
     fn append_syn_type(&mut self, _te_span: Span, ty: &syn::Type) {

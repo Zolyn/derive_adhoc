@@ -374,6 +374,11 @@ impl ExpansionOutput for Items {
             ),
         }
     }
+    fn append_syn_litstr(&mut self, lit: &syn::LitStr) {
+        self.append_item(Item::Plain {
+            text: lit.value(),
+        });
+    }
     fn append_syn_type(&mut self, te_span: Span, ty: &syn::Type) {
         (|| {
             match ty {
@@ -443,9 +448,10 @@ impl Expand<Items> for TemplateElement<Items> {
     fn expand(&self, ctx: &Context, out: &mut Items) -> syn::Result<()> {
         match self {
             TE::Ident(ident) => out.append_identfrag_toks(&ident),
-            TE::Literal(lit) => out.append_syn_lit(&lit),
+            TE::LitStr(lit) => out.append_syn_litstr(&lit),
             TE::Subst(e) => e.expand(ctx, out)?,
             TE::Repeat(e) => e.expand(ctx, out),
+            TE::Literal(_, not_in_paste) |
             TE::Punct(_, not_in_paste) | TE::Group { not_in_paste, .. } => {
                 void::unreachable(*not_in_paste)
             }
