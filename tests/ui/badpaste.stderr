@@ -15,3 +15,9 @@ error: not allowed in within ${paste ...} (or case_changing)
    |
 20 |     struct ${paste $tname _ 42};
    |                             ^^
+
+error: unexpected end of input, $Xmeta in paste requires `as ...`
+  --> ui/badpaste.rs:22:45
+   |
+22 |     struct ${paste $tname ${tmeta(something)}};
+   |                                             ^

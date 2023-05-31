@@ -18,6 +18,8 @@ derive_adhoc! {
     DataType:
 
     struct ${paste $tname _ 42};
+
+    struct ${paste $tname ${tmeta(something)}};
 }
 
 fn main() {}
