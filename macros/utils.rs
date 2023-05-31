@@ -194,7 +194,7 @@ impl Drop for ErrorAccumulator {
 ///
 /// Will then write out `T` as its tokens.
 /// In identifier pasting, converts the tokens to a string first
-/// (so they had better be keywords).
+/// (so they had better be identifiers, or ident fragments).
 pub struct TokenPastesAsIdent<T>(pub T);
 
 impl<T: ToTokens> ToTokens for TokenPastesAsIdent<T> {
