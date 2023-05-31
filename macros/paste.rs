@@ -231,7 +231,7 @@ impl Items {
             })?
             .map(|(pos, _)| pos);
 
-        fn plain_strs(items: &[Item]) -> impl Iterator<Item = &str> {
+        fn plain_strs(items: &[Item]) -> impl Iterator<Item = &str> + Clone {
             items.iter().map(|item| match item {
                 Item::Plain { text, .. } => text.as_str(),
                 _ => panic!("non plain item"),
@@ -241,7 +241,7 @@ impl Items {
         fn mk_ident<'i>(
             out_span: Span,
             change_case: Option<ChangeCase>,
-            items: impl Iterator<Item = &'i str>,
+            items: impl Iterator<Item = &'i str> + Clone,
         ) -> syn::Result<syn::Ident> {
             let ident = items.collect::<String>();
             let ident = if let Some(change_case) = change_case {
