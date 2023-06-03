@@ -8,6 +8,7 @@ pub use std::fmt::{self, Debug, Display, Write as _};
 pub use std::iter;
 pub use std::marker::PhantomData;
 pub use std::mem;
+pub use std::ops::Deref;
 pub use std::panic::{catch_unwind, AssertUnwindSafe};
 pub use std::str::FromStr;
 pub use std::thread::panicking;
@@ -36,7 +37,7 @@ pub use crate::utils::advise_incompatibility;
 pub use crate::utils::expand_macro_name;
 pub use crate::utils::ErrorAccumulator;
 pub use crate::utils::{braced_group, delimit_token_group};
-pub use crate::utils::{ErrorLoc, MakeError};
+pub use crate::utils::{ErrorLoc, IdentAny, MakeError};
 pub use crate::utils::{ToTokensPunctComposable, TokenPastesAsIdent};
 pub(crate) use crate::{check, dbg_allkw, framework};
 

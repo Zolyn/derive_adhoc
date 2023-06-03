@@ -265,7 +265,7 @@ impl DaOption {
 
 impl Parse for DaOption {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let kw = input.call(syn::Ident::parse_any)?;
+        let kw: IdentAny = input.parse()?;
 
         let from_od = |od| {
             Ok(DaOption {
@@ -289,7 +289,7 @@ impl Parse for DaOption {
 
 impl<V: FromStr + DaOptValDescribable> Parse for DaOptVal<V> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let kw = input.call(Ident::parse_any)?;
+        let kw: IdentAny = input.parse()?;
         let value = kw.to_string().parse().map_err(|_| {
             kw.error(format_args!("unknown value for {}", V::DESCRIPTION))
         })?;

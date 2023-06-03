@@ -208,6 +208,32 @@ impl<T: ToTokens> quote::IdentFragment for TokenPastesAsIdent<T> {
     }
 }
 
+//---------- IdentAny ----------
+
+/// Like `syn::Ident` but parses using `parse_any`, accepting keywords
+pub struct IdentAny(pub syn::Ident);
+impl Parse for IdentAny {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        Ok(IdentAny(Ident::parse_any(input)?))
+    }
+}
+impl Deref for IdentAny {
+    type Target = syn::Ident;
+    fn deref(&self) -> &syn::Ident {
+        &self.0
+    }
+}
+impl Spanned for IdentAny {
+    fn span(&self) -> Span {
+        self.0.span()
+    }
+}
+impl<T: AsRef<str> + ?Sized> PartialEq<T> for IdentAny {
+    fn eq(&self, rhs: &T) -> bool {
+        self.0.eq(rhs)
+    }
+}
+
 //---------- expand_macro_name ----------
 
 /// Return a full path to the location of `derive_adhoc_expand`.
@@ -284,6 +310,7 @@ macro_rules! keyword_general {
       @ 2 $kw:expr, $constr:ident,
       { $( $bindings:tt )* } $( $constr_args:tt )?
     } => {
+        let _: &IdentAny = &$kw_var;
         if $kw_var == $kw {
             $( $bindings )*
             return $from_enum($Enum::$constr $( $constr_args )*);

@@ -358,7 +358,7 @@ impl Parse for AdhocAttrList {
 
 impl<O: SubstParseContext> SubstMetaAs<O> {
     fn parse(input: ParseStream, nb: O::NotInBool) -> syn::Result<Self> {
-        let kw = input.call(syn::Ident::parse_any)?;
+        let kw: IdentAny = input.parse()?;
         let from_sma = |sma: SubstMetaAs<_>| Ok(sma);
 
         // See keyword_general! in utils.rs
@@ -436,7 +436,7 @@ pub trait ParseUsingSubkeywords: Sized + ParseOneSubkeyword {
     fn parse(input: ParseStream, kw_span: Span) -> syn::Result<Self> {
         let mut out = Self::new_default(kw_span)?;
         while !input.is_empty() {
-            let subkw = input.call(Ident::parse_any)?;
+            let subkw: IdentAny = input.parse()?;
             let _: Token![=] = input.parse()?;
             out.process_one_keyword(&subkw, input).unwrap_or_else(|| {
                 Err(subkw.error("unknown $vpat/$vconstr argument sub-keyword"))
@@ -616,7 +616,7 @@ impl<O: SubstParseContext> Subst<O> {
 /// Parses only the content (ie, after the `$` and inside any `{ }`)
 impl<O: SubstParseContext> Parse for Subst<O> {
     fn parse<'i>(input: ParseStream<'i>) -> syn::Result<Self> {
-        let kw = input.call(syn::Ident::parse_any)?;
+        let kw: IdentAny = input.parse()?;
         let output_marker = PhantomData;
         let from_sd = |sd| {
             Ok(Subst {
@@ -633,7 +633,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
             let s = s
                 .strip_suffix("_bizarre")
                 .ok_or_else(|| kw.error("bizarre mode but not _bizarre"))?;
-            syn::Ident::new(s, kw.span())
+            IdentAny(syn::Ident::new(s, kw.span()))
         };
 
         // keyword!{ KEYWORD [ {BLOCK WITH BINDINGS} ] [ CONSTRUCTOR-ARGS ] }
