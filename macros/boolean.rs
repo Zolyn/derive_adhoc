@@ -42,9 +42,12 @@ impl Subst<BooleanContext> {
 
         macro_rules! eval_meta { { $wa:expr, $lev:ident, $($pmetas:tt)* } => { {
             let SubstMeta { path, as_} = $wa;
-            if let Some(as_) = as_ {
-                void::unreachable(as_.1)
-            }
+            use SubstMetaAs as SMA;
+            match as_ {
+                SMA::Unspecified(..) => {}
+                SMA::lit(nb) |
+                SMA::ty(nb) => void::unreachable(*nb)
+            };
             is_found(ctx.for_with_within::<$lev,_,_>(|_ctx, within| {
                 path.search_eval_bool(&within . $($pmetas)*)
             }))

@@ -24,7 +24,7 @@ error: unexpected arguments to expansion keyword
 22 |     ${if false { } else { } forbidden}
    |                             ^^^^^^^^^
 
-error: derive-adhoc construct is an expansion - not valid in a condition
+error: `Xmeta as ...` not allowed in conditions
   --> ui/badargs.rs:24:27
    |
 24 |     ${if tmeta(some_path) as lit { }}

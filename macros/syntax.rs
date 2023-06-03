@@ -160,16 +160,15 @@ pub enum SubstVis {
 #[derive(Debug, Clone)]
 pub struct SubstMeta<O: SubstParseContext> {
     pub path: SubstMetaPath,
-    pub as_: Option<(SubstMetaAs<O>, O::NotInBool)>,
+    pub as_: SubstMetaAs<O>,
 }
 
 #[derive(Debug, Clone, AsRefStr, Display)]
 #[allow(non_camel_case_types)] // clearer to use the exact ident
 pub enum SubstMetaAs<O: SubstParseContext> {
-    lit,
-    ty,
-    #[allow(dead_code)] // TODO remove
-    Dummy((Void, PhantomData<O>)),
+    Unspecified(),
+    lit(O::NotInBool),
+    ty(O::NotInBool),
 }
 
 #[derive(Debug, Clone)]
@@ -357,7 +356,7 @@ impl Parse for AdhocAttrList {
 }
 
 impl<O: SubstParseContext> SubstMetaAs<O> {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
+    fn parse(input: ParseStream, nb: O::NotInBool) -> syn::Result<Self> {
         let kw = input.call(syn::Ident::parse_any)?;
         let from_sma = |sma: SubstMetaAs<_>| Ok(sma);
 
@@ -366,8 +365,8 @@ impl<O: SubstParseContext> SubstMetaAs<O> {
             keyword_general! { kw from_sma SubstMetaAs; $($args)* }
         } }
 
-        keyword! { lit }
-        keyword! { ty }
+        keyword! { lit(nb) }
+        keyword! { ty(nb) }
 
         Err(kw.error("unknown derive-adhoc 'as' syntax type keyword"))
     }
@@ -381,11 +380,12 @@ impl<O: SubstParseContext> Parse for SubstMeta<O> {
 
         if input.peek(Token![as]) {
             let as_token: Token![as] = input.parse()?;
-            let nb = O::not_in_bool(&as_token)?;
-            let as_spec = SubstMetaAs::parse(input)?;
-            as_ = Some((as_spec, nb));
+            let nb = O::not_in_bool(&as_token).map_err(|_| {
+                as_token.error("`Xmeta as ...` not allowed in conditions")
+            })?;
+            as_ = SubstMetaAs::parse(input, nb)?;
         } else {
-            as_ = None;
+            as_ = SubstMetaAs::Unspecified();
         }
 
         Ok(SubstMeta { path, as_ })

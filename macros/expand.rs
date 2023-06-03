@@ -683,9 +683,7 @@ where
             )
         })?;
 
-        let as_ = self.as_.as_ref().map(|(as_, _nb)| as_);
-
-        found.expand(self.span(), as_, out)?;
+        found.expand(self.span(), &self.as_, out)?;
 
         Ok(())
     }
@@ -724,7 +722,7 @@ impl<'l> MetaNode<'l> {
     fn expand<O>(
         &self,
         tspan: Span,
-        as_: Option<&SubstMetaAs<O>>,
+        as_: &SubstMetaAs<O>,
         out: &mut O,
     ) -> syn::Result<()>
     where
@@ -744,12 +742,11 @@ impl<'l> MetaNode<'l> {
 
         use SubstMetaAs as SMS;
         match as_ {
-            Some(SMS::lit) => out.append_syn_lit(lit),
-            Some(as_ @ SMS::ty) => {
+            SMS::lit(..) => out.append_syn_lit(lit),
+            as_ @ SMS::ty(..) => {
                 out.append_syn_type(tspan, &metavalue_lit_as(lit, tspan, as_)?)
             }
-            Some(SMS::Dummy((v,_))) => void::unreachable(*v),
-            None => out.append_meta_value(tspan, lit)?,
+            SMS::Unspecified(..) => out.append_meta_value(tspan, lit)?,
         }
         Ok(())
     }
