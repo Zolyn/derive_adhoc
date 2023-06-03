@@ -347,6 +347,7 @@ Expand the contents and paste it together into a single identifier.
 The contents may only contain identifer fragments, strings (`"..."`),
 and (certain) expansions.
 Supported expansions are `$ftype`, `$ttype`, `$tdeftype`, `$Xname`, `$Xmeta`,
+`${paste ...}`,
 `${CASE_CHANGE}`,
 `$tdefkwd`,
 as well as conditionals and repetitions.
@@ -584,13 +585,11 @@ This is useful to make identifiers with the natural spelling
 for their kind,
 out of identifiers originally for something else.
 
-The content must be a single (terminal) expansion item
-which would be valid within `${paste }`.
 If the content's expansion is a path, only the final segment is changed.
-`${CASE_CHANGE }` may appear within `${paste }` to change the case of
-a paste fragment, before concatenation.
-(Concatenating before changing case, `${CASE_CHANGE ${paste ...}}`,
-is not supported.)
+
+The content must be valid within `${paste }`,
+and is treated the same way.
+`${CASE_CHANGE }` may appear within `${paste }` and vice versa.
 
 This table shows the supported case styles.
 Note that changing the case can add and remove underscores.
