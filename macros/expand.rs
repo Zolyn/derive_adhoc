@@ -693,6 +693,20 @@ fn metavalue_spans(tspan: Span, vspan: Span) -> [ErrorLoc; 2] {
     [(vspan, "attribute value"), (tspan, "template")]
 }
 
+/// Obtain the `LiStr` from a meta node value (ie, a `Lit`)
+fn metavalue_litstr<'l>(
+    lit: &'l syn::Lit,
+    tspan: Span,
+    msg: fmt::Arguments<'_>,
+) -> syn::Result<&'l syn::LitStr> {
+    match lit {
+        syn::Lit::Str(s) => Ok(s),
+        // having checked derive_builder, it doesn't handle
+        // Lit::Verbatim so I guess we don't need to either.
+        _ => Err(metavalue_spans(tspan, lit.span()).error(msg)),
+    }
+}
+
 /// Convert a literal found in a meta item into `T`
 ///
 /// `into_what` is used only for error reporting
@@ -704,15 +718,14 @@ pub fn metavalue_lit_as<T>(
 where
     T: Parse + ToTokens,
 {
-    let s: &syn::LitStr = match lit {
-        syn::Lit::Str(s) => Ok(s),
-        // having checked derive_builder, it doesn't handle
-        // Lit::Verbatim so I guess we don't need to either.
-        _ => Err(metavalue_spans(tspan, lit.span()).error(format_args!(
+    let s = metavalue_litstr(
+        lit,
+        tspan,
+        format_args!(
             "expected string literal, for conversion to {}",
             into_what,
-        ))),
-    }?;
+        ),
+    )?;
 
     let thing: T = s.parse()?;
     Ok(thing)
