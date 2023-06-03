@@ -362,18 +362,6 @@ impl ExpansionOutput for Items {
             te_span,
         });
     }
-    fn append_syn_lit(&mut self, lit: &syn::Lit) {
-        use syn::Lit as L;
-        match lit {
-            L::Str(s) => self.append_item(Item::Plain {
-                text: s.value(),
-            }),
-            x => self.write_error(
-                x,
-                "derive-adhoc macro wanted to do identifier pasting, but inappropriate literal provided",
-            ),
-        }
-    }
     fn append_syn_litstr(&mut self, lit: &syn::LitStr) {
         self.append_item(Item::Plain {
             text: lit.value(),
@@ -418,14 +406,6 @@ impl ExpansionOutput for Items {
             Ok::<_, syn::Error>(())
         })()
         .unwrap_or_else(|e| self.record_error(e));
-    }
-    fn append_meta_value(
-        &mut self,
-        _tspan: Span,
-        lit: &syn::Lit,
-    ) -> syn::Result<()> {
-        self.append_syn_lit(lit);
-        Ok(())
     }
     fn append_tokens_with(
         &mut self,

@@ -151,15 +151,6 @@ pub trait ExpansionOutput: SubstParseContext {
         A: FnOnce(&mut TokenAccumulator),
         B: FnOnce(&mut TokenAccumulator);
 
-    /// Append a [`syn::Lit`](enum@syn::Lit)
-    ///
-    /// This is its own method because `syn::Lit` is not `Display`,
-    /// and we don't want to unconditionally turn it into a string
-    /// before retokenising it.
-    //
-    // XXXX abolish this method and have callers use _litstr or _tokens.
-    fn append_syn_lit(&mut self, v: &syn::Lit);
-
     /// Append a [`syn::LitStr`](struct@syn::LitStr)
     ///
     /// This is its own method because `syn::LitStr` is not `Display`,
@@ -173,17 +164,6 @@ pub trait ExpansionOutput: SubstParseContext {
     /// in the terminology of the template reference:
     /// If a paste contains more than one, it is an error.
     fn append_syn_type(&mut self, te_span: Span, v: &syn::Type);
-
-    /// Append a meta item value (without `as` clause in the template)
-    ///
-    /// Can fail, if the actual concrete value is not right
-    //
-    // TODO there are no callers for this, it should be removed.
-    fn append_meta_value(
-        &mut self,
-        tspan: Span,
-        lit: &syn::Lit,
-    ) -> syn::Result<()>;
 
     /// Append using a function which generates tokens
     ///
@@ -419,23 +399,11 @@ impl ExpansionOutput for TokenAccumulator {
         self.append(ident);
         post(self);
     }
-    fn append_syn_lit(&mut self, lit: &syn::Lit) {
-        self.append(lit);
-    }
     fn append_syn_litstr(&mut self, lit: &syn::LitStr) {
         self.append(lit);
     }
     fn append_syn_type(&mut self, _te_span: Span, ty: &syn::Type) {
         self.append(ty);
-    }
-    fn append_meta_value(
-        &mut self,
-        tspan: Span,
-        lit: &syn::Lit,
-    ) -> syn::Result<()> {
-        let tokens: TokenStream = metavalue_lit_as(lit, tspan, &"tokens")?;
-        self.append(tokens);
-        Ok(())
     }
     fn append_tokens_with(
         &mut self,
