@@ -288,7 +288,7 @@ Accesses macro parameters passed via `#[adhoc(...)]` attributes.
    Looks for `#[adhoc(NAME=LIT)]`, and expands to `LIT`.
    `LIT` can only be a literal, which is parsed as Rust tokens,
    which become the result of the expansion.
-   (Within `${paste }` and `${case }`, the literal is used directly.)
+   (Within `${paste }` and `${CASE_CHANGE }`, the literal is used directly.)
 
  * **`${Xmeta(SUB(NAME))}`**:
    Looks for `#[adhoc(SUB(NAME=LIT))]`, and expands to `LIT`.

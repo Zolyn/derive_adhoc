@@ -15,7 +15,7 @@ pub struct Items {
 }
 
 #[derive(Debug)]
-/// Entry in a `${paste ...}` or `${case ...}`
+/// Entry in a `${paste ...}` or `${CASE ...}`
 ///
 /// `te_span` is the span of this item entry in the template.
 /// It is used for error reporting if we can't cope with this entry
@@ -310,7 +310,7 @@ impl SubstParseContext for Items {
     }
 
     fn not_in_paste(span: &impl Spanned) -> syn::Result<Void> {
-        Err(span.error("not allowed in within ${paste ...} (or ${case })"))
+        Err(span.error("not allowed in within ${paste ...} (or case_changing)"))
     }
 }
 

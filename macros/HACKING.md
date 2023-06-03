@@ -15,7 +15,7 @@ and, especially, testing them can be complex.
    * [Adding an expansion keyword](#adding-an-expansion-keyword)
       * [Accessing the driver](#accessing-the-driver)
       * [Expansion keysords with content or arguments](#expansion-keysords-with-content-or-arguments)
-      * [Adding a keyword that can appear in `${paste }` and/or `${case }`](#adding-a-keyword-that-can-appear-in-paste--andor-case-)
+      * [Adding a keyword that can appear in `${paste }` and/or `${CASE }`](#adding-a-keyword-that-can-appear-in-paste--andor-case-)
       * [Adding a boolean keyword](#adding-a-boolean-keyword)
 
 ## Required reading
@@ -170,11 +170,11 @@ which allows `... as ...`, except in boolean context.
 
 For named arguments, use [`syntax::ParseUsingSubkeywords`].
 
-### Adding a keyword that can appear in `${paste }` and/or `${case }`
+### Adding a keyword that can appear in `${paste }` and/or `${CASE }`
 
 Removing `O::NotInPaste` marker from a `SubstDetails` variant
 will allow the template to contain that keyword
-within `${paste}` and `${case}`.
+within `${paste}` and `${CASE}`.
 
 You won't be able to call `out.append_tokens` any more.
 Instead, you must use one of the more specific
