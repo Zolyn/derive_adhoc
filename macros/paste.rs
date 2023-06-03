@@ -130,6 +130,38 @@ impl Items {
     }
 }
 
+/// Element of input to `mk_ident`: one bit of the leaf identifier
+///
+/// This is, essentially, the part of an `Item` which contributes to the
+/// pasting.
+type Piece<'i> = &'i str;
+
+/// Make a leaf identifier out of pieces
+///
+/// Actually pastes together the pieces.
+///
+/// Any surrounding path elements, generics, etc., of a nontrivial
+/// expansion, are handled by `assemble`, not here.
+fn mk_ident<'i>(
+    out_span: Span,
+    change_case: Option<ChangeCase>,
+    items: impl Iterator<Item = Piece<'i>> + Clone,
+) -> syn::Result<syn::Ident> {
+    let ident = items.collect::<String>();
+    let ident = if let Some(change_case) = change_case {
+        change_case.apply(&ident)
+    } else {
+        ident
+    };
+    catch_unwind(|| format_ident!("{}", ident, span = out_span))
+        .map_err(|_| {
+            out_span.error(format_args!(
+                "pasted identifier {:?} is invalid",
+                ident
+            ))
+        })
+}
+
 impl Items {
     fn append_item(&mut self, item: Item) {
         self.items.push(item);
@@ -212,8 +244,6 @@ impl Items {
         // messages for identifiers with the wrong span are rather poor.
         let out_span = tspan;
 
-        type Piece<'i> = &'i str;
-
         let nontrivial = items
             .iter()
             .enumerate()
@@ -238,26 +268,6 @@ impl Items {
                 Item::Plain { text, .. } => text.as_str(),
                 _ => panic!("non plain item"),
             })
-        }
-
-        fn mk_ident<'i>(
-            out_span: Span,
-            change_case: Option<ChangeCase>,
-            items: impl Iterator<Item = Piece<'i>> + Clone,
-        ) -> syn::Result<syn::Ident> {
-            let ident = items.collect::<String>();
-            let ident = if let Some(change_case) = change_case {
-                change_case.apply(&ident)
-            } else {
-                ident
-            };
-            catch_unwind(|| format_ident!("{}", ident, span = out_span))
-                .map_err(|_| {
-                    out_span.error(format_args!(
-                        "pasted identifier {:?} is invalid",
-                        ident
-                    ))
-                })
         }
 
         if let Some(nontrivial) = nontrivial {
