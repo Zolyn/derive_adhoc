@@ -23,6 +23,7 @@ pub struct Items {
 enum Item {
     Plain {
         text: String,
+        span: Option<Span>,
     },
     Complex {
         pre: TokenStream,
@@ -134,7 +135,7 @@ impl Items {
 ///
 /// This is, essentially, the part of an `Item` which contributes to the
 /// pasting.
-type Piece<'i> = &'i str;
+type Piece<'i> = (&'i str, Option<Span>);
 
 /// Make a leaf identifier out of pieces
 ///
@@ -147,7 +148,7 @@ fn mk_ident<'i>(
     change_case: Option<ChangeCase>,
     items: impl Iterator<Item = Piece<'i>> + Clone,
 ) -> syn::Result<syn::Ident> {
-    let ident = items.collect::<String>();
+    let ident = items.clone().map(|i| i.0).collect::<String>();
     let ident = if let Some(change_case) = change_case {
         change_case.apply(&ident)
     } else {
@@ -166,14 +167,17 @@ impl Items {
     fn append_item(&mut self, item: Item) {
         self.items.push(item);
     }
+    /// Append a plain entry from something `Display`
+    ///
     /// Like `ExpansionOutput::append_display` but doesn't need `Spanned`
-    fn append_display<V: Display>(&mut self, v: &V) {
+    fn append_plain<V: Display>(&mut self, span: Span, v: V) {
         self.append_item(Item::Plain {
             text: v.to_string(),
+            span: Some(span),
         })
     }
     pub fn append_fixed_string(&mut self, text: &'static str) {
-        self.append_item(Item::Plain { text: text.into() });
+        self.append_item(Item::Plain { text: text.into(), span: None })
     }
 
     /// Combine the accumulated pieces and append them to `out`
@@ -265,7 +269,7 @@ impl Items {
 
         fn plain_strs(items: &[Item]) -> impl Iterator<Item = Piece> + Clone {
             items.iter().map(|item| match item {
-                Item::Plain { text, .. } => text.as_str(),
+                Item::Plain { text, span } => (text.as_str(), *span),
                 _ => panic!("non plain item"),
             })
         }
@@ -276,13 +280,13 @@ impl Items {
             let (items_before, items) = items.split_at_mut(nontrivial);
             let nontrivial = &mut items[0];
 
-            let mk_ident_nt = |text: Piece| {
+            let mk_ident_nt = |(text, txspan): Piece| {
                 mk_ident(
                     out_span,
                     change_case,
                     chain!(
                         plain_strs(items_before),
-                        iter::once(text),
+                        iter::once((text, txspan)),
                         plain_strs(items_after),
                     ),
                 )
@@ -293,12 +297,12 @@ impl Items {
                     pre,
                     text,
                     post,
-                    te_span: _,
+                    te_span,
                 } => {
                     return Ok(Either::Right((
                         tspan,
                         mem::take(pre),
-                        mk_ident_nt(text)?,
+                        mk_ident_nt((text, Some(*te_span)))?,
                         mem::take(post),
                     )))
                 }
@@ -329,7 +333,7 @@ impl SubstParseContext for Items {
 
 impl ExpansionOutput for Items {
     fn append_display<S: Display + Spanned>(&mut self, plain: &S) {
-        self.append_display(plain);
+        self.append_plain(plain.span(), plain);
     }
     fn append_identfrag_toks<I: quote::IdentFragment + ToTokens>(
         &mut self,
@@ -342,7 +346,9 @@ impl ExpansionOutput for Items {
                 QIF::fmt(&self.0, f)
             }
         }
-        self.append_display(&AsIdentFragment(ident));
+        // There's <I as IdentFragment>::span too, which returns Option
+        let span = <I as Spanned>::span(ident);
+        self.append_plain(span, AsIdentFragment(ident));
     }
     fn append_idpath<A, B>(
         &mut self,
@@ -375,9 +381,7 @@ impl ExpansionOutput for Items {
         });
     }
     fn append_syn_litstr(&mut self, lit: &syn::LitStr) {
-        self.append_item(Item::Plain {
-            text: lit.value(),
-        });
+        self.append_plain(lit.span(), lit.value());
     }
     fn append_syn_type(&mut self, te_span: Span, ty: &syn::Type) {
         (|| {
