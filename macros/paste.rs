@@ -140,8 +140,8 @@ impl Items {
             text: v.to_string(),
         })
     }
-    pub fn append_fixed_string(&mut self, text: String) {
-        self.append_item(Item::Plain { text });
+    pub fn append_fixed_string(&mut self, text: &'static str) {
+        self.append_item(Item::Plain { text: text.into() });
     }
 
     /// Combine the accumulated pieces and append them to `out`
