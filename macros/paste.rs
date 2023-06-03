@@ -156,10 +156,46 @@ fn mk_ident<'i>(
     };
     catch_unwind(|| format_ident!("{}", ident, span = out_span))
         .map_err(|_| {
-            out_span.error(format_args!(
+            let mut err = out_span.error(format_args!(
                 "pasted identifier {:?} is invalid",
                 ident
-            ))
+            ));
+            // We want to show the user where the bad part is.  In
+            // particular, if it came from somewhere nontrivial like an
+            // ${Xmeta}.  But, we don't want to dump one error for every
+            // input, because most of them will be harmless fixed
+            // identifiers, in the template right next to the ${paste}.
+            // So, try out each input bit and see if it would make an
+            // identifier by itself.
+            for ((part, pspan), pfx) in izip!(
+                items,
+                // The first entry must be valid as an identifier start.
+                // The subsequent entries, we prepend with "X".  If the first
+                // entry was empty, that would be reported too.  This may
+                // mean we make more reports than needed, which is why we say
+                // "probably".
+                chain!(iter::once(""), iter::repeat("X")),
+            ) {
+                let pspan = match pspan {
+                    Some(s) => s,
+                    None => continue,
+                };
+                // We accept keywords.  If the problem was that the output
+                // was a keyword because one of the inputs was, we hope that
+                // this is because one of the other inputs was empty.
+                //
+                // If the output was a keyword for some other reason, it
+                // probably means the identifier construction scheme is
+                // defective and hopefully the situation will be obvious to
+                // the user.
+                match syn::parse_str(&format!("{}{}", pfx, part)) {
+                    Ok::<IdentAny, _>(_) => {}
+                    Err(_) => err.combine(pspan.error(
+                        "probably-invalid input to identifier pasting",
+                    )),
+                }
+            }
+            err
         })
 }
 

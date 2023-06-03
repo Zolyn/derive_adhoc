@@ -24,3 +24,18 @@ error: pasted identifier "Bad." is invalid
    |
 22 |     struct ${paste Bad ${tmeta(dot) as str}};
    |              ^^^^^
+
+error: probably-invalid input to identifier pasting
+  --> ui/badmeta.rs:5:15
+   |
+5  |   #[adhoc(dot = ".")]
+   |                 ^^^
+...
+19 | / derive_adhoc! {
+20 | |     DataType:
+21 | |
+22 | |     struct ${paste Bad ${tmeta(dot) as str}};
+23 | | }
+   | |_- in this macro invocation
+   |
+   = note: this error originates in the macro `derive_adhoc_driver_DataType` which comes from the expansion of the macro `derive_adhoc` (in Nightly builds, run with -Z macro-backtrace for more info)
