@@ -375,6 +375,9 @@ impl ExpansionOutput for Items {
         &mut self,
         ident: &I,
     ) {
+        // We could just use format_ident! but that would give us an Ident
+        // and we'd have to cons again to get the String we want.
+        // This helper type avoids that.
         use quote::IdentFragment as QIF;
         struct AsIdentFragment<'i, I>(&'i I);
         impl<'i, I: QIF> Display for AsIdentFragment<'i, I> {
