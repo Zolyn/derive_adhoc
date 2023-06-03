@@ -212,6 +212,8 @@ impl Items {
         // messages for identifiers with the wrong span are rather poor.
         let out_span = tspan;
 
+        type Piece<'i> = &'i str;
+
         let nontrivial = items
             .iter()
             .enumerate()
@@ -231,7 +233,7 @@ impl Items {
             })?
             .map(|(pos, _)| pos);
 
-        fn plain_strs(items: &[Item]) -> impl Iterator<Item = &str> + Clone {
+        fn plain_strs(items: &[Item]) -> impl Iterator<Item = Piece> + Clone {
             items.iter().map(|item| match item {
                 Item::Plain { text, .. } => text.as_str(),
                 _ => panic!("non plain item"),
@@ -241,7 +243,7 @@ impl Items {
         fn mk_ident<'i>(
             out_span: Span,
             change_case: Option<ChangeCase>,
-            items: impl Iterator<Item = &'i str> + Clone,
+            items: impl Iterator<Item = Piece<'i>> + Clone,
         ) -> syn::Result<syn::Ident> {
             let ident = items.collect::<String>();
             let ident = if let Some(change_case) = change_case {
@@ -264,7 +266,7 @@ impl Items {
             let (items_before, items) = items.split_at_mut(nontrivial);
             let nontrivial = &mut items[0];
 
-            let mk_ident_nt = |text: &str| {
+            let mk_ident_nt = |text: Piece| {
                 mk_ident(
                     out_span,
                     change_case,
