@@ -114,6 +114,13 @@ stable-minfeatures:
     - mv Cargo.lock.example Cargo.lock
     - cargo test --locked  -p derive-adhoc-tests --no-default-features --features=derive-adhoc-tests/recent
 
+# Check that the docs build
+cargo-doc:
+  stage: comprehensive
+  script:
+    - mv Cargo.lock.example Cargo.lock
+    - cargo doc --locked --workspace --verbose --features=full
+
 # Test our MSRV and Cargo.toml minimal versions
 #
 # We don't enable any of the optional fatures in derive-adhoc-tests.
