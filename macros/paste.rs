@@ -23,6 +23,7 @@ pub struct Items {
 enum Item {
     Plain {
         text: String,
+        span: Option<Span>,
     },
     Complex {
         pre: TokenStream,
@@ -130,18 +131,93 @@ impl Items {
     }
 }
 
+/// Element of input to `mk_ident`: one bit of the leaf identifier
+///
+/// This is, essentially, the part of an `Item` which contributes to the
+/// pasting.
+type Piece<'i> = (&'i str, Option<Span>);
+
+/// Make a leaf identifier out of pieces
+///
+/// Actually pastes together the pieces.
+///
+/// Any surrounding path elements, generics, etc., of a nontrivial
+/// expansion, are handled by `assemble`, not here.
+fn mk_ident<'i>(
+    out_span: Span,
+    change_case: Option<ChangeCase>,
+    pieces: impl Iterator<Item = Piece<'i>> + Clone,
+) -> syn::Result<syn::Ident> {
+    let ident = pieces.clone().map(|i| i.0).collect::<String>();
+    let ident = if let Some(change_case) = change_case {
+        change_case.apply(&ident)
+    } else {
+        ident
+    };
+    catch_unwind(|| format_ident!("{}", ident, span = out_span)).map_err(
+        |_| {
+            let mut err = out_span.error(format_args!(
+                "pasted identifier {:?} is invalid",
+                ident
+            ));
+            // We want to show the user where the bad part is.  In
+            // particular, if it came from somewhere nontrivial like an
+            // ${Xmeta}.  But, we don't want to dump one error for every
+            // input, because most of them will be harmless fixed
+            // identifiers, in the template right next to the ${paste}.
+            // So, try out each input bit and see if it would make an
+            // identifier by itself.
+            for ((piece, pspan), pfx) in izip!(
+                pieces,
+                // The first entry must be valid as an identifier start.
+                // The subsequent entries, we prepend with "X".  If the first
+                // entry was empty, that would be reported too.  This may
+                // mean we make more reports than needed, which is why we say
+                // "probably".
+                chain!(iter::once(""), iter::repeat("X")),
+            ) {
+                let pspan = match pspan {
+                    Some(s) => s,
+                    None => continue,
+                };
+                // We accept keywords.  If the problem was that the output
+                // was a keyword because one of the inputs was, we hope that
+                // this is because one of the other inputs was empty.
+                //
+                // If the output was a keyword for some other reason, it
+                // probably means the identifier construction scheme is
+                // defective and hopefully the situation will be obvious to
+                // the user.
+                match syn::parse_str(&format!("{}{}", pfx, piece)) {
+                    Ok::<IdentAny, _>(_) => {}
+                    Err(_) => err.combine(pspan.error(
+                        "probably-invalid input to identifier pasting",
+                    )),
+                }
+            }
+            err
+        },
+    )
+}
+
 impl Items {
     fn append_item(&mut self, item: Item) {
         self.items.push(item);
     }
+    /// Append a plain entry from something `Display`
+    ///
     /// Like `ExpansionOutput::append_display` but doesn't need `Spanned`
-    fn append_display<V: Display>(&mut self, v: &V) {
+    fn append_plain<V: Display>(&mut self, span: Span, v: V) {
         self.append_item(Item::Plain {
             text: v.to_string(),
+            span: Some(span),
         })
     }
-    pub fn append_fixed_string(&mut self, text: String) {
-        self.append_item(Item::Plain { text });
+    pub fn append_fixed_string(&mut self, text: &'static str) {
+        self.append_item(Item::Plain {
+            text: text.into(),
+            span: None,
+        })
     }
 
     /// Combine the accumulated pieces and append them to `out`
@@ -231,31 +307,11 @@ impl Items {
             })?
             .map(|(pos, _)| pos);
 
-        fn plain_strs(items: &[Item]) -> impl Iterator<Item = &str> {
+        fn plain_strs(items: &[Item]) -> impl Iterator<Item = Piece> + Clone {
             items.iter().map(|item| match item {
-                Item::Plain { text, .. } => text.as_str(),
+                Item::Plain { text, span } => (text.as_str(), *span),
                 _ => panic!("non plain item"),
             })
-        }
-
-        fn mk_ident<'i>(
-            out_span: Span,
-            change_case: Option<ChangeCase>,
-            items: impl Iterator<Item = &'i str>,
-        ) -> syn::Result<syn::Ident> {
-            let ident = items.collect::<String>();
-            let ident = if let Some(change_case) = change_case {
-                change_case.apply(&ident)
-            } else {
-                ident
-            };
-            catch_unwind(|| format_ident!("{}", ident, span = out_span))
-                .map_err(|_| {
-                    out_span.error(format_args!(
-                        "pasted identifier {:?} is invalid",
-                        ident
-                    ))
-                })
         }
 
         if let Some(nontrivial) = nontrivial {
@@ -264,13 +320,13 @@ impl Items {
             let (items_before, items) = items.split_at_mut(nontrivial);
             let nontrivial = &mut items[0];
 
-            let mk_ident_nt = |text: &str| {
+            let mk_ident_nt = |(text, txspan): Piece| {
                 mk_ident(
                     out_span,
                     change_case,
                     chain!(
                         plain_strs(items_before),
-                        iter::once(text),
+                        iter::once((text, txspan)),
                         plain_strs(items_after),
                     ),
                 )
@@ -281,12 +337,12 @@ impl Items {
                     pre,
                     text,
                     post,
-                    te_span: _,
+                    te_span,
                 } => {
                     return Ok(Either::Right((
                         tspan,
                         mem::take(pre),
-                        mk_ident_nt(text)?,
+                        mk_ident_nt((text, Some(*te_span)))?,
                         mem::take(post),
                     )))
                 }
@@ -317,12 +373,15 @@ impl SubstParseContext for Items {
 
 impl ExpansionOutput for Items {
     fn append_display<S: Display + Spanned>(&mut self, plain: &S) {
-        self.append_display(plain);
+        self.append_plain(plain.span(), plain);
     }
     fn append_identfrag_toks<I: quote::IdentFragment + ToTokens>(
         &mut self,
         ident: &I,
     ) {
+        // We could just use format_ident! but that would give us an Ident
+        // and we'd have to cons again to get the String we want.
+        // This helper type avoids that.
         use quote::IdentFragment as QIF;
         struct AsIdentFragment<'i, I>(&'i I);
         impl<'i, I: QIF> Display for AsIdentFragment<'i, I> {
@@ -330,7 +389,9 @@ impl ExpansionOutput for Items {
                 QIF::fmt(&self.0, f)
             }
         }
-        self.append_display(&AsIdentFragment(ident));
+        // There's <I as IdentFragment>::span too, which returns Option
+        let span = <I as Spanned>::span(ident);
+        self.append_plain(span, AsIdentFragment(ident));
     }
     fn append_idpath<A, B>(
         &mut self,
@@ -362,17 +423,8 @@ impl ExpansionOutput for Items {
             te_span,
         });
     }
-    fn append_syn_lit(&mut self, lit: &syn::Lit) {
-        use syn::Lit as L;
-        match lit {
-            L::Str(s) => self.append_item(Item::Plain {
-                text: s.value(),
-            }),
-            x => self.write_error(
-                x,
-                "derive-adhoc macro wanted to do identifier pasting, but inappropriate literal provided",
-            ),
-        }
+    fn append_syn_litstr(&mut self, lit: &syn::LitStr) {
+        self.append_plain(lit.span(), lit.value());
     }
     fn append_syn_type(&mut self, te_span: Span, ty: &syn::Type) {
         (|| {
@@ -414,14 +466,6 @@ impl ExpansionOutput for Items {
         })()
         .unwrap_or_else(|e| self.record_error(e));
     }
-    fn append_meta_value(
-        &mut self,
-        _tspan: Span,
-        lit: &syn::Lit,
-    ) -> syn::Result<()> {
-        self.append_syn_lit(lit);
-        Ok(())
-    }
     fn append_tokens_with(
         &mut self,
         not_in_paste: &Void,
@@ -443,10 +487,12 @@ impl Expand<Items> for TemplateElement<Items> {
     fn expand(&self, ctx: &Context, out: &mut Items) -> syn::Result<()> {
         match self {
             TE::Ident(ident) => out.append_identfrag_toks(&ident),
-            TE::Literal(lit) => out.append_syn_lit(&lit),
+            TE::LitStr(lit) => out.append_syn_litstr(&lit),
             TE::Subst(e) => e.expand(ctx, out)?,
             TE::Repeat(e) => e.expand(ctx, out),
-            TE::Punct(_, not_in_paste) | TE::Group { not_in_paste, .. } => {
+            TE::Literal(_, not_in_paste)
+            | TE::Punct(_, not_in_paste)
+            | TE::Group { not_in_paste, .. } => {
                 void::unreachable(*not_in_paste)
             }
         }

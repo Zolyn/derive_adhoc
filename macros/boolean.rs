@@ -42,9 +42,13 @@ impl Subst<BooleanContext> {
 
         macro_rules! eval_meta { { $wa:expr, $lev:ident, $($pmetas:tt)* } => { {
             let SubstMeta { path, as_} = $wa;
-            if let Some(as_) = as_ {
-                void::unreachable(as_.1)
-            }
+            use SubstMetaAs as SMA;
+            match as_ {
+                SMA::Unspecified(..) => {}
+                SMA::str(nb) |
+                SMA::tokens(nb, ..) |
+                SMA::ty(nb) => void::unreachable(*nb)
+            };
             is_found(ctx.for_with_within::<$lev,_,_>(|_ctx, within| {
                 path.search_eval_bool(&within . $($pmetas)*)
             }))
@@ -133,7 +137,7 @@ impl SubstMetaPath {
 
     pub fn search<'a, A, F, E>(&self, pmetas: A, f: &mut F) -> Result<(), E>
     where
-        F: FnMut(MetaValue<'a>) -> Result<(), E>,
+        F: FnMut(MetaNode<'a>) -> Result<(), E>,
         A: IntoIterator<Item = &'a PreprocessedMeta>,
     {
         for pmeta in pmetas {
@@ -148,7 +152,7 @@ impl SubstMetaPath {
         f: &mut F,
     ) -> Result<(), E>
     where
-        F: FnMut(MetaValue<'a>) -> Result<(), E>,
+        F: FnMut(MetaNode<'a>) -> Result<(), E>,
     {
         #![allow(non_camel_case_types)]
         use syn::Meta as sM;
@@ -159,9 +163,9 @@ impl SubstMetaPath {
 
         let vspan = pmeta.span();
         match (&self.deeper, pmeta) {
-            (None, sM::Path(_)) => f(MV::Unit(vspan))?,
-            (None, sM::List(_)) => f(MV::Deeper(vspan))?,
-            (None, sM::NameValue(nv)) => f(MV::Lit(&nv.lit))?,
+            (None, sM::Path(_)) => f(MN::Unit(vspan))?,
+            (None, sM::List(_)) => f(MN::Deeper(vspan))?,
+            (None, sM::NameValue(nv)) => f(MN::Lit(&nv.lit))?,
             (Some(_), sM::NameValue(_)) => {}
             (Some(_), sM::Path(_)) => {} // self is deeper than pmeta
             (Some(d), sM::List(l)) => {

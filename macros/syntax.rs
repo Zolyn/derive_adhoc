@@ -18,7 +18,8 @@ pub struct Template<O: SubstParseContext> {
 #[derive(Debug)]
 pub enum TemplateElement<O: SubstParseContext> {
     Ident(Ident),
-    Literal(syn::Lit),
+    LitStr(syn::LitStr),
+    Literal(syn::Lit, O::NotInPaste),
     Punct(Punct, O::NotInPaste),
     Group {
         /// Sadly Group's constructors let us only set *both* delimiters
@@ -159,14 +160,16 @@ pub enum SubstVis {
 #[derive(Debug, Clone)]
 pub struct SubstMeta<O: SubstParseContext> {
     pub path: SubstMetaPath,
-    pub as_: Option<(SubstMetaAs, O::NotInBool)>,
+    pub as_: SubstMetaAs<O>,
 }
 
-#[derive(Debug, Clone, AsRefStr, Display, EnumIter)]
+#[derive(Debug, Clone, AsRefStr, Display)]
 #[allow(non_camel_case_types)] // clearer to use the exact ident
-pub enum SubstMetaAs {
-    lit,
-    ty,
+pub enum SubstMetaAs<O: SubstParseContext> {
+    Unspecified(O::NotInPaste),
+    tokens(O::NotInBool, O::NotInPaste),
+    ty(O::NotInBool),
+    str(O::NotInBool),
 }
 
 #[derive(Debug, Clone)]
@@ -315,7 +318,13 @@ impl<O: SubstParseContext> Parse for TemplateElement<O> {
                 }
             }
             TT::Ident(tt) => TE::Ident(tt),
-            tt @ TT::Literal(_) => TE::Literal(syn::parse2(tt.into())?),
+            tt @ TT::Literal(..) => {
+                let span = tt.span();
+                match syn::parse2(tt.into())? {
+                    syn::Lit::Str(s) => TE::LitStr(s),
+                    other => TE::Literal(other, O::not_in_paste(&span)?),
+                }
+            }
             TT::Punct(tok) if tok.as_char() != '$' => {
                 let span = tok.span();
                 TE::Punct(tok, O::not_in_paste(&span)?)
@@ -347,6 +356,26 @@ impl Parse for AdhocAttrList {
     }
 }
 
+impl<O: SubstParseContext> SubstMetaAs<O> {
+    fn parse(input: ParseStream, nb: O::NotInBool) -> syn::Result<Self> {
+        let kw: IdentAny = input.parse()?;
+        let from_sma = |sma: SubstMetaAs<_>| Ok(sma);
+
+        // See keyword_general! in utils.rs
+        macro_rules! keyword { { $($args:tt)* } => {
+            keyword_general! { kw from_sma SubstMetaAs; $($args)* }
+        } }
+
+        let np = O::not_in_paste(&kw);
+
+        keyword! { str(nb) }
+        keyword! { tokens(nb, np?) }
+        keyword! { ty(nb) }
+
+        Err(kw.error("unknown derive-adhoc 'as' syntax type keyword"))
+    }
+}
+
 impl<O: SubstParseContext> Parse for SubstMeta<O> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let path: SubstMetaPath = input.parse()?;
@@ -355,13 +384,15 @@ impl<O: SubstParseContext> Parse for SubstMeta<O> {
 
         if input.peek(Token![as]) {
             let as_token: Token![as] = input.parse()?;
-            let kw = input.call(syn::Ident::parse_any)?;
-            let as_ty = SubstMetaAs::iter().find(|as_| kw == as_).ok_or_else(
-                || kw.error("unknown derive-adhoc 'as' syntax type keyword"),
-            )?;
-            as_ = Some((as_ty, O::not_in_bool(&as_token)?));
+            let nb = O::not_in_bool(&as_token).map_err(|_| {
+                as_token.error("`Xmeta as ...` not allowed in conditions")
+            })?;
+            as_ = SubstMetaAs::parse(input, nb)?;
         } else {
-            as_ = None;
+            let np = O::not_in_paste(&input.span()).map_err(|_| {
+                input.error("$Xmeta in paste requires `as ...`")
+            })?;
+            as_ = SubstMetaAs::Unspecified(np);
         }
 
         Ok(SubstMeta { path, as_ })
@@ -405,7 +436,7 @@ pub trait ParseUsingSubkeywords: Sized + ParseOneSubkeyword {
     fn parse(input: ParseStream, kw_span: Span) -> syn::Result<Self> {
         let mut out = Self::new_default(kw_span)?;
         while !input.is_empty() {
-            let subkw = input.call(Ident::parse_any)?;
+            let subkw: IdentAny = input.parse()?;
             let _: Token![=] = input.parse()?;
             out.process_one_keyword(&subkw, input).unwrap_or_else(|| {
                 Err(subkw.error("unknown $vpat/$vconstr argument sub-keyword"))
@@ -585,7 +616,7 @@ impl<O: SubstParseContext> Subst<O> {
 /// Parses only the content (ie, after the `$` and inside any `{ }`)
 impl<O: SubstParseContext> Parse for Subst<O> {
     fn parse<'i>(input: ParseStream<'i>) -> syn::Result<Self> {
-        let kw = input.call(syn::Ident::parse_any)?;
+        let kw: IdentAny = input.parse()?;
         let output_marker = PhantomData;
         let from_sd = |sd| {
             Ok(Subst {
@@ -602,7 +633,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
             let s = s
                 .strip_suffix("_bizarre")
                 .ok_or_else(|| kw.error("bizarre mode but not _bizarre"))?;
-            syn::Ident::new(s, kw.span())
+            IdentAny(syn::Ident::new(s, kw.span()))
         };
 
         // keyword!{ KEYWORD [ {BLOCK WITH BINDINGS} ] [ CONSTRUCTOR-ARGS ] }
@@ -894,7 +925,7 @@ impl<O: SubstParseContext> RepeatedTemplate<O> {
         for elem in template.elements.drain(..) {
             let not_special = match elem {
                 _ if !beginning => elem,
-                TE::Ident(_) | TE::Literal(_) | TE::Punct(..) => elem,
+                TE::Ident(_) | TE::Literal(..) | TE::Punct(..) => elem,
 
                 TE::Subst(subst) => match subst.sd {
                     SD::when(when, ..) => {

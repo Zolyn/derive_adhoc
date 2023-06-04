@@ -285,28 +285,40 @@ so for full support of generic types the template must expand both.
 Accesses macro parameters passed via `#[adhoc(...)]` attributes.
 
  * **`${Xmeta(NAME)}`**:
-   Looks for `#[adhoc(NAME=LIT)]`, and expands to `LIT`.
-   `LIT` can only be a literal, which is parsed as Rust tokens,
-   which become the result of the expansion.
-   (Within `${paste }` and `${CASE_CHANGE }`, the literal is used directly.)
+   Looks for `#[adhoc(NAME="VALUE")]`, and expands to `VALUE`.
+   `"VALUE"` must be be a string literal,
+   which is parsed as an arbitrary series of tokens.
+   `${Xmeta...}` expands to those tokens.
 
  * **`${Xmeta(SUB(NAME))}`**:
-   Looks for `#[adhoc(SUB(NAME=LIT))]`, and expands to `LIT`.
+   Looks for `#[adhoc(SUB(NAME="VALUE"))]`.
    The `#[adhoc()]` is parsed as
    a set of nested, comma-separated, lists.
    So this could would find `NAME` 
-   in `#[adhoc(SUB1,SUB(N1,NAME=LIT,N2),SUB2)]`.
+   in `#[adhoc(SUB1,SUB(N1,NAME="VALUE",N2),SUB2)]`.
    The path can be arbitrarily deep, e.g.: `${Xmeta(L1(L2(L3(ATTR))))}`.
 
  * **`${Xmeta(...) as SYNTYPE}`**:
-   Parses `LIT` as Rust code specifying a `SYNTYPE`,
-   and then expands to that.
-   Unless `SYNTYPE` is `lit`, `LIT` must be a *string* literal.
+   Treats the value as a `SYNTYPE`,
+   rather than an arbitrary sequence of tokens.
    `SYNTYPE`s available are:
 
-    * **`lit`**: A literal value; expands `LIT` directly;
-      equivalent to not having said `as`.
-    * **`ty`**: A type, possibly with generics etc. (`syn::Type`).
+    * **`str`**: Expands to a string literal
+     with the same contents as
+     the string provided for `VALUE`.
+     Ie, the attribute's string value is *not* parsed.
+     Within `${paste }` and `${CASE_CHANGE }`,
+     the provided string becomes part of the pasted identifier
+     (and so must consist of legal identifier characters).
+
+    * **`ty`**:
+     `VALUE` is parsed as a type,
+     possibly with generics etc. (`syn::Type`).
+
+    * **`tokens`**:
+     `VALUE` is parsed as an arbtitrary sequence of tokens
+     (`TokenStream`).
+     Equivalent to not specifying `as`.
 
 When expanding `${Xmeta}`,
 it is an error if the value was not specified in the driver,
@@ -346,7 +358,8 @@ With `${Xattrs}`, unlike `${Xmeta}`,
 Expand the contents and paste it together into a single identifier.
 The contents may only contain identifer fragments, strings (`"..."`),
 and (certain) expansions.
-Supported expansions are `$ftype`, `$ttype`, `$tdeftype`, `$Xname`, `$Xmeta`,
+Supported expansions are `$ftype`, `$ttype`, `$tdeftype`, `$Xname`,
+`${Xmeta as ty}`, `${Xmeta as str}`,
 `${paste ...}`,
 `${CASE_CHANGE ...}`,
 `$tdefkwd`,

@@ -28,14 +28,22 @@ We expect to increase it cautiously and only with good reason.
 #### Breaking
 
  * `${paste }` no longer allows non-string literals in its content.
+ * Invalid literal content within `${paste }` is now rejected
+   during parsing, so even if that part of the template isn't expanded.
+ * `${Xmeta... as lit}` is abolished, in favour of `... as str`
+   (which has more consistent semantics).
+ * `${Xmeta}` without `as` is no longer allowed in `${paste ...}`.
+ * In `#[adhoc(attr="VALUE")]`, now only *string* literals are allowed.
 
 #### Added
 
  * `${paste }` and `${CASE_CHANGE ...}` can now be nested,
     either (or both) ways round.
+ * `${Xmeta... as str}`, `${Xmeta... as tokens}`.
 
 #### Improved
 
+ * Better error messages when `${paste }` produces a bad identifier.
  * docs: Minor improvements to reference.
  * internal: CI tests improved and extended
  * internal: cleanups, and internal docs improved.

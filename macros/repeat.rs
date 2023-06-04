@@ -99,7 +99,8 @@ impl<O: SubstParseContext> TemplateElement<O> {
     ) -> syn::Result<()> {
         match self {
             TE::Ident(_) => {}
-            TE::Literal(_) => {}
+            TE::Literal(..) => {}
+            TE::LitStr(_) => {}
             TE::Punct(..) => {}
             TE::Repeat(_) => {}
             TE::Group { template, .. } => template.analyse_repeat(visitor)?,

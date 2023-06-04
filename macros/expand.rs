@@ -20,8 +20,8 @@ pub struct DeriveAdhocExpandInput {
     pub template: Template<TokenAccumulator>,
 }
 
-/// Value found in driver `#[adhoc(some(thing))]`
-pub enum MetaValue<'l> {
+/// Node in tree structure found in driver `#[adhoc(some(thing))]`
+pub enum MetaNode<'l> {
     Unit(Span),
     Deeper(Span),
     Lit(&'l syn::Lit),
@@ -36,7 +36,7 @@ pub enum Fname<'r> {
     Index(syn::Index),
 }
 
-pub use MetaValue as MV;
+pub use MetaNode as MN;
 
 impl Parse for DeriveAdhocExpandInput {
     fn parse(input: ParseStream) -> syn::Result<Self> {
@@ -127,12 +127,12 @@ impl Parse for DeriveAdhocExpandInput {
     }
 }
 
-impl Spanned for MetaValue<'_> {
+impl Spanned for MetaNode<'_> {
     fn span(&self) -> Span {
         match self {
-            MV::Unit(span) => *span,
-            MV::Deeper(span) => *span,
-            MV::Lit(lit) => lit.span(),
+            MN::Unit(span) => *span,
+            MN::Deeper(span) => *span,
+            MN::Lit(lit) => lit.span(),
         }
     }
 }
@@ -309,7 +309,7 @@ impl SubstVPat {
                 if let Some(fprefix) = &self.fprefix {
                     fprefix.expand(ctx, &mut paste);
                 } else {
-                    paste.append_fixed_string("f_".into());
+                    paste.append_fixed_string("f_");
                 }
                 paste.append_identfrag_toks(&field.fname(kw_span));
                 paste.assemble(out, None)?;
@@ -345,7 +345,8 @@ impl Expand<TokenAccumulator> for TemplateElement<TokenAccumulator> {
     ) -> syn::Result<()> {
         match self {
             TE::Ident(tt) => out.append(tt.clone()),
-            TE::Literal(tt) => out.append(tt.clone()),
+            TE::Literal(tt, ..) => out.append(tt.clone()),
+            TE::LitStr(tt) => out.append(tt.clone()),
             TE::Punct(tt, _) => out.append(tt.clone()),
             TE::Group {
                 delim_span,
@@ -666,7 +667,7 @@ where
         let mut found = None;
         let error_loc = || [(self.span(), "expansion"), ctx.error_loc()];
 
-        self.path.search(pmetas, &mut |av: MetaValue| {
+        self.path.search(pmetas, &mut |av: MetaNode| {
             if found.is_some() {
                 return Err(error_loc().error(
  "tried to expand just attribute value, but it was specified multiple times"
@@ -682,9 +683,7 @@ where
             )
         })?;
 
-        let as_ = self.as_.as_ref().map(|(as_, _nb)| as_);
-
-        found.expand(self.span(), as_, out)?;
+        found.expand(self.span(), &self.as_, out)?;
 
         Ok(())
     }
@@ -692,6 +691,23 @@ where
 
 fn metavalue_spans(tspan: Span, vspan: Span) -> [ErrorLoc; 2] {
     [(vspan, "attribute value"), (tspan, "template")]
+}
+
+/// Obtain the `LiStr` from a meta node value (ie, a `Lit`)
+///
+/// This is the thing we actually use.
+/// Non-string-literal values are not allowed.
+fn metavalue_litstr<'l>(
+    lit: &'l syn::Lit,
+    tspan: Span,
+    msg: fmt::Arguments<'_>,
+) -> syn::Result<&'l syn::LitStr> {
+    match lit {
+        syn::Lit::Str(s) => Ok(s),
+        // having checked derive_builder, it doesn't handle
+        // Lit::Verbatim so I guess we don't need to either.
+        _ => Err(metavalue_spans(tspan, lit.span()).error(msg)),
+    }
 }
 
 /// Convert a literal found in a meta item into `T`
@@ -705,25 +721,24 @@ pub fn metavalue_lit_as<T>(
 where
     T: Parse + ToTokens,
 {
-    let s: &syn::LitStr = match lit {
-        syn::Lit::Str(s) => Ok(s),
-        // having checked derive_builder, it doesn't handle
-        // Lit::Verbatim so I guess we don't need to either.
-        _ => Err(metavalue_spans(tspan, lit.span()).error(format_args!(
+    let s = metavalue_litstr(
+        lit,
+        tspan,
+        format_args!(
             "expected string literal, for conversion to {}",
             into_what,
-        ))),
-    }?;
+        ),
+    )?;
 
     let thing: T = s.parse()?;
     Ok(thing)
 }
 
-impl<'l> MetaValue<'l> {
+impl<'l> MetaNode<'l> {
     fn expand<O>(
         &self,
         tspan: Span,
-        as_: Option<&SubstMetaAs>,
+        as_: &SubstMetaAs<O>,
         out: &mut O,
     ) -> syn::Result<()>
     where
@@ -732,22 +747,33 @@ impl<'l> MetaValue<'l> {
         let spans = |vspan| metavalue_spans(tspan, vspan);
 
         let lit = match self {
-            MetaValue::Unit(vspan) => return Err(spans(*vspan).error(
+            MN::Unit(vspan) => return Err(spans(*vspan).error(
  "tried to expand attribute which is just a unit, not a literal"
             )),
-            MetaValue::Deeper(vspan) => return Err(spans(*vspan).error(
+            MN::Deeper(vspan) => return Err(spans(*vspan).error(
  "tried to expand attribute which is nested list, not a value",
             )),
-            MetaValue::Lit(lit) => lit,
+            MN::Lit(lit) => lit,
         };
 
         use SubstMetaAs as SMS;
         match as_ {
-            Some(SMS::lit) => out.append_syn_lit(lit),
-            Some(as_ @ SMS::ty) => {
+            SMS::Unspecified(np) | SMS::tokens(_, np) => {
+                let tokens: TokenStream =
+                    metavalue_lit_as(lit, tspan, &"tokens")?;
+                out.append_tokens(np, tokens)?;
+            }
+            as_ @ SMS::ty(..) => {
                 out.append_syn_type(tspan, &metavalue_lit_as(lit, tspan, as_)?)
             }
-            None => out.append_meta_value(tspan, lit)?,
+            SMS::str(..) => {
+                let s = metavalue_litstr(
+                    lit,
+                    tspan,
+                    format_args!("expected string literal, for meta value",),
+                )?;
+                out.append_syn_litstr(s);
+            }
         }
         Ok(())
     }
