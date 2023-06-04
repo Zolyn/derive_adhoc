@@ -366,10 +366,10 @@ impl<O: SubstParseContext> SubstMetaAs<O> {
             keyword_general! { kw from_sma SubstMetaAs; $($args)* }
         } }
 
-        let np = O::not_in_paste(&kw);
+        let not_in_paste = || O::not_in_paste(&kw);
 
         keyword! { str(nb) }
-        keyword! { tokens(nb, np?) }
+        keyword! { tokens(nb, not_in_paste()?) }
         keyword! { ty(nb) }
 
         Err(kw.error("unknown derive-adhoc 'as' syntax type keyword"))
