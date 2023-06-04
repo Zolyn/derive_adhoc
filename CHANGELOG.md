@@ -23,6 +23,13 @@ We expect to increase it cautiously and only with good reason.
 
 ## Changelog
 
+### UNRELEASED
+
+#### Improved
+
+ * internal: CI tests improved and extended
+ * internal: docs improved and clarified some terminology.
+
 ### 0.3.0
 
 #### Breaking
