@@ -694,6 +694,9 @@ fn metavalue_spans(tspan: Span, vspan: Span) -> [ErrorLoc; 2] {
 }
 
 /// Obtain the `LiStr` from a meta node value (ie, a `Lit`)
+///
+/// This is the thing we actually use.
+/// Non-string-literal values are not allowed.
 fn metavalue_litstr<'l>(
     lit: &'l syn::Lit,
     tspan: Span,
@@ -755,11 +758,22 @@ impl<'l> MetaNode<'l> {
 
         use SubstMetaAs as SMS;
         match as_ {
-            SMS::lit(..) => out.append_syn_lit(lit),
+            SMS::Unspecified(np) | SMS::tokens(_, np) => {
+                let tokens: TokenStream =
+                    metavalue_lit_as(lit, tspan, &"tokens")?;
+                out.append_tokens(np, tokens)?;
+            }
             as_ @ SMS::ty(..) => {
                 out.append_syn_type(tspan, &metavalue_lit_as(lit, tspan, as_)?)
             }
-            SMS::Unspecified(..) => out.append_meta_value(tspan, lit)?,
+            SMS::str(..) => {
+                let s = metavalue_litstr(
+                    lit,
+                    tspan,
+                    format_args!("expected string literal, for meta value",),
+                )?;
+                out.append_syn_litstr(s);
+            }
         }
         Ok(())
     }

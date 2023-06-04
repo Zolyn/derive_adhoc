@@ -56,9 +56,9 @@ derive_adhoc! {
     struct ${paste "Pre" $tdeftype "Post"} {
         $(
             ${paste
-              ${if fmeta(prefix) { ${fmeta(prefix)} _ } }
+              ${if fmeta(prefix) { ${fmeta(prefix) as str} _ } }
               $fname
-              ${if fmeta(suffix) { _ ${fmeta(suffix)} } }
+              ${if fmeta(suffix) { _ ${fmeta(suffix) as str} } }
             }: $ftype,
         )
     }

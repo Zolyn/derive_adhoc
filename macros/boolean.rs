@@ -45,7 +45,8 @@ impl Subst<BooleanContext> {
             use SubstMetaAs as SMA;
             match as_ {
                 SMA::Unspecified(..) => {}
-                SMA::lit(nb) |
+                SMA::str(nb) |
+                SMA::tokens(nb, ..) |
                 SMA::ty(nb) => void::unreachable(*nb)
             };
             is_found(ctx.for_with_within::<$lev,_,_>(|_ctx, within| {

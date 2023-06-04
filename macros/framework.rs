@@ -177,6 +177,8 @@ pub trait ExpansionOutput: SubstParseContext {
     /// Append a meta item value (without `as` clause in the template)
     ///
     /// Can fail, if the actual concrete value is not right
+    //
+    // TODO there are no callers for this, it should be removed.
     fn append_meta_value(
         &mut self,
         tspan: Span,

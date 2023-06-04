@@ -166,9 +166,10 @@ pub struct SubstMeta<O: SubstParseContext> {
 #[derive(Debug, Clone, AsRefStr, Display)]
 #[allow(non_camel_case_types)] // clearer to use the exact ident
 pub enum SubstMetaAs<O: SubstParseContext> {
-    Unspecified(),
-    lit(O::NotInBool),
+    Unspecified(O::NotInPaste),
+    tokens(O::NotInBool, O::NotInPaste),
     ty(O::NotInBool),
+    str(O::NotInBool),
 }
 
 #[derive(Debug, Clone)]
@@ -365,7 +366,10 @@ impl<O: SubstParseContext> SubstMetaAs<O> {
             keyword_general! { kw from_sma SubstMetaAs; $($args)* }
         } }
 
-        keyword! { lit(nb) }
+        let np = O::not_in_paste(&kw);
+
+        keyword! { str(nb) }
+        keyword! { tokens(nb, np?) }
         keyword! { ty(nb) }
 
         Err(kw.error("unknown derive-adhoc 'as' syntax type keyword"))
@@ -385,7 +389,10 @@ impl<O: SubstParseContext> Parse for SubstMeta<O> {
             })?;
             as_ = SubstMetaAs::parse(input, nb)?;
         } else {
-            as_ = SubstMetaAs::Unspecified();
+            let np = O::not_in_paste(&input.span()).map_err(|_| {
+                input.error("$Xmeta in paste requires `as ...`")
+            })?;
+            as_ = SubstMetaAs::Unspecified(np);
         }
 
         Ok(SubstMeta { path, as_ })
