@@ -8,13 +8,8 @@ use crate::framework::*;
 /// i.e., it corresponds to the lexical context for a `${paste }`,
 /// and collects the identifier fragments being pasted.
 #[derive(Debug)]
-pub struct Items<C = ()>
-where
-    C: CaseContext,
-{
+pub struct Items {
     data: ItemsData,
-    /// TODO CASE NEST remove
-    case: PhantomData<C>,
 }
 
 /// Accumulator for things to be pasted
@@ -140,25 +135,10 @@ define_cases! {
     AsShoutySnakeCase   "shouty_snake_case"        "SHOUTY_SNAKE_CASE" ,
 }
 
-/// Kind of lexical context in which we are pasting identifiers
-///
-/// Depends on whether we are trying to change the case.
-///
-/// There are two implementors:
-///  * `()` for `${paste }`
-///  * `WithinCase` for `${case }`
-pub trait CaseContext: Sized + Default + Debug {
-}
-
-/// XXXX remove
-impl CaseContext for () {
-}
-
-impl Items<()> {
-    pub fn new(tspan: Span) -> Items<()> {
+impl Items {
+    pub fn new(tspan: Span) -> Items {
         Items {
             data: ItemsData::new(tspan),
-            case: PhantomData,
         }
     }
 }
@@ -173,7 +153,7 @@ impl ItemsData {
     }
 }
 
-impl<C: CaseContext> Items<C> {
+impl Items {
     fn append_item(&mut self, item: Item) {
         self.data.items.push(ItemEntry { item });
     }
@@ -329,7 +309,7 @@ impl ItemsData {
     }
 }
 
-impl<C: CaseContext> SubstParseContext for Items<C> {
+impl SubstParseContext for Items {
     type NotInPaste = Void;
     type NotInBool = ();
     type BoolOnly = Void;
@@ -343,7 +323,7 @@ impl<C: CaseContext> SubstParseContext for Items<C> {
     }
 }
 
-impl<C: CaseContext> ExpansionOutput for Items<C> {
+impl ExpansionOutput for Items {
     fn append_display<S: Display + Spanned>(&mut self, plain: &S) {
         self.append_display(plain);
     }
@@ -462,8 +442,8 @@ impl<C: CaseContext> ExpansionOutput for Items<C> {
     }
 }
 
-impl<C: CaseContext> Expand<Items<C>> for TemplateElement<Items<C>> {
-    fn expand(&self, ctx: &Context, out: &mut Items<C>) -> syn::Result<()> {
+impl Expand<Items> for TemplateElement<Items> {
+    fn expand(&self, ctx: &Context, out: &mut Items) -> syn::Result<()> {
         match self {
             TE::Ident(ident) => out.append_identfrag_toks(&ident),
             TE::Literal(lit) => out.append_syn_lit(&lit),
