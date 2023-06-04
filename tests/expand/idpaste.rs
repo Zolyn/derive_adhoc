@@ -44,7 +44,7 @@ derive_adhoc! {
 
 #[derive(Adhoc)]
 struct ExpandName {
-    #[adhoc(prefix = "attr", suffix = 24)]
+    #[adhoc(prefix = "attr", suffix = "24")]
     f: FieldType,
 
     k: String,
@@ -62,6 +62,9 @@ derive_adhoc! {
             }: $ftype,
         )
     }
+
+    struct ${pascal_case ${paste wom_ ${shouty_snake_case $tname}
+                           ${if true { _bat } else { _noise }}}};
 }
 
 fn main() {}

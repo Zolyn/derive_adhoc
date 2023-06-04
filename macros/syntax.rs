@@ -13,7 +13,6 @@ pub use TemplateElement as TE;
 #[derive(Debug)]
 pub struct Template<O: SubstParseContext> {
     pub elements: Vec<TemplateElement<O>>,
-    pub allow_nonterminal: O::AllowNonterminal,
 }
 
 #[derive(Debug)]
@@ -108,25 +107,11 @@ pub enum SubstDetails<O: SubstParseContext> {
     ),
 
     // expansion manipulation
-    paste(
-        Template<paste::Items>,
-        O::NotInPaste,
-        O::NotInCase,
-        O::NotInBool,
-    ),
-    ChangeCase(
-        Box<Subst<paste::Items<paste::WithinCaseContext>>>,
-        paste::ChangeCase,
-        O::NotInCase,
-        O::NotInBool,
-    ),
+    paste(Template<paste::Items>, O::NotInBool),
+    ChangeCase(Template<paste::Items>, paste::ChangeCase, O::NotInBool),
 
     // special
-    when(
-        Box<Subst<BooleanContext>>,
-        O::NotInBool,
-        O::AllowNonterminal,
-    ),
+    when(Box<Subst<BooleanContext>>, O::NotInBool),
 
     // expressions
     False(O::BoolOnly),
@@ -247,10 +232,7 @@ impl Spanned for SubstMetaPath {
 }
 
 impl<O: SubstParseContext> Template<O> {
-    pub fn parse(
-        input: ParseStream,
-        allow_nonterminal: O::AllowNonterminal,
-    ) -> syn::Result<Self> {
+    pub fn parse(input: ParseStream) -> syn::Result<Self> {
         // eprintln!("@@@@@@@@@@ PARSE {}", &input);
         let mut good = vec![];
         let mut errors = ErrorAccumulator::default();
@@ -261,10 +243,7 @@ impl<O: SubstParseContext> Template<O> {
                 Ok(())
             });
         }
-        errors.finish_with(Template {
-            elements: good,
-            allow_nonterminal,
-        })
+        errors.finish_with(Template { elements: good })
     }
 
     /// Parses one of
@@ -277,17 +256,15 @@ impl<O: SubstParseContext> Template<O> {
         let la = input.lookahead1();
         if la.peek(token::Brace) {
             let inner;
-            let brace = braced!(inner in input);
-            Template::parse(&inner, O::allow_nonterminal(&brace.span)?)
+            let _brace = braced!(inner in input);
+            Template::parse(&inner)
         } else if la.peek(Ident::peek_any)
             || la.peek(Token![$])
             || la.peek(syn::Lit)
         {
-            let span = input.span();
             let element = input.parse()?;
             Ok(Template {
                 elements: vec![element],
-                allow_nonterminal: O::allow_nonterminal(&span)?,
             })
         } else {
             Err(la.error())
@@ -328,10 +305,7 @@ impl<O: SubstParseContext> Parse for TemplateElement<O> {
             TT::Group(group) => {
                 let delim_span = group.span_open();
                 let delimiter = group.delimiter();
-                let allow_nonterminal = O::allow_nonterminal(&delim_span)?;
-                let t_parser = |input: ParseStream| {
-                    Template::parse(input, allow_nonterminal)
-                };
+                let t_parser = |input: ParseStream| Template::parse(input);
                 let template = t_parser.parse2(group.stream())?;
                 TE::Group {
                     delim_span,
@@ -563,6 +537,7 @@ impl ParseUsingSubkeywords for SubstVPat {
 
 impl<O: SubstParseContext> Subst<O> {
     /// Parses everything including a `$` (which we insist on)
+    #[allow(dead_code)] // This was once used for ${paste }
     fn parse_entire(input: ParseStream) -> syn::Result<Self> {
         let _dollar: Token![$] = input.parse()?;
         let deescaped = deescape_orig_dollar(input)?;
@@ -649,14 +624,10 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         } }
 
         let not_in_paste = O::not_in_paste(&kw);
-        let not_in_case = O::not_in_case(&kw);
         let not_in_bool = O::not_in_bool(&kw);
         let bool_only = O::bool_only(&kw);
-        let allow_nonterminal = O::allow_nonterminal(&kw);
 
-        let parse_if = |input| {
-            SubstIf::parse(input, kw.span(), allow_nonterminal.clone()?)
-        };
+        let parse_if = |input| SubstIf::parse(input, kw.span());
 
         let in_parens = |input: ParseStream<'i>| {
             let inner;
@@ -670,7 +641,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
                     "tdefvariants needs to contain the variant definitions",
                 ));
             }
-            Template::parse(input, Default::default())
+            Template::parse(input)
         };
 
         keyword! { tname(not_in_bool?) }
@@ -732,11 +703,11 @@ impl<O: SubstParseContext> Parse for Subst<O> {
 
         keyword! {
             paste {
-                let template = Template::parse(input, ())?;
+                let template = Template::parse(input)?;
             }
-            (template, not_in_paste?, not_in_case?, not_in_bool?)
+            (template, not_in_bool?)
         }
-        keyword! { when(input.parse()?, not_in_bool?, allow_nonterminal?) }
+        keyword! { when(input.parse()?, not_in_bool?) }
 
         keyword! { "false": False(bool_only?) }
         keyword! { "true": True(bool_only?) }
@@ -759,9 +730,8 @@ impl<O: SubstParseContext> Parse for Subst<O> {
 
         if let Ok(case) = kw.to_string().parse() {
             return from_sd(SD::ChangeCase(
-                Box::new(Subst::parse_entire(input)?),
+                Template::parse(input)?,
                 case,
-                not_in_case?,
                 not_in_bool?,
             ));
         }
@@ -771,11 +741,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
 }
 
 impl<O: SubstParseContext> SubstIf<O> {
-    fn parse(
-        input: ParseStream,
-        kw_span: Span,
-        not_in_nonterminal: O::AllowNonterminal,
-    ) -> syn::Result<Self> {
+    fn parse(input: ParseStream, kw_span: Span) -> syn::Result<Self> {
         let mut tests = Vec::new();
         let mut otherwise = None;
 
@@ -783,7 +749,7 @@ impl<O: SubstParseContext> SubstIf<O> {
             let condition = input.parse()?;
             let content;
             let _br = braced![ content in input ];
-            let consequence = Template::parse(&content, not_in_nonterminal)?;
+            let consequence = Template::parse(&content)?;
             tests.push((condition, consequence));
 
             // (I'd like to use a lookahead here too, but it doesn't
@@ -814,9 +780,7 @@ impl<O: SubstParseContext> SubstIf<O> {
             } else if lookahead.peek(token::Brace) {
                 let content;
                 let _br = braced![ content in input ];
-                otherwise = Some(
-                    Template::parse(&content, not_in_nonterminal)?.into(),
-                );
+                otherwise = Some(Template::parse(&content)?.into());
                 break;
                 // No more input allowed.
                 // Subst::parse_after_dollar will detect any remaining
@@ -921,8 +885,7 @@ impl<O: SubstParseContext> RepeatedTemplate<O> {
         span: Span,
         over: Option<RepeatOver>,
     ) -> Result<RepeatedTemplate<O>, syn::Error> {
-        let allow_nonterminal = O::allow_nonterminal(&span)?;
-        let mut template = Template::parse(input, allow_nonterminal)?;
+        let mut template = Template::parse(input)?;
 
         // split `when` off
         let mut whens = vec![];

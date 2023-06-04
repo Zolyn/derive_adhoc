@@ -12,7 +12,7 @@ pub use std::panic::{catch_unwind, AssertUnwindSafe};
 pub use std::str::FromStr;
 pub use std::thread::panicking;
 
-pub use itertools::{chain, izip, Itertools};
+pub use itertools::{chain, izip, Either, Itertools};
 pub use proc_macro2::{Delimiter, Ident, Literal, Punct};
 pub use proc_macro2::{Span, TokenStream, TokenTree};
 pub use quote::{format_ident, quote, quote_spanned, ToTokens};

@@ -26,7 +26,7 @@ pub fn dump(ctx: &Context) {
 }
 
 fn template_result(ctx: &Context, templ: TokenStream) -> String {
-    let parser = |input: &ParseBuffer<'_>| Template::parse(input, ());
+    let parser = |input: &ParseBuffer<'_>| Template::parse(input);
     let templ: Template<TokenAccumulator> =
         parser.parse2(templ).expect("failed to parse own template");
     let result = (|| {

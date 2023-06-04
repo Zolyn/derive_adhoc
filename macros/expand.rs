@@ -72,7 +72,7 @@ impl Parse for DeriveAdhocExpandInput {
 
             let template;
             let template_brace = braced!(template in input);
-            let template = Template::parse(&template, ());
+            let template = Template::parse(&template);
 
             let template_crate;
             let template_name;
@@ -312,8 +312,7 @@ impl SubstVPat {
                     paste.append_fixed_string("f_".into());
                 }
                 paste.append_identfrag_toks(&field.fname(kw_span));
-
-                out.append_tokens_with(&(), |out| paste.assemble(out))?;
+                paste.assemble(out, None)?;
                 out.append(Token![,](kw_span));
 
                 Ok::<_, syn::Error>(())
@@ -616,13 +615,15 @@ where
             }
             SD::Crate(np, ..) => out.append_tokens(np, &ctx.template_crate)?,
 
-            SD::paste(content, np, ..) => {
+            SD::paste(content, ..) => {
                 let mut items = paste::Items::new(kw_span);
                 content.expand(ctx, &mut items);
-                out.append_tokens_with(np, |ta| items.assemble(ta))?;
+                items.assemble(out, None)?;
             }
-            SD::ChangeCase(content, case, nc, ..) => {
-                out.append_case_expansion(nc, *case, ctx, kw_span, content)?
+            SD::ChangeCase(content, case, ..) => {
+                let mut items = paste::Items::new(kw_span);
+                content.expand(ctx, &mut items);
+                items.assemble(out, Some(*case))?;
             }
 
             SD::when(..) => out.write_error(

@@ -22,7 +22,7 @@ struct PreTopNamePost<F> {
 }
 impl<F> std::panic::RefUnwindSafe for PreTopNamePost<F> {}
 struct ExpandName {
-    #[adhoc(prefix = "attr", suffix = 24)]
+    #[adhoc(prefix = "attr", suffix = "24")]
     f: FieldType,
     k: String,
 }
@@ -30,4 +30,5 @@ struct PreExpandNamePost {
     attr_f_24: FieldType,
     k: String,
 }
+struct WomExpandNameBat;
 fn main() {}

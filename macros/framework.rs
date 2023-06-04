@@ -84,34 +84,13 @@ pub struct WithinField<'c> {
 pub trait SubstParseContext {
     /// Uninhabited iff this lexical context is within `${paste }`
     type NotInPaste: Debug + Copy + Sized;
-    /// Uninhabited iff this lexical context is within `${case }`
-    type NotInCase: Debug + Copy + Sized;
     /// Uninhabited iff this lexical context is within a condition.
     type NotInBool: Debug + Copy + Sized;
-    /// Inhabited iff lexical context allows other than a single subst
-    ///
-    /// Used for `${case }`; could be used in other places where we
-    /// accept the `${...}` syntax for an expansion, but want to
-    /// reject repetitions, `${if }`, and so on.
-    ///
-    /// We reject nonterminals inside `${case }` because in the
-    /// current implementation the semantics of allowing them would be
-    /// confusing: each literal token or terminal expansion result
-    /// would be case-changed separately.
-    //
-    // TODO this limitation makes things less orthogonal, and the
-    // implementation approach isn't very pretty, so this should
-    // be changed.
-    type AllowNonterminal: Debug + Copy + Sized;
     /// Uninhabited unless this lexical context is within a condition.
     type BoolOnly: Debug + Copy + Sized;
 
     fn not_in_paste(span: &impl Spanned) -> syn::Result<Self::NotInPaste>;
-    fn not_in_case(span: &impl Spanned) -> syn::Result<Self::NotInCase>;
     fn not_in_bool(span: &impl Spanned) -> syn::Result<Self::NotInBool>;
-    fn allow_nonterminal(
-        span: &impl Spanned,
-    ) -> syn::Result<Self::AllowNonterminal>;
 
     fn bool_only(span: &impl Spanned) -> syn::Result<Self::BoolOnly> {
         Err(span.error(
@@ -223,16 +202,6 @@ pub trait ExpansionOutput: SubstParseContext {
     /// either `self`, or `Self::BoolOnly`, is uninhabited,
     /// with a call to [`void::unreachable`].
     fn append_bool_only(&mut self, bool_only: &Self::BoolOnly) -> !;
-
-    /// Append the expansion of a `${case }`
-    fn append_case_expansion(
-        &mut self,
-        np: &Self::NotInCase,
-        case: paste::ChangeCase,
-        ctx: &Context,
-        span: Span,
-        paste_body: &Subst<paste::Items<paste::WithinCaseContext>>,
-    ) -> syn::Result<()>;
 
     /// Note that an error occurred
     ///
@@ -405,18 +374,10 @@ impl TokenAccumulator {
 impl SubstParseContext for TokenAccumulator {
     type NotInPaste = ();
     type NotInBool = ();
-    type NotInCase = ();
-    type AllowNonterminal = ();
     fn not_in_bool(_: &impl Spanned) -> syn::Result<()> {
         Ok(())
     }
     fn not_in_paste(_: &impl Spanned) -> syn::Result<()> {
-        Ok(())
-    }
-    fn not_in_case(_: &impl Spanned) -> syn::Result<()> {
-        Ok(())
-    }
-    fn allow_nonterminal(_: &impl Spanned) -> syn::Result<()> {
         Ok(())
     }
 
@@ -470,18 +431,6 @@ impl ExpansionOutput for TokenAccumulator {
         f(self)
     }
 
-    fn append_case_expansion(
-        &mut self,
-        _not_in_case: &(),
-        case: paste::ChangeCase,
-        ctx: &Context,
-        tspan: Span,
-        paste_body: &Subst<paste::Items<paste::WithinCaseContext>>,
-    ) -> syn::Result<()> {
-        let mut items = paste::Items::new_case(tspan, case);
-        paste_body.expand(ctx, &mut items)?;
-        items.assemble(self)
-    }
     fn append_bool_only(&mut self, bool_only: &Self::BoolOnly) -> ! {
         void::unreachable(*bool_only)
     }
