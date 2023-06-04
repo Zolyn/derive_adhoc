@@ -121,6 +121,18 @@ cargo-doc:
     - mv Cargo.lock.example Cargo.lock
     - cargo doc --locked --workspace --verbose --features=full
 
+# Check that the complete docs build without any warnings
+cargo-doc-all:
+  stage: comprehensive
+  allow_failure: true
+  script:
+    - apt-get update
+    - apt-get -y install jq
+    - mv Cargo.lock.example Cargo.lock
+    - cargo doc --locked --workspace --verbose --features=full --document-private-items --message-format=json >rustdoc.json
+    - jq --raw-output '. | select(.message.level) | .message.rendered' <rustdoc.json |tee rustdoc.errors
+    - test ! -s rustdoc.errors
+
 # Test our MSRV and Cargo.toml minimal versions
 #
 # We don't enable any of the optional fatures in derive-adhoc-tests.
