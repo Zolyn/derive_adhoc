@@ -732,12 +732,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
             not_in_paste()?, not_in_bool()?,
         ) }
 
-        keyword! {
-            paste {
-                let template = Template::parse(input)?;
-            }
-            (template, not_in_bool()?)
-        }
+        keyword! { paste(Template::parse(input)?, not_in_bool()?) }
         keyword! { when(input.parse()?, not_in_bool()?) }
 
         keyword! { "false": False(bool_only()?) }
