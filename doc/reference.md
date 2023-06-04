@@ -348,7 +348,7 @@ The contents may only contain identifer fragments, strings (`"..."`),
 and (certain) expansions.
 Supported expansions are `$ftype`, `$ttype`, `$tdeftype`, `$Xname`, `$Xmeta`,
 `${paste ...}`,
-`${CASE_CHANGE}`,
+`${CASE_CHANGE ...}`,
 `$tdefkwd`,
 as well as conditionals and repetitions.
 
