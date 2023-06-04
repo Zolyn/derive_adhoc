@@ -164,9 +164,38 @@ impl Items {
             }
             return Ok(());
         }
-        let tspan = self.tspan;
-        let items = self.items;
 
+        match Self::assemble_inner(self.tspan, self.items, change_case)? {
+            Either::Left(ident) => out.append_identfrag_toks(
+                &ident, //
+            ),
+            Either::Right((tspan, pre, ident, post)) => out.append_idpath(
+                tspan,
+                |ta| ta.append(pre),
+                &ident,
+                |ta| ta.append(post),
+            ),
+        }
+
+        Ok(())
+    }
+
+    /// Combine the accumulated pieces and say what to do
+    ///
+    /// Inner, non-monomorphised, function for [`Items::assemble`].
+    ///
+    /// Returns `Right` with values to pass to
+    /// [`append_idpath`](ExpansionOutput::append_idpath)
+    /// or
+    /// `Left` with the value to pass to
+    /// [`append_identfrag_toks`](ExpansionOutput::append_identfrag_toks).
+    fn assemble_inner(
+        tspan: Span,
+        items: Vec<Item>,
+        change_case: Option<ChangeCase>,
+    ) -> syn::Result<
+        Either<syn::Ident, (Span, TokenStream, syn::Ident, TokenStream)>,
+    > {
         // We must always use a similar span when we emit identifiers
         // that are going to be used to bind variables, or the hygiene
         // system doesn't think they're the same identifier.
@@ -259,22 +288,20 @@ impl Items {
                     post,
                     te_span: _,
                 } => {
-                    out.append_idpath(
+                    return Ok(Either::Right((
                         tspan,
-                        |ta| ta.append(pre),
-                        &mk_ident_nt(text)?,
-                        |ta| ta.append(post),
-                    );
+                        mem::take(pre),
+                        mk_ident_nt(text)?,
+                        mem::take(post),
+                    )))
                 }
                 Item::Plain { .. } => panic!("trivial nontrivial"),
             }
         } else {
-            out.append_identfrag_toks(
-                &mk_ident(out_span, change_case, plain_strs(&items))?
-            );
+            return Ok(Either::Left(
+                mk_ident(out_span, change_case, plain_strs(&items))?, //
+            ));
         }
-
-        Ok(())
     }
 }
 
