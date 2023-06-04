@@ -321,12 +321,10 @@ impl<O: SubstParseContext> Parse for TemplateElement<O> {
                 }
             }
             TT::Ident(tt) => TE::Ident(tt),
-            tt @ TT::Literal(..) => {
-                match syn::parse2(tt.into())? {
-                    syn::Lit::Str(s) => TE::LitStr(s),
-                    other => TE::Literal(other, not_in_paste()?),
-                }
-            }
+            tt @ TT::Literal(..) => match syn::parse2(tt.into())? {
+                syn::Lit::Str(s) => TE::LitStr(s),
+                other => TE::Literal(other, not_in_paste()?),
+            },
             TT::Punct(tok) if tok.as_char() != '$' => {
                 TE::Punct(tok, not_in_paste()?)
             }
