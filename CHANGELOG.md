@@ -25,10 +25,20 @@ We expect to increase it cautiously and only with good reason.
 
 ### UNRELEASED
 
+#### Breaking
+
+ * `${paste }` no longer allows non-string literals in its content.
+
+#### Added
+
+ * `${paste }` and `${CASE_CHANGE ...}` can now be nested,
+    either (or both) ways round.
+
 #### Improved
 
+ * docs: Minor improvements to reference.
  * internal: CI tests improved and extended
- * internal: docs improved and clarified some terminology.
+ * internal: cleanups, and internal docs improved.
 
 ### 0.3.0
 
