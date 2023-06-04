@@ -154,8 +154,8 @@ fn mk_ident<'i>(
     } else {
         ident
     };
-    catch_unwind(|| format_ident!("{}", ident, span = out_span))
-        .map_err(|_| {
+    catch_unwind(|| format_ident!("{}", ident, span = out_span)).map_err(
+        |_| {
             let mut err = out_span.error(format_args!(
                 "pasted identifier {:?} is invalid",
                 ident
@@ -196,7 +196,8 @@ fn mk_ident<'i>(
                 }
             }
             err
-        })
+        },
+    )
 }
 
 impl Items {
@@ -213,7 +214,10 @@ impl Items {
         })
     }
     pub fn append_fixed_string(&mut self, text: &'static str) {
-        self.append_item(Item::Plain { text: text.into(), span: None })
+        self.append_item(Item::Plain {
+            text: text.into(),
+            span: None,
+        })
     }
 
     /// Combine the accumulated pieces and append them to `out`
@@ -486,8 +490,9 @@ impl Expand<Items> for TemplateElement<Items> {
             TE::LitStr(lit) => out.append_syn_litstr(&lit),
             TE::Subst(e) => e.expand(ctx, out)?,
             TE::Repeat(e) => e.expand(ctx, out),
-            TE::Literal(_, not_in_paste) |
-            TE::Punct(_, not_in_paste) | TE::Group { not_in_paste, .. } => {
+            TE::Literal(_, not_in_paste)
+            | TE::Punct(_, not_in_paste)
+            | TE::Group { not_in_paste, .. } => {
                 void::unreachable(*not_in_paste)
             }
         }
