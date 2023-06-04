@@ -310,7 +310,8 @@ impl SubstParseContext for Items {
     }
 
     fn not_in_paste(span: &impl Spanned) -> syn::Result<Void> {
-        Err(span.error("not allowed in within ${paste ...} (or case_changing)"))
+        Err(span
+            .error("not allowed in within ${paste ...} (or case_changing)"))
     }
 }
 
