@@ -72,6 +72,23 @@ cargo-test:
     paths:
       - cache/*
 
+# Test every commit
+#
+# This may not work properly if we change the Nightly image version,
+# or the cargo expand version.  Workaround: I believe doing that as
+# the only commit in an MR will still work.
+every-commit:
+  stage: comprehensive
+  image: rustlang/rust@sha256:415b7c22ab4a8a3ec3efc9cc8d7b018964f0c6757fff27bbd110e0ed92566321
+  script:
+    - ./maint/via-cargo-install-in-ci cargo-expand --locked --version=1.0.44 --features=prettyplease
+    - mv Cargo.lock.example Cargo.lock
+    - maint/for-every-commit cargo test --locked --workspace --verbose --all-features
+  cache:
+    when: 'always'
+    paths:
+      - cache/*
+
 cargo-test-minfeatures:
   stage: comprehensive
   image: rustlang/rust@sha256:415b7c22ab4a8a3ec3efc9cc8d7b018964f0c6757fff27bbd110e0ed92566321

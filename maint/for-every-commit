@@ -1,0 +1,97 @@
+#!/bin/bash
+#
+# We fail CI if the word "F I X M E" is detedcted, as a whole word,
+# in any case.  The word is not matched if there are word-characters
+# abutted to it.
+
+set -e
+set -o pipefail
+
+ORIGIN=origin
+BASE_BRANCHES='main'
+
+tlref () {
+    echo "refs/remotes/$ORIGIN/$tbranch"
+}
+
+x () {
+    echo "+ $*"
+    "$@"
+}
+
+git_checkout_maybe_clean () {
+    x=$1; shift
+    if
+	$x git checkout -q "$1"
+    then :
+    else 
+	echo "Checkout failed, trying with git clean"
+	x git clean -xdff
+	x git checkout -q "$1"
+    fi
+}
+
+old_branch=$(git symbolic-ref -q HEAD || test $? = 1)
+
+restore_old_branch () {
+    case "$old_branch" in
+	refs/heads/*)
+	    git_checkout_maybe_clean '' "${old_branch#refs/heads/}" ||
+		echo '*** Failed to return to original branch ***'
+	    ;;
+	*)
+	    echo "*** Was not originally on a branch, HEAD changed! ***"
+	    ;;
+    esac
+}
+
+trap 'restore_old_branch' 0
+
+refspecs=()
+for tbranch in $BASE_BRANCHES; do
+    refspecs+=(+"refs/heads/$tbranch:$(tlref)")
+done
+git fetch "$ORIGIN" "${refspecs[@]}"
+
+for tbranch in $BASE_BRANCHES; do
+    trevlist="$(tlref)..HEAD"
+    tcount=$(git rev-list --count "$trevlist")
+    printf "HEAD is %3d commits ahead of %s\n" "$tcount" "$tbranch"
+    if [ "$count" ] && [ $count -le $tcount ]; then continue; fi
+    count=$tcount
+    branch=$tbranch
+    revlist=$trevlist
+done
+
+echo "Testing every commit not already on $branch"
+
+commits=$(git rev-list --reverse "$revlist")
+
+i=0
+for commit in $commits; do
+    banner='##############################'
+    printf "|\n%s %d/%d %s\n|\n" "$banner" "$i" "$count" "$banner"
+    git log -n1 "$commit" | sed 's/^/| /'
+    echo '|'
+
+    git_checkout_maybe_clean x "$commit"
+
+    if x "$@"; then :; else
+	rc="$?"
+	printf "
+|
+========================= Failed after $i/$count =========================
+|
+Earliest broken commit is
+  "
+	git --no-pager log -n1 --pretty=oneline "$commit"
+	exit "$rc"
+    fi
+    i=$(( $i + 1 ))
+done
+
+echo "|
+$banner ok $banner
+|"
+
+rc=0
