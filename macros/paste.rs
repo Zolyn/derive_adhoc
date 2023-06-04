@@ -146,9 +146,9 @@ type Piece<'i> = (&'i str, Option<Span>);
 fn mk_ident<'i>(
     out_span: Span,
     change_case: Option<ChangeCase>,
-    items: impl Iterator<Item = Piece<'i>> + Clone,
+    pieces: impl Iterator<Item = Piece<'i>> + Clone,
 ) -> syn::Result<syn::Ident> {
-    let ident = items.clone().map(|i| i.0).collect::<String>();
+    let ident = pieces.clone().map(|i| i.0).collect::<String>();
     let ident = if let Some(change_case) = change_case {
         change_case.apply(&ident)
     } else {
@@ -167,8 +167,8 @@ fn mk_ident<'i>(
             // identifiers, in the template right next to the ${paste}.
             // So, try out each input bit and see if it would make an
             // identifier by itself.
-            for ((part, pspan), pfx) in izip!(
-                items,
+            for ((piece, pspan), pfx) in izip!(
+                pieces,
                 // The first entry must be valid as an identifier start.
                 // The subsequent entries, we prepend with "X".  If the first
                 // entry was empty, that would be reported too.  This may
@@ -188,7 +188,7 @@ fn mk_ident<'i>(
                 // probably means the identifier construction scheme is
                 // defective and hopefully the situation will be obvious to
                 // the user.
-                match syn::parse_str(&format!("{}{}", pfx, part)) {
+                match syn::parse_str(&format!("{}{}", pfx, piece)) {
                     Ok::<IdentAny, _>(_) => {}
                     Err(_) => err.combine(pspan.error(
                         "probably-invalid input to identifier pasting",
