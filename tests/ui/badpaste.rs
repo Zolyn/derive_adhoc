@@ -14,4 +14,10 @@ derive_adhoc! {
     }}
 }
 
+derive_adhoc! {
+    DataType:
+
+    struct ${paste $tname _ 42};
+}
+
 fn main() {}
