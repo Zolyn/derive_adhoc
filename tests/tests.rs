@@ -51,7 +51,7 @@
 //! ### `tests/expand/*.rs`
 //!
 //!  - Run with [`trybuild`], and expected to pass.
-//!  - Expanded with [`macrotest`], compared with `expand/*.expanded.rs`.
+//!  - Expanded with `macrotest`, compared with `expand/*.expanded.rs`.
 //!
 //! Invoked from `tests/macrotest.rs`,
 //! using [`list_expand_test_paths`]
