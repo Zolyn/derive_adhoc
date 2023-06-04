@@ -304,6 +304,9 @@ pub fn deescape_orig_dollar(
 
 impl<O: SubstParseContext> Parse for TemplateElement<O> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
+        let input_span = input.span();
+        let not_in_paste = || O::not_in_paste(&input_span);
+
         Ok(match input.parse()? {
             TT::Group(group) => {
                 let delim_span = group.span_open();
@@ -311,23 +314,21 @@ impl<O: SubstParseContext> Parse for TemplateElement<O> {
                 let t_parser = |input: ParseStream| Template::parse(input);
                 let template = t_parser.parse2(group.stream())?;
                 TE::Group {
+                    not_in_paste: not_in_paste()?,
                     delim_span,
                     delimiter,
                     template,
-                    not_in_paste: O::not_in_paste(&delim_span)?,
                 }
             }
             TT::Ident(tt) => TE::Ident(tt),
             tt @ TT::Literal(..) => {
-                let span = tt.span();
                 match syn::parse2(tt.into())? {
                     syn::Lit::Str(s) => TE::LitStr(s),
-                    other => TE::Literal(other, O::not_in_paste(&span)?),
+                    other => TE::Literal(other, not_in_paste()?),
                 }
             }
             TT::Punct(tok) if tok.as_char() != '$' => {
-                let span = tok.span();
-                TE::Punct(tok, O::not_in_paste(&span)?)
+                TE::Punct(tok, not_in_paste()?)
             }
             TT::Punct(_dollar) => {
                 let deescaped = deescape_orig_dollar(input)?;
@@ -335,8 +336,7 @@ impl<O: SubstParseContext> Parse for TemplateElement<O> {
                 if la.peek(Token![$]) {
                     // $$
                     let dollar: Punct = input.parse()?;
-                    let span = dollar.span();
-                    TE::Punct(dollar, O::not_in_paste(&span)?)
+                    TE::Punct(dollar, not_in_paste()?)
                 } else if la.peek(token::Paren) {
                     RepeatedTemplate::parse_in_parens(input)?
                 } else {
