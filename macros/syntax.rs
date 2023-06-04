@@ -304,6 +304,9 @@ pub fn deescape_orig_dollar(
 
 impl<O: SubstParseContext> Parse for TemplateElement<O> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
+        let input_span = input.span();
+        let not_in_paste = || O::not_in_paste(&input_span);
+
         Ok(match input.parse()? {
             TT::Group(group) => {
                 let delim_span = group.span_open();
@@ -311,23 +314,19 @@ impl<O: SubstParseContext> Parse for TemplateElement<O> {
                 let t_parser = |input: ParseStream| Template::parse(input);
                 let template = t_parser.parse2(group.stream())?;
                 TE::Group {
+                    not_in_paste: not_in_paste()?,
                     delim_span,
                     delimiter,
                     template,
-                    not_in_paste: O::not_in_paste(&delim_span)?,
                 }
             }
             TT::Ident(tt) => TE::Ident(tt),
-            tt @ TT::Literal(..) => {
-                let span = tt.span();
-                match syn::parse2(tt.into())? {
-                    syn::Lit::Str(s) => TE::LitStr(s),
-                    other => TE::Literal(other, O::not_in_paste(&span)?),
-                }
-            }
+            tt @ TT::Literal(..) => match syn::parse2(tt.into())? {
+                syn::Lit::Str(s) => TE::LitStr(s),
+                other => TE::Literal(other, not_in_paste()?),
+            },
             TT::Punct(tok) if tok.as_char() != '$' => {
-                let span = tok.span();
-                TE::Punct(tok, O::not_in_paste(&span)?)
+                TE::Punct(tok, not_in_paste()?)
             }
             TT::Punct(_dollar) => {
                 let deescaped = deescape_orig_dollar(input)?;
@@ -335,8 +334,7 @@ impl<O: SubstParseContext> Parse for TemplateElement<O> {
                 if la.peek(Token![$]) {
                     // $$
                     let dollar: Punct = input.parse()?;
-                    let span = dollar.span();
-                    TE::Punct(dollar, O::not_in_paste(&span)?)
+                    TE::Punct(dollar, not_in_paste()?)
                 } else if la.peek(token::Paren) {
                     RepeatedTemplate::parse_in_parens(input)?
                 } else {
@@ -366,10 +364,10 @@ impl<O: SubstParseContext> SubstMetaAs<O> {
             keyword_general! { kw from_sma SubstMetaAs; $($args)* }
         } }
 
-        let np = O::not_in_paste(&kw);
+        let not_in_paste = || O::not_in_paste(&kw);
 
         keyword! { str(nb) }
-        keyword! { tokens(nb, np?) }
+        keyword! { tokens(nb, not_in_paste()?) }
         keyword! { ty(nb) }
 
         Err(kw.error("unknown derive-adhoc 'as' syntax type keyword"))
@@ -654,9 +652,9 @@ impl<O: SubstParseContext> Parse for Subst<O> {
             keyword_general! { kw from_sd SD; $($args)* }
         } }
 
-        let not_in_paste = O::not_in_paste(&kw);
-        let not_in_bool = O::not_in_bool(&kw);
-        let bool_only = O::bool_only(&kw);
+        let not_in_paste = || O::not_in_paste(&kw);
+        let not_in_bool = || O::not_in_bool(&kw);
+        let bool_only = || O::bool_only(&kw);
 
         let parse_if = |input| SubstIf::parse(input, kw.span());
 
@@ -675,95 +673,90 @@ impl<O: SubstParseContext> Parse for Subst<O> {
             Template::parse(input)
         };
 
-        keyword! { tname(not_in_bool?) }
-        keyword! { ttype(not_in_bool?) }
-        keyword! { tdeftype(not_in_bool?) }
-        keyword! { vname(not_in_bool?) }
-        keyword! { fname(not_in_bool?) }
-        keyword! { ftype(not_in_bool?) }
-        keyword! { fpatname(not_in_bool?) }
-        keyword! { tdefkwd(not_in_bool?) }
+        keyword! { tname(not_in_bool()?) }
+        keyword! { ttype(not_in_bool()?) }
+        keyword! { tdeftype(not_in_bool()?) }
+        keyword! { vname(not_in_bool()?) }
+        keyword! { fname(not_in_bool()?) }
+        keyword! { ftype(not_in_bool()?) }
+        keyword! { fpatname(not_in_bool()?) }
+        keyword! { tdefkwd(not_in_bool()?) }
 
-        keyword! { "tvis": Vis(SubstVis::T, not_in_paste?) }
-        keyword! { "fvis": Vis(SubstVis::F, not_in_paste?) }
+        keyword! { "tvis": Vis(SubstVis::T, not_in_paste()?) }
+        keyword! { "fvis": Vis(SubstVis::F, not_in_paste()?) }
 
-        keyword! { is_struct(bool_only?) }
-        keyword! { is_enum(bool_only?) }
-        keyword! { is_union(bool_only?) }
-        keyword! { v_is_unit(bool_only?) }
-        keyword! { v_is_tuple(bool_only?) }
-        keyword! { v_is_named(bool_only?) }
+        keyword! { is_struct(bool_only()?) }
+        keyword! { is_enum(bool_only()?) }
+        keyword! { is_union(bool_only()?) }
+        keyword! { v_is_unit(bool_only()?) }
+        keyword! { v_is_tuple(bool_only()?) }
+        keyword! { v_is_named(bool_only()?) }
 
-        keyword! { tgens(not_in_paste?, not_in_bool?) }
-        keyword! { tdefgens(not_in_paste?, not_in_bool?) }
-        keyword! { tgnames(not_in_paste?, not_in_bool?) }
-        keyword! { twheres(not_in_paste?, not_in_bool?) }
+        keyword! { tgens(not_in_paste()?, not_in_bool()?) }
+        keyword! { tdefgens(not_in_paste()?, not_in_bool()?) }
+        keyword! { tgnames(not_in_paste()?, not_in_bool()?) }
+        keyword! { twheres(not_in_paste()?, not_in_bool()?) }
 
         keyword! { tmeta(input.parse()?) }
         keyword! { vmeta(input.parse()?) }
         keyword! { fmeta(input.parse()?) }
 
-        keyword! { tattrs(input.parse()?, not_in_paste?, not_in_bool?) }
-        keyword! { vattrs(input.parse()?, not_in_paste?, not_in_bool?) }
-        keyword! { fattrs(input.parse()?, not_in_paste?, not_in_bool?) }
+        keyword! { tattrs(input.parse()?, not_in_paste()?, not_in_bool()?) }
+        keyword! { vattrs(input.parse()?, not_in_paste()?, not_in_bool()?) }
+        keyword! { fattrs(input.parse()?, not_in_paste()?, not_in_bool()?) }
 
         keyword! { vtype(
             SubstVType::parse(input, kw.span())?,
-            not_in_paste?, not_in_bool?,
+            not_in_paste()?, not_in_bool()?,
         ) }
         keyword! { vpat(
             SubstVPat::parse(input, kw.span())?,
-            not_in_paste?, not_in_bool?,
+            not_in_paste()?, not_in_bool()?,
         ) }
 
         keyword! { tdefvariants(
             parse_def_body(input)?,
-            not_in_paste?, not_in_bool?,
+            not_in_paste()?, not_in_bool()?,
         ) }
         keyword! { fdefine(
             (!input.is_empty()).then(|| {
                 Template::parse_single_or_braced(input)
             }).transpose()?,
-            not_in_paste?, not_in_bool?
+            not_in_paste()?, not_in_bool()?
         ) }
         keyword! { vdefbody(
             Template::parse_single_or_braced(input)?,
             parse_def_body(input)?,
-            not_in_paste?, not_in_bool?,
+            not_in_paste()?, not_in_bool()?,
         ) }
 
-        keyword! {
-            paste {
-                let template = Template::parse(input)?;
-            }
-            (template, not_in_bool?)
-        }
-        keyword! { when(input.parse()?, not_in_bool?) }
+        keyword! { paste(Template::parse(input)?, not_in_bool()?) }
+        keyword! { when(input.parse()?, not_in_bool()?) }
 
-        keyword! { "false": False(bool_only?) }
-        keyword! { "true": True(bool_only?) }
-        keyword! { "if": If(parse_if(input)?, not_in_bool?) }
-        keyword! { select1(parse_if(input)?, not_in_bool?) }
-        keyword! { dbg_all_keywords(not_in_bool?) }
-        keyword! { "crate": Crate(not_in_paste?, not_in_bool?) }
+        keyword! { "false": False(bool_only()?) }
+        keyword! { "true": True(bool_only()?) }
+        keyword! { "if": If(parse_if(input)?, not_in_bool()?) }
+        keyword! { select1(parse_if(input)?, not_in_bool()?) }
+        keyword! { dbg_all_keywords(not_in_bool()?) }
+        keyword! { "crate": Crate(not_in_paste()?, not_in_bool()?) }
 
         keyword! { "for": For(
             RepeatedTemplate::parse_for(input)?,
-            not_in_bool?,
+            not_in_bool()?,
         )}
 
         let any_all_contents = |input: ParseStream<'i>| {
             Punctuated::parse_terminated(&in_parens(input)?)
         };
-        keyword! { any(any_all_contents(input)?, bool_only?) }
-        keyword! { all(any_all_contents(input)?, bool_only?) }
-        keyword! { not(in_parens(input)?.parse()?, bool_only?) }
+        keyword! { any(any_all_contents(input)?, bool_only()?) }
+        keyword! { all(any_all_contents(input)?, bool_only()?) }
+        keyword! { not(in_parens(input)?.parse()?, bool_only()?) }
 
         if let Ok(case) = kw.to_string().parse() {
             return from_sd(SD::ChangeCase(
                 Template::parse(input)?,
                 case,
-                not_in_bool?,
+                not_in_bool()?,
             ));
         }
 
