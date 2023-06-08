@@ -154,6 +154,12 @@ and, unlike most other expansions,
 `$fname` has the hygiene span of the driver field name.
 Instead, use `$vpat`, `$fpatname`, or `${paste ... $fname ...}`.
 
+#### Examples
+
+ * `$fname`: `0`, `field`, `field_b`
+ * `$vname`: `UnitVariant`
+ * `$tname`: `Tuple`, `Struct`, `Enum`
+
 ### `$fvis`, `$tvis` - visibility
 
 The declared visibility of the field, or toplevel type.
