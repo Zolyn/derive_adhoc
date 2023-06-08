@@ -125,6 +125,14 @@ in turn.
 structs and unions do not have variants, but
 derive-adhoc treats them as having a single (unnamed) variant.
 
+#### Examples
+
+For [example enum `Enum`](#structs-used-in-examples):
+
+ * `$($vname,)`: `UnitVariant, TupleVariant, NamedVariant,`
+ * `$($fname)`: `0 field field_b field_e`
+ * `${for fields hello}`: `hello hello hello hello`
+
 ## Expansions
 
 Each expansion keyword is described in this section.
