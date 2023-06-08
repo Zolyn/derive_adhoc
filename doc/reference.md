@@ -175,6 +175,14 @@ so there is no `$vvis`.
 For the effective visibility of an enum field, write
 `${if is_enum { $tvis } else { $fvis }}`.
 
+#### Examples
+
+ * `$tvis` for `Unit`: `pub`
+ * `$tvis` for `Enum`: `pub(crate)`
+ * `$tvis` for others: nothing
+ * `$fvis` for `field` in `Struct`: `pub`
+ * `$fvis` for others: nothing
+
 ### `$vpat`, `$fpatname` - pattern matching and value deconstruction
 
 `$vpat` expands to a pattern
@@ -738,7 +746,7 @@ struct Tuple<'a, 'l: 'a, T: Display = usize, const C: usize = 1>(
 struct Struct<'a, 'l: 'a, T: Display = usize, const C: usize = 1>
 where T: 'l, T: TryInto<u8>
 {
-    field: &'l &'a T,
+    pub field: &'l &'a T,
     field_b: String,
 }
 
