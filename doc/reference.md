@@ -127,6 +127,8 @@ derive-adhoc treats them as having a single (unnamed) variant.
 
 #### Examples
 
+<!--##examples-for `Enum`##-->
+<!--##examples-ignore-para##-->
 For [example enum `Enum`](#structs-used-in-examples):
 
  * `$($vname,)`: `UnitVariant, TupleVariant, NamedVariant,`
@@ -498,6 +500,7 @@ ${tdefvariants $(
 ) }
 ```
 
+<!--##examples-for-toplevels-concat Tuple Enum##-->
 Expands to (when applied to `Tuple` and `Enum`):
 
 ```rust,ignore
@@ -732,6 +735,8 @@ and dumping the expansion to stderr during compilation.
 
 The example expansions in the syntax reference 
 are those generated for the following driver types:
+
+<!--##examples-structs##-->
 
 ```ignore
 # use std::fmt::Display;
