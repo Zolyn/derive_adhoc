@@ -478,8 +478,7 @@ ${tdefvariants $(
 
 Expands to:
 
-```ignore
-# use std::fmt::Display;
+```rust,ignore
 struct TupleCopy<'a, 'l: 'a, T: Display = usize, const C: usize = 1,>(
     &'a &'l T,
 );
