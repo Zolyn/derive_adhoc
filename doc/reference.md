@@ -213,8 +213,8 @@ where `FNAME` is the actual field name (or tuple field number).
 #### Examples
 
  * `$vpat` for structs: `Unit { }`, `Tuple { 0: f_0 }`
- * `$vpat` for a variant: `Enum::NamedVariant { field: f_field, ... }`
- * `$vpatname`: `f_0`, `f_field`.
+ * `$vpat` for enum variant: `Enum::NamedVariant { field: f_field, ... }`
+ * `$vpatname`: `f_0`, `f_field`
  * `${vpat self=${paste $tname Reference} vname=${paste Ref $vname} fprefix=other_}`: `EnumReference::RefNamedVariant { field: other_field, ... }`
 
 ### `$ftype`, `$vtype`, `$ttype`, `$tdeftype` - types
@@ -498,7 +498,7 @@ ${tdefvariants $(
 ) }
 ```
 
-Expands to:
+Expands to (when applied to `Tuple` and `Enum`):
 
 ```rust,ignore
 struct TupleCopy<'a, 'l: 'a, T: Display = usize, const C: usize = 1,>(
