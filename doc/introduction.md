@@ -1,9 +1,10 @@
-# Getting started with `derive_adhoc`.
+# Introduction to derive-adhoc
 
-> Here I want to put an introduction about what derive_adhoc does.  For
-> now I'll just link to the [README].
->
-> This is a work in progress.
+`derive-adhoc` allows you to write `#[derive]` macros
+-- macros driven by Rust data structures -
+by writing templates in a fairly straightforward template language.
+
+# Getting started with `derive_adhoc`.
 
 There are two parts to using `derive_adhoc`:
 specifying _templates_ that you can use to derive new features for your
