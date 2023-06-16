@@ -4,6 +4,25 @@
 -- macros driven by Rust data structures -
 by writing templates in a fairly straightforward template language.
 
+<!--##toc##-->
+   * [Getting started with `derive_adhoc`.](#getting-started-with-derive_adhoc)
+      * [Exporting templates](#exporting-templates)
+      * [If you're only deriving once...](#if-youre-only-deriving-once)
+   * [A brief tutorial: How to write your own Clone](#a-brief-tutorial-how-to-write-your-own-clone)
+      * [Simple templates: fields and repetition](#simple-templates-fields-and-repetition)
+      * [Making MyClone apply to generics](#making-myclone-apply-to-generics)
+      * [Making MyClone apply conditionally](#making-myclone-apply-conditionally)
+      * [Deriving for enumerations](#deriving-for-enumerations)
+   * [Some more advanced topics](#some-more-advanced-topics)
+      * [Transforming names and strings](#transforming-names-and-strings)
+   * [Another example: Defining a constructor function.](#another-example-defining-a-constructor-function)
+      * [Marking a template's limitations](#marking-a-templates-limitations)
+      * [Working with visibility](#working-with-visibility)
+      * [Using attributes to make a template take arguments](#using-attributes-to-make-a-template-take-arguments)
+      * [Getting started with conditionals](#getting-started-with-conditionals)
+      * [More complicated conditionals](#more-complicated-conditionals)
+   * [Other features](#other-features)
+
 ## Getting started with `derive_adhoc`.
 
 There are two parts to using `derive_adhoc`:
