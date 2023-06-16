@@ -1118,7 +1118,7 @@ For example:
 
  * `is_enum`, `is_struct`, `is_union`;
    `v_is_unit`, `is_named`, `is_tuple`;
-   and `vfis`, `tvis`:
+   and `fvis`, `tvis`:
    more conditions for dealing with various cases by hand.
 
  * `$tdef*`, `$vdef*`, `$fdef*`
