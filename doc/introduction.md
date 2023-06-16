@@ -740,20 +740,10 @@ and `${paste is_ ${snake_case $vname}}` will be
 There are other case-changers:
   * `${pascal_case my_ident}` becomes `MyIdent`.
     You can also write this as
-    `${PascalCase ..}`,
-    `${upper_camel_case ..}`,
-    or `${UpperCamelCase ..}`.
+    `${upper_camel_case ..}`.
   * `${lower_camel_case my_ident}` becomes `myIdent`.
-    You can also write this as
-    `${lowerCamelCase .. }` or
-    `${LowerCamelCase ..}`
   * `${shouty_snake_case MyIdent}` becomes `MY_IDENT`.
-    You can also write this as
-    `${SHOUTY_SNAKE_CASE ..}` or
-    `${ShoutySnakeCase ..}`.
   * `${snake_case MyIdent}` becomes `my_ident`, as you've already seen.
-    You can also write it as
-    `${SnakeCase ..}`.
 
 ### A note on syntax
 

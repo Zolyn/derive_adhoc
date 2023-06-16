@@ -114,11 +114,10 @@ macro_rules! define_cases { {
 
 define_cases! {
     // heck API       our keyword (and aliases)  our example(s)
-    AsUpperCamelCase    "pascal_case"              "PascalCase"
-                        "upper_camel_case"         "UpperCamelCase"    ,
-    AsLowerCamelCase    "lower_camel_case"         "lowerCamelCase"    ,
-    AsSnakeCase         "snake_case",
-    AsShoutySnakeCase   "shouty_snake_case"        "SHOUTY_SNAKE_CASE" ,
+    AsUpperCamelCase    "pascal_case"         "upper_camel_case"   ,
+    AsLowerCamelCase    "lower_camel_case"                         ,
+    AsSnakeCase         "snake_case"                               ,
+    AsShoutySnakeCase   "shouty_snake_case"                        ,
 }
 
 impl Items {

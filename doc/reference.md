@@ -613,10 +613,10 @@ which is used to implement the actual case changing.
 
 | `CASE_CHANGE`        | `CASE_CHANGE` aliases            | Name in [`heck`]  | Example of results    |
 |----------------------|----------------------------------|-----------------------------------|-----------------------|
-| `pascal_case`        | `PascalCase` `upper_camel_case` `UpperCamelCase` | `UpperCamelCase`                  | `PascalCase`          |
+| `pascal_case`        | `upper_camel_case`               | `UpperCamelCase`                  | `PascalCase`          |
 | `snake_case`         |                                  | `SnakeCase`                       | `snake_case`          |
-| `shouty_snake_case`  | `SHOUTY_SNAKE_CASE`              | `ShoutySnakeCase`                 | `SHOUTY_SNAKE_CASE`   |
-| `lower_camel_case`   | `lowerCamelCase`                 | `LowerCamelCase`                  | `lowerCamelCase`      |
+| `shouty_snake_case`  |                                  | `ShoutySnakeCase`                 | `SHOUTY_SNAKE_CASE`   |
+| `lower_camel_case`   |                                  | `LowerCamelCase`                  | `lowerCamelCase`      |
 
 ## Expansion options
 
