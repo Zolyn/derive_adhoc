@@ -48,6 +48,11 @@
 //! Testing proc macros is not entirely straightforward,
 //! so there are multiple classes of test with different approaches.
 //!
+//! ## Normal tests directly in this module
+//!
+//! Listed below, with `mod` lines referring to `.rs` files
+//! which contain `#[test]` functions.
+//!
 //! ### `tests/expand/*.rs`
 //!
 //!  - Run with [`trybuild`], and expected to pass.

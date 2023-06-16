@@ -125,6 +125,14 @@ in turn.
 structs and unions do not have variants, but
 derive-adhoc treats them as having a single (unnamed) variant.
 
+#### Examples
+
+For [example enum `Enum`](#structs-used-in-examples):
+
+ * `$($vname,)`: `UnitVariant, TupleVariant, NamedVariant,`
+ * `$($fname)`: `0 field field_b field_e`
+ * `${for fields hello}`: `hello hello hello hello`
+
 ## Expansions
 
 Each expansion keyword is described in this section.
@@ -146,6 +154,12 @@ and, unlike most other expansions,
 `$fname` has the hygiene span of the driver field name.
 Instead, use `$vpat`, `$fpatname`, or `${paste ... $fname ...}`.
 
+#### Examples
+
+ * `$fname`: `0`, `field`, `field_b`
+ * `$vname`: `UnitVariant`
+ * `$tname`: `Tuple`, `Struct`, `Enum`
+
 ### `$fvis`, `$tvis` - visibility
 
 The declared visibility of the field, or toplevel type.
@@ -160,6 +174,14 @@ Rust enum variants inherit visibility from the enum itself -
 so there is no `$vvis`.
 For the effective visibility of an enum field, write
 `${if is_enum { $tvis } else { $fvis }}`.
+
+#### Examples
+
+ * `$tvis` for `Unit`: `pub`
+ * `$tvis` for `Enum`: `pub(crate)`
+ * `$tvis` for others: nothing
+ * `$fvis` for `field` in `Struct`: `pub`
+ * `$fvis` for others: nothing
 
 ### `$vpat`, `$fpatname` - pattern matching and value deconstruction
 
@@ -478,8 +500,7 @@ ${tdefvariants $(
 
 Expands to:
 
-```ignore
-# use std::fmt::Display;
+```rust,ignore
 struct TupleCopy<'a, 'l: 'a, T: Display = usize, const C: usize = 1,>(
     &'a &'l T,
 );
@@ -725,7 +746,7 @@ struct Tuple<'a, 'l: 'a, T: Display = usize, const C: usize = 1>(
 struct Struct<'a, 'l: 'a, T: Display = usize, const C: usize = 1>
 where T: 'l, T: TryInto<u8>
 {
-    field: &'l &'a T,
+    pub field: &'l &'a T,
     field_b: String,
 }
 
