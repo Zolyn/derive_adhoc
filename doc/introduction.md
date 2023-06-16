@@ -1107,27 +1107,35 @@ and an `all(...)` that is true
 when _all_ of its arguments are true.
 
 
+# Other features
 
+derive-adhoc has many more features,
+that aren't yet explained in this tutorial.
+For example:
 
-> Coming sections:
->
-> ## More conditions
->
->  is_enum, is_struct, etc
->  v_is_unit etc
->  vfis, tvis
->
->  `${select1}`
->
+ * `is_enum`, `is_struct`, `is_union`;
+   `v_is_unit`, `is_named`, `is_tuple`;
+   and `vfis`, `tvis`:
+   more conditions for dealing with various cases by hand.
+
+ * `$tdef*`, `$vdef*`, `$fdef*`
+   for defining a new data structure
+   in terms of features of the input data structure,
+   and `$Xattrs` for passing through attributes.
+
+ * `${select1}`
+   can help with writing careful templates
+   that will reject incoherent inputs.
+
+Full details are in the [reference].
+
+<!--
+
+ TODO:
+
 > ## Explicit repetition
 >
 >   (When to use `${for}`?)
->
-> ## Working with attributes
->
->   (When do we want to use $xattrs?)
->
-> ## `$tdef*`, `$vdef*, `$fdef*` — what it's for and why.
 >
 > ## What else am I missing?
 >
@@ -1138,6 +1146,7 @@ when _all_ of its arguments are true.
 >      if we can.
 >  - Link to each reference section.
 
+-->
 
 [reference]: crate::doc_reference
 [README]: crate
