@@ -1,9 +1,10 @@
-# Getting started with `derive_adhoc`.
+# Introduction to derive-adhoc
 
-> Here I want to put an introduction about what derive_adhoc does.  For
-> now I'll just link to the [README].
->
-> This is a work in progress.
+`derive-adhoc` allows you to write `#[derive]` macros
+-- macros driven by Rust data structures -
+by writing templates in a fairly straightforward template language.
+
+# Getting started with `derive_adhoc`.
 
 There are two parts to using `derive_adhoc`:
 specifying _templates_ that you can use to derive new features for your
@@ -935,11 +936,12 @@ that expands to the visibility of the current field.
 
 (Since enums variants are always visible, there is no `$vvis`.)
 
-
+ <!--
 > TODO: Document `${if is_enum { $tvis } else { $fvis }}`.
 >
 > Or maybe change it so $fvis is `pub` for enums? -nickm
-
+>  See https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/issues/18
+ -->
 
 ## Using attributes to make a template take arguments
 
@@ -997,9 +999,10 @@ to look for `#[adhoc]` attributes for the current _variant_,
 or `$fmeta` to
 to look for `#[adhoc]` attributes for the current _field_.
 
-
+ <!--
 > TODO: Is this the right way to talk about "as lit" and "as ty"?
 > I'm thinking not yet.
+ -->
 
 ## Getting started with conditionals
 
@@ -1107,27 +1110,35 @@ and an `all(...)` that is true
 when _all_ of its arguments are true.
 
 
+# Other features
 
+derive-adhoc has many more features,
+that aren't yet explained in this tutorial.
+For example:
 
-> Coming sections:
->
-> ## More conditions
->
->  is_enum, is_struct, etc
->  v_is_unit etc
->  vfis, tvis
->
->  `${select1}`
->
+ * `is_enum`, `is_struct`, `is_union`;
+   `v_is_unit`, `is_named`, `is_tuple`;
+   and `vfis`, `tvis`:
+   more conditions for dealing with various cases by hand.
+
+ * `$tdef*`, `$vdef*`, `$fdef*`
+   for defining a new data structure
+   in terms of features of the input data structure,
+   and `$Xattrs` for passing through attributes.
+
+ * `${select1}`
+   can help with writing careful templates
+   that will reject incoherent inputs.
+
+Full details are in the [reference].
+
+<!--
+
+ TODO:
+
 > ## Explicit repetition
 >
 >   (When to use `${for}`?)
->
-> ## Working with attributes
->
->   (When do we want to use $xattrs?)
->
-> ## `$tdef*`, `$vdef*, `$fdef*` — what it's for and why.
 >
 > ## What else am I missing?
 >
@@ -1138,6 +1149,7 @@ when _all_ of its arguments are true.
 >      if we can.
 >  - Link to each reference section.
 
+-->
 
 [reference]: crate::doc_reference
 [README]: crate
