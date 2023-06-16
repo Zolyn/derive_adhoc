@@ -936,11 +936,12 @@ that expands to the visibility of the current field.
 
 (Since enums variants are always visible, there is no `$vvis`.)
 
-
+ <!--
 > TODO: Document `${if is_enum { $tvis } else { $fvis }}`.
 >
 > Or maybe change it so $fvis is `pub` for enums? -nickm
-
+>  See https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/issues/18
+ -->
 
 ## Using attributes to make a template take arguments
 
@@ -998,9 +999,10 @@ to look for `#[adhoc]` attributes for the current _variant_,
 or `$fmeta` to
 to look for `#[adhoc]` attributes for the current _field_.
 
-
+ <!--
 > TODO: Is this the right way to talk about "as lit" and "as ty"?
 > I'm thinking not yet.
+ -->
 
 ## Getting started with conditionals
 
