@@ -172,7 +172,7 @@ sub grok_document () {
 		my @l = $cols[$i] =~ m{\`(\w+)\`}g;
 		if ($case_cols[$i] =~ m{\`heck\`}) {
 		    push @{ $out{heck} }, @l;
-		} else {
+		} elsif ($case_cols[$i] =~ m{\`CASE_CHANGE\`}) {
 		    push @$out, @l;
 		}
 	    }
