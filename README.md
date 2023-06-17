@@ -13,9 +13,11 @@ So the template syntax is still subject to change.
 derive-adhoc has seen limited, if any, real-world use.
 So there may well be sharp edges.
 
-The documentation is currently very dry and terse,
-and there are few good examples
-(mostly, there are just the test cases).
+The reference documentation is complete,
+but lacks examples for some constructs.
+Refer to the introduction,
+which has a number of worked examples.
+covering much of the functionality,
 
 ## Overview
 
