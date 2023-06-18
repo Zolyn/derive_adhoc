@@ -1,5 +1,8 @@
 //! Utilities for proc macro implementation
 
+use crate::prelude::*;
+use proc_macro_crate::{crate_name, FoundCrate};
+
 //---------- misc ----------
 
 /// Construct a braced group from a token expansion
@@ -36,9 +39,6 @@ pub fn advise_incompatibility(err_needing_advice: syn::Error) -> syn::Error {
 }
 
 //---------- MakeError ----------
-
-use crate::prelude::*;
-use proc_macro_crate::{crate_name, FoundCrate};
 
 /// Provides `.error()` on `impl Spanned` and `[`[`ErrorLoc`]`]`
 pub trait MakeError {
