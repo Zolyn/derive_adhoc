@@ -118,6 +118,10 @@ mod list_names;
 #[cfg(test)]
 mod modules;
 
+// This is special, and contains tests that use a clone of the d-a-m crate
+#[cfg(test)]
+mod directly;
+
 //---------- utilities and common code for testing ----------
 
 #[ext(DebugExt)]
