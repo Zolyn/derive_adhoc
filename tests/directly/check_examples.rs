@@ -4,7 +4,7 @@
 
 use super::*;
 
-struct Example<'i> {
+struct ExtractedExample<'i> {
     drivers: &'i [syn::DeriveInput],
     input: &'i TokenStream,
     limit: &'i TokenStream,
@@ -18,7 +18,7 @@ enum Tracker {
     },
 }
 
-impl Example<'_> {
+impl ExtractedExample<'_> {
     fn check(
         &self,
     ) -> Result<(), Vec<String>> {
@@ -113,7 +113,7 @@ fn poc() {
     let input = quote! { $($vname,) };
     let limit = quote! { any(equal($tname,Enum),equal($vname,Enum)) };
     let output = quote! { UnitVariant, TupleVariant, NamedVariant, };
-    Example {
+    ExtractedExample {
         drivers: &[driver],
         input: &input,
         limit: &limit,
