@@ -829,6 +829,33 @@ Use `$vdefbody` and `$fdefine` when defining a derived type.
  * `v_is_tuple`: true for `struct Tuple(...);`, and `Enum::TupleVariant(...);`
  * `v_is_named`: true for `struct Struct {...}`, and `Enum::NamedVariant {...}`
 
+### `approx_equal(ARG1, ARG2)` -- equality comparison (token comparison)
+
+The two `ARGS`s are each expanded (as series of tokens)
+and compared for equality.
+
+Span is disregarded, so
+two identifiers that would refer to different types or values,
+but which have the same name,
+would count as equal.
+
+Spacing is disregarded, even between punctuation characters.
+For example, `approx_equal` regards `<<` as equal to `< <`.
+This means expansions might count as equal
+even if the Rust compiler would accept one and reject the other;
+and, expansions migtht count as equal
+even if macros could tell the difference.
+
+If both inputs are valid Rust types,
+they will only compare equal if they are syntactically the same.
+(Note that different ways of writing the same type
+are treated as different:
+for example, `Vec<u8>` is not equal to `Vec<u8, Global>`
+and `std::os::raw::c_char` is not equal to `std::ffi::c_char`.)
+
+The `ARG`s are in derive-adhoc's usual
+[syntax for positional arguments](#named-and-positional-template-arguments-to-expansions-and-conditions).
+
 ### `false`, `true`, `not(CONDITION)`, `any(COND1,COND2,...)`, `all(COND1,COND2,...)` -- boolean logic
 
 ## Case changing
