@@ -234,8 +234,8 @@ impl Spanned for SubstMetaPath {
     }
 }
 
-impl<O: SubstParseContext> Template<O> {
-    pub fn parse(input: ParseStream) -> syn::Result<Self> {
+impl<O: SubstParseContext> Parse for Template<O> {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
         // eprintln!("@@@@@@@@@@ PARSE {}", &input);
         let mut good = vec![];
         let mut errors = ErrorAccumulator::default();
@@ -248,7 +248,9 @@ impl<O: SubstParseContext> Template<O> {
         }
         errors.finish_with(Template { elements: good })
     }
+}
 
+impl<O: SubstParseContext> Template<O> {
     /// Parses one of
     ///     identifier
     ///     literal
