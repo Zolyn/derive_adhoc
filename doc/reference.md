@@ -254,7 +254,7 @@ Use `$vpat` for that.
  * `vname`: variant name.  Default is `$vname`.
    Not expanded for structs.
 
-These can be used to with `${paste }`
+These can be used with `${paste }`
 to name related (derived) types and variants.
 
 #### Examples
