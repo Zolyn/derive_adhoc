@@ -55,24 +55,46 @@ define_derive_adhoc! {
     }
 }
 
+trait GetUsize {
+    fn get_usize(&self) -> Option<usize>;
+}
+
+define_derive_adhoc! {
+    GetUsize =
+
+    impl GetUsize for $ttype {
+        fn get_usize(&self) -> Option<usize> {
+            match self { $(
+                #[allow(unused_variables)]
+                $vpat => { $(
+                    ${when approx_equal($ftype, usize)}
+                    return Some(*$fpatname);
+                ) }
+            ) };
+            #[allow(unreachable_code)]
+            None
+        }
+    }
+}
+
 #[derive(Adhoc)]
-#[derive_adhoc(Trait)]
+#[derive_adhoc(Trait, GetUsize)]
 struct Unit;
 
 #[derive(Adhoc)]
-#[derive_adhoc(Trait)]
+#[derive_adhoc(Trait, GetUsize)]
 #[adhoc(hi(ferris))]
 struct Tuple(usize);
 
 #[derive(Adhoc)]
-#[derive_adhoc(Trait)]
+#[derive_adhoc(Trait, GetUsize)]
 #[adhoc(hello(there = 42))]
 struct Struct {
     field: usize,
 }
 
 #[derive(Adhoc)]
-#[derive_adhoc(Trait)]
+#[derive_adhoc(Trait, GetUsize)]
 enum Enum {
     #[adhoc(hello(there))]
     Unit,
@@ -121,6 +143,12 @@ fn test(top: &str, fields: &str, tmeta: bool, vmeta: bool, v: impl Trait) {
     }
 }
 
+fn test_get_usize(some_usize: Option<usize>, v: impl GetUsize) {
+    if !(v.get_usize() == some_usize) {
+        panic!()
+    }
+}
+
 fn main() {
     static_test();
 
@@ -131,4 +159,11 @@ fn main() {
     test("enum", "tuple", false, true, Enum::Tuple(0));
     test("enum", "named", false, false, Enum::Named { field: 0 });
     test("union", "named", false, false, Union { field: 0 });
+
+    test_get_usize(None, Unit);
+    test_get_usize(Some(0), Tuple(0));
+    test_get_usize(Some(0), Struct { field: 0 });
+    test_get_usize(None, Enum::Unit);
+    test_get_usize(Some(0), Enum::Tuple(0));
+    test_get_usize(None, Enum::Named { field: 0u32 });
 }

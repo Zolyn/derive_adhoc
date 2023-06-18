@@ -8,7 +8,10 @@ trait Trait {
     fn has_tmeta(&self) -> bool;
     fn has_vmeta(&self) -> bool;
 }
-#[derive_adhoc(Trait)]
+trait GetUsize {
+    fn get_usize(&self) -> Option<usize>;
+}
+#[derive_adhoc(Trait, GetUsize)]
 struct Unit;
 impl Trait for Unit {
     fn shape_top(&self) -> &'static str {
@@ -36,7 +39,16 @@ impl Trait for Unit {
         }
     }
 }
-#[derive_adhoc(Trait)]
+impl GetUsize for Unit {
+    fn get_usize(&self) -> Option<usize> {
+        match self {
+            #[allow(unused_variables)]
+            Unit {} => {}
+        };
+        #[allow(unreachable_code)] None
+    }
+}
+#[derive_adhoc(Trait, GetUsize)]
 #[adhoc(hi(ferris))]
 struct Tuple(usize);
 impl Trait for Tuple {
@@ -65,7 +77,18 @@ impl Trait for Tuple {
         }
     }
 }
-#[derive_adhoc(Trait)]
+impl GetUsize for Tuple {
+    fn get_usize(&self) -> Option<usize> {
+        match self {
+            #[allow(unused_variables)]
+            Tuple { 0: f_0 } => {
+                return Some(*f_0);
+            }
+        };
+        #[allow(unreachable_code)] None
+    }
+}
+#[derive_adhoc(Trait, GetUsize)]
 #[adhoc(hello(there = 42))]
 struct Struct {
     field: usize,
@@ -96,7 +119,18 @@ impl Trait for Struct {
         }
     }
 }
-#[derive_adhoc(Trait)]
+impl GetUsize for Struct {
+    fn get_usize(&self) -> Option<usize> {
+        match self {
+            #[allow(unused_variables)]
+            Struct { field: f_field } => {
+                return Some(*f_field);
+            }
+        };
+        #[allow(unreachable_code)] None
+    }
+}
+#[derive_adhoc(Trait, GetUsize)]
 enum Enum {
     #[adhoc(hello(there))]
     Unit,
@@ -138,6 +172,21 @@ impl Trait for Enum {
         }
     }
 }
+impl GetUsize for Enum {
+    fn get_usize(&self) -> Option<usize> {
+        match self {
+            #[allow(unused_variables)]
+            Enum::Unit {} => {}
+            #[allow(unused_variables)]
+            Enum::Tuple { 0: f_0 } => {
+                return Some(*f_0);
+            }
+            #[allow(unused_variables)]
+            Enum::Named { field: f_field } => {}
+        };
+        #[allow(unreachable_code)] None
+    }
+}
 #[derive_adhoc(Trait)]
 union Union {
     field: usize,
@@ -176,6 +225,11 @@ fn test(top: &str, fields: &str, tmeta: bool, vmeta: bool, v: impl Trait) {
         { ::std::rt::begin_panic("explicit panic") }
     }
 }
+fn test_get_usize(some_usize: Option<usize>, v: impl GetUsize) {
+    if !(v.get_usize() == some_usize) {
+        { ::std::rt::begin_panic("explicit panic") }
+    }
+}
 fn main() {
     static_test();
     test("struct", "unit", false, false, Unit);
@@ -185,4 +239,10 @@ fn main() {
     test("enum", "tuple", false, true, Enum::Tuple(0));
     test("enum", "named", false, false, Enum::Named { field: 0 });
     test("union", "named", false, false, Union { field: 0 });
+    test_get_usize(None, Unit);
+    test_get_usize(Some(0), Tuple(0));
+    test_get_usize(Some(0), Struct { field: 0 });
+    test_get_usize(None, Enum::Unit);
+    test_get_usize(Some(0), Enum::Tuple(0));
+    test_get_usize(None, Enum::Named { field: 0u32 });
 }
