@@ -9,6 +9,7 @@
 //! of the optional features.
 
 use macros::framework::*;
+use macros::Concatenated;
 
 use syn::parse_quote;
 

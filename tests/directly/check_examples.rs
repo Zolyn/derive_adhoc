@@ -4,6 +4,8 @@
 
 use super::*;
 
+mod reference_extract;
+
 struct ExtractedExample<'i> {
     drivers: &'i [syn::DeriveInput],
     input: &'i TokenStream,
