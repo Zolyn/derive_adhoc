@@ -79,7 +79,7 @@ enum Enum {
     #[adhoc(hello(there(inner)))]
     Tuple(usize),
     Named {
-        field: usize,
+        field: u32,
     },
 }
 

@@ -102,7 +102,7 @@ enum Enum {
     Unit,
     #[adhoc(hello(there(inner)))]
     Tuple(usize),
-    Named { field: usize },
+    Named { field: u32 },
 }
 impl Trait for Enum {
     fn shape_top(&self) -> &'static str {
