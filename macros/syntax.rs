@@ -5,7 +5,7 @@
 //!  * The types representing a parsed template.
 //!  * The `parse` methods.
 
-use crate::framework::*;
+use super::framework::*;
 
 pub use SubstDetails as SD;
 pub use TemplateElement as TE;

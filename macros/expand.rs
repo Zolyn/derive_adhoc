@@ -6,7 +6,7 @@
 //! Also contains the top-level "do the work" macro function -
 //! the implementation of `derive_adhoc_expand!()`.
 
-use crate::framework::*;
+use super::framework::*;
 
 /// Input to `derive_adhoc_expand!`
 #[derive(Debug)]

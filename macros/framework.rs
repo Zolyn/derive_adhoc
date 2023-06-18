@@ -2,13 +2,13 @@
 //!
 //! Also re-exports the names that the implementation wants.
 
-pub use crate::prelude::*;
+pub use super::prelude::*;
 
-pub use crate::boolean::*;
-pub use crate::repeat::*;
-pub use crate::syntax::*;
+pub use super::boolean::*;
+pub use super::repeat::*;
+pub use super::syntax::*;
 
-pub(crate) use crate::paste;
+pub(super) use super::paste;
 
 /// Context during expansion
 ///

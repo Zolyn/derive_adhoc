@@ -1,6 +1,6 @@
 //! Implementation of identifier pasting expansion `${paste }`
 
-use crate::framework::*;
+use super::framework::*;
 
 /// Accumulator for things to be pasted
 ///

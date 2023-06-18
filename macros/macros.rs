@@ -43,7 +43,7 @@ mod _doc_notes {}
 mod check;
 #[cfg(not(feature = "expect"))]
 mod check {
-    use crate::prelude::*;
+    use super::prelude::*;
     #[derive(Debug, Clone, Copy, PartialEq)]
     pub struct Target(Void);
 

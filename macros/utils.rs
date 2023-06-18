@@ -1,6 +1,6 @@
 //! Utilities for proc macro implementation
 
-use crate::prelude::*;
+use super::prelude::*;
 use proc_macro_crate::{crate_name, FoundCrate};
 
 //---------- misc ----------

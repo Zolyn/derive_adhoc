@@ -1,6 +1,6 @@
 //! Macro impl for invoking a predefined template `derive_adhoc!`
 
-use crate::prelude::*;
+use super::prelude::*;
 
 #[derive(Debug, Clone)]
 struct TemplateInvocation {
