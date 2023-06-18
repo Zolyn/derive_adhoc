@@ -9,26 +9,26 @@
 
 mod prelude;
 
-use prelude::*;
+pub(crate) use prelude::*;
 
 // Implementation - common parts
 #[macro_use]
-mod utils;
-mod framework;
+pub(crate) mod utils;
+pub(crate) mod framework;
 
 // modules containing the actual implementations of our proc-macros
-mod capture;
-mod definition;
-mod invocation;
+pub(crate) mod capture;
+pub(crate) mod definition;
+pub(crate) mod invocation;
 
 // Implementation - specific areas
-mod boolean;
-mod dbg_allkw;
-mod expand;
-mod options;
-mod paste;
-mod repeat;
-mod syntax;
+pub(crate) mod boolean;
+pub(crate) mod dbg_allkw;
+pub(crate) mod expand;
+pub(crate) mod options;
+pub(crate) mod paste;
+pub(crate) mod repeat;
+pub(crate) mod syntax;
 
 #[doc=include_str!("HACKING.md")]
 mod _doc_hacking {}
