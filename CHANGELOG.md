@@ -23,6 +23,19 @@ We expect to increase it cautiously and only with good reason.
 
 ## Changelog
 
+### 0.5.0
+
+#### Breaking
+
+ * Case changing: non-snake-case keywords for case change instructions
+   abolished (to make room for possible future reservation of
+   non-snake-case keywords as user-defined ones).  Change the case
+   of the keyword to snake case.
+
+#### Improved
+
+ * Documentation: tidying and a few more examples.
+
 ### 0.4.0
 
 #### Breaking
