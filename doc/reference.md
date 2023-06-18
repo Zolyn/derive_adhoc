@@ -187,7 +187,7 @@ For the effective visibility of an enum field, write
 
 `$vpat` expands to a pattern
 suitable for matching a value of the top-level type.
-It expands to `TYPE { FIELD: f_FNAME, .. }`,
+It expands to `TYPE { FIELD: f_FNAME, ... }`,
 where `TYPE` names the top-level type or enum variant.
 (`TYPE` doesn't have generics,
 since those are not allowed in patterns.)
