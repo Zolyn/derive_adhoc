@@ -92,3 +92,31 @@ impl Example<'_> {
         bad_outputs.push(bad);
     }
 }
+
+#[test]
+#[should_panic] // XXXX panics due to lack of `equal` in this d-a branch
+fn poc() {
+    let driver: syn::DeriveInput = parse_quote! {
+        pub(crate) enum Enum<'a, 'l: 'a, T: Display = usize,
+                             const C: usize = 1>
+        where T: 'l, T: TryInto<u8>
+        {
+            UnitVariant,
+            TupleVariant(std::iter::Once::<T>),
+            NamedVariant { 
+                field: &'l &'a T,
+                field_b: String,
+                field_e: <T as TryInto<u8>>::Error,
+             },
+        }
+    };
+    let input = quote! { $($vname,) };
+    let limit = quote! { any(equal($tname,Enum),equal($vname,Enum)) };
+    let output = quote! { UnitVariant, TupleVariant, NamedVariant, };
+    Example {
+        drivers: &[driver],
+        input: &input,
+        limit: &limit,
+        output: &output.to_string(),
+    }.check().unwrap();
+}
