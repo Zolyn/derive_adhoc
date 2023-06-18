@@ -1,6 +1,9 @@
 //! Core types and traits for parsing and expansion
 //!
 //! Also re-exports the names that the implementation wants.
+//!
+//! Should be included with `use super::framework::*`, not `crate::`,
+//! so that it works with `tests/directly.rs` too.
 
 pub use super::prelude::*;
 
