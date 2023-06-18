@@ -103,7 +103,7 @@ sub handle_bullet ($) {
       my ($n) = @_;
       sprintf "any(%s)",
 	join ',',
-	map { "${_}meta(name($n))" }
+	map { "equal(\$${_}name,$n)" }
 	qw(t v);
     };
     if (m{^structs?$}) {
@@ -113,7 +113,7 @@ sub handle_bullet ($) {
     } elsif (m{^\`(\w+)\`$}) {
       $t_limit = $tv_name->($1);
     } elsif (m{^`(\w+)` in \`(\w+)\`$}) {
-      $t_limit = sprintf "all(fmeta(name(%s)), %s)", $1, $tv_name->($2);
+      $t_limit = sprintf "all(equal(\$fname,%s),%s)", $1, $tv_name->($2);
     } elsif (m{^others$}) {
       $t_limit = sprintf "not(any(%s))", join ',', @t_limits;
     } else {
