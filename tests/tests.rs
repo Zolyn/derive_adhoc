@@ -104,6 +104,12 @@
 //!
 //! Each module is compiled, and its `#[test]` functions are run.
 
+// We don't want to have to cfg-mark all the imports
+#![cfg_attr(
+    not(all(test, feature = "full", feature = "ui", feature = "recent")),
+    allow(unused_imports)
+)]
+
 use std::fmt::Debug;
 use std::iter;
 use std::path::PathBuf;
