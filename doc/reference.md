@@ -128,7 +128,7 @@ derive-adhoc treats them as having a single (unnamed) variant.
 #### Examples
 
 <!--##examples-for `Enum`##-->
-<!--##examples-ignore-para##-->
+<!--##examples-ignore##-->
 For [example enum `Enum`](#structs-used-in-examples):
 
  * `$($vname,)`: `UnitVariant, TupleVariant, NamedVariant,`

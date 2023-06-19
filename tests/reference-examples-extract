@@ -22,8 +22,8 @@
 #
 # Special markers
 #
-#   <!--##examples-ignore-para##-->
-#       Ignore the (rest of) this paragraph
+#   <!--##examples-ignore##-->
+#       Ignore until next blank line
 #
 #   <!--##examples-for FOO##-->
 #       In bullet point, use this as if "for FOO" was written
@@ -194,7 +194,7 @@ while (<STDIN>) {
     $override_for_clause = $1;
     next;
   }
-  if (m{^\<\!--\#\#examples-ignore-para\#\#--\>\s*$}) {
+  if (m{^\<\!--\#\#examples-ignore\#\#--\>\s*$}) {
     $text_handle = 'ignore';
     next;
   }
