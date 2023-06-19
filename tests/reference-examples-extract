@@ -37,8 +37,10 @@
 #
 
 use strict;
+use JSON;
 
 our $structs;
+our %output;
 
 our $bq_content;
 our $bq_keywords;
@@ -65,18 +67,13 @@ sub in_example () {
 
 our $o;
 
-sub output ($$) {
-  my ($what, $data) = @_;
-  $data .= "\n" if length $data && $data !~ m{\n$};
-  $o .= "--$what--\n". $data. "--END--\n";
-}
-sub output_mark ($) {
-  my ($what) = @_;
-  output $what, "\n";
-}
-sub flush_output () {
-  print $o or die $!;
-  $o = '';
+sub output_example ($$) {
+  my ($kind, $data) = @_;
+  push @{ $output{examples} }, {
+      'line' => $.,
+      'kind' => $kind,
+      'data' => $data,
+  };
 }
 
 sub handle_bullet ($) {
@@ -92,6 +89,7 @@ sub handle_bullet ($) {
   my ($input, $for_clause, $outputs) = ($1, $2, $3);
 
   my $t_limit;
+  my $all_must_match = JSON::false;
   if (defined $override_for_clause) {
     $for_clause = $override_for_clause;
   }
@@ -111,8 +109,10 @@ sub handle_bullet ($) {
       $t_limit = $tv_name->($1);
     } elsif (m{^`(\w+)` in \`(\w+)\`$}) {
       $t_limit = sprintf "all(equal(\$fname,%s),%s)", $1, $tv_name->($2);
+      $all_must_match = JSON::true,
     } elsif (m{^others$}) {
       $t_limit = sprintf "not(any(%s))", join ',', @t_limits;
+      $all_must_match = JSON::true,
     } else {
       unhandled("for clause \"$for_clause\"");
       $t_limit = 'false';
@@ -121,11 +121,14 @@ sub handle_bullet ($) {
 
   push @t_limits, $t_limit;
   my $poss = sub {
-    output_mark 'WITH_POSSIBILITIES';
-    output 'INPUT', $input;
-    output 'LIMIT', $t_limit;
-    output 'POSSIBLE_OUTPUT', $_[0];
-    output_mark 'NEXT';
+    output_example
+      'can_produce',
+      {
+       'input' => $input,
+       'limit' => $t_limit,
+       'all_must_match' => $all_must_match,
+       'output' => $_[0],
+      };
   };
   if ($outputs eq 'nothing') {
     $poss->('');
@@ -149,10 +152,13 @@ while (<STDIN>) {
 	  # tested by rustdoc
 	} elsif (@bq_toplevels) {
 	  die unless defined $bq_input;
-	  output_mark 'WITH_CONCAT';
-	  output 'INPUT', $bq_input;
-	  output 'TOPLEVEL', $_ foreach @bq_toplevels;
-	  output 'OUTPUT', $bq_content;
+	  output_example
+	    'concatenate_for',
+	    {
+	     'input' => $bq_input,
+	     'toplevels' => \@bq_toplevels,
+	     'output' => $bq_content,
+	    };
 	  @bq_toplevels = ();
 	  $bq_input = undef;
 	} elsif (defined $bq_input) {
@@ -271,12 +277,12 @@ while (<STDIN>) {
   }
 }
 
-do {
-  local $o;
-  $structs =~ s{^\#(?: |$)}{}mg;
-  output 'STRUCTS', $structs;
-  flush_output();
-};
 
-flush_output();
+$structs =~ s{^\#(?: |$)}{}mg;
+$output{structs} = $structs;
+
+my $encoder = new JSON;
+$encoder->pretty(1);
+$encoder->canonical(1);
+print $encoder->encode(\%output) or die $!;
 flush STDOUT or die $!;
