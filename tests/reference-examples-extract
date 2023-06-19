@@ -20,15 +20,15 @@
 # And then the first is expanded for each TYPE;
 # the results (concatenated) must match the 2nd block.
 #
-# Special markers
+# Special directives
 #
 #   <!--##examples-ignore##-->
 #       Ignore until next blank line
 #
 #   <!--##examples-for FOO##-->
-#       In bullet point, use this as if "for FOO" was written
+#       In bullet point(s), use this as if "for FOO" was written
 #       (ignoring any actual "for FOO")
-#       until end of section (or next ##examples-for FOO##
+#       Applies until end of section (or next such directive)
 #
 # Preceding a ```...``` quote
 #
