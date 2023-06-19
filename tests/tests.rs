@@ -115,6 +115,7 @@ use std::iter;
 use std::path::PathBuf;
 
 use easy_ext::ext;
+use regex::Regex;
 
 pub mod tutils;
 pub use tutils::*;

@@ -9,6 +9,35 @@ pub impl<T: Debug> T {
     }
 }
 
+/// `fn m!(l: &str, re: &str) -> bool`: does regexp `re` match in `l` ?
+#[macro_export]
+macro_rules! m { { $l:expr, $re:expr $(,)? } => {
+    Regex::new($re).expect(concat!("bad regexp ", $re)).is_match(&$l)
+} }
+/// `fn mc!(l: &str, re: &str) -> Option<(CAP,...)>`: regexp captures?
+///
+/// `(CAP,...)` is a tuple of `String`.
+#[macro_export]
+macro_rules! mc { { $l:expr, $re:expr $(,)? } => {
+    Regex::new($re)
+        .expect(concat!("bad regexp ", $re))
+        .captures(&$l)
+        .map(|caps| {
+            let caps = caps
+                .iter()
+                .map(|m| m.map(|m| m.as_str().to_owned()).unwrap_or_default())
+                .collect_vec();
+            let len = caps.len();
+            caps
+                .into_iter()
+                .skip(1)
+                .collect_tuple()
+                .unwrap_or_else(|| {
+                    panic!("wrong # matches: got {} from {}", len, $re)
+                })
+        })
+} }
+
 const EXPAND_TEST_GLOB: &str = "expand/*.rs";
 const EXPAND_MACROTEST_IGNORE_GLOB: &str = "*.expanded.rs";
 
