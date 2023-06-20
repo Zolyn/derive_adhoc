@@ -4,7 +4,26 @@
 -- macros driven by Rust data structures -
 by writing templates in a fairly straightforward template language.
 
-# Getting started with `derive_adhoc`.
+<!--##toc##-->
+   * [Getting started with `derive_adhoc`.](#getting-started-with-derive_adhoc)
+      * [Exporting templates](#exporting-templates)
+      * [If you're only deriving once...](#if-youre-only-deriving-once)
+   * [A brief tutorial: How to write your own Clone](#a-brief-tutorial-how-to-write-your-own-clone)
+      * [Simple templates: fields and repetition](#simple-templates-fields-and-repetition)
+      * [Making MyClone apply to generics](#making-myclone-apply-to-generics)
+      * [Making MyClone apply conditionally](#making-myclone-apply-conditionally)
+      * [Deriving for enumerations](#deriving-for-enumerations)
+   * [Some more advanced topics](#some-more-advanced-topics)
+      * [Transforming names and strings](#transforming-names-and-strings)
+   * [Another example: Defining a constructor function.](#another-example-defining-a-constructor-function)
+      * [Marking a template's limitations](#marking-a-templates-limitations)
+      * [Working with visibility](#working-with-visibility)
+      * [Using attributes to make a template take arguments](#using-attributes-to-make-a-template-take-arguments)
+      * [Getting started with conditionals](#getting-started-with-conditionals)
+      * [More complicated conditionals](#more-complicated-conditionals)
+   * [Other features](#other-features)
+
+## Getting started with `derive_adhoc`.
 
 There are two parts to using `derive_adhoc`:
 specifying _templates_ that you can use to derive new features for your
@@ -56,7 +75,7 @@ pub struct MyStruct;
 MyStruct::print_name();
 ```
 
-## Exporting templates
+### Exporting templates
 
 But now suppose that you want to expose your template,
 so that people can use it from any crate.
@@ -115,7 +134,7 @@ struct TheirStructure {
 }
 ```
 
-## If you're only deriving once...
+### If you're only deriving once...
 
 If you want, you can apply a template to an existing type
 without having to name that template.
@@ -159,7 +178,7 @@ straight to the reference manual,
 you can find it [over here][reference].
 (It's still pretty terse, but we're working on that.)
 
-# A brief tutorial: How to write your own Clone
+## A brief tutorial: How to write your own Clone
 
 For the next few sections, for a toy example,
 we'll be using `derive_adhoc` to define
@@ -179,7 +198,7 @@ that Rust's `derive(Clone)` doesn't have.
 > We're learning how to explain these concepts
 > as we go along.
 
-## Simple templates: fields and repetition
+### Simple templates: fields and repetition
 
 Let's imagine we had to write Clone from scratch for a simple structure
 like this:
@@ -307,7 +326,7 @@ there's more to come.)
 > whenever it is logical.
 
 
-### Will MyClone apply to other kinds of struct?
+#### Will MyClone apply to other kinds of struct?
 
 Rust defines several kinds of struct:
 structs with fields (`struct Foo {...};`),
@@ -354,7 +373,7 @@ Rust often lets you use a slightly unidiomatic syntax
 so that you can handle many different cases
 in the same way.
 
-## Making MyClone apply to generics
+### Making MyClone apply to generics
 
 But here's a structure where our current `MyClone` implementation
 will fall flat:
@@ -433,7 +452,7 @@ where
 ```
 
 
-## Making MyClone apply conditionally
+### Making MyClone apply conditionally
 
 Now, for the first time, we will make MyClone do something
 that Rust's `#[derive(Clone)]` does not:
@@ -509,7 +528,7 @@ where
 > `where ,`
 > (which is also a syntax error).
 
-## Deriving for enumerations
+### Deriving for enumerations
 
 At this point, you've probably noticed
 that we've defined `MyClone` to apply to `struct`s only,
@@ -626,7 +645,7 @@ So (in this case at least)
 we were able to write a single template expansion
 that worked for both `struct`s and enum`s.
 
-### Putting the generics back into our enumeration-friendly template
+#### Putting the generics back into our enumeration-friendly template
 
 Now let's see how it works when we try to handle generics again.
 (It's surprisingly straightforward!)
@@ -662,12 +681,12 @@ for variants and fields:
 if we just have `$ftype` in a top-level repetition,
 `derive_adhoc` will iterate over all fields in all variants.
 
-# Some more advanced topics
+## Some more advanced topics
 
 Now that we've our first basic example under our belt,
 let's look at some other things that `derive_adhoc` can do.
 
-## Transforming names and strings
+### Transforming names and strings
 
 Often, it's useful to define new identifiers
 based on existing ones,
@@ -745,7 +764,7 @@ There are other case-changers:
   * `${shouty_snake_case MyIdent}` becomes `MY_IDENT`.
   * `${snake_case MyIdent}` becomes `my_ident`, as you've already seen.
 
-### A note on syntax
+#### A note on syntax
 
 In this last section,
 you've seen a new syntax for the first time.
@@ -776,7 +795,7 @@ If you ever need to write a literal `$`,
 you can write `$$`.
 
 
-# Another example: Defining a constructor function.
+## Another example: Defining a constructor function.
 
 In this section,
 we'll be using another example to demonstrate
@@ -842,7 +861,7 @@ So far, there aren't any new techniques at work here.
 We'll add some more down below.
 
 
-## Marking a template's limitations
+### Marking a template's limitations
 
 The template above doesn't work for enumerations.
 If you try to apply it to one, you'll get
@@ -891,7 +910,7 @@ error: expected driver kind struct, but driver is enum (expected kind)
 > IOW, I think that it's not so helpful to refer to "drivers"
 > in the error message. -nickm
 
-## Working with visibility
+### Working with visibility
 
 Our `Constructor` template above doesn't really make sense
 if it's applied to a non-public type:
@@ -933,7 +952,7 @@ that expands to the visibility of the current field.
 >  See https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/issues/18
  -->
 
-## Using attributes to make a template take arguments
+### Using attributes to make a template take arguments
 
 Let's suppose we want to make our `Constructor` template
 a little more flexible:
@@ -994,7 +1013,7 @@ to look for `#[adhoc]` attributes for the current _field_.
 > I'm thinking not yet.
  -->
 
-## Getting started with conditionals
+### Getting started with conditionals
 
 In the example above,
 we made it possible to rename the "new" function
@@ -1040,7 +1059,7 @@ There are also `vmeta` and `fmeta` attributes
 to detect `#[adhoc(..)]` attributes
 on variants and fields respectively.
 
-## More complicated conditionals
+### More complicated conditionals
 
 Frequently, we'd like our template
 to behave in different ways different fields.
@@ -1100,7 +1119,7 @@ and an `all(...)` that is true
 when _all_ of its arguments are true.
 
 
-# Other features
+## Other features
 
 derive-adhoc has many more features,
 that aren't yet explained in this tutorial.
