@@ -221,7 +221,7 @@ where `FNAME` is the actual field name (or tuple field number).
 
 The type of the field, variant, or the toplevel type.
 
-`$ftype`, `$vtype` and `$type`
+`$ftype`, `$vtype` and `$ttype`
 are suitable for referencing the type in any context
 (for example, when defining the type of a binding,
 or as a type parameter for a generic type).
