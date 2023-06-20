@@ -9,18 +9,22 @@ pub impl<T: Debug> T {
     }
 }
 
+/// `fn re!(l: &str) -> Regex`
+#[macro_export]
+macro_rules! re { { $re:expr $(,)? } => {
+    Regex::new($re).expect(concat!("bad regexp ", $re))
+} }
 /// `fn m!(l: &str, re: &str) -> bool`: does regexp `re` match in `l` ?
 #[macro_export]
 macro_rules! m { { $l:expr, $re:expr $(,)? } => {
-    Regex::new($re).expect(concat!("bad regexp ", $re)).is_match(&$l)
+    re!($re).is_match(&$l)
 } }
 /// `fn mc!(l: &str, re: &str) -> Option<(CAP,...)>`: regexp captures?
 ///
 /// `(CAP,...)` is a tuple of `String`.
 #[macro_export]
 macro_rules! mc { { $l:expr, $re:expr $(,)? } => {
-    Regex::new($re)
-        .expect(concat!("bad regexp ", $re))
+    re!($re)
         .captures(&$l)
         .map(|caps| {
             let caps = caps
