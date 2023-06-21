@@ -61,9 +61,9 @@ fn read_preprocess() -> Preprocessed {
 
     let mut lines = BufReader::new(file)
         .lines()
-        .map(|l| l.expect("file read error").to_owned())
+        .map(|l| l.expect("file read error"))
         .enumerate()
-        .map(|(lno, l)| (lno+1, l))
+        .map(|(lno, l)| (lno+1, format!("{}\n", l.trim_end())))
         .peekable();
 
     let mut current_paragraph = None;
@@ -116,7 +116,7 @@ fn read_preprocess() -> Preprocessed {
 
             if m!(l, "^-ignore$") {
                 while let Some((lno, l)) = lines.next() {
-                    if m!(l, "^$") {
+                    if m!(l, "^\n$") {
                         break
                     } else if is_directive(&l) {
                         wrong(lno, "directive in ignore section");
@@ -142,7 +142,7 @@ fn read_preprocess() -> Preprocessed {
             } else {
                 wrong(lno, format_args!("unrecgonised directive: {l:?}"))
             }
-        } else if m!(l, "^$") {
+        } else if m!(l, "^\n$") {
             None
         } else {
             current_paragraph
@@ -162,7 +162,7 @@ fn read_preprocess() -> Preprocessed {
 
 fn extract_structs(input: &Preprocessed) -> Vec<syn::DeriveInput> {
     fn parse_content(lno: LineNo, content: &str) -> Vec<syn::DeriveInput> {
-        let content = re!(r"^# ").replace_all(content, "");
+        let content = re!(r"(?m)^#(?: |$)").replace_all(content, "");
         let items: Concatenated<syn::Item> = syn::parse_str(&content)
             .unwrap_or_else(|e| wrong(lno, format_args!("structs content parse failed: {e}, given {content}",)));
         items.0.into_iter().filter_map(|item| match item {
@@ -198,7 +198,6 @@ fn extract_structs(input: &Preprocessed) -> Vec<syn::DeriveInput> {
 }
 
 #[test]
-#[should_panic] // XXXX unfinished, bugs in docs and d-a, too
 fn extract() {
     let iis = read_preprocess();
 
