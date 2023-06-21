@@ -205,5 +205,5 @@ fn extract() {
         println!("{:?}", ii);
     }
     let structs_ = extract_structs(&iis);
-    println!("{:?}", structs_);
+    println!("{:?}", structs_.iter().map(|s| &s.ident).collect_vec());
 }
