@@ -115,6 +115,7 @@ version = "0.0.1"
 dependencies = [
  "derive-adhoc 0.5.0",
  "easy-ext",
+ "educe",
  "glob",
  "itertools",
  "macrotest",
@@ -156,6 +157,17 @@ name = "easy-ext"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed2ddb5d6d3904e83114add6bbadf2b8307b4ae9fb4b2202afde1fe7bf3b56c0"
+
+[[package]]
+name = "educe"
+version = "0.4.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "244bedfdc8964d3352120556537296ac40291ca4dc959b161b6d2c94191411d9"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
 
 [[package]]
 name = "either"
