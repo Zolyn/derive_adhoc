@@ -132,8 +132,16 @@ dependencies = [
  "derive-adhoc 0.5.0",
  "easy-ext",
  "glob",
+ "itertools",
  "macrotest",
+ "proc-macro-crate",
+ "proc-macro2",
+ "quote",
+ "sha3",
+ "strum",
+ "syn 1.0.109",
  "trybuild",
+ "void",
 ]
 
 [[package]]
