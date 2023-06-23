@@ -29,6 +29,17 @@ struct Mismatch {
     context_desc: String,
 }
 
+#[ext]
+impl Context<'_> {
+    fn vname_s(&self) -> Option<String> {
+        Some(self.variant?.variant?.ident.to_string())
+    }
+    fn fname_s(&self) -> Option<String> {
+        let span = Span::call_site();
+        Some(self.field?.fname(span).to_token_stream().to_string())
+    }
+}
+
 impl Tracker {
     fn finish_ok(&self) -> Result<(), String> {
         if self.all_must_match {
@@ -126,6 +137,16 @@ impl PossibilitiesExample {
         };
         let limit = &self.limit;
         let input = &self.input;
+        let context_desc = {
+            let mut out = format!("{}", ctx.top.ident);
+            if let Some(vname) = ctx.vname_s() {
+                write!(out, "::{}", vname).unwrap();
+            }
+            if let Some(fname) = ctx.fname_s() {
+                write!(out, ".{}", fname).unwrap();
+            }
+            out
+        };
         println!("CHECKING :{} {} => {}", self.loc, &input, &self.output);
 
         if self.all_must_match {
@@ -163,20 +184,7 @@ impl PossibilitiesExample {
         };
         let matched = matched.map_err(|got| Mismatch {
             got,
-            context_desc: {
-                let mut out = format!("{}", ctx.top.ident);
-                if let Some(variant) = ctx.variant {
-                    if let Some(variant) = variant.variant {
-                        write!(out, "::{}", variant.ident).unwrap();
-                    }
-                }
-                if let Some(field) = ctx.field {
-                    let field = field.fname(Span::call_site());
-                    let field = field.to_token_stream();
-                    write!(out, ".{}", field).unwrap();
-                }
-                out
-            },
+            context_desc,
         });
         tracker.note(matched);
     }
