@@ -126,8 +126,8 @@ impl Example for PossibilitiesExample {
             other_outputs: vec![],
             skipped_context_descs: vec![],
         };
-        println!("CHECKING :{} {} => {}", self.loc, &self.input, &self.output);
-        println!("  LIMIT {:?}", &self.limit);
+        println!("checking :{} {} => {}", self.loc, &self.input, &self.output);
+        //println!("  LIMIT {:?}", &self.limit);
 
         for driver in drivers {
             Context::call(
@@ -141,6 +141,7 @@ impl Example for PossibilitiesExample {
 	match tracker.finish_ok() {
             Ok(()) => {},
             Err(m) => {
+                eprintln!();
                 errs.wrong(self.loc, "example mismatch");
                 eprintln!(r"{}
 input: {}
@@ -155,7 +156,7 @@ documented: {}", m, self.input, self.limit, self.output);
                 for skip in tracker.skipped_context_descs {
                     eprint!(" [{}]", skip);
                 }
-                eprintln!();
+                eprintln!("\n");
             }
         }
     }
@@ -200,7 +201,7 @@ impl PossibilitiesExample {
         };
 
         if !limit.matches(ctx) {
-            println!("  INAPPLICABLE {:?}", &context_desc);
+            //println!("  INAPPLICABLE {:?}", &context_desc);
             tracker.note_skip(context_desc);
             return
         }
@@ -216,15 +217,15 @@ impl PossibilitiesExample {
 
         let matched = match out {
             Ok(got) if got == self.output.to_string() => {
-                println!("  MATCHED {}", &context_desc);
+                //println!("  MATCHED {}", &context_desc);
                 Ok(())
             },
             Err(e) => {
-                println!("  ERROR {}", &context_desc);
+                //println!("  ERROR {}", &context_desc);
                 Err(format!("error: {}", e))
             },
             Ok(s) => {
-                println!("  MISMATCH {}", &context_desc);
+                //println!("  MISMATCH {}", &context_desc);
                 Err(s.to_string())
             },
         };
