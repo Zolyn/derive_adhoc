@@ -216,7 +216,7 @@ where `FNAME` is the actual field name (or tuple field number).
 
  * `$vpat` for structs: `Unit { }`, `Tuple { 0: f_0 }`
  * `$vpat` for enum variant: `Enum::NamedVariant { field: f_field, ... }`
- * `$vpatname`: `f_0`, `f_field`
+ * `$fpatname`: `f_0`, `f_field`
  * `${vpat self=${paste $tname Reference} vname=${paste Ref $vname} fprefix=other_}`: `EnumReference::RefNamedVariant { field: other_field, ... }`
 
 ### `$ftype`, `$vtype`, `$ttype`, `$tdeftype` - types
