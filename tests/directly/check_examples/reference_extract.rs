@@ -240,8 +240,8 @@ pub fn extract(errs: &mut Errors) -> (
     for ii in &iis {
         println!("{:?}", ii);
     }
-    let structs_ = extract_structs(&iis);
-    println!("{:?}", structs_.iter().map(|s| &s.ident).collect_vec());
+    let structs = extract_structs(&iis);
+    println!("{:?}", structs.iter().map(|s| &s.ident).collect_vec());
 
     let examples = extract_examples(&iis);
 
@@ -254,5 +254,5 @@ pub fn extract(errs: &mut Errors) -> (
         }
     }
 
-    (structs_, examples)
+    (structs, examples)
 }

@@ -46,5 +46,5 @@ fn bail(loc: DocLoc, msg: impl Display) -> ! {
 #[should_panic] // XXXX incomplete
 fn check_examples() {
     let mut errs = Errors::new();
-    let (structs_, examples) = reference_extract::extract(&mut errs);
+    let (structs, examples) = reference_extract::extract(&mut errs);
 }
