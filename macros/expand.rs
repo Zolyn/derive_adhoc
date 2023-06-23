@@ -447,6 +447,7 @@ where
         //   referring to the type    $ttype     Type::<G>
         //   impl'ing for the type    $ttype     Type::<G>
         //   defining a new type      $ttypedef  Type<G: bounds>
+        // Handles $ttype and $tdeftype, and, indirectly, $vtype
         let do_ttype = |out: &mut O, colons: Option<()>, do_some_gens| {
             let _: &dyn Fn(&mut _) = do_some_gens; // specify type
             let colons = colons.map(|()| Token![::](kw_span));
