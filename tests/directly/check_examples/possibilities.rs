@@ -22,6 +22,7 @@ struct Tracker {
     all_must_match: bool,
     matching_outputs: usize,
     other_outputs: Vec<Mismatch>,
+    skipped_context_descs: Vec<String>,
 }
 
 struct Mismatch {
@@ -107,6 +108,10 @@ impl Tracker {
             Err(got) => self.other_outputs.push(got),
         }
     }
+
+    fn note_skip(&mut self, context_desc: String) {
+        self.skipped_context_descs.push(context_desc);
+    }
 }
 
 impl Example for PossibilitiesExample {
@@ -119,6 +124,7 @@ impl Example for PossibilitiesExample {
             all_must_match: self.all_must_match,
             matching_outputs: 0,
             other_outputs: vec![],
+            skipped_context_descs: vec![],
         };
         println!("CHECKING :{} {} => {}", self.loc, &self.input, &self.output);
         println!("  LIMIT {:?}", &self.limit);
@@ -145,6 +151,11 @@ documented: {}", m, self.input, self.limit, self.output);
                               got.got, got.context_desc);
                 }
                 eprintln!("matched: {}", tracker.matching_outputs);
+                eprint!("skipped:");
+                for skip in tracker.skipped_context_descs {
+                    eprint!(" [{}]", skip);
+                }
+                eprintln!();
             }
         }
     }
@@ -190,6 +201,7 @@ impl PossibilitiesExample {
 
         if !limit.matches(ctx) {
             println!("  INAPPLICABLE {:?}", &context_desc);
+            tracker.note_skip(context_desc);
             return
         }
 
