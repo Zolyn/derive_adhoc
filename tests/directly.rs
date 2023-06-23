@@ -8,6 +8,13 @@
 //! Currently, this makes a testing version of derive-adhoc without any
 //! of the optional features.
 
+use macros::framework::*;
+
+use syn::parse_quote;
+
 #[allow(dead_code)]
 #[path = "../macros/macros.rs"]
 pub(super) mod macros;
+
+#[cfg(feature = "recent")] // examples may not work with old compiler
+mod check_examples;
