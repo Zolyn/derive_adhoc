@@ -1,14 +1,10 @@
 //! Extract examples from the reference manual
 
-#![allow(dead_code)] // XXXX
-
-use crate::*;
-use crate::directly::*;
+use super::possibilities::PossibilitiesExample;
+use super::*;
 
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::SeqCst;
-
-type DocLoc = usize;
 
 #[derive(Debug)]
 enum InputItem {
@@ -52,15 +48,8 @@ enum InputDirective {
 
 type Preprocessed = Vec<InputItem>;
 
-use InputItem as II;
 use InputDirective as ID;
-
-const INPUT_FILE: &str = "doc/reference.md";
-
-fn wrong(loc: DocLoc, msg: impl Display) -> ! {
-    eprintln!("{INPUT_FILE}:{loc}: {msg}");
-    panic!("unexpected content in documentation");
-}
+use InputItem as II;
 
 #[derive(Default, Debug)]
 struct DirectiveTrackUsed(AtomicBool);
@@ -75,7 +64,7 @@ impl DirectiveTrackUsed {
     }
 }
 
-fn read_preprocess() -> Preprocessed {
+fn read_preprocess(errs: &mut Errors) -> Preprocessed {
     let _ = dbg!(std::env::current_dir());
 
     let file = File::open(format!("../{INPUT_FILE}")).unwrap();
@@ -135,7 +124,7 @@ fn read_preprocess() -> Preprocessed {
             let l = l.trim().strip_prefix("<!--##examples").unwrap();
             let l = l
                 .strip_suffix("##-->")
-                .unwrap_or_else(|| wrong(loc, "directive suffix wrong"));
+                .unwrap_or_else(|| bail(loc, "directive suffix wrong"));
             let used = Default::default();
 
             let d = if m!(l, "^-ignore$") {
@@ -143,7 +132,8 @@ fn read_preprocess() -> Preprocessed {
                     if m!(l, "^\n$") {
                         break
                     } else if is_directive(&l) {
-                        wrong(loc, "directive in ignore section");
+                        errs.wrong(loc, "directive in ignore section");
+                        break;
                     } else {
                         drop(l);
                     }
@@ -164,7 +154,8 @@ fn read_preprocess() -> Preprocessed {
             } else if m!(l, "^-structs") {
                 Some(ID::Structs { })
             } else {
-                wrong(loc, format_args!("unrecgonised directive: {l:?}"))
+                errs.wrong(loc, format_args!("unrecgonised directive: {l:?}"));
+                continue;
             };
             d.map(|d| II::Directive {
                 used,
@@ -193,11 +184,14 @@ fn extract_structs(input: &Preprocessed) -> Vec<syn::DeriveInput> {
     fn parse_content(loc: DocLoc, content: &str) -> Vec<syn::DeriveInput> {
         let content = re!(r"(?m)^#(?: |$)").replace_all(content, "");
         let items: Concatenated<syn::Item> = syn::parse_str(&content)
-            .unwrap_or_else(|e| wrong(loc, format_args!("structs content parse failed: {e}, given {content}",)));
+            .unwrap_or_else(|e| bail(loc, format_args!(
+                "structs content parse failed: {e}, given {content}",
+            )));
         items.0.into_iter().filter_map(|item| match item {
             syn::Item::Union(_) | syn::Item::Struct(_) | syn::Item::Enum(_) => {
                 Some(
-                    syn::parse2(item.into_token_stream()).expect("failed to reparse item as DeriveInput"))
+                    syn::parse2(item.into_token_stream())
+                        .expect("failed to reparse item as DeriveInput"))
             },
             _ => None,
         }).collect_vec()
@@ -222,7 +216,7 @@ fn extract_structs(input: &Preprocessed) -> Vec<syn::DeriveInput> {
                 Some(II::BlockQuote { loc, content, .. }) => {
                     parse_content(*loc, content).into_iter()
                 }
-                _ => wrong(
+                _ => bail(
                     *loc,
                     "structs directive not followed by blockquote",
                 ),
@@ -233,10 +227,15 @@ fn extract_structs(input: &Preprocessed) -> Vec<syn::DeriveInput> {
         .collect()
 }
 
-#[test]
-#[should_panic] // XXXX incomplete
-fn extract() {
-    let iis = read_preprocess();
+fn extract_examples(input: &Preprocessed) -> Vec<Box<dyn Example>> {
+    vec![]
+}
+
+pub fn extract(errs: &mut Errors) -> (
+    Vec<syn::DeriveInput>,
+    Vec<Box<dyn Example>>,
+) {
+    let iis = read_preprocess(errs);
 
     for ii in &iis {
         println!("{:?}", ii);
@@ -244,12 +243,16 @@ fn extract() {
     let structs_ = extract_structs(&iis);
     println!("{:?}", structs_.iter().map(|s| &s.ident).collect_vec());
 
+    let examples = extract_examples(&iis);
+
     for ii in &iis {
         match ii {
             II::Directive { used, loc, .. } if !used.is() => {
-                wrong(*loc, "unused directive - out of place");
+                errs.wrong(*loc, "unused directive - out of place");
             }
             _ => {}
         }
     }
+
+    (structs_, examples)
 }

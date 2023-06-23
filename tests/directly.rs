@@ -11,6 +11,8 @@
 use macros::framework::*;
 use macros::Concatenated;
 
+use super::*;
+
 use syn::parse_quote;
 
 #[allow(dead_code)]
