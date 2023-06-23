@@ -47,4 +47,8 @@ fn bail(loc: DocLoc, msg: impl Display) -> ! {
 fn check_examples() {
     let mut errs = Errors::new();
     let (structs, examples) = reference_extract::extract(&mut errs);
+    for example in &examples {
+        example.check(&mut errs, &structs);
+    }
+    eprintln!("checked {} examples", examples.len());
 }

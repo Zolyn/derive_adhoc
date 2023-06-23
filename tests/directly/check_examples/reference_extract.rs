@@ -227,8 +227,188 @@ fn extract_structs(input: &Preprocessed) -> Vec<syn::DeriveInput> {
         .collect()
 }
 
-fn extract_examples(input: &Preprocessed) -> Vec<Box<dyn Example>> {
-    vec![]
+#[derive(Default, Debug)]
+struct SectionState<'i> {
+    for_: Option<(DocLoc, &'i String, &'i DirectiveTrackUsed)>,
+    t_limits: Vec<String>,
+}    
+
+fn parse_bullet(
+    loc: DocLoc,
+    bullet: &str,
+    errs: &mut Errors,
+    ss: &mut SectionState,
+    examples_out: &mut Vec<Box<dyn Example>>,
+) {
+    let bullet = re!(r"\n   +").replace_all(bullet, " ");
+    let (input, here_for, outputs) = match mc!(
+        bullet,
+        r#"(?m)^ \* `([^`]+)`(?: for ([^:]+))?: (.*)$"#
+    ) {
+        Some(y) => y,
+        None => {
+            errs.wrong(loc, format_args!(
+                "failed to parse bullet point as example: {:?}",
+                bullet,
+            ));
+            return;
+        }
+    };
+
+    let for_used_buf = Default::default();
+
+    let for_ = ss.for_.or_else(|| {
+        if here_for.is_empty() {
+            None
+        } else {
+            Some((loc, &here_for, &for_used_buf))
+        }
+    });
+    
+    let mut all_must_match = false;
+    let limit = match for_ {
+        None => "true".to_owned(),
+        Some((loc, for_, for_used)) => {
+            for_used.note();
+            let tv_name = |n| {
+                format!(
+                    "any(equal($tname,{}),all(is_enum,equal($vname,{})))",
+                    n,
+                    n,
+                )
+            };
+            if m!(for_, "^structs?$") {
+                "is_struct".into()
+            } else if m!(for_, "^enum( variant)?s?$") {
+                "is_enum".into()
+            } else if let Some((n,)) = mc!(for_, r"^`(\w+)`$") {
+                tv_name(n)
+            } else if let Some((f,n)) = mc!(for_, r"^`(\w+)` in `(\w+)`$") {
+                all_must_match = true;
+                format!("all(equal($fname,{}),{})", f, tv_name(n))
+            } else if m!(for_, "^others$") {
+                all_must_match = true;
+                format!("not(any({}))", ss.t_limits.join(","))
+            } else {
+                errs.wrong(loc, format_args!(
+                    r#"unhandled for clause "{}""#,
+                    for_
+                ));
+                return;
+            }
+        }
+    };
+    ss.t_limits.push(limit.clone());
+
+    let mut poss = |output: &str| {
+        macro_rules! parse1 { { $v:ident } => {
+            let $v: TokenStream = match syn::parse_str(&$v) {
+                Ok(y) => y,
+                Err(e) => {
+                    errs.wrong(loc, format_args!(
+                        r#"failed to parse {}: {:?}: {}"#,
+                        stringify!($v),
+                        $v,
+                        e
+                    ));
+                    return;
+                },
+            };
+        } }
+        parse1!(input);
+        parse1!(limit);
+        parse1!(output);
+        examples_out.push(Box::new(PossibilitiesExample {
+            loc,
+            input,
+            limit,
+            all_must_match,
+            output,
+        }));
+    };
+
+    if m!(outputs, "^nothing$") {
+        poss("");
+    } else {
+        let mut outputs = outputs;
+        while !outputs.is_empty() {
+            let (p, rest) = match mc!(
+                outputs,
+                "(?m)^`([^`]+)`(?:, (.*)|)$",
+            ) {
+                Some(y) => y,
+                None => {
+                    errs.wrong(loc, format!(
+                        r#"bad (tail of) bullet point examples "{}""#,
+                        outputs,
+                    ));
+                    break;
+                }
+            };
+            poss(&p);
+            outputs = rest;
+        }
+    }
+}
+                
+fn extract_examples(
+    input: &Preprocessed,
+    errs: &mut Errors,
+) -> Vec<Box<dyn Example>> {
+    let mut examples_out = vec![];
+
+    for (ia, ib) in input
+        .iter()
+        .enumerate()
+        .filter_map(|(i, ii)| match ii {
+            II::Heading {
+                depth,
+                text,
+                ..
+            } if m!(text, r"^Examples?\b") => Some((i, depth)),
+            _ => None,
+        })
+        .map(|(ia, depth_a)| {
+            let ib = input
+                .iter()
+                .enumerate()
+                .skip(ia + 1)
+                .find_map(|(ib, ii)| match ii {
+                    II::Heading {
+                        depth: depth_b,
+                        ..
+                    } if depth_b <= depth_a => Some(ib),
+                    _ => None,
+                }).unwrap_or(input.len());
+            (ia, ib)
+        })
+    {
+        let mut ss = SectionState::default();
+
+        for ii in &input[ia..ib] {
+            match ii {
+                II::Bullet { loc, bullet } => {
+                    parse_bullet(
+                        *loc,
+                        bullet,
+                        errs,
+                        &mut ss,
+                        &mut examples_out,
+                    );
+                }
+                II::Directive { loc, d, used } => match d {
+                    ID::For { for_: new } => ss.for_ = Some((*loc, new, used)),
+                    ID::ForToplevelsConcat { .. } => {
+                        used.note();
+                        eprintln!("DUNNO"); // XXXX
+                    }
+                    _ => {},
+                }
+                _ => {},
+            }
+        }
+    }
+    examples_out
 }
 
 pub fn extract(errs: &mut Errors) -> (
@@ -237,13 +417,9 @@ pub fn extract(errs: &mut Errors) -> (
 ) {
     let iis = read_preprocess(errs);
 
-    for ii in &iis {
-        println!("{:?}", ii);
-    }
     let structs = extract_structs(&iis);
-    println!("{:?}", structs.iter().map(|s| &s.ident).collect_vec());
 
-    let examples = extract_examples(&iis);
+    let examples = extract_examples(&iis, errs);
 
     for ii in &iis {
         match ii {
