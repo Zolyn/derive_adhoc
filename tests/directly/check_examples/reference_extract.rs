@@ -8,32 +8,32 @@ use crate::directly::*;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::SeqCst;
 
-type LineNo = usize;
+type DocLoc = usize;
 
 #[derive(Debug)]
 enum InputItem {
     Bullet {
-        lno: LineNo,
+        loc: DocLoc,
         bullet: String,
     },
     BlockQuote {
-        lno: LineNo,
+        loc: DocLoc,
         options: String,
         content: String,
     },
     Heading {
-        lno: LineNo,
+        loc: DocLoc,
         /// number of hashes
         depth: usize,
         text: String,
     },
     Paragraph {
-        lno: LineNo,
+        loc: DocLoc,
         content: String,
     },
     Directive {
         used: DirectiveTrackUsed,
-        lno: LineNo,
+        loc: DocLoc,
         d: InputDirective,
     },
 }
@@ -57,8 +57,8 @@ use InputDirective as ID;
 
 const INPUT_FILE: &str = "doc/reference.md";
 
-fn wrong(lno: LineNo, msg: impl Display) -> ! {
-    eprintln!("{INPUT_FILE}:{lno}: {msg}");
+fn wrong(loc: DocLoc, msg: impl Display) -> ! {
+    eprintln!("{INPUT_FILE}:{loc}: {msg}");
     panic!("unexpected content in documentation");
 }
 
@@ -86,7 +86,7 @@ fn read_preprocess() -> Preprocessed {
         .lines()
         .map(|l| l.expect("file read error"))
         .enumerate()
-        .map(|(lno, l)| (lno+1, format!("{}\n", l.trim_end())))
+        .map(|(loc, l)| (loc+1, format!("{}\n", l.trim_end())))
         .peekable();
 
     let mut current_paragraph = None;
@@ -94,12 +94,12 @@ fn read_preprocess() -> Preprocessed {
     let mut preprocessed = vec![];
 
     macro_rules! end_paragraph { {} => {
-        if let Some((lno, content)) = current_paragraph.take() {
-            preprocessed.push(II::Paragraph { lno, content });
+        if let Some((loc, content)) = current_paragraph.take() {
+            preprocessed.push(II::Paragraph { loc, content });
         }
     } }
 
-    while let Some((lno, l)) = lines.next() {
+    while let Some((loc, l)) = lines.next() {
         let ii = if let Some((options,)) = mc!(l, "```(.*)") {
             let options = options.trim().to_owned();
             let mut content = String::new();
@@ -111,7 +111,7 @@ fn read_preprocess() -> Preprocessed {
                 }
                 content += &l;
             }
-            Some(II::BlockQuote { lno, options, content })
+            Some(II::BlockQuote { loc, options, content })
         } else if m!(l, r"^ \* ") {
             let mut bullet: String = l;
             loop {
@@ -124,10 +124,10 @@ fn read_preprocess() -> Preprocessed {
                 }
                 bullet += &lines.next().unwrap().1;
             }
-            Some(II::Bullet { lno, bullet })
+            Some(II::Bullet { loc, bullet })
         } else if let Some((hashes, text)) = mc!(l, r"^(\#+) (\S.*)") {
             Some(II::Heading {
-                lno,
+                loc,
                 depth: hashes.len(),
                 text: text.trim_end().to_owned(),
             })
@@ -135,15 +135,15 @@ fn read_preprocess() -> Preprocessed {
             let l = l.trim().strip_prefix("<!--##examples").unwrap();
             let l = l
                 .strip_suffix("##-->")
-                .unwrap_or_else(|| wrong(lno, "directive suffix wrong"));
+                .unwrap_or_else(|| wrong(loc, "directive suffix wrong"));
             let used = Default::default();
 
             let d = if m!(l, "^-ignore$") {
-                while let Some((lno, l)) = lines.next() {
+                while let Some((loc, l)) = lines.next() {
                     if m!(l, "^\n$") {
                         break
                     } else if is_directive(&l) {
-                        wrong(lno, "directive in ignore section");
+                        wrong(loc, "directive in ignore section");
                     } else {
                         drop(l);
                     }
@@ -164,18 +164,18 @@ fn read_preprocess() -> Preprocessed {
             } else if m!(l, "^-structs") {
                 Some(ID::Structs { })
             } else {
-                wrong(lno, format_args!("unrecgonised directive: {l:?}"))
+                wrong(loc, format_args!("unrecgonised directive: {l:?}"))
             };
             d.map(|d| II::Directive {
                 used,
-                lno,
+                loc,
                 d
             })
         } else if m!(l, "^\n$") {
             None
         } else {
             current_paragraph
-                .get_or_insert((lno, String::new()))
+                .get_or_insert((loc, String::new()))
                 .1
                 += &l;
             continue;
@@ -190,10 +190,10 @@ fn read_preprocess() -> Preprocessed {
 }
 
 fn extract_structs(input: &Preprocessed) -> Vec<syn::DeriveInput> {
-    fn parse_content(lno: LineNo, content: &str) -> Vec<syn::DeriveInput> {
+    fn parse_content(loc: DocLoc, content: &str) -> Vec<syn::DeriveInput> {
         let content = re!(r"(?m)^#(?: |$)").replace_all(content, "");
         let items: Concatenated<syn::Item> = syn::parse_str(&content)
-            .unwrap_or_else(|e| wrong(lno, format_args!("structs content parse failed: {e}, given {content}",)));
+            .unwrap_or_else(|e| wrong(loc, format_args!("structs content parse failed: {e}, given {content}",)));
         items.0.into_iter().filter_map(|item| match item {
             syn::Item::Union(_) | syn::Item::Struct(_) | syn::Item::Enum(_) => {
                 Some(
@@ -208,22 +208,22 @@ fn extract_structs(input: &Preprocessed) -> Vec<syn::DeriveInput> {
         .enumerate()
         .filter_map(|(i, ii)| match ii {
             II::Directive {
-                lno,
+                loc,
                 used,
                 d: ID::Structs { }
             } => {
                 used.note();
-                Some((i, lno))
+                Some((i, loc))
             },
             _ => None
         })
-        .map(|(i, lno)| {
+        .map(|(i, loc)| {
             match input.get(i+1) {
-                Some(II::BlockQuote { lno, content, .. }) => {
-                    parse_content(*lno, content).into_iter()
+                Some(II::BlockQuote { loc, content, .. }) => {
+                    parse_content(*loc, content).into_iter()
                 }
                 _ => wrong(
-                    *lno,
+                    *loc,
                     "structs directive not followed by blockquote",
                 ),
             }
@@ -246,8 +246,8 @@ fn extract() {
 
     for ii in &iis {
         match ii {
-            II::Directive { used, lno, .. } if !used.is() => {
-                wrong(*lno, "unused directive - out of place");
+            II::Directive { used, loc, .. } if !used.is() => {
+                wrong(*loc, "unused directive - out of place");
             }
             _ => {}
         }
