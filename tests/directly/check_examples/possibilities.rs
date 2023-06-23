@@ -13,7 +13,7 @@ pub struct PossibilitiesExample {
     /// A derive-adhoc condition
     pub limit: TokenStream,
     /// Expected output
-    pub output: String,
+    pub output: TokenStream,
 }
 
 enum Tracker {
@@ -100,7 +100,7 @@ impl PossibilitiesExample {
         };
 
         let bad = match out {
-            Ok(s) if s == self.output => {
+            Ok(s) if s == self.output.to_string() => {
                 *tracker = Tracker::Found;
                 return;
             }
@@ -135,7 +135,7 @@ fn poc() {
         loc: 42,
         input: input,
         limit: limit,
-        output: output.to_string(),
+        output,
     }.check(&mut Errors::new(), &[driver]);
 }
 
