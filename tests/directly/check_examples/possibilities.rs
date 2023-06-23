@@ -178,9 +178,18 @@ impl PossibilitiesExample {
         })();
 
         let matched = match out {
-            Ok(s) if s == self.output.to_string() => Ok(()),
-            Err(e) => Err(format!("error: {}", e)),
-            Ok(s) => Err(s),
+            Ok(got) if got == self.output.to_string() => {
+                println!("  MATCHED {}", &context_desc);
+                Ok(())
+            },
+            Err(e) => {
+                println!("  ERROR {}", &context_desc);
+                Err(format!("error: {}", e))
+            },
+            Ok(s) => {
+                println!("  MISMATCH {}", &context_desc);
+                Err(s.to_string())
+            },
         };
         let matched = matched.map_err(|got| Mismatch {
             got,
