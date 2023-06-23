@@ -432,7 +432,7 @@ where
                         out.append(&c.colon_token);
                         out.append(&c.ty);
                     }
-                    GP::Lifetime(l) => out.append(&l.lifetime),
+                    GP::Lifetime(l) => out.append(&l),
                 }
                 out.with_tokens(|out| {
                     pair.punct().to_tokens_punct_composable(out);
