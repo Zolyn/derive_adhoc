@@ -30,6 +30,13 @@ struct Mismatch {
     context_desc: String,
 }
 
+/// Limit on the contexts (in the example structs) that this test is for
+///
+/// This was (at an early stage) done with derive-adhoc conditions.
+/// However, derive-adhoc conditions throw an error when applied
+/// in contexts that lack all the information
+/// (for example, `$fname` outside a field).
+/// Also, they make it difficult to analyse what `Others` means.
 #[derive(Educe, Clone)]
 #[educe(Debug)]
 pub enum Limit {
@@ -67,6 +74,9 @@ impl Limit {
             Limit::Name(n) => tname(n) || vname(n) || fname(n),
             Limit::Field { f, n} => fname(f) && (tname(n) || vname(n)),
             Limit::Others(v) => {
+                // If we've had any `for field in Type` annotations,
+                // we should skip any contexts that don't have a field.
+                // Since, in that case, "other" means *other fields*
                 if v.iter().any(|l| matches!(l, Limit::Field { .. })) {
                     if ctx.fname_s().is_none() {
                         return false;
@@ -236,6 +246,13 @@ impl PossibilitiesExample {
         tracker.note(matched);
     }
 
+    /// If `self` and `TokenStream` are equal-enough
+    /// (see `similar_token_streams`) return true.
+    ///
+    /// Otherwise hopes that `self`'s string representation has a `...`,
+    /// and then expects that `got`'s string matches the implied pattern.
+    /// This does *not* do anything useful about possible spacing
+    /// differences, which may be a latent bug.
     fn matches_handling_ellipsis(&self, got: &TokenStream) -> bool {
         if similar_token_streams(&self.output, got) {
             return true

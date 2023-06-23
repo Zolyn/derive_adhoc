@@ -43,6 +43,21 @@ fn bail(loc: DocLoc, msg: impl Display) -> ! {
 }
 
 /// Tries to compare but disregarding spacing, which is unpredictable
+///
+/// What we really want to know is
+/// whether the two `TokenStream`s mean the same.
+/// This is not so straightforward.
+/// Neither `TokenStream` nor `TokenTree` are `PartialEq`,
+/// The string representation of a `TokenStream` has unpredictable spacing:
+/// it can even inherit *some but not all* of the input spacing,
+/// and, empirically, it can depend on whether the tokens went through `syn`
+/// (and presumably which `syn` type(s)).
+/// For example, output from `derive-adhoc`
+/// that came via an expansion that used `syn::Type`
+/// can have different spacing to
+/// a string with the same meaning, converted to `TokenStream` and back.
+///
+/// The algorithm in this function isn't perfect but I think it will do.
 fn similar_token_streams(a: &TokenStream, b: &TokenStream) -> bool {
     for eob in a.clone().into_iter().zip_longest(b.clone().into_iter()) {
         let (a, b) = match eob {
