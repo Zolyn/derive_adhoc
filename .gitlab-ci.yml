@@ -34,6 +34,13 @@ maint-check-bizarre:
   script:
     - maint/update-bizarre --check
 
+maint-check-test-deps:
+  stage: test
+  script:
+    - apt-get -y update
+    - apt-get -y install libtoml-perl git
+    - maint/check-test-deps
+
 # Check for FIXMEs.  This is in "comprehensive" so you can sabotage
 # the CI, but still get it all to run - useful for iterating through CI.
 maint-check-todos:
