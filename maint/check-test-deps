@@ -1,0 +1,59 @@
+#!/usr/bin/perl -w
+#
+# Checks that the dependencies used by the direct tests in
+# derive-adhoc-tests, are the same ones as specified in the
+# derive-adhoc-macros Cargo.toml.
+
+use strict;
+
+use IO::Handle;
+use TOML qw(from_toml);
+
+sub read_file ($) {
+    my ($file) = @_;
+    local $/ = undef;
+    open C, $file or die "$file $!";
+    my $toml = <C> // die "$file $!";
+    C->error and die "$file $!";
+    $toml = from_toml($toml) || die "$file ?";
+    return $toml;
+}
+
+my $macros = read_file 'macros/Cargo.toml';
+my $tests = read_file 'tests/Cargo.toml';
+
+sub normalise ($) {
+    my ($info) = @_;
+    if (!ref $info) {
+	$info = { version => $info };
+    }
+    ($info, $info->{version} // '<unspecified>')
+}
+
+our $bad;
+
+sub bad ($) {
+    print STDERR "mismatch: $_[0]\n";
+    $bad++;
+}
+
+foreach my $p (sort keys %{ $macros->{dependencies} }) {
+    my ($mi, $mv) = normalise($macros->{dependencies}{$p});
+    my $ti = $tests->{dependencies}{$p};
+    if (!defined $ti) {
+	if (($mi->{optional} // '') eq 'true') {
+	    next;
+	}
+	bad "missing dependency $p";
+	next;
+    }
+    my $tv;
+    ($ti, $tv) = normalise($ti);
+    if ($mv ne $tv) {
+	bad "dependency $p macros have $mv tests have $tv";
+    }
+}
+
+if ($bad) {
+    die "Some dependencies in macros/Cargo.toml aren't matched in tests/\n";
+}
