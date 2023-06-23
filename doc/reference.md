@@ -299,7 +299,7 @@ so for full support of generic types the template must expand both.
 
 #### Examples
 
- * `$tgens`: `a, 'l: 'a, T: Display, const C: usize,`
+ * `$tgens`: `'a, 'l: 'a, T: Display, const C: usize,`
  * `$tgnames`: `'a, 'l, T, C,`
  * `$twheres`: `T: 'l, T: TryInto<u8>,`
  * `$tdefgens`: `'a, 'l: 'a, T: Display = usize, const C: usize = 1,`
