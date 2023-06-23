@@ -36,6 +36,12 @@ mod _doc_hacking {}
 #[doc=include_str!("NOTES.md")]
 mod _doc_notes {}
 
+/// Dummy of proc_macro for use when compiling outside of proc macro context
+#[cfg(not(proc_macro))]
+pub(crate) mod proc_macro {
+    pub(crate) use proc_macro2::TokenStream;
+}
+
 //========== `expect`, the `check` module (or dummy version) ==========
 
 // "expect" feature; module named check.rs for tab completion reasons
@@ -82,7 +88,7 @@ impl DaOptValDescribable for check::Target {
 ///
 /// This macro's behvaiour is not currently stable or documented.
 /// If you invoke it yourself, you get to keep all the pieces.
-#[proc_macro]
+#[cfg_attr(proc_macro, proc_macro)]
 pub fn derive_adhoc_expand(
     input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
@@ -116,7 +122,7 @@ pub fn derive_adhoc_expand(
 /// with [`#[derive(Adhoc)]`](crate::Adhoc),
 /// and the resulting `derive_adhoc_driver_TYPE` macro must be
 /// available in scope.
-#[proc_macro]
+#[cfg_attr(proc_macro, proc_macro)]
 pub fn derive_adhoc(
     input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
@@ -214,7 +220,7 @@ pub fn derive_adhoc(
 ///
 /// Overall, the situation is similar to defining
 /// an exported `macro_rules` macro.
-#[proc_macro]
+#[cfg_attr(proc_macro, proc_macro)]
 pub fn define_derive_adhoc(
     input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
@@ -339,7 +345,10 @@ pub fn define_derive_adhoc(
 // and then it will perhaps want to do *something* with the attributes?
 // Although maybe just ignoring them and letting them get to the expander
 // is right.
-#[proc_macro_derive(Adhoc, attributes(adhoc, derive_adhoc))]
+#[cfg_attr(
+    proc_macro,
+    proc_macro_derive(Adhoc, attributes(adhoc, derive_adhoc))
+)]
 pub fn derive_adhoc_derive_macro(
     input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
