@@ -14,13 +14,51 @@ pub struct PossibilitiesExample {
     pub limit: TokenStream,
     /// Expected output
     pub output: TokenStream,
+    /// Are *all* the possibilities (subject to `limit`) supposed to match?
+    pub all_must_match: bool,
 }
 
-enum Tracker {
-    Found,
-    NotFound {
-        bad_outputs: Vec<String>
-    },
+struct Tracker {
+    all_must_match: bool,
+    matching_outputs: usize,
+    other_outputs: Vec<Mismatch>,
+}
+
+struct Mismatch {
+    got: String,
+    context_desc: String,
+}
+
+impl Tracker {
+    fn finish_ok(&self) -> Result<(), String> {
+        if self.all_must_match {
+            if !self.other_outputs.is_empty() {
+                return Err(
+ "at least one actual output doesn't match the documented output".into()
+                )
+            }
+        }
+        if self.matching_outputs == 0 {
+            return Err(
+ "documented output does not match any of the actual outputs".into()
+            )
+        }
+        Ok(())
+    }
+
+    fn should_continue(&self) -> bool {
+        if !self.all_must_match && self.matching_outputs != 0 {
+            return false;
+        }
+        true
+    }
+
+    fn note(&mut self, matched: Result<(), Mismatch>) {
+        match matched {
+            Ok(()) => self.matching_outputs += 1,
+            Err(got) => self.other_outputs.push(got),
+        }
+    }
 }
 
 impl Example for PossibilitiesExample {
@@ -29,8 +67,10 @@ impl Example for PossibilitiesExample {
         errs: &mut Errors,
         drivers: &[syn::DeriveInput],
     ) {
-        let mut tracker = Tracker::NotFound {
-            bad_outputs: vec![],
+        let mut tracker = Tracker {
+            all_must_match: self.all_must_match,
+            matching_outputs: 0,
+            other_outputs: vec![],
         };
         for driver in drivers {
             Context::call(
@@ -41,17 +81,19 @@ impl Example for PossibilitiesExample {
             ).unwrap();
         }
 
-        match tracker {
-            Tracker::Found => {}
-            Tracker::NotFound { bad_outputs } => {
-                eprintln!(r"documented output does not match any of the actual outputs!
+	match tracker.finish_ok() {
+            Ok(()) => {},
+            Err(m) => {
+                errs.wrong(self.loc, "example mismatch");
+                eprintln!(r"{}
 input: {}
 limit: {}
-documented: {}", self.input, self.limit, self.output);
-                for got in bad_outputs {
-                    eprintln!("    actual: {}", got);
+documented: {}", m, self.input, self.limit, self.output);
+                for got in tracker.other_outputs {
+                    eprintln!("mismatched: {} [{}]",
+                              got.got, got.context_desc);
                 }
-                errs.wrong(self.loc, "example mismatch");
+                eprintln!("matched: {}", tracker.matching_outputs);
             }
         }
     }
@@ -79,35 +121,64 @@ impl PossibilitiesExample {
         tracker: &mut Tracker,
         ctx: &Context<'_>,
     ) {
-        let bad_outputs = match tracker {
-            Tracker::Found => return,
-            Tracker::NotFound { bad_outputs } => bad_outputs,
+        if !tracker.should_continue() {
+            return
         };
-
         let limit = &self.limit;
         let input = &self.input;
-        let template: Template<TokenAccumulator> = parse_quote!(
+        println!("CHECKING :{} {} => {}", self.loc, &input, &self.output);
+
+        if self.all_must_match {
+            let template: Template<TokenAccumulator> =
+                parse_quote!( ${if #limit {} else {}} );
+            let mut out = TokenAccumulator::new();
+            template.expand(ctx, &mut out);
+            match out.tokens() {
+                Ok(_) => {},
+                Err(e) => {
+                    assert!(e.to_string().contains("must be within"), "{:?}", e);
+                    return;
+                }
+            }
+        }
+
+        let template = quote!(
             ${if #limit {
                 #input
             } else {
                 inapplicable: #limit
             }}
         );
-        let out = {
+        let out = (|| {
             let mut out = TokenAccumulator::new();
+            let template: Template<TokenAccumulator> = syn::parse2(template)?;
             template.expand(ctx, &mut out);
             out.tokens().map(|out| out.to_string())
-        };
+        })();
 
-        let bad = match out {
-            Ok(s) if s == self.output.to_string() => {
-                *tracker = Tracker::Found;
-                return;
-            }
-            Err(e) => format!("error: {}", e),
-            Ok(s) => s,
+        let matched = match out {
+            Ok(s) if s == self.output.to_string() => Ok(()),
+            Err(e) => Err(format!("error: {}", e)),
+            Ok(s) => Err(s),
         };
-        bad_outputs.push(bad);
+        let matched = matched.map_err(|got| Mismatch {
+            got,
+            context_desc: {
+                let mut out = format!("{}", ctx.top.ident);
+                if let Some(variant) = ctx.variant {
+                    if let Some(variant) = variant.variant {
+                        write!(out, "::{}", variant.ident).unwrap();
+                    }
+                }
+                if let Some(field) = ctx.field {
+                    let field = field.fname(Span::call_site());
+                    let field = field.to_token_stream();
+                    write!(out, ".{}", field).unwrap();
+                }
+                out
+            },
+        });
+        tracker.note(matched);
     }
 }
 
@@ -132,10 +203,11 @@ fn poc() {
     let limit = quote! { any(equal($tname,Enum),equal($vname,Enum)) };
     let output = quote! { UnitVariant, TupleVariant, NamedVariant, };
     PossibilitiesExample {
+        all_must_match: false,
         loc: 42,
         input: input,
         limit: limit,
-        output,
+        output: output,
     }.check(&mut Errors::new(), &[driver]);
 }
 
