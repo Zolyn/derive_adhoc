@@ -131,7 +131,7 @@ For [example enum `Enum`](#structs-used-in-examples):
 
  * `$($vname,)`: `UnitVariant, TupleVariant, NamedVariant,`
  * `$($fname)`: `0 field field_b field_e`
- * `${for fields hello}`: `hello hello hello hello`
+ * `${for fields { hello }}`: `hello hello hello hello`
 
 ## Expansions
 
