@@ -118,6 +118,7 @@ use std::iter;
 use std::path::PathBuf;
 
 use easy_ext::ext;
+use educe::Educe;
 use itertools::Itertools;
 use regex::Regex;
 

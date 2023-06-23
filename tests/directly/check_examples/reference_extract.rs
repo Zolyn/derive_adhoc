@@ -230,7 +230,7 @@ fn extract_structs(input: &Preprocessed) -> Vec<syn::DeriveInput> {
 #[derive(Default, Debug)]
 struct SectionState<'i> {
     for_: Option<(DocLoc, &'i String, &'i DirectiveTrackUsed)>,
-    t_limits: Vec<String>,
+    t_limits: Vec<possibilities::Limit>,
 }    
 
 fn parse_bullet(
@@ -267,28 +267,22 @@ fn parse_bullet(
     
     let mut all_must_match = false;
     let limit = match for_ {
-        None => "true".to_owned(),
+        None => possibilities::Limit::True,
         Some((loc, for_, for_used)) => {
+            use possibilities::Limit as L;
             for_used.note();
-            let tv_name = |n| {
-                format!(
-                    "any(equal($tname,{}),all(is_enum,equal($vname,{})))",
-                    n,
-                    n,
-                )
-            };
             if m!(for_, "^structs?$") {
-                "is_struct".into()
+                L::IsStruct
             } else if m!(for_, "^enum( variant)?s?$") {
-                "is_enum".into()
+                L::IsEnum
             } else if let Some((n,)) = mc!(for_, r"^`(\w+)`$") {
-                tv_name(n)
+                L::Name(n.into())
             } else if let Some((f,n)) = mc!(for_, r"^`(\w+)` in `(\w+)`$") {
                 all_must_match = true;
-                format!("all(equal($fname,{}),{})", f, tv_name(n))
+                L::Field { f, n }
             } else if m!(for_, "^others$") {
                 all_must_match = true;
-                format!("not(any({}))", ss.t_limits.join(","))
+                L::Others(mem::take(&mut ss.t_limits))
             } else {
                 errs.wrong(loc, format_args!(
                     r#"unhandled for clause "{}""#,
@@ -316,12 +310,11 @@ fn parse_bullet(
             };
         } }
         parse1!(input);
-        parse1!(limit);
         parse1!(output);
         examples_out.push(Box::new(PossibilitiesExample {
             loc,
             input,
-            limit,
+            limit: limit.clone(),
             all_must_match,
             output,
         }));

@@ -10,8 +10,8 @@ pub struct PossibilitiesExample {
     pub loc: DocLoc,
     /// A derive-adhoc template fragment
     pub input: TokenStream,
-    /// A derive-adhoc condition
-    pub limit: TokenStream,
+    /// Limit on which contexts to consider
+    pub limit: Limit,
     /// Expected output
     pub output: TokenStream,
     /// Are *all* the possibilities (subject to `limit`) supposed to match?
@@ -29,6 +29,20 @@ struct Mismatch {
     context_desc: String,
 }
 
+#[derive(Educe, Clone)]
+#[educe(Debug)]
+pub enum Limit {
+    True,
+    IsStruct,
+    IsEnum,
+    Name(String),
+    Field {
+        f: String,
+        n: String,
+    },
+    Others(#[educe(Debug(ignore))] Vec<Limit>),
+}
+
 #[ext]
 impl Context<'_> {
     fn vname_s(&self) -> Option<String> {
@@ -37,6 +51,29 @@ impl Context<'_> {
     fn fname_s(&self) -> Option<String> {
         let span = Span::call_site();
         Some(self.field?.fname(span).to_token_stream().to_string())
+    }
+}
+
+impl Limit {
+    fn matches(&self, ctx: &Context<'_>) -> bool {
+        let tname = |n| &ctx.top.ident.to_string() == n;
+        let vname = |n| ctx.vname_s().map(|s| &s == n) == Some(true);
+        let fname = |n| ctx.fname_s().map(|s| &s == n) == Some(true);
+        match self {
+            Limit::True => true,
+            Limit::IsStruct => matches!(ctx.top.data, syn::Data::Struct(_)),
+            Limit::IsEnum => matches!(ctx.top.data, syn::Data::Enum(_)),
+            Limit::Name(n) => tname(n) || vname(n) || fname(n),
+            Limit::Field { f, n} => fname(f) && (tname(n) || vname(n)),
+            Limit::Others(v) => {
+                if v.iter().any(|l| matches!(l, Limit::Field { .. })) {
+                    if ctx.fname_s().is_none() {
+                        return false;
+                    }
+                }
+                !v.iter().any(|l| l.matches(ctx))
+            },
+        }
     }
 }
 
@@ -83,6 +120,9 @@ impl Example for PossibilitiesExample {
             matching_outputs: 0,
             other_outputs: vec![],
         };
+        println!("CHECKING :{} {} => {}", self.loc, &self.input, &self.output);
+        println!("  LIMIT {:?}", &self.limit);
+
         for driver in drivers {
             Context::call(
                 driver,
@@ -98,7 +138,7 @@ impl Example for PossibilitiesExample {
                 errs.wrong(self.loc, "example mismatch");
                 eprintln!(r"{}
 input: {}
-limit: {}
+limit: {:?}
 documented: {}", m, self.input, self.limit, self.output);
                 for got in tracker.other_outputs {
                     eprintln!("mismatched: {} [{}]",
@@ -136,7 +176,7 @@ impl PossibilitiesExample {
             return
         };
         let limit = &self.limit;
-        let input = &self.input;
+
         let context_desc = {
             let mut out = format!("{}", ctx.top.ident);
             if let Some(vname) = ctx.vname_s() {
@@ -147,32 +187,17 @@ impl PossibilitiesExample {
             }
             out
         };
-        println!("CHECKING :{} {} => {}", self.loc, &input, &self.output);
 
-        if self.all_must_match {
-            let template: Template<TokenAccumulator> =
-                parse_quote!( ${if #limit {} else {}} );
-            let mut out = TokenAccumulator::new();
-            template.expand(ctx, &mut out);
-            match out.tokens() {
-                Ok(_) => {},
-                Err(e) => {
-                    assert!(e.to_string().contains("must be within"), "{:?}", e);
-                    return;
-                }
-            }
+        if !limit.matches(ctx) {
+            println!("  INAPPLICABLE {:?}", &context_desc);
+            return
         }
 
-        let template = quote!(
-            ${if #limit {
-                #input
-            } else {
-                inapplicable: #limit
-            }}
-        );
+        let input = &self.input;
+
         let out = (|| {
             let mut out = TokenAccumulator::new();
-            let template: Template<TokenAccumulator> = syn::parse2(template)?;
+            let template: Template<TokenAccumulator> = syn::parse2(input.clone())?;
             template.expand(ctx, &mut out);
             out.tokens().map(|out| out.to_string())
         })();
@@ -200,7 +225,6 @@ impl PossibilitiesExample {
 }
 
 #[test]
-#[should_panic] // XXXX panics due to lack of `equal` in this d-a branch
 fn poc() {
     let driver: syn::DeriveInput = parse_quote! {
         pub(crate) enum Enum<'a, 'l: 'a, T: Display = usize,
@@ -217,7 +241,7 @@ fn poc() {
         }
     };
     let input = quote! { $($vname,) };
-    let limit = quote! { any(equal($tname,Enum),equal($vname,Enum)) };
+    let limit = Limit::Name("Enum".into());
     let output = quote! { UnitVariant, TupleVariant, NamedVariant, };
     PossibilitiesExample {
         all_must_match: false,
