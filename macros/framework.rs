@@ -360,6 +360,20 @@ impl TokenAccumulator {
     pub fn tokens(self) -> syn::Result<TokenStream> {
         self.0
     }
+    /// Appends `val`, via [`ToTokensPunctComposable`] or [`ToTokens`]
+    pub fn append_maybe_punct_composable(
+        &mut self,
+        val: &(impl ToTokens + ToTokensPunctComposable),
+        composable: bool,
+    ) {
+        self.with_tokens(|out| {
+            if composable {
+                val.to_tokens_punct_composable(out);
+            } else {
+                val.to_tokens(out);
+            }
+        });
+    }
 }
 
 impl SubstParseContext for TokenAccumulator {
