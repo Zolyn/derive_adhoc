@@ -212,11 +212,11 @@ impl PossibilitiesExample {
             let mut out = TokenAccumulator::new();
             let template: Template<TokenAccumulator> = syn::parse2(input.clone())?;
             template.expand(ctx, &mut out);
-            out.tokens().map(|out| out.to_string())
+            out.tokens()
         })();
 
         let matched = match out {
-            Ok(got) if got == self.output.to_string() => {
+            Ok(got) if self.matches_handling_ellipsis(&got) => {
                 //println!("  MATCHED {}", &context_desc);
                 Ok(())
             },
@@ -234,6 +234,25 @@ impl PossibilitiesExample {
             context_desc,
         });
         tracker.note(matched);
+    }
+
+    fn matches_handling_ellipsis(&self, got: &TokenStream) -> bool {
+        if similar_token_streams(&self.output, got) {
+            return true
+        }
+        let expected = self.output.to_string();
+        let got = got.to_string();
+        if got == expected {
+            return true
+        }
+        (||{
+            let (ea, eb) = expected.split_once("...")?;
+            let ea = ea.trim_end();
+            let eb = eb.trim_start();
+            let gmb = got.strip_prefix(ea)?;
+            let _gm = gmb.strip_suffix(eb)?;
+            Some(())
+        })().is_some()
     }
 }
 

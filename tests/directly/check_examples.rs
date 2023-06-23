@@ -42,8 +42,27 @@ fn bail(loc: DocLoc, msg: impl Display) -> ! {
     panic!("Errors should have panicked already!");
 }
 
+/// Tries to compare but disregarding spacing, which is unpredictable
+fn similar_token_streams(a: &TokenStream, b: &TokenStream) -> bool {
+    for eob in a.clone().into_iter().zip_longest(b.clone().into_iter()) {
+        let (a, b) = match eob {
+            itertools::EitherOrBoth::Both(a, b) => (a, b),
+            _ => return false,
+        };
+        if !match (a, b) {
+            (TT::Group(a), TT::Group(b)) => {
+                a.delimiter() == b.delimiter() &&
+                    similar_token_streams(&a.stream(), &b.stream())
+            },
+            (a, b) => a.to_string() == b.to_string()
+        } {
+            return false
+        }
+    }
+    return true
+}
+
 #[test]
-#[should_panic] // XXXX incomplete
 fn check_examples() {
     let mut errs = Errors::new();
     let (structs, examples) = reference_extract::extract(&mut errs);
