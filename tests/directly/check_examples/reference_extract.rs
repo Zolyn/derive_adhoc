@@ -362,7 +362,11 @@ fn examples_section<'i>(
             II::Bullet { loc, bullet } => {
                 parse_bullet(*loc, bullet, errs, &mut ss, out);
             }
-            II::Directive { loc: d_loc, d, used } => match d {
+            II::Directive {
+                loc: d_loc,
+                d,
+                used,
+            } => match d {
                 ID::For { for_: new } => ss.for_ = Some((*d_loc, new, used)),
                 ID::ForToplevelsConcat { toplevels } => {
                     used.note();
@@ -378,7 +382,11 @@ fn examples_section<'i>(
                         }
                     };
                     match input.next() {
-                        Some(II::BlockQuote { options: _, content, .. }) => {
+                        Some(II::BlockQuote {
+                            options: _,
+                            content,
+                            ..
+                        }) => {
                             let example = ForToplevelsConcatExample {
                                 loc: bq_input_loc,
                                 input: (*bq_input).clone(),
@@ -396,7 +404,11 @@ fn examples_section<'i>(
                 }
                 _ => {}
             },
-            II::BlockQuote { loc, options, content } => {
+            II::BlockQuote {
+                loc,
+                options,
+                content,
+            } => {
                 if m!(options, r"^rust$") {
                     continue;
                 }
