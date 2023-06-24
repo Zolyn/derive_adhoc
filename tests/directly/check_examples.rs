@@ -1,4 +1,47 @@
 //! Check the examples in the reference manual
+//!
+//! Looks for bullet points and blockquotes
+//! in sections with title starting "Examples":
+//!
+//! ```text
+//!  * `INPUT`: `OUTPUT`
+//!  * `INPUT` for struct: `OUTPUT`
+//!  * `INPUT` for structs: `OUTPUT`
+//!  * `INPUT` for enum: `OUTPUT`
+//!  * `INPUT` for enums: `OUTPUT`
+//!  * `INPUT` for enum variant: `OUTPUT`
+//!  * `INPUT` for enum variants: `OUTPUT`
+//!  * `INPUT` for `TYPE-OR-VARIANT`: `OUTPUT`
+//!  * `INPUT` for `FIELD` in `TYPE-OR-VARIANT`: `OUTPUT`
+//! ```
+//!
+//! Blockquotes ` ```rust ` are tested separately via rustdoc, so ignored here.
+//!
+//! Otherwise, they should come in pairs, with, in between,
+//! ```text
+//!   <!--##examples-for-toplevels-concat TYPE TYPE...##-->
+//! ```
+//! And then the first is expanded for each TYPE;
+//! the results (concatenated) must match the 2nd block.
+//!
+//! Special directives
+//!
+//!   * `<!--##examples-ignore##-->`:
+//!
+//!       Ignore until next blank line
+//!
+//!   * `<!--##examples-for FOO##-->`:
+//!
+//!       In bullet point(s), use this as if "for FOO" was written
+//!       (ignoring any actual "for FOO")
+//!       Applies until end of section (or next such directive)
+//!
+//! Preceding a ` ```...``` ` quote
+//!
+//!   * `<!--##examples-structs##-->`:
+//!
+//!       The quote has the example structs
+//!
 
 #![allow(dead_code, unused_imports, unused_variables)] // XXXX
 
