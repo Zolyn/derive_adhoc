@@ -93,6 +93,8 @@ fn bail(loc: DocLoc, msg: impl Display) -> ! {
 #[derive(Debug)]
 #[allow(dead_code)] // TODO EX TEST
 pub struct DissimilarTokenStreams {
+    exp: TokenStream,
+    got: TokenStream,
     same: TokenStream,
     diff: itertools::EitherOrBoth<TokenTree, TokenTree>,
 }
@@ -102,15 +104,28 @@ impl DissimilarTokenStreams {
         use itertools::EitherOrBoth;
         use EitherOrBoth as EOB;
         eprintln!("----- difference report -----");
-        eprintln!("same: {}", &self.same);
-        let side = |s, getter: fn(_) -> _| {
-            match getter(self.diff.as_ref()) {
-                None => eprintln!("{} ended earlier", s),
-                Some(t) => eprintln!("{}: {}", s, t),
-            }
+        eprintln!(" expected:        {}", &self.exp);
+        eprintln!(" actual:          {}", &self.got);
+        eprintln!(" similar prefix:  {}", &self.same);
+
+        let side = |s, getter: fn(_) -> Option<TokenTree>| {
+            eprintln!(
+                " {:16} {}",
+                format!("{} token:", s),
+                match getter(self.diff.clone()) {
+                    None => format!("(none)"),
+                    Some(TokenTree::Group(g)) => {
+                        format!("{}", proc_macro2::Group::new(
+                            g.delimiter(),
+                            quote!("..."),
+                        ))
+                    },
+                    Some(other) => format!("{}", other),
+                }
+            )
         };
-        side("exp", EOB::left);
-        side("got", EOB::right);
+        side("expected", EOB::left);
+        side("actual", EOB::right);
     }
 }
 
@@ -166,6 +181,8 @@ fn check_expected_actual_similar_tokens(exp: &TokenStream, got: &TokenStream)
     let mut same = TokenStream::new();
     recurse(exp, got, &mut same).map_err(|diff| DissimilarTokenStreams {
         same, diff,
+        exp: exp.clone(),
+        got: got.clone(),
     })
 }
 
