@@ -41,6 +41,7 @@ enum InputDirective {
     },
     Structs {
     },
+    #[allow(dead_code)] // TODO EXTEST not yet implemented
     ForToplevelsConcat {
         toplevels: Vec<String>,
     },
@@ -393,7 +394,7 @@ fn extract_examples(
                     ID::For { for_: new } => ss.for_ = Some((*loc, new, used)),
                     ID::ForToplevelsConcat { .. } => {
                         used.note();
-                        eprintln!("DUNNO"); // XXXX
+                        eprintln!("FOR TOPLEVELS CONCAT NYI"); // TODO EXTEST
                     }
                     _ => {},
                 }
