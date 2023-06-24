@@ -150,28 +150,34 @@ fn check_expected_actual_similar_tokens(exp: &TokenStream, got: &TokenStream)
 {
     use itertools::EitherOrBoth;
     use EitherOrBoth as EOB;
+    
+    /// Having `recurse` return this ensures that on error,
+    /// we inserted precisely one placeholder message.
+    struct ErrorPlaceholderInserted(EitherOrBoth<TokenTree, TokenTree>);
 
     fn recurse(
         a: &TokenStream,
         b: &TokenStream,
         same_out: &mut TokenStream,
-    ) -> Result<(), EitherOrBoth<TokenTree, TokenTree>> {
+    ) -> Result<(), ErrorPlaceholderInserted> {
         for eob in a.clone().into_iter().zip_longest(b.clone().into_iter()) {
+            let mut mk_err = |tokens: TokenStream| {
+                tokens.to_tokens(same_out);
+                Err(ErrorPlaceholderInserted(eob.clone()))
+            };
             let (a, b) = match &eob {
                 EOB::Both(a, b) => (a, b),
                 EOB::Left(_a) => {
-                    quote!(MISSING_ACTUAL_TOKEN_HERE).to_tokens(same_out);
-                    return Err(eob);
+                    return mk_err(quote!(MISSING_ACTUAL_TOKEN_HERE));
                 }
                 EOB::Right(_b) => {
-                    quote!(UNEXPECTED_ACTUAL_TOKEN_HERE).to_tokens(same_out);
-                    return Err(eob);
+                    return mk_err(quote!(UNEXPECTED_ACTUAL_TOKEN_HERE));
                 }
             };
             if !match (a, b) {
                 (TT::Group(a), TT::Group(b)) => {
                     if a.delimiter() != b.delimiter() {
-                        return Err(eob);
+                        return mk_err(quote!(FOUND_DIFFERENT_DELIMITERS_HERE));
                     }
                     let mut sub = TokenStream::new();
                     let r = recurse(&a.stream(), &b.stream(), &mut sub);
@@ -182,8 +188,7 @@ fn check_expected_actual_similar_tokens(exp: &TokenStream, got: &TokenStream)
                 }
                 (a, b) => a.to_string() == b.to_string(),
             } {
-                quote!(FOUND_DIFFERENCE_HERE).to_tokens(same_out);
-                return Err(eob);
+                return mk_err(quote!(FOUND_DIFFERENCE_HERE));
             }
             a.to_tokens(same_out);
         }
@@ -191,7 +196,7 @@ fn check_expected_actual_similar_tokens(exp: &TokenStream, got: &TokenStream)
     }
 
     let mut same = TokenStream::new();
-    recurse(exp, got, &mut same).map_err(|diff| DissimilarTokenStreams {
+    recurse(exp, got, &mut same).map_err(|ErrorPlaceholderInserted(diff)| DissimilarTokenStreams {
         same, diff,
         exp: exp.clone(),
         got: got.clone(),
