@@ -127,11 +127,13 @@ derive-adhoc treats them as having a single (unnamed) variant.
 
 #### Examples
 
+<!--##examples-for `Enum`##-->
+<!--##examples-ignore##-->
 For [example enum `Enum`](#structs-used-in-examples):
 
  * `$($vname,)`: `UnitVariant, TupleVariant, NamedVariant,`
  * `$($fname)`: `0 field field_b field_e`
- * `${for fields hello}`: `hello hello hello hello`
+ * `${for fields { hello }}`: `hello hello hello hello`
 
 ## Expansions
 
@@ -187,7 +189,7 @@ For the effective visibility of an enum field, write
 
 `$vpat` expands to a pattern
 suitable for matching a value of the top-level type.
-It expands to `TYPE { FIELD: f_FNAME, .. }`,
+It expands to `TYPE { FIELD: f_FNAME, ... }`,
 where `TYPE` names the top-level type or enum variant.
 (`TYPE` doesn't have generics,
 since those are not allowed in patterns.)
@@ -212,16 +214,16 @@ where `FNAME` is the actual field name (or tuple field number).
 
 #### Examples
 
- * `$vpat` for structs: `Unit { }`, `Tuple { 0: f_0 }`
- * `$vpat` for a variant: `Enum::NamedVariant { field: f_field, ... }`
- * `$vpatname`: `f_0`, `f_field`.
+ * `$vpat` for structs: `Unit { }`, `Tuple { 0: f_0, }`
+ * `$vpat` for enum variant: `Enum::NamedVariant { field: f_field, ... }`
+ * `$fpatname`: `f_0`, `f_field`
  * `${vpat self=${paste $tname Reference} vname=${paste Ref $vname} fprefix=other_}`: `EnumReference::RefNamedVariant { field: other_field, ... }`
 
 ### `$ftype`, `$vtype`, `$ttype`, `$tdeftype` - types
 
 The type of the field, variant, or the toplevel type.
 
-`$ftype`, `$vtype` and `$type`
+`$ftype`, `$vtype` and `$ttype`
 are suitable for referencing the type in any context
 (for example, when defining the type of a binding,
 or as a type parameter for a generic type).
@@ -254,7 +256,7 @@ Use `$vpat` for that.
  * `vname`: variant name.  Default is `$vname`.
    Not expanded for structs.
 
-These can be used to with `${paste }`
+These can be used with `${paste }`
 to name related (derived) types and variants.
 
 #### Examples
@@ -297,7 +299,7 @@ so for full support of generic types the template must expand both.
 
 #### Examples
 
- * `$tgens`: `a, 'l: 'a, T: Display, const C: usize,`
+ * `$tgens`: `'a, 'l: 'a, T: Display, const C: usize,`
  * `$tgnames`: `'a, 'l, T, C,`
  * `$twheres`: `T: 'l, T: TryInto<u8>,`
  * `$tdefgens`: `'a, 'l: 'a, T: Display = usize, const C: usize = 1,`
@@ -498,7 +500,8 @@ ${tdefvariants $(
 ) }
 ```
 
-Expands to:
+<!--##examples-for-toplevels-concat Tuple Enum##-->
+Expands to (when applied to `Tuple` and `Enum`):
 
 ```rust,ignore
 struct TupleCopy<'a, 'l: 'a, T: Display = usize, const C: usize = 1,>(
@@ -732,6 +735,8 @@ and dumping the expansion to stderr during compilation.
 
 The example expansions in the syntax reference 
 are those generated for the following driver types:
+
+<!--##examples-structs##-->
 
 ```ignore
 # use std::fmt::Display;

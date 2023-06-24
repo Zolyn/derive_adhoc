@@ -1,4 +1,7 @@
 //! private prelude for proc macro stuff
+//!
+//! Should be included with `use super::prelude::*`, not `crate::`,
+//! so that it works with `tests/directly.rs` too.
 
 pub use std::borrow::Cow;
 pub use std::cell::RefCell;
@@ -31,15 +34,16 @@ pub use void::{ResultVoidErrExt as _, ResultVoidExt as _, Void};
 
 pub use TokenTree as TT;
 
-pub use crate::definition::escape_dollars;
-pub use crate::framework::TokenAccumulator;
-pub use crate::utils::advise_incompatibility;
-pub use crate::utils::expand_macro_name;
-pub use crate::utils::ErrorAccumulator;
-pub use crate::utils::{braced_group, delimit_token_group};
-pub use crate::utils::{ErrorLoc, IdentAny, MakeError};
-pub use crate::utils::{ToTokensPunctComposable, TokenPastesAsIdent};
-pub(crate) use crate::{check, dbg_allkw, framework};
+pub use super::definition::escape_dollars;
+pub use super::framework::TokenAccumulator;
+pub use super::utils::advise_incompatibility;
+pub use super::utils::expand_macro_name;
+pub use super::utils::ErrorAccumulator;
+pub use super::utils::{braced_group, delimit_token_group};
+pub use super::utils::{Concatenated, Discard};
+pub use super::utils::{ErrorLoc, IdentAny, MakeError};
+pub use super::utils::{ToTokensPunctComposable, TokenPastesAsIdent};
+pub(super) use super::{check, dbg_allkw, framework};
 
-pub use crate::expand::*;
-pub use crate::options::*;
+pub use super::expand::*;
+pub use super::options::*;

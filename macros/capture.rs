@@ -1,6 +1,6 @@
 //! Macro impl for capturing the driver `#[derive(Adhoc)]`
 
-use crate::prelude::*;
+use super::prelude::*;
 
 /// Contents of an entry in a `#[derive_adhoc(..)]` attribute
 enum InvocationEntry {

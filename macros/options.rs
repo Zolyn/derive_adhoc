@@ -3,7 +3,7 @@
 //! These "combine": multiple specifications of the same option
 //! are allowed, so long as they are compatible.
 
-use crate::prelude::*;
+use super::prelude::*;
 
 use OptionDetails as OD;
 

@@ -1,12 +1,12 @@
 //! Expansion of a template into output tokens, plus `derive_adhoc_expand!()`
 //!
 //! Contains the implementations of `fn expand()`
-//! for the various template types in [`crate::syntax`].
+//! for the various template types in [`super::syntax`].
 //!
 //! Also contains the top-level "do the work" macro function -
 //! the implementation of `derive_adhoc_expand!()`.
 
-use crate::framework::*;
+use super::framework::*;
 
 /// Input to `derive_adhoc_expand!`
 #[derive(Debug)]
@@ -399,7 +399,13 @@ where
         // eprintln!("@@@@@@@@@@@@@@@@@@@@ EXPAND {:?}", self);
 
         let do_meta = |wa: &SubstMeta<_>, out, meta| wa.expand(ctx, out, meta);
-        let do_tgnames = |out: &mut TokenAccumulator| {
+
+        // Methods for handling generics.  Most take `composable: bool`,
+        // which lets us control the trailing comma.  This is desirable
+        // because we should include it for expansions like $tgens that the
+        // user can append things to, but ideally *not* for expansions like
+        // $ttype that the user can't.
+        let do_tgnames = |out: &mut TokenAccumulator, composable| {
             for pair in ctx.top.generics.params.pairs() {
                 use syn::GenericParam as GP;
                 match pair.value() {
@@ -407,9 +413,7 @@ where
                     GP::Const(c) => out.append(&c.ident),
                     GP::Lifetime(l) => out.append(&l.lifetime),
                 }
-                out.with_tokens(|out| {
-                    pair.punct().to_tokens_punct_composable(out);
-                });
+                out.append_maybe_punct_composable(&pair.punct(), composable);
             }
         };
         let do_tgens_nodefs = |out: &mut TokenAccumulator| {
@@ -432,23 +436,28 @@ where
                         out.append(&c.colon_token);
                         out.append(&c.ty);
                     }
-                    GP::Lifetime(l) => out.append(&l.lifetime),
+                    GP::Lifetime(l) => out.append(&l),
                 }
                 out.with_tokens(|out| {
                     pair.punct().to_tokens_punct_composable(out);
                 });
             }
         };
-        let do_tgens = |out: &mut TokenAccumulator| {
-            out.append(&ctx.top.generics.params);
+        let do_tgens = |out: &mut TokenAccumulator, composable: bool| {
+            out.append_maybe_punct_composable(
+                &ctx.top.generics.params,
+                composable,
+            );
         };
+
         // There are three contexts where the top-level type
         // name might occur with generics, and two syntaxes:
         //   referring to the type    $ttype     Type::<G>
         //   impl'ing for the type    $ttype     Type::<G>
-        //   defining a new type      $ttypedef  Type<G: bounds>
+        //   defining a new type      $tdeftype  Type<G: bounds>
+        // Handles $ttype and $tdeftype, and, indirectly, $vtype
         let do_ttype = |out: &mut O, colons: Option<()>, do_some_gens| {
-            let _: &dyn Fn(&mut _) = do_some_gens; // specify type
+            let _: &dyn Fn(&mut _, bool) = do_some_gens; // specify type
             let colons = colons.map(|()| Token![::](kw_span));
             out.append_idpath(
                 kw_span,
@@ -457,11 +466,12 @@ where
                 |out| {
                     out.append(colons);
                     out.append(Token![<](kw_span));
-                    do_some_gens(out);
+                    do_some_gens(out, false);
                     out.append(Token![>](kw_span));
                 },
             )
         };
+
         let do_maybe_delimited_group = |out, np, delim, content| {
             let _: &mut O = out;
             let _: &Template<TokenAccumulator> = content;
@@ -541,11 +551,11 @@ where
                 Ok(())
             })?,
             SD::tdefgens(np, ..) => out.append_tokens_with(np, |out| {
-                do_tgens(out);
+                do_tgens(out, true);
                 Ok(())
             })?,
             SD::tgnames(np, ..) => out.append_tokens_with(np, |out| {
-                do_tgnames(out);
+                do_tgnames(out, true);
                 Ok(())
             })?,
             SD::twheres(np, ..) => out.append_tokens_with(np, |out| {

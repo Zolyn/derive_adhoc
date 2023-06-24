@@ -1,6 +1,6 @@
 //! Macro impl for defining a template `define_derive_adhoc!`
 
-use crate::prelude::*;
+use super::prelude::*;
 
 #[derive(Debug, Clone)]
 struct TemplateDefinition {
@@ -39,7 +39,7 @@ impl Parse for TemplateDefinition {
 ///
 /// Then, we spot these when parsing the template, and disregard them.
 /// That is done by
-/// [`syntax::deescape_orig_dollar`](crate::syntax::deescape_orig_dollar).
+/// [`syntax::deescape_orig_dollar`](super::syntax::deescape_orig_dollar).
 ///
 /// See `doc/implementation.md` for why this is needed.
 ///

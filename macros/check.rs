@@ -2,29 +2,6 @@
 
 use crate::prelude::*;
 
-/// Type which parses as `T`, but then discards it
-pub struct Discard<T>(PhantomData<T>);
-
-impl<T: Parse> Parse for Discard<T> {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let _: T = input.parse()?;
-        Ok(Discard(PhantomData))
-    }
-}
-
-/// Type which parses as a concatenated series of `T`
-pub struct Concatenated<T>(pub Vec<T>);
-
-impl<T: Parse> Parse for Concatenated<T> {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let mut out = vec![];
-        while !input.is_empty() {
-            out.push(input.parse()?);
-        }
-        Ok(Concatenated(out))
-    }
-}
-
 /// Value for an `expect`
 #[derive(Debug, Clone, Copy, Eq, PartialEq, EnumString, Display)]
 #[allow(non_camel_case_types)]

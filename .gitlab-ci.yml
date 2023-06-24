@@ -34,6 +34,13 @@ maint-check-bizarre:
   script:
     - maint/update-bizarre --check
 
+maint-check-test-deps:
+  stage: test
+  script:
+    - apt-get -y update
+    - apt-get -y install libtoml-perl git
+    - maint/check-test-deps
+
 # Check for FIXMEs.  This is in "comprehensive" so you can sabotage
 # the CI, but still get it all to run - useful for iterating through CI.
 maint-check-todos:
@@ -66,11 +73,22 @@ cargo-test:
   script:
     - ./maint/via-cargo-install-in-ci cargo-expand --locked --version=1.0.44 --features=prettyplease
     - mv Cargo.lock.example Cargo.lock
-    - cargo test --locked --workspace --verbose --all-features
+    - cargo test --locked --workspace --verbose --all-features -- --skip directly::check_examples
   cache:
     when: 'always'
     paths:
       - cache/*
+
+# Warning only, since this approach may be fragile and also the 
+# testing machinery (particularly the thing that parses reference.md
+# is rather baroque and ad-hco).
+check-doc-examples:
+  stage: comprehensive
+  image: rustlang/rust@sha256:415b7c22ab4a8a3ec3efc9cc8d7b018964f0c6757fff27bbd110e0ed92566321
+  allow_failure: true
+  script:
+    - mv Cargo.lock.example Cargo.lock
+    - cargo test --locked -p derive-adhoc-tests --verbose --all-features -- --nocapture directly::check_examples
 
 # Test every commit
 #
@@ -82,7 +100,7 @@ every-commit:
   image: rustlang/rust@sha256:415b7c22ab4a8a3ec3efc9cc8d7b018964f0c6757fff27bbd110e0ed92566321
   script:
     - ./maint/via-cargo-install-in-ci cargo-expand --locked --version=1.0.44 --features=prettyplease
-    - maint/for-every-commit sh -ec 'cp Cargo.lock.example Cargo.lock && cargo test --locked --workspace --verbose --all-features'
+    - maint/for-every-commit sh -ec 'cp Cargo.lock.example Cargo.lock && cargo test --locked --workspace --verbose --all-features -- --skip directly::check_examples'
   cache:
     when: 'always'
     paths:
@@ -93,7 +111,7 @@ cargo-test-minfeatures:
   image: rustlang/rust@sha256:415b7c22ab4a8a3ec3efc9cc8d7b018964f0c6757fff27bbd110e0ed92566321
   script:
     - mv Cargo.lock.example Cargo.lock
-    - cargo test --locked  -p derive-adhoc-tests --no-default-features --features=derive-adhoc-tests/recent
+    - cargo test --locked  -p derive-adhoc-tests --no-default-features --features=derive-adhoc-tests/recent -- --skip directly::check_examples
 
 # Test on Stable Rust
 #

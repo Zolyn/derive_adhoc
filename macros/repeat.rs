@@ -1,6 +1,6 @@
 //! Handling of repetition
 
-use crate::framework::*;
+use super::framework::*;
 
 pub use RepeatOver as RO;
 

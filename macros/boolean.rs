@@ -1,6 +1,6 @@
 //! Handling of boolean evaluation (conditions)
 
-use crate::framework::*;
+use super::framework::*;
 
 /// Implementor of [`SubstParseContext`] for booleans
 ///

@@ -1,14 +1,17 @@
 //! Core types and traits for parsing and expansion
 //!
 //! Also re-exports the names that the implementation wants.
+//!
+//! Should be included with `use super::framework::*`, not `crate::`,
+//! so that it works with `tests/directly.rs` too.
 
-pub use crate::prelude::*;
+pub use super::prelude::*;
 
-pub use crate::boolean::*;
-pub use crate::repeat::*;
-pub use crate::syntax::*;
+pub use super::boolean::*;
+pub use super::repeat::*;
+pub use super::syntax::*;
 
-pub(crate) use crate::paste;
+pub(super) use super::paste;
 
 /// Context during expansion
 ///
@@ -359,6 +362,20 @@ impl TokenAccumulator {
     }
     pub fn tokens(self) -> syn::Result<TokenStream> {
         self.0
+    }
+    /// Appends `val`, via [`ToTokensPunctComposable`] or [`ToTokens`]
+    pub fn append_maybe_punct_composable(
+        &mut self,
+        val: &(impl ToTokens + ToTokensPunctComposable),
+        composable: bool,
+    ) {
+        self.with_tokens(|out| {
+            if composable {
+                val.to_tokens_punct_composable(out);
+            } else {
+                val.to_tokens(out);
+            }
+        });
     }
 }
 

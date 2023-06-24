@@ -9,32 +9,38 @@
 
 mod prelude;
 
-use prelude::*;
+pub(crate) use prelude::*;
 
 // Implementation - common parts
 #[macro_use]
-mod utils;
-mod framework;
+pub(crate) mod utils;
+pub(crate) mod framework;
 
 // modules containing the actual implementations of our proc-macros
-mod capture;
-mod definition;
-mod invocation;
+pub(crate) mod capture;
+pub(crate) mod definition;
+pub(crate) mod invocation;
 
 // Implementation - specific areas
-mod boolean;
-mod dbg_allkw;
-mod expand;
-mod options;
-mod paste;
-mod repeat;
-mod syntax;
+pub(crate) mod boolean;
+pub(crate) mod dbg_allkw;
+pub(crate) mod expand;
+pub(crate) mod options;
+pub(crate) mod paste;
+pub(crate) mod repeat;
+pub(crate) mod syntax;
 
 #[doc=include_str!("HACKING.md")]
 mod _doc_hacking {}
 
 #[doc=include_str!("NOTES.md")]
 mod _doc_notes {}
+
+/// Dummy of proc_macro for use when compiling outside of proc macro context
+#[cfg(not(proc_macro))]
+pub(crate) mod proc_macro {
+    pub(crate) use proc_macro2::TokenStream;
+}
 
 //========== `expect`, the `check` module (or dummy version) ==========
 
@@ -43,7 +49,7 @@ mod _doc_notes {}
 mod check;
 #[cfg(not(feature = "expect"))]
 mod check {
-    use crate::prelude::*;
+    use super::prelude::*;
     #[derive(Debug, Clone, Copy, PartialEq)]
     pub struct Target(Void);
 
@@ -82,7 +88,7 @@ impl DaOptValDescribable for check::Target {
 ///
 /// This macro's behvaiour is not currently stable or documented.
 /// If you invoke it yourself, you get to keep all the pieces.
-#[proc_macro]
+#[cfg_attr(proc_macro, proc_macro)]
 pub fn derive_adhoc_expand(
     input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
@@ -116,7 +122,7 @@ pub fn derive_adhoc_expand(
 /// with [`#[derive(Adhoc)]`](crate::Adhoc),
 /// and the resulting `derive_adhoc_driver_TYPE` macro must be
 /// available in scope.
-#[proc_macro]
+#[cfg_attr(proc_macro, proc_macro)]
 pub fn derive_adhoc(
     input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
@@ -136,7 +142,7 @@ pub fn derive_adhoc(
 /// ```
 ///
 /// Then, `MyMacro` can be used with
-/// [`#[derive(Adhoc)]`](Adhoc)
+/// [`#[derive(Adhoc)]`](crate::Adhoc)
 /// `#[derive_adhoc(MyMacro)]`.
 ///
 /// `OPTIONS,..` is an optional comma-separated list of
@@ -214,7 +220,7 @@ pub fn derive_adhoc(
 ///
 /// Overall, the situation is similar to defining
 /// an exported `macro_rules` macro.
-#[proc_macro]
+#[cfg_attr(proc_macro, proc_macro)]
 pub fn define_derive_adhoc(
     input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
@@ -229,11 +235,13 @@ pub fn define_derive_adhoc(
 /// This macro does two things:
 ///
 ///  1. It captures the data structure definition,
-///     so that it can be used with calls to [`derive_adhoc!`].
+///     so that it can be used with calls to
+///     [`derive_adhoc!`](macro@crate::derive_adhoc).
 ///
 ///  2. If `#[derive_adhoc(MyMacro)]` attributes are also specified,
 ///     they are taken to refer to reuseable templates
-///     defined with [`define_derive_adhoc!`].
+///     defined with
+///     [`define_derive_adhoc!`](macro@crate::define_derive_adhoc).
 ///     Each such `MyMacro` is applied to the data structure.
 ///
 ///     You can specify
@@ -339,7 +347,10 @@ pub fn define_derive_adhoc(
 // and then it will perhaps want to do *something* with the attributes?
 // Although maybe just ignoring them and letting them get to the expander
 // is right.
-#[proc_macro_derive(Adhoc, attributes(adhoc, derive_adhoc))]
+#[cfg_attr(
+    proc_macro,
+    proc_macro_derive(Adhoc, attributes(adhoc, derive_adhoc))
+)]
 pub fn derive_adhoc_derive_macro(
     input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {

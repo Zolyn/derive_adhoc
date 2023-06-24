@@ -1,5 +1,8 @@
 //! Utilities for proc macro implementation
 
+use super::prelude::*;
+use proc_macro_crate::{crate_name, FoundCrate};
+
 //---------- misc ----------
 
 /// Construct a braced group from a token expansion
@@ -26,6 +29,29 @@ pub fn delimit_token_group(
     Ok(out)
 }
 
+/// Type which parses as `T`, but then discards it
+pub struct Discard<T>(PhantomData<T>);
+
+impl<T: Parse> Parse for Discard<T> {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let _: T = input.parse()?;
+        Ok(Discard(PhantomData))
+    }
+}
+
+/// Type which parses as a concatenated series of `T`
+pub struct Concatenated<T>(pub Vec<T>);
+
+impl<T: Parse> Parse for Concatenated<T> {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let mut out = vec![];
+        while !input.is_empty() {
+            out.push(input.parse()?);
+        }
+        Ok(Concatenated(out))
+    }
+}
+
 /// Add a warning about derive-adhoc version incompatibility
 pub fn advise_incompatibility(err_needing_advice: syn::Error) -> syn::Error {
     let mut advice = Span::call_site().error(
@@ -36,9 +62,6 @@ pub fn advise_incompatibility(err_needing_advice: syn::Error) -> syn::Error {
 }
 
 //---------- MakeError ----------
-
-use crate::prelude::*;
-use proc_macro_crate::{crate_name, FoundCrate};
 
 /// Provides `.error()` on `impl Spanned` and `[`[`ErrorLoc`]`]`
 pub trait MakeError {
