@@ -3,8 +3,7 @@
 use super::possibilities::PossibilitiesExample;
 use super::*;
 
-use std::sync::atomic::AtomicBool;
-use std::sync::atomic::Ordering::SeqCst;
+use std::cell::Cell;
 
 #[derive(Debug)]
 enum InputItem {
@@ -39,14 +38,9 @@ enum InputItem {
 
 #[derive(Debug)]
 enum InputDirective {
-    For {
-        for_: String,
-    },
+    For { for_: String },
     Structs {},
-    #[allow(dead_code)] // TODO EXTEST not yet implemented
-    ForToplevelsConcat {
-        toplevels: Vec<String>,
-    },
+    ForToplevelsConcat { toplevels: Vec<String> },
     // TODO EXTEST need a way to test the tabular $vdefbody example
 }
 
@@ -55,17 +49,16 @@ type Preprocessed = Vec<InputItem>;
 use InputDirective as ID;
 use InputItem as II;
 
-// TODO EXTEST this ought to be Cell, not Atomic.
 #[derive(Default, Debug)]
-struct DirectiveTrackUsed(AtomicBool);
+struct DirectiveTrackUsed(Cell<bool>);
 
 impl DirectiveTrackUsed {
     fn note(&self) {
-        self.0.store(true, SeqCst);
+        self.0.set(true);
     }
 
     fn is(&self) -> bool {
-        self.0.load(SeqCst)
+        self.0.get()
     }
 }
 
@@ -236,6 +229,7 @@ fn extract_structs(input: &Preprocessed) -> Vec<syn::DeriveInput> {
 struct SectionState<'i> {
     for_: Option<(DocLoc, &'i String, &'i DirectiveTrackUsed)>,
     t_limits: Vec<possibilities::Limit>,
+    bq_input: Option<(DocLoc, &'i String)>,
 }
 
 fn parse_bullet(
@@ -350,6 +344,83 @@ fn parse_bullet(
     }
 }
 
+fn examples_section<'i>(
+    input: impl Iterator<Item = &'i InputItem>,
+    errs: &mut Errors,
+    out: &mut Vec<Box<dyn Example>>,
+) {
+    let mut input = input.peekable();
+    let mut ss = SectionState::default();
+
+    while let Some(ii) = input.next() {
+        match ii {
+            II::Bullet { loc, bullet } => {
+                parse_bullet(*loc, bullet, errs, &mut ss, out);
+            }
+            II::Directive {
+                loc: d_loc,
+                d,
+                used,
+            } => match d {
+                ID::For { for_: new } => ss.for_ = Some((*d_loc, new, used)),
+                ID::ForToplevelsConcat { toplevels } => {
+                    used.note();
+                    if matches!(input.peek(), Some(II::Paragraph { .. })) {
+                        _ = input.next();
+                    }
+                    let (bq_input_loc, bq_input) = match ss.bq_input.take() {
+                        Some(y) => y,
+                        None => {
+                            errs.wrong(*d_loc,
+ "for-toplevels-concat but no previous blockquote for input");
+                            continue;
+                        }
+                    };
+                    match input.next() {
+                        Some(II::BlockQuote {
+                            options: _,
+                            content,
+                            ..
+                        }) => {
+                            let example = ForToplevelsConcatExample {
+                                loc: bq_input_loc,
+                                input: (*bq_input).clone(),
+                                toplevels: toplevels.clone(),
+                                output: content.clone(),
+                            };
+                            out.push(Box::new(example));
+                        }
+                        _ => {
+                            errs.wrong(*d_loc,
+ "for-toplevels-concat not followed by output blockquote");
+                            continue;
+                        }
+                    }
+                }
+                _ => {}
+            },
+            II::BlockQuote {
+                loc,
+                options,
+                content,
+            } => {
+                if m!(options, r"^rust$") {
+                    continue;
+                }
+                if let Some((prev, _)) = ss.bq_input {
+                    errs.wrong(prev,
+ "unused blockquote, simply followed by another - missing directive?");
+                }
+                ss.bq_input = Some((*loc, content));
+            }
+            II::Paragraph { loc, .. } => {
+                errs.wrong(*loc, "unmarked text in examples section");
+            }
+            II::Heading { .. } => panic!("heading in subsection!"),
+        }
+    }
+}
+
 fn extract_examples(
     input: &Preprocessed,
     errs: &mut Errors,
@@ -382,28 +453,18 @@ fn extract_examples(
             (ia, ib)
         })
     {
-        let mut ss = SectionState::default();
-
-        for ii in &input[ia..ib] {
-            match ii {
-                II::Bullet { loc, bullet } => {
-                    parse_bullet(
-                        *loc,
-                        bullet,
-                        errs,
-                        &mut ss,
-                        &mut examples_out,
-                    );
-                }
-                II::Directive { loc, d, used } => match d {
-                    ID::For { for_: new } => ss.for_ = Some((*loc, new, used)),
-                    ID::ForToplevelsConcat { .. } => {
-                        used.note();
-                        eprintln!("FOR TOPLEVELS CONCAT NYI"); // TODO EXTEST
-                    }
-                    _ => {}
-                },
-                _ => {}
+        let mut input = input[ia..ib].iter();
+        loop {
+            let is_heading = |ii: &InputItem| matches!(ii, II::Heading { .. });
+            examples_section(
+                input.take_while_ref(|ii| !is_heading(ii)),
+                errs,
+                &mut examples_out,
+            );
+            match input.next() {
+                None => break,
+                Some(ii) if is_heading(ii) => {}
+                Some(ii) => panic!("shouldn't be {:?}", ii),
             }
         }
     }

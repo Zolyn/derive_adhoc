@@ -24,6 +24,7 @@
 //! ```text
 //!   <!--##examples-for-toplevels-concat TYPE TYPE...##-->
 //! ```
+//! (which shuld be followed by introductory text for the reader).
 //! And then the first is expanded for each TYPE;
 //! the results (concatenated) must match the 2nd block.
 //!
@@ -48,8 +49,11 @@
 
 use super::*;
 
+mod for_toplevels_concat;
 mod possibilities;
 mod reference_extract;
+
+use for_toplevels_concat::ForToplevelsConcatExample;
 
 const INPUT_FILE: &str = "doc/reference.md";
 
@@ -86,6 +90,48 @@ fn bail(loc: DocLoc, msg: impl Display) -> ! {
     panic!("Errors should have panicked already!");
 }
 
+#[derive(Debug)]
+#[allow(dead_code)] // TODO EX TEST
+pub struct DissimilarTokenStreams {
+    exp: TokenStream,
+    got: TokenStream,
+    same: TokenStream,
+    diff: itertools::EitherOrBoth<TokenTree, TokenTree>,
+}
+
+impl DissimilarTokenStreams {
+    fn eprintln(&self) {
+        use itertools::EitherOrBoth;
+        use EitherOrBoth as EOB;
+        eprintln!("----- difference report -----");
+        eprintln!(" expected:        {}", &self.exp);
+        eprintln!(" actual:          {}", &self.got);
+        eprintln!(" similar prefix:  {}", &self.same);
+
+        let side = |s, getter: fn(_) -> Option<TokenTree>| {
+            eprintln!(
+                " {:16} {}",
+                format!("{} token:", s),
+                match getter(self.diff.clone()) {
+                    None => format!("(none)"),
+                    Some(TokenTree::Group(g)) => {
+                        format!(
+                            "{}",
+                            proc_macro2::Group::new(
+                                g.delimiter(),
+                                quote!("..."),
+                            )
+                        )
+                    }
+                    Some(other) => format!("{}", other),
+                }
+            )
+        };
+        side("expected", EOB::left);
+        side("actual", EOB::right);
+    }
+}
+
 /// Tries to compare but disregarding spacing, which is unpredictable
 ///
 /// What we really want to know is
@@ -102,23 +148,84 @@ fn bail(loc: DocLoc, msg: impl Display) -> ! {
 /// a string with the same meaning, converted to `TokenStream` and back.
 ///
 /// The algorithm in this function isn't perfect but I think it will do.
-fn similar_token_streams(a: &TokenStream, b: &TokenStream) -> bool {
-    for eob in a.clone().into_iter().zip_longest(b.clone().into_iter()) {
-        let (a, b) = match eob {
-            itertools::EitherOrBoth::Both(a, b) => (a, b),
-            _ => return false,
-        };
-        if !match (a, b) {
-            (TT::Group(a), TT::Group(b)) => {
-                a.delimiter() == b.delimiter()
-                    && similar_token_streams(&a.stream(), &b.stream())
+fn check_expected_actual_similar_tokens(
+    exp: &TokenStream,
+    got: &TokenStream,
+) -> Result<(), DissimilarTokenStreams> {
+    use itertools::EitherOrBoth;
+    use EitherOrBoth as EOB;
+
+    /// Having `recurse` return this ensures that on error,
+    /// we inserted precisely one placeholder message.
+    struct ErrorPlaceholderInserted(EitherOrBoth<TokenTree, TokenTree>);
+
+    fn recurse(
+        a: &TokenStream,
+        b: &TokenStream,
+        same_out: &mut TokenStream,
+    ) -> Result<(), ErrorPlaceholderInserted> {
+        let mut input =
+            a.clone().into_iter().zip_longest(b.clone().into_iter());
+        loop {
+            if input
+                .clone()
+                .filter_map(|eob| eob.left())
+                .collect::<TokenStream>()
+                .to_string()
+                == "..."
+            {
+                // disregard rest of this group
+                return Ok(());
             }
-            (a, b) => a.to_string() == b.to_string(),
-        } {
-            return false;
+            let eob = match input.next() {
+                Some(y) => y,
+                None => break,
+            };
+            let mut mk_err = |tokens: TokenStream| {
+                tokens.to_tokens(same_out);
+                Err(ErrorPlaceholderInserted(eob.clone()))
+            };
+            let (a, b) = match &eob {
+                EOB::Both(a, b) => (a, b),
+                EOB::Left(_a) => {
+                    return mk_err(quote!(MISSING_ACTUAL_TOKEN_HERE));
+                }
+                EOB::Right(_b) => {
+                    return mk_err(quote!(UNEXPECTED_ACTUAL_TOKEN_HERE));
+                }
+            };
+            if !match (a, b) {
+                (TT::Group(a), TT::Group(b)) => {
+                    if a.delimiter() != b.delimiter() {
+                        return mk_err(quote!(
+                            FOUND_DIFFERENT_DELIMITERS_HERE
+                        ));
+                    }
+                    let mut sub = TokenStream::new();
+                    let r = recurse(&a.stream(), &b.stream(), &mut sub);
+                    proc_macro2::Group::new(a.delimiter(), sub)
+                        .to_tokens(same_out);
+                    let () = r?;
+                    continue;
+                }
+                (a, b) => a.to_string() == b.to_string(),
+            } {
+                return mk_err(quote!(FOUND_DIFFERENCE_HERE));
+            }
+            a.to_tokens(same_out);
         }
+        Ok(())
     }
-    return true;
+
+    let mut same = TokenStream::new();
+    recurse(exp, got, &mut same).map_err(|ErrorPlaceholderInserted(diff)| {
+        DissimilarTokenStreams {
+            same,
+            diff,
+            exp: exp.clone(),
+            got: got.clone(),
+        }
+    })
 }
 
 #[test]

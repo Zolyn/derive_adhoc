@@ -243,23 +243,9 @@ impl PossibilitiesExample {
     /// This does *not* do anything useful about possible spacing
     /// differences, which may be a latent bug.
     fn matches_handling_ellipsis(&self, got: &TokenStream) -> bool {
-        if similar_token_streams(&self.output, got) {
-            return true;
-        }
-        let expected = self.output.to_string();
-        let got = got.to_string();
-        if got == expected {
-            return true;
-        }
-        (|| {
-            let (ea, eb) = expected.split_once("...")?;
-            let ea = ea.trim_end();
-            let eb = eb.trim_start();
-            let gmb = got.strip_prefix(ea)?;
-            let _gm = gmb.strip_suffix(eb)?;
-            Some(())
-        })()
-        .is_some()
+        // It would be nice to do more with the error (difference) report,
+        // but we'd have to choose which mismatching outputs to report.
+        check_expected_actual_similar_tokens(&self.output, got).is_ok()
     }
 }
 
