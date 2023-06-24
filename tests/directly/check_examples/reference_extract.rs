@@ -3,8 +3,7 @@
 use super::possibilities::PossibilitiesExample;
 use super::*;
 
-use std::sync::atomic::AtomicBool;
-use std::sync::atomic::Ordering::SeqCst;
+use std::cell::Cell;
 
 #[derive(Debug)]
 enum InputItem {
@@ -55,17 +54,16 @@ type Preprocessed = Vec<InputItem>;
 use InputDirective as ID;
 use InputItem as II;
 
-// TODO EXTEST this ought to be Cell, not Atomic.
 #[derive(Default, Debug)]
-struct DirectiveTrackUsed(AtomicBool);
+struct DirectiveTrackUsed(Cell<bool>);
 
 impl DirectiveTrackUsed {
     fn note(&self) {
-        self.0.store(true, SeqCst);
+        self.0.set(true);
     }
 
     fn is(&self) -> bool {
-        self.0.load(SeqCst)
+        self.0.get()
     }
 }
 
