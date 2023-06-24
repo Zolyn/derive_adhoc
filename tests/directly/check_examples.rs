@@ -24,6 +24,7 @@
 //! ```text
 //!   <!--##examples-for-toplevels-concat TYPE TYPE...##-->
 //! ```
+//! (which shuld be followed by introductory text for the reader).
 //! And then the first is expanded for each TYPE;
 //! the results (concatenated) must match the 2nd block.
 //!
