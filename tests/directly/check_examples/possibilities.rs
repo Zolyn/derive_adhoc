@@ -248,20 +248,7 @@ impl PossibilitiesExample {
         if check_expected_actual_similar_tokens(&self.output, got).is_ok() {
             return true;
         }
-        let expected = self.output.to_string();
-        let got = got.to_string();
-        if got == expected {
-            return true;
-        }
-        (|| {
-            let (ea, eb) = expected.split_once("...")?;
-            let ea = ea.trim_end();
-            let eb = eb.trim_start();
-            let gmb = got.strip_prefix(ea)?;
-            let _gm = gmb.strip_suffix(eb)?;
-            Some(())
-        })()
-        .is_some()
+        false
     }
 }
 
