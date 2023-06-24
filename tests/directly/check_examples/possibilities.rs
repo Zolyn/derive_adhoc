@@ -245,10 +245,7 @@ impl PossibilitiesExample {
     fn matches_handling_ellipsis(&self, got: &TokenStream) -> bool {
         // It would be nice to do more with the error (difference) report,
         // but we'd have to choose which mismatching outputs to report.
-        if check_expected_actual_similar_tokens(&self.output, got).is_ok() {
-            return true;
-        }
-        false
+        check_expected_actual_similar_tokens(&self.output, got).is_ok()
     }
 }
 
