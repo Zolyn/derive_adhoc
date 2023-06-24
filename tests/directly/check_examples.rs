@@ -162,6 +162,15 @@ fn check_expected_actual_similar_tokens(exp: &TokenStream, got: &TokenStream)
     ) -> Result<(), ErrorPlaceholderInserted> {
         let mut input = a.clone().into_iter().zip_longest(b.clone().into_iter());
         loop {
+            if input
+                .clone()
+                .filter_map(|eob| eob.left())
+                .collect::<TokenStream>()
+                .to_string() == "..."
+            {
+                // disregard rest of this group
+                return Ok(())
+            }
             let eob = match input.next() {
                 Some(y) => y,
                 None => break,
