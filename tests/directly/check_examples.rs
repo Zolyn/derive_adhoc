@@ -109,8 +109,8 @@ impl DissimilarTokenStreams {
                 Some(t) => eprintln!("{}: {}", s, t),
             }
         };
-        side("a", EOB::left);
-        side("b", EOB::right);
+        side("exp", EOB::left);
+        side("got", EOB::right);
     }
 }
 
@@ -130,7 +130,7 @@ impl DissimilarTokenStreams {
 /// a string with the same meaning, converted to `TokenStream` and back.
 ///
 /// The algorithm in this function isn't perfect but I think it will do.
-fn similar_token_streams(a: &TokenStream, b: &TokenStream)
+fn check_expected_actual_similar_tokens(exp: &TokenStream, got: &TokenStream)
                          -> Result<(), DissimilarTokenStreams>
 {
     use itertools::EitherOrBoth;
@@ -164,7 +164,7 @@ fn similar_token_streams(a: &TokenStream, b: &TokenStream)
     }
 
     let mut same = TokenStream::new();
-    recurse(a, b, &mut same).map_err(|diff| DissimilarTokenStreams {
+    recurse(exp, got, &mut same).map_err(|diff| DissimilarTokenStreams {
         same, diff,
     })
 }

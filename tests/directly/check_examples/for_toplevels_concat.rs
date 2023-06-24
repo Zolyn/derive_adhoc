@@ -49,7 +49,7 @@ impl Example for ForToplevelsConcatExample {
             }
         };
 
-        let err = match similar_token_streams(&got, &exp) {
+        let err = match check_expected_actual_similar_tokens(&exp, &got) {
             Err(e) => e,
             Ok(()) => return,
         };
