@@ -349,13 +349,14 @@ fn parse_bullet(
 }
 
 fn examples_section<'i>(
-    section: impl Iterator<Item = &'i InputItem>,
+    input: impl Iterator<Item = &'i InputItem>,
     errs: &mut Errors,
     out: &mut Vec<Box<dyn Example>>,
 ) {
+    let mut input = input.peekable();
     let mut ss = SectionState::default();
 
-    for ii in section {
+    while let Some(ii) = input.next() {
         match ii {
             II::Bullet { loc, bullet } => {
                 parse_bullet(*loc, bullet, errs, &mut ss, out);
@@ -364,11 +365,21 @@ fn examples_section<'i>(
                 ID::For { for_: new } => ss.for_ = Some((*loc, new, used)),
                 ID::ForToplevelsConcat { .. } => {
                     used.note();
+                    if matches!(input.peek(), Some(II::Paragraph { .. })) {
+                        _ = input.next();
+                    }
                     eprintln!("FOR TOPLEVELS CONCAT NYI"); // TODO EXTEST
                 }
                 _ => {}
             },
-            _ => {}
+            #[allow(unused_variables)] // TODO EXTEST
+            II::BlockQuote { loc, options, content } => {
+                // TODO EXTEST
+            }
+            II::Paragraph { loc, .. } => {
+                errs.wrong(*loc, "unmarked text in examples section");
+            }
+            II::Heading { .. } => panic!("heading in subsection!"),
         }
     }
 }
