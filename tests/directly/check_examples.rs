@@ -13,7 +13,10 @@
 //!  * `INPUT` for enum variants: `OUTPUT`
 //!  * `INPUT` for `TYPE-OR-VARIANT`: `OUTPUT`
 //!  * `INPUT` for `FIELD` in `TYPE-OR-VARIANT`: `OUTPUT`
+//!  * `INPUT` for others: `OUTPUT`
 //! ```
+//!
+//! (Others means not any of the preceding contexts.)
 //!
 //! Blockquotes ` ```rust ` are tested separately via rustdoc, so ignored here.
 //!
