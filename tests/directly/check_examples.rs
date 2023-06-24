@@ -159,7 +159,14 @@ fn check_expected_actual_similar_tokens(exp: &TokenStream, got: &TokenStream)
         for eob in a.clone().into_iter().zip_longest(b.clone().into_iter()) {
             let (a, b) = match &eob {
                 EOB::Both(a, b) => (a, b),
-                _ => return Err(eob),
+                EOB::Left(_a) => {
+                    quote!(MISSING_ACTUAL_TOKEN_HERE).to_tokens(same_out);
+                    return Err(eob);
+                }
+                EOB::Right(_b) => {
+                    quote!(UNEXPECTED_ACTUAL_TOKEN_HERE).to_tokens(same_out);
+                    return Err(eob);
+                }
             };
             if !match (a, b) {
                 (TT::Group(a), TT::Group(b)) => {
@@ -175,6 +182,7 @@ fn check_expected_actual_similar_tokens(exp: &TokenStream, got: &TokenStream)
                 }
                 (a, b) => a.to_string() == b.to_string(),
             } {
+                quote!(FOUND_DIFFERENCE_HERE).to_tokens(same_out);
                 return Err(eob);
             }
             a.to_tokens(same_out);
