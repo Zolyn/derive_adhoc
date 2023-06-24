@@ -198,26 +198,12 @@ fn extract_structs(input: &Preprocessed) -> Vec<syn::DeriveInput> {
             .collect_vec()
     }
 
-    input
-        .iter()
-        .enumerate()
-        .filter_map(|(i, ii)| match ii {
-            II::Directive {
-                loc,
-                used,
-                d: ID::Structs {},
-            } => {
-                used.note();
-                Some((i, loc))
-            }
-            _ => None,
-        })
-        .map(|(i, loc)| match input.get(i + 1) {
-            Some(II::BlockQuote { loc, content, .. }) => {
-                parse_content(*loc, content).into_iter()
-            }
-            _ => bail(*loc, "structs directive not followed by blockquote"),
-        })
+    blockquotes_after_directive(input, |d| match d {
+        ID::Structs {} => Some(()),
+        _ => None,
+    }).map(|(loc, content, ())| {
+        parse_content(loc, content).into_iter()
+    })
         .flatten()
         .collect()
 }
@@ -416,6 +402,33 @@ fn examples_section<'i>(
             II::Heading { .. } => panic!("heading in subsection!"),
         }
     }
+}
+
+fn blockquotes_after_directive<'o, DD>(
+    input: &'o Preprocessed,
+    mut is_introducer: impl FnMut(&InputDirective) -> Option<DD> + 'o,
+) -> impl Iterator<Item = (DocLoc, &'o str, DD)> + 'o {
+    input
+        .iter()
+        .enumerate()
+        .filter_map(move |(i, ii)| match ii {
+            II::Directive {
+                loc,
+                used,
+                d,
+            } => {
+                let dd = is_introducer(d)?;
+                used.note();
+                Some((i, *loc, dd))
+            }
+            _ => None,
+        })
+        .map(move |(i, loc, dd)| match input.get(i + 1) {
+            Some(II::BlockQuote { loc, content, .. }) => {
+                (*loc, &**content, dd)
+            }
+            _ => bail(loc, "directive not followed by blockquote"),
+        })
 }
 
 fn extract_examples(
