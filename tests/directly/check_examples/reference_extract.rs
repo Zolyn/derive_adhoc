@@ -348,6 +348,37 @@ fn parse_bullet(
     }
 }
 
+fn examples_section(
+    section: &[InputItem],
+    errs: &mut Errors,
+    out: &mut Vec<Box<dyn Example>>,
+) {
+    let mut ss = SectionState::default();
+
+    for ii in section {
+        match ii {
+            II::Bullet { loc, bullet } => {
+                parse_bullet(
+                    *loc,
+                    bullet,
+                    errs,
+                    &mut ss,
+                    out,
+                );
+            }
+            II::Directive { loc, d, used } => match d {
+                ID::For { for_: new } => ss.for_ = Some((*loc, new, used)),
+                ID::ForToplevelsConcat { .. } => {
+                    used.note();
+                    eprintln!("FOR TOPLEVELS CONCAT NYI"); // TODO EXTEST
+                }
+                _ => {}
+            },
+            _ => {}
+        }
+    }
+}
+
 fn extract_examples(
     input: &Preprocessed,
     errs: &mut Errors,
@@ -380,30 +411,7 @@ fn extract_examples(
             (ia, ib)
         })
     {
-        let mut ss = SectionState::default();
-
-        for ii in &input[ia..ib] {
-            match ii {
-                II::Bullet { loc, bullet } => {
-                    parse_bullet(
-                        *loc,
-                        bullet,
-                        errs,
-                        &mut ss,
-                        &mut examples_out,
-                    );
-                }
-                II::Directive { loc, d, used } => match d {
-                    ID::For { for_: new } => ss.for_ = Some((*loc, new, used)),
-                    ID::ForToplevelsConcat { .. } => {
-                        used.note();
-                        eprintln!("FOR TOPLEVELS CONCAT NYI"); // TODO EXTEST
-                    }
-                    _ => {}
-                },
-                _ => {}
-            }
-        }
+        examples_section(&input[ia..ib], errs, &mut examples_out);
     }
     examples_out
 }
