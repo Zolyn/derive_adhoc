@@ -358,13 +358,7 @@ fn examples_section(
     for ii in section {
         match ii {
             II::Bullet { loc, bullet } => {
-                parse_bullet(
-                    *loc,
-                    bullet,
-                    errs,
-                    &mut ss,
-                    out,
-                );
+                parse_bullet(*loc, bullet, errs, &mut ss, out);
             }
             II::Directive { loc, d, used } => match d {
                 ID::For { for_: new } => ss.for_ = Some((*loc, new, used)),
