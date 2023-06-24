@@ -142,7 +142,7 @@ pub fn derive_adhoc(
 /// ```
 ///
 /// Then, `MyMacro` can be used with
-/// [`#[derive(Adhoc)]`](Adhoc)
+/// [`#[derive(Adhoc)]`](crate::Adhoc)
 /// `#[derive_adhoc(MyMacro)]`.
 ///
 /// `OPTIONS,..` is an optional comma-separated list of
@@ -235,11 +235,13 @@ pub fn define_derive_adhoc(
 /// This macro does two things:
 ///
 ///  1. It captures the data structure definition,
-///     so that it can be used with calls to [`derive_adhoc!`].
+///     so that it can be used with calls to
+///     [`derive_adhoc!`](macro@crate::derive_adhoc).
 ///
 ///  2. If `#[derive_adhoc(MyMacro)]` attributes are also specified,
 ///     they are taken to refer to reuseable templates
-///     defined with [`define_derive_adhoc!`].
+///     defined with
+///     [`define_derive_adhoc!`](macro@crate::define_derive_adhoc).
 ///     Each such `MyMacro` is applied to the data structure.
 ///
 ///     You can specify

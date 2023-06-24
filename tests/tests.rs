@@ -125,6 +125,11 @@ use regex::Regex;
 pub mod tutils;
 pub use tutils::*;
 
+// These mostly serve to avoid rustdoc warnings from directly::macros,
+// which is macros.rs re-built outside the proc macro system.
+#[allow(unused_imports)]
+use derive_adhoc::{define_derive_adhoc, derive_adhoc, Adhoc};
+
 //---------- modules containing straightforwrad `#[test]` tests ----------
 
 #[cfg(test)]

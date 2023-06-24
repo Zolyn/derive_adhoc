@@ -1,7 +1,7 @@
 //! Expansion of a template into output tokens, plus `derive_adhoc_expand!()`
 //!
 //! Contains the implementations of `fn expand()`
-//! for the various template types in [`crate::syntax`].
+//! for the various template types in [`super::syntax`].
 //!
 //! Also contains the top-level "do the work" macro function -
 //! the implementation of `derive_adhoc_expand!()`.
