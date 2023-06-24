@@ -234,6 +234,7 @@ fn extract_structs(input: &Preprocessed) -> Vec<syn::DeriveInput> {
 struct SectionState<'i> {
     for_: Option<(DocLoc, &'i String, &'i DirectiveTrackUsed)>,
     t_limits: Vec<possibilities::Limit>,
+    bq_input: Option<(DocLoc, &'i String)>,
 }
 
 fn parse_bullet(
@@ -363,18 +364,47 @@ fn examples_section<'i>(
             }
             II::Directive { loc: d_loc, d, used } => match d {
                 ID::For { for_: new } => ss.for_ = Some((*d_loc, new, used)),
-                ID::ForToplevelsConcat { .. } => {
+                ID::ForToplevelsConcat { toplevels } => {
                     used.note();
                     if matches!(input.peek(), Some(II::Paragraph { .. })) {
                         _ = input.next();
                     }
-                    eprintln!("FOR TOPLEVELS CONCAT NYI"); // TODO EXTEST
+                    let (bq_input_loc, bq_input) = match ss.bq_input.take() {
+                        Some(y) => y,
+                        None => {
+                            errs.wrong(*d_loc,
+ "for-toplevels-concat but no previous blockquote for input");
+                            continue;
+                        }
+                    };
+                    match input.next() {
+                        Some(II::BlockQuote { options: _, content, .. }) => {
+                            let example = ForToplevelsConcatExample {
+                                loc: bq_input_loc,
+                                input: (*bq_input).clone(),
+                                toplevels: toplevels.clone(),
+                                output: content.clone(),
+                            };
+                            out.push(Box::new(example));
+                        }
+                        _ => {
+                            errs.wrong(*d_loc,
+ "for-toplevels-concat not followed by output blockquote");
+                            continue;
+                        }
+                    }
                 }
                 _ => {}
             },
-            #[allow(unused_variables)] // TODO EXTEST
             II::BlockQuote { loc, options, content } => {
-                // TODO EXTEST
+                if m!(options, r"^rust$") {
+                    continue;
+                }
+                if let Some((prev, _)) = ss.bq_input {
+                    errs.wrong(prev,
+ "unused blockquote, simply followed by another - missing directive?");
+                }
+                ss.bq_input = Some((*loc, content));
             }
             II::Paragraph { loc, .. } => {
                 errs.wrong(*loc, "unmarked text in examples section");

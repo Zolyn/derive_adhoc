@@ -49,8 +49,11 @@
 
 use super::*;
 
+mod for_toplevels_concat;
 mod possibilities;
 mod reference_extract;
+
+use for_toplevels_concat::ForToplevelsConcatExample;
 
 const INPUT_FILE: &str = "doc/reference.md";
 
