@@ -166,8 +166,12 @@ fn check_expected_actual_similar_tokens(exp: &TokenStream, got: &TokenStream)
                     if a.delimiter() != b.delimiter() {
                         return Err(eob);
                     }
-                    let () = recurse(&a.stream(), &b.stream(), same_out)?;
-                    true
+                    let mut sub = TokenStream::new();
+                    let r = recurse(&a.stream(), &b.stream(), &mut sub);
+                    proc_macro2::Group::new(a.delimiter(), sub)
+                        .to_tokens(same_out);
+                    let () = r?;
+                    continue;
                 }
                 (a, b) => a.to_string() == b.to_string(),
             } {
