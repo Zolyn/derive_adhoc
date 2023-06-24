@@ -54,9 +54,7 @@ impl Example for ForToplevelsConcatExample {
             Ok(()) => return,
         };
         eprintln!("==============================");
-        let mut errs = Errors::new(); // TODO EXTEST remove
         errs.wrong(self.loc, format_args!("example expansion mismatch:"));
-        mem::forget(errs);
         eprintln!("expanded for: {}", self.toplevels.join(", "));
         err.eprintln();
         eprintln!("----- input -----\n{}", self.input.trim_end());
