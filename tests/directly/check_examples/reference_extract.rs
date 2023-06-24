@@ -48,6 +48,7 @@ enum InputDirective {
     ForToplevelsConcat {
         toplevels: Vec<String>,
     },
+    // TODO EXTEST need a way to test the tabular $vdefbody example
 }    
 
 type Preprocessed = Vec<InputItem>;
@@ -55,6 +56,7 @@ type Preprocessed = Vec<InputItem>;
 use InputDirective as ID;
 use InputItem as II;
 
+// TODO EXTEST this ought to be Cell, not Atomic.
 #[derive(Default, Debug)]
 struct DirectiveTrackUsed(AtomicBool);
 
