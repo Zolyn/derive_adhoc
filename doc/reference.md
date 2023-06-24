@@ -509,7 +509,7 @@ struct TupleCopy<'a, 'l: 'a, T: Display = usize, const C: usize = 1,>(
 );
 pub(crate) enum EnumCopy<'a, 'l: 'a, T: Display = usize, const C: usize = 1,> {
     UnitVariantCopy,
-    TupleVariantCopy(std::iter::Once::<T>),
+    TupleVariantCopy(std::iter::Once::<T>,),
     NamedVariantCopy { field_copy: &'l &'a T, /*...*/ }
 }
 ```
