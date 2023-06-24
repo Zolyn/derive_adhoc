@@ -61,8 +61,6 @@ impl Example for ForToplevelsConcatExample {
         err.eprintln();
         eprintln!("----- input -----\n{}", self.input.trim_end());
         eprintln!("----- documented -----\n{}", self.output.trim_end());
-        eprintln!("----- expected (reparsed) -----\n{}", &exp);
-        eprintln!("----- actual -----\n{}", &got);
         eprintln!("==============================");
     }
 }
