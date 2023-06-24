@@ -107,22 +107,35 @@ fn bail(loc: DocLoc, msg: impl Display) -> ! {
 ///
 /// The algorithm in this function isn't perfect but I think it will do.
 fn similar_token_streams(a: &TokenStream, b: &TokenStream) -> bool {
-    for eob in a.clone().into_iter().zip_longest(b.clone().into_iter()) {
-        let (a, b) = match eob {
-            itertools::EitherOrBoth::Both(a, b) => (a, b),
-            _ => return false,
-        };
-        if !match (a, b) {
-            (TT::Group(a), TT::Group(b)) => {
-                a.delimiter() == b.delimiter()
-                    && similar_token_streams(&a.stream(), &b.stream())
+    use itertools::EitherOrBoth;
+    use EitherOrBoth as EOB;
+
+    fn inner(
+        a: &TokenStream,
+        b: &TokenStream,
+        same_out: &mut TokenStream,
+    ) -> Result<(), EitherOrBoth<TokenTree, TokenTree>> {
+        for eob in a.clone().into_iter().zip_longest(b.clone().into_iter()) {
+            let (a, b) = match eob {
+                EOB::Both(a, b) => (a, b),
+                _ => return Err(eob),
+            };
+            if !match (&a, &b) {
+                (TT::Group(a), TT::Group(b)) => {
+                    a.delimiter() == b.delimiter()
+                        && similar_token_streams(&a.stream(), &b.stream())
+                }
+                (a, b) => a.to_string() == b.to_string(),
+            } {
+                return Err(EOB::Both(a, b));
             }
-            (a, b) => a.to_string() == b.to_string(),
-        } {
-            return false;
+            a.to_tokens(same_out);
         }
+        Ok(())
     }
-    return true;
+
+    let mut same_out = TokenStream::new();
+    inner(a, b, &mut same_out).is_ok()
 }
 
 #[test]
