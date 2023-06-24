@@ -14,15 +14,18 @@ enum InputItem {
     },
     BlockQuote {
         loc: DocLoc,
+        #[allow(dead_code)] // we ignore this for now
         options: String,
         content: String,
     },
     Heading {
+        #[allow(dead_code)] // we don't syntax check our headings
         loc: DocLoc,
         /// number of hashes
         depth: usize,
         text: String,
     },
+    #[allow(dead_code)] // paragraphs are just ignored
     Paragraph {
         loc: DocLoc,
         content: String,

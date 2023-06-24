@@ -46,8 +46,6 @@
 //!       The quote has the example structs
 //!
 
-#![allow(dead_code, unused_imports, unused_variables)] // XXXX
-
 use super::*;
 
 mod possibilities;
