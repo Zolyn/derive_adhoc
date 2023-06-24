@@ -348,8 +348,8 @@ fn parse_bullet(
     }
 }
 
-fn examples_section(
-    section: &[InputItem],
+fn examples_section<'i>(
+    section: impl Iterator<Item = &'i InputItem>,
     errs: &mut Errors,
     out: &mut Vec<Box<dyn Example>>,
 ) {
@@ -405,7 +405,20 @@ fn extract_examples(
             (ia, ib)
         })
     {
-        examples_section(&input[ia..ib], errs, &mut examples_out);
+        let mut input = input[ia..ib].iter();
+        loop {
+            let is_heading = |ii: &InputItem| matches!(ii, II::Heading { .. });
+            examples_section(
+                input.take_while_ref(|ii| !is_heading(ii)),
+                errs,
+                &mut examples_out,
+            );
+            match input.next() {
+                None => break,
+                Some(ii) if is_heading(ii) => {}
+                Some(ii) => panic!("shouldn't be {:?}", ii),
+            }
+        }
     }
     examples_out
 }
