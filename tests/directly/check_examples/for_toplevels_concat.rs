@@ -49,17 +49,20 @@ impl Example for ForToplevelsConcatExample {
             }
         };
 
-        if !similar_token_streams(&got, &exp) {
-            eprintln!("==============================");
-            let mut errs = Errors::new(); // TODO EXTEST remove
-            errs.wrong(self.loc, format_args!("example expansion mismatch:"));
-            mem::forget(errs);
-            eprintln!("expanded for: {}", self.toplevels.join(", "));
-            eprintln!("----- input -----\n{}", self.input.trim_end());
-            eprintln!("----- documented -----\n{}", self.output.trim_end());
-            eprintln!("----- expected (reparsed) -----\n{}", &exp);
-            eprintln!("----- actual -----\n{}", &got);
-            eprintln!("==============================");
-        }
+        let err = match similar_token_streams(&got, &exp) {
+            Err(e) => e,
+            Ok(()) => return,
+        };
+        eprintln!("==============================");
+        let mut errs = Errors::new(); // TODO EXTEST remove
+        errs.wrong(self.loc, format_args!("example expansion mismatch:"));
+        mem::forget(errs);
+        eprintln!("expanded for: {}", self.toplevels.join(", "));
+        err.eprintln();
+        eprintln!("----- input -----\n{}", self.input.trim_end());
+        eprintln!("----- documented -----\n{}", self.output.trim_end());
+        eprintln!("----- expected (reparsed) -----\n{}", &exp);
+        eprintln!("----- actual -----\n{}", &got);
+        eprintln!("==============================");
     }
 }

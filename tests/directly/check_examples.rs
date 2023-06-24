@@ -90,6 +90,30 @@ fn bail(loc: DocLoc, msg: impl Display) -> ! {
     panic!("Errors should have panicked already!");
 }
 
+#[derive(Debug)]
+#[allow(dead_code)] // TODO EX TEST
+pub struct DissimilarTokenStreams {
+    same: TokenStream,
+    diff: itertools::EitherOrBoth<TokenTree, TokenTree>,
+}
+
+impl DissimilarTokenStreams {
+    fn eprintln(&self) {
+        use itertools::EitherOrBoth;
+        use EitherOrBoth as EOB;
+        eprintln!("----- difference report -----");
+        eprintln!("same: {}", &self.same);
+        let side = |s, getter: fn(_) -> _| {
+            match getter(self.diff.as_ref()) {
+                None => eprintln!("{} ended earlier", s),
+                Some(t) => eprintln!("{}: {}", s, t),
+            }
+        };
+        side("a", EOB::left);
+        side("b", EOB::right);
+    }
+}
+
 /// Tries to compare but disregarding spacing, which is unpredictable
 ///
 /// What we really want to know is
@@ -106,36 +130,43 @@ fn bail(loc: DocLoc, msg: impl Display) -> ! {
 /// a string with the same meaning, converted to `TokenStream` and back.
 ///
 /// The algorithm in this function isn't perfect but I think it will do.
-fn similar_token_streams(a: &TokenStream, b: &TokenStream) -> bool {
+fn similar_token_streams(a: &TokenStream, b: &TokenStream)
+                         -> Result<(), DissimilarTokenStreams>
+{
     use itertools::EitherOrBoth;
     use EitherOrBoth as EOB;
 
-    fn inner(
+    fn recurse(
         a: &TokenStream,
         b: &TokenStream,
         same_out: &mut TokenStream,
     ) -> Result<(), EitherOrBoth<TokenTree, TokenTree>> {
         for eob in a.clone().into_iter().zip_longest(b.clone().into_iter()) {
-            let (a, b) = match eob {
+            let (a, b) = match &eob {
                 EOB::Both(a, b) => (a, b),
                 _ => return Err(eob),
             };
-            if !match (&a, &b) {
+            if !match (a, b) {
                 (TT::Group(a), TT::Group(b)) => {
-                    a.delimiter() == b.delimiter()
-                        && similar_token_streams(&a.stream(), &b.stream())
+                    if a.delimiter() != b.delimiter() {
+                        return Err(eob);
+                    }
+                    let () = recurse(&a.stream(), &b.stream(), same_out)?;
+                    true
                 }
                 (a, b) => a.to_string() == b.to_string(),
             } {
-                return Err(EOB::Both(a, b));
+                return Err(eob);
             }
             a.to_tokens(same_out);
         }
         Ok(())
     }
 
-    let mut same_out = TokenStream::new();
-    inner(a, b, &mut same_out).is_ok()
+    let mut same = TokenStream::new();
+    recurse(a, b, &mut same).map_err(|diff| DissimilarTokenStreams {
+        same, diff,
+    })
 }
 
 #[test]

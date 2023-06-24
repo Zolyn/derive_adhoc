@@ -243,7 +243,7 @@ impl PossibilitiesExample {
     /// This does *not* do anything useful about possible spacing
     /// differences, which may be a latent bug.
     fn matches_handling_ellipsis(&self, got: &TokenStream) -> bool {
-        if similar_token_streams(&self.output, got) {
+        if similar_token_streams(&self.output, got).is_ok() { // TODO EXTEST
             return true;
         }
         let expected = self.output.to_string();
