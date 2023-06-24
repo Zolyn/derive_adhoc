@@ -361,8 +361,8 @@ fn examples_section<'i>(
             II::Bullet { loc, bullet } => {
                 parse_bullet(*loc, bullet, errs, &mut ss, out);
             }
-            II::Directive { loc, d, used } => match d {
-                ID::For { for_: new } => ss.for_ = Some((*loc, new, used)),
+            II::Directive { loc: d_loc, d, used } => match d {
+                ID::For { for_: new } => ss.for_ = Some((*d_loc, new, used)),
                 ID::ForToplevelsConcat { .. } => {
                     used.note();
                     if matches!(input.peek(), Some(II::Paragraph { .. })) {
