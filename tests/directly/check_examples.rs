@@ -160,7 +160,12 @@ fn check_expected_actual_similar_tokens(exp: &TokenStream, got: &TokenStream)
         b: &TokenStream,
         same_out: &mut TokenStream,
     ) -> Result<(), ErrorPlaceholderInserted> {
-        for eob in a.clone().into_iter().zip_longest(b.clone().into_iter()) {
+        let mut input = a.clone().into_iter().zip_longest(b.clone().into_iter());
+        loop {
+            let eob = match input.next() {
+                Some(y) => y,
+                None => break,
+            };
             let mut mk_err = |tokens: TokenStream| {
                 tokens.to_tokens(same_out);
                 Err(ErrorPlaceholderInserted(eob.clone()))
