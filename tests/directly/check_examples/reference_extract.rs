@@ -156,23 +156,22 @@ fn read_preprocess(errs: &mut Errors) -> Preprocessed {
             } else if m!(l, "^-structs") {
                 Some(ID::Structs {})
             } else if m!(l, "^-possibilities-blockquote") {
-                let (intro, field1, rest) = match lines.next().and_then(
-                    |(_lno, l)| mc!(l, r"^(<!--)(.)(.*)-->")
-                ) {
-                    Some(y) => y,
-                    None => {
-                        errs.wrong(loc, "possibilities-blockquote not followed by table picture");
-                        continue;
-                    }
-                };
-                Some(ID::PossibilitiesBlockquote {
-                    heading_picture: format!(
-                        "{}{}{}",
-                        field1.repeat(intro.len()),
-                        field1,
-                        rest,
-                    ),
-                })
+                (|| {
+                    let (_, l) = lines.next()?;
+                    let (intro, field1, rest) = mc!(l, r"^(<!--)(.)(.*)-->")
+                        .or_else(|| {
+                            errs.wrong(loc, "possibilities-blockquote not followed by table picture");
+                            None
+                        })?;
+                    Some(ID::PossibilitiesBlockquote {
+                        heading_picture: format!(
+                            "{}{}{}",
+                            field1.repeat(intro.len()),
+                            field1,
+                            rest,
+                        ),
+                    })
+                })()
             } else {
                 errs.wrong(loc, format_args!("unrecgonised directive: {l:?}"));
                 continue;
