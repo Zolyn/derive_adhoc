@@ -115,11 +115,14 @@ impl DissimilarTokenStreams {
                 match getter(self.diff.clone()) {
                     None => format!("(none)"),
                     Some(TokenTree::Group(g)) => {
-                        format!("{}", proc_macro2::Group::new(
-                            g.delimiter(),
-                            quote!("..."),
-                        ))
-                    },
+                        format!(
+                            "{}",
+                            proc_macro2::Group::new(
+                                g.delimiter(),
+                                quote!("..."),
+                            )
+                        )
+                    }
                     Some(other) => format!("{}", other),
                 }
             )
@@ -145,12 +148,13 @@ impl DissimilarTokenStreams {
 /// a string with the same meaning, converted to `TokenStream` and back.
 ///
 /// The algorithm in this function isn't perfect but I think it will do.
-fn check_expected_actual_similar_tokens(exp: &TokenStream, got: &TokenStream)
-                         -> Result<(), DissimilarTokenStreams>
-{
+fn check_expected_actual_similar_tokens(
+    exp: &TokenStream,
+    got: &TokenStream,
+) -> Result<(), DissimilarTokenStreams> {
     use itertools::EitherOrBoth;
     use EitherOrBoth as EOB;
-    
+
     /// Having `recurse` return this ensures that on error,
     /// we inserted precisely one placeholder message.
     struct ErrorPlaceholderInserted(EitherOrBoth<TokenTree, TokenTree>);
@@ -160,16 +164,18 @@ fn check_expected_actual_similar_tokens(exp: &TokenStream, got: &TokenStream)
         b: &TokenStream,
         same_out: &mut TokenStream,
     ) -> Result<(), ErrorPlaceholderInserted> {
-        let mut input = a.clone().into_iter().zip_longest(b.clone().into_iter());
+        let mut input =
+            a.clone().into_iter().zip_longest(b.clone().into_iter());
         loop {
             if input
                 .clone()
                 .filter_map(|eob| eob.left())
                 .collect::<TokenStream>()
-                .to_string() == "..."
+                .to_string()
+                == "..."
             {
                 // disregard rest of this group
-                return Ok(())
+                return Ok(());
             }
             let eob = match input.next() {
                 Some(y) => y,
@@ -191,7 +197,9 @@ fn check_expected_actual_similar_tokens(exp: &TokenStream, got: &TokenStream)
             if !match (a, b) {
                 (TT::Group(a), TT::Group(b)) => {
                     if a.delimiter() != b.delimiter() {
-                        return mk_err(quote!(FOUND_DIFFERENT_DELIMITERS_HERE));
+                        return mk_err(quote!(
+                            FOUND_DIFFERENT_DELIMITERS_HERE
+                        ));
                     }
                     let mut sub = TokenStream::new();
                     let r = recurse(&a.stream(), &b.stream(), &mut sub);
@@ -210,10 +218,13 @@ fn check_expected_actual_similar_tokens(exp: &TokenStream, got: &TokenStream)
     }
 
     let mut same = TokenStream::new();
-    recurse(exp, got, &mut same).map_err(|ErrorPlaceholderInserted(diff)| DissimilarTokenStreams {
-        same, diff,
-        exp: exp.clone(),
-        got: got.clone(),
+    recurse(exp, got, &mut same).map_err(|ErrorPlaceholderInserted(diff)| {
+        DissimilarTokenStreams {
+            same,
+            diff,
+            exp: exp.clone(),
+            got: got.clone(),
+        }
     })
 }
 

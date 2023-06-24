@@ -11,20 +11,21 @@ pub struct ForToplevelsConcatExample {
 
 impl Example for ForToplevelsConcatExample {
     fn check(&self, errs: &mut Errors, drivers: &[syn::DeriveInput]) {
-        let (got, exp) = match (||{
+        let (got, exp) = match (|| {
             let mut got = TokenStream::new();
 
             let template: Template<TokenAccumulator> =
                 syn::parse_str(&self.input)
-                .map_err(|e| format!("parse template: {}", e))?;
+                    .map_err(|e| format!("parse template: {}", e))?;
 
-            let exp: TokenStream =
-                syn::parse_str(&self.output)
+            let exp: TokenStream = syn::parse_str(&self.output)
                 .map_err(|e| format!("parse expected output: {}", e))?;
 
             for toplevel in &self.toplevels {
-                (||{
-                    let driver = drivers.iter().find(|d| d.ident == toplevel)
+                (|| {
+                    let driver = drivers
+                        .iter()
+                        .find(|d| d.ident == toplevel)
                         .ok_or_else(|| format!("driver not found"))?;
 
                     let crate_ = &parse_quote!(crate);
@@ -33,10 +34,12 @@ impl Example for ForToplevelsConcatExample {
                             let mut out = TokenAccumulator::new();
                             template.expand(&ctx, &mut out);
                             out.tokens()
-                        }).map_err(|e| format!("expansion failed: {}", e))?
+                        })
+                        .map_err(|e| format!("expansion failed: {}", e))?,
                     );
                     Ok::<_, String>(())
-                })().map_err(|e| format!("toplevel {}: {}", toplevel, e))?;
+                })()
+                .map_err(|e| format!("toplevel {}: {}", toplevel, e))?;
             }
 
             Ok::<_, String>((got, exp))

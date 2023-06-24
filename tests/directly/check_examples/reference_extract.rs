@@ -38,13 +38,9 @@ enum InputItem {
 
 #[derive(Debug)]
 enum InputDirective {
-    For {
-        for_: String,
-    },
+    For { for_: String },
     Structs {},
-    ForToplevelsConcat {
-        toplevels: Vec<String>,
-    },
+    ForToplevelsConcat { toplevels: Vec<String> },
     // TODO EXTEST need a way to test the tabular $vdefbody example
 }
 
