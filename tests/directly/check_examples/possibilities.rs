@@ -44,10 +44,7 @@ pub enum Limit {
     IsStruct,
     IsEnum,
     Name(String),
-    Field {
-        f: String,
-        n: String,
-    },
+    Field { f: String, n: String },
     Others(#[educe(Debug(ignore))] Vec<Limit>),
 }
 
@@ -72,7 +69,7 @@ impl Limit {
             Limit::IsStruct => matches!(ctx.top.data, syn::Data::Struct(_)),
             Limit::IsEnum => matches!(ctx.top.data, syn::Data::Enum(_)),
             Limit::Name(n) => tname(n) || vname(n) || fname(n),
-            Limit::Field { f, n} => fname(f) && (tname(n) || vname(n)),
+            Limit::Field { f, n } => fname(f) && (tname(n) || vname(n)),
             Limit::Others(v) => {
                 // If we've had any `for field in Type` annotations,
                 // we should skip any contexts that don't have a field.
@@ -83,7 +80,7 @@ impl Limit {
                     }
                 }
                 !v.iter().any(|l| l.matches(ctx))
-            },
+            }
         }
     }
 }
@@ -94,13 +91,14 @@ impl Tracker {
             if !self.other_outputs.is_empty() {
                 return Err(
  "at least one actual output doesn't match the documented output".into()
-                )
+                );
             }
         }
         if self.matching_outputs == 0 {
             return Err(
- "documented output does not match any of the actual outputs".into()
-            )
+                "documented output does not match any of the actual outputs"
+                    .into(),
+            );
         }
         Ok(())
     }
@@ -125,11 +123,7 @@ impl Tracker {
 }
 
 impl Example for PossibilitiesExample {
-    fn check(
-        &self,
-        errs: &mut Errors,
-        drivers: &[syn::DeriveInput],
-    ) {
+    fn check(&self, errs: &mut Errors, drivers: &[syn::DeriveInput]) {
         let mut tracker = Tracker {
             all_must_match: self.all_must_match,
             matching_outputs: 0,
@@ -140,26 +134,29 @@ impl Example for PossibilitiesExample {
         //println!("  LIMIT {:?}", &self.limit);
 
         for driver in drivers {
-            Context::call(
-                driver,
-                &parse_quote!(crate),
-                None,
-                |ctx| Ok(self.search_one_driver(&mut tracker, &ctx))
-            ).unwrap();
+            Context::call(driver, &parse_quote!(crate), None, |ctx| {
+                Ok(self.search_one_driver(&mut tracker, &ctx))
+            })
+            .unwrap();
         }
 
-	match tracker.finish_ok() {
-            Ok(()) => {},
+        match tracker.finish_ok() {
+            Ok(()) => {}
             Err(m) => {
                 eprintln!();
                 errs.wrong(self.loc, "example mismatch");
-                eprintln!(r"{}
+                eprintln!(
+                    r"{}
 input: {}
 limit: {:?}
-documented: {}", m, self.input, self.limit, self.output);
+documented: {}",
+                    m, self.input, self.limit, self.output
+                );
                 for got in tracker.other_outputs {
-                    eprintln!("mismatched: {} [{}]",
-                              got.got, got.context_desc);
+                    eprintln!(
+                        "mismatched: {} [{}]",
+                        got.got, got.context_desc
+                    );
                 }
                 eprintln!("matched: {}", tracker.matching_outputs);
                 eprint!("skipped:");
@@ -173,29 +170,23 @@ documented: {}", m, self.input, self.limit, self.output);
 }
 
 impl PossibilitiesExample {
-    fn search_one_driver(
-        &self,
-        tracker: &mut Tracker,
-        ctx: &Context<'_>,
-    ) {
+    fn search_one_driver(&self, tracker: &mut Tracker, ctx: &Context<'_>) {
         self.compare_one_output(tracker, ctx);
         ctx.for_with_within::<WithinVariant, _, _>(|ctx, _| {
             self.compare_one_output(tracker, ctx);
             ctx.for_with_within::<WithinField, _, _>(|ctx, _| {
                 self.compare_one_output(tracker, ctx);
                 Ok::<_, Void>(())
-            }).unwrap();
+            })
+            .unwrap();
             Ok::<_, Void>(())
-        }).void_unwrap()
+        })
+        .void_unwrap()
     }
 
-    fn compare_one_output(
-        &self,
-        tracker: &mut Tracker,
-        ctx: &Context<'_>,
-    ) {
+    fn compare_one_output(&self, tracker: &mut Tracker, ctx: &Context<'_>) {
         if !tracker.should_continue() {
-            return
+            return;
         };
         let limit = &self.limit;
 
@@ -213,14 +204,15 @@ impl PossibilitiesExample {
         if !limit.matches(ctx) {
             //println!("  INAPPLICABLE {:?}", &context_desc);
             tracker.note_skip(context_desc);
-            return
+            return;
         }
 
         let input = &self.input;
 
         let out = (|| {
             let mut out = TokenAccumulator::new();
-            let template: Template<TokenAccumulator> = syn::parse2(input.clone())?;
+            let template: Template<TokenAccumulator> =
+                syn::parse2(input.clone())?;
             template.expand(ctx, &mut out);
             out.tokens()
         })();
@@ -229,20 +221,17 @@ impl PossibilitiesExample {
             Ok(got) if self.matches_handling_ellipsis(&got) => {
                 //println!("  MATCHED {}", &context_desc);
                 Ok(())
-            },
+            }
             Err(e) => {
                 //println!("  ERROR {}", &context_desc);
                 Err(format!("error: {}", e))
-            },
+            }
             Ok(s) => {
                 //println!("  MISMATCH {}", &context_desc);
                 Err(s.to_string())
-            },
+            }
         };
-        let matched = matched.map_err(|got| Mismatch {
-            got,
-            context_desc,
-        });
+        let matched = matched.map_err(|got| Mismatch { got, context_desc });
         tracker.note(matched);
     }
 
@@ -255,21 +244,22 @@ impl PossibilitiesExample {
     /// differences, which may be a latent bug.
     fn matches_handling_ellipsis(&self, got: &TokenStream) -> bool {
         if similar_token_streams(&self.output, got) {
-            return true
+            return true;
         }
         let expected = self.output.to_string();
         let got = got.to_string();
         if got == expected {
-            return true
+            return true;
         }
-        (||{
+        (|| {
             let (ea, eb) = expected.split_once("...")?;
             let ea = ea.trim_end();
             let eb = eb.trim_start();
             let gmb = got.strip_prefix(ea)?;
             let _gm = gmb.strip_suffix(eb)?;
             Some(())
-        })().is_some()
+        })()
+        .is_some()
     }
 }
 
@@ -282,7 +272,7 @@ fn poc() {
         {
             UnitVariant,
             TupleVariant(std::iter::Once::<T>),
-            NamedVariant { 
+            NamedVariant {
                 field: &'l &'a T,
                 field_b: String,
                 field_e: <T as TryInto<u8>>::Error,
@@ -298,6 +288,6 @@ fn poc() {
         input: input,
         limit: limit,
         output: output,
-    }.check(&mut Errors::new(), &[driver]);
+    }
+    .check(&mut Errors::new(), &[driver]);
 }
-

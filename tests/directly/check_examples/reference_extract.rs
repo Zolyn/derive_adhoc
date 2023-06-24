@@ -42,14 +42,13 @@ enum InputDirective {
     For {
         for_: String,
     },
-    Structs {
-    },
+    Structs {},
     #[allow(dead_code)] // TODO EXTEST not yet implemented
     ForToplevelsConcat {
         toplevels: Vec<String>,
     },
     // TODO EXTEST need a way to test the tabular $vdefbody example
-}    
+}
 
 type Preprocessed = Vec<InputItem>;
 
@@ -81,7 +80,7 @@ fn read_preprocess(errs: &mut Errors) -> Preprocessed {
         .lines()
         .map(|l| l.expect("file read error"))
         .enumerate()
-        .map(|(loc, l)| (loc+1, format!("{}\n", l.trim_end())))
+        .map(|(loc, l)| (loc + 1, format!("{}\n", l.trim_end())))
         .peekable();
 
     let mut current_paragraph = None;
@@ -106,7 +105,11 @@ fn read_preprocess(errs: &mut Errors) -> Preprocessed {
                 }
                 content += &l;
             }
-            Some(II::BlockQuote { loc, options, content })
+            Some(II::BlockQuote {
+                loc,
+                options,
+                content,
+            })
         } else if m!(l, r"^ \* ") {
             let mut bullet: String = l;
             loop {
@@ -115,7 +118,7 @@ fn read_preprocess(errs: &mut Errors) -> Preprocessed {
                     None => break,
                 };
                 if !m!(l, r"^   +\S") {
-                    break
+                    break;
                 }
                 bullet += &lines.next().unwrap().1;
             }
@@ -136,7 +139,7 @@ fn read_preprocess(errs: &mut Errors) -> Preprocessed {
             let d = if m!(l, "^-ignore$") {
                 while let Some((loc, l)) = lines.next() {
                     if m!(l, "^\n$") {
-                        break
+                        break;
                     } else if is_directive(&l) {
                         errs.wrong(loc, "directive in ignore section");
                         break;
@@ -148,33 +151,25 @@ fn read_preprocess(errs: &mut Errors) -> Preprocessed {
             } else if let Some((for_,)) = mc!(l, r"^-for (\S.*)$") {
                 let for_ = for_.trim_end().to_owned();
                 Some(ID::For { for_ })
-            } else if let Some((toplevels,)) = mc!(
-                l,
-                r"^-for-toplevels-concat (\S.*)$",
-            ) {
+            } else if let Some((toplevels,)) =
+                mc!(l, r"^-for-toplevels-concat (\S.*)$",)
+            {
                 let toplevels = toplevels
                     .split_ascii_whitespace()
                     .map(|s| s.to_owned())
                     .collect_vec();
                 Some(ID::ForToplevelsConcat { toplevels })
             } else if m!(l, "^-structs") {
-                Some(ID::Structs { })
+                Some(ID::Structs {})
             } else {
                 errs.wrong(loc, format_args!("unrecgonised directive: {l:?}"));
                 continue;
             };
-            d.map(|d| II::Directive {
-                used,
-                loc,
-                d
-            })
+            d.map(|d| II::Directive { used, loc, d })
         } else if m!(l, "^\n$") {
             None
         } else {
-            current_paragraph
-                .get_or_insert((loc, String::new()))
-                .1
-                += &l;
+            current_paragraph.get_or_insert((loc, String::new())).1 += &l;
             continue;
         };
 
@@ -190,19 +185,29 @@ fn extract_structs(input: &Preprocessed) -> Vec<syn::DeriveInput> {
     fn parse_content(loc: DocLoc, content: &str) -> Vec<syn::DeriveInput> {
         let content = re!(r"(?m)^#(?: |$)").replace_all(content, "");
         let items: Concatenated<syn::Item> = syn::parse_str(&content)
-            .unwrap_or_else(|e| bail(loc, format_args!(
-                "structs content parse failed: {e}, given {content}",
-            )));
-        items.0.into_iter().filter_map(|item| match item {
-            syn::Item::Union(_) | syn::Item::Struct(_) | syn::Item::Enum(_) => {
-                Some(
+            .unwrap_or_else(|e| {
+                bail(
+                    loc,
+                    format_args!(
+                        "structs content parse failed: {e}, given {content}",
+                    ),
+                )
+            });
+        items
+            .0
+            .into_iter()
+            .filter_map(|item| match item {
+                syn::Item::Union(_)
+                | syn::Item::Struct(_)
+                | syn::Item::Enum(_) => Some(
                     syn::parse2(item.into_token_stream())
-                        .expect("failed to reparse item as DeriveInput"))
-            },
-            _ => None,
-        }).collect_vec()
+                        .expect("failed to reparse item as DeriveInput"),
+                ),
+                _ => None,
+            })
+            .collect_vec()
     }
-            
+
     input
         .iter()
         .enumerate()
@@ -210,24 +215,18 @@ fn extract_structs(input: &Preprocessed) -> Vec<syn::DeriveInput> {
             II::Directive {
                 loc,
                 used,
-                d: ID::Structs { }
+                d: ID::Structs {},
             } => {
                 used.note();
                 Some((i, loc))
-            },
-            _ => None
-        })
-        .map(|(i, loc)| {
-            match input.get(i+1) {
-                Some(II::BlockQuote { loc, content, .. }) => {
-                    parse_content(*loc, content).into_iter()
-                }
-                _ => bail(
-                    *loc,
-                    "structs directive not followed by blockquote",
-                ),
             }
-
+            _ => None,
+        })
+        .map(|(i, loc)| match input.get(i + 1) {
+            Some(II::BlockQuote { loc, content, .. }) => {
+                parse_content(*loc, content).into_iter()
+            }
+            _ => bail(*loc, "structs directive not followed by blockquote"),
         })
         .flatten()
         .collect()
@@ -237,7 +236,7 @@ fn extract_structs(input: &Preprocessed) -> Vec<syn::DeriveInput> {
 struct SectionState<'i> {
     for_: Option<(DocLoc, &'i String, &'i DirectiveTrackUsed)>,
     t_limits: Vec<possibilities::Limit>,
-}    
+}
 
 fn parse_bullet(
     loc: DocLoc,
@@ -247,19 +246,20 @@ fn parse_bullet(
     examples_out: &mut Vec<Box<dyn Example>>,
 ) {
     let bullet = re!(r"\n   +").replace_all(bullet, " ");
-    let (input, here_for, outputs) = match mc!(
-        bullet,
-        r#"(?m)^ \* `([^`]+)`(?: for ([^:]+))?: (.*)$"#
-    ) {
-        Some(y) => y,
-        None => {
-            errs.wrong(loc, format_args!(
-                "failed to parse bullet point as example: {:?}",
-                bullet,
-            ));
-            return;
-        }
-    };
+    let (input, here_for, outputs) =
+        match mc!(bullet, r#"(?m)^ \* `([^`]+)`(?: for ([^:]+))?: (.*)$"#) {
+            Some(y) => y,
+            None => {
+                errs.wrong(
+                    loc,
+                    format_args!(
+                        "failed to parse bullet point as example: {:?}",
+                        bullet,
+                    ),
+                );
+                return;
+            }
+        };
 
     let for_used_buf = Default::default();
 
@@ -270,7 +270,7 @@ fn parse_bullet(
             Some((loc, &here_for, &for_used_buf))
         }
     });
-    
+
     let mut all_must_match = false;
     let limit = match for_ {
         None => possibilities::Limit::True,
@@ -283,17 +283,17 @@ fn parse_bullet(
                 L::IsEnum
             } else if let Some((n,)) = mc!(for_, r"^`(\w+)`$") {
                 L::Name(n.into())
-            } else if let Some((f,n)) = mc!(for_, r"^`(\w+)` in `(\w+)`$") {
+            } else if let Some((f, n)) = mc!(for_, r"^`(\w+)` in `(\w+)`$") {
                 all_must_match = true;
                 L::Field { f, n }
             } else if m!(for_, "^others$") {
                 all_must_match = true;
                 L::Others(mem::take(&mut ss.t_limits))
             } else {
-                errs.wrong(loc, format_args!(
-                    r#"unhandled for clause "{}""#,
-                    for_
-                ));
+                errs.wrong(
+                    loc,
+                    format_args!(r#"unhandled for clause "{}""#, for_),
+                );
                 return;
             }
         }
@@ -331,16 +331,16 @@ fn parse_bullet(
     } else {
         let mut outputs = outputs;
         while !outputs.is_empty() {
-            let (p, rest) = match mc!(
-                outputs,
-                "(?m)^`([^`]+)`(?:, (.*)|)$",
-            ) {
+            let (p, rest) = match mc!(outputs, "(?m)^`([^`]+)`(?:, (.*)|)$",) {
                 Some(y) => y,
                 None => {
-                    errs.wrong(loc, format!(
-                        r#"bad (tail of) bullet point examples "{}""#,
-                        outputs,
-                    ));
+                    errs.wrong(
+                        loc,
+                        format!(
+                            r#"bad (tail of) bullet point examples "{}""#,
+                            outputs,
+                        ),
+                    );
                     break;
                 }
             };
@@ -349,7 +349,7 @@ fn parse_bullet(
         }
     }
 }
-                
+
 fn extract_examples(
     input: &Preprocessed,
     errs: &mut Errors,
@@ -360,11 +360,9 @@ fn extract_examples(
         .iter()
         .enumerate()
         .filter_map(|(i, ii)| match ii {
-            II::Heading {
-                depth,
-                text,
-                ..
-            } if m!(text, r"^Examples?\b") => Some((i, depth)),
+            II::Heading { depth, text, .. } if m!(text, r"^Examples?\b") => {
+                Some((i, depth))
+            }
             _ => None,
         })
         .map(|(ia, depth_a)| {
@@ -373,12 +371,14 @@ fn extract_examples(
                 .enumerate()
                 .skip(ia + 1)
                 .find_map(|(ib, ii)| match ii {
-                    II::Heading {
-                        depth: depth_b,
-                        ..
-                    } if depth_b <= depth_a => Some(ib),
+                    II::Heading { depth: depth_b, .. }
+                        if depth_b <= depth_a =>
+                    {
+                        Some(ib)
+                    }
                     _ => None,
-                }).unwrap_or(input.len());
+                })
+                .unwrap_or(input.len());
             (ia, ib)
         })
     {
@@ -401,19 +401,18 @@ fn extract_examples(
                         used.note();
                         eprintln!("FOR TOPLEVELS CONCAT NYI"); // TODO EXTEST
                     }
-                    _ => {},
-                }
-                _ => {},
+                    _ => {}
+                },
+                _ => {}
             }
         }
     }
     examples_out
 }
 
-pub fn extract(errs: &mut Errors) -> (
-    Vec<syn::DeriveInput>,
-    Vec<Box<dyn Example>>,
-) {
+pub fn extract(
+    errs: &mut Errors,
+) -> (Vec<syn::DeriveInput>, Vec<Box<dyn Example>>) {
     let iis = read_preprocess(errs);
 
     let structs = extract_structs(&iis);

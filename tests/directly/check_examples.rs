@@ -110,15 +110,15 @@ fn similar_token_streams(a: &TokenStream, b: &TokenStream) -> bool {
         };
         if !match (a, b) {
             (TT::Group(a), TT::Group(b)) => {
-                a.delimiter() == b.delimiter() &&
-                    similar_token_streams(&a.stream(), &b.stream())
-            },
-            (a, b) => a.to_string() == b.to_string()
+                a.delimiter() == b.delimiter()
+                    && similar_token_streams(&a.stream(), &b.stream())
+            }
+            (a, b) => a.to_string() == b.to_string(),
         } {
-            return false
+            return false;
         }
     }
-    return true
+    return true;
 }
 
 #[test]
