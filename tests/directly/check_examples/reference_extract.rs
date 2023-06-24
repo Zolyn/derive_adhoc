@@ -42,7 +42,6 @@ enum InputDirective {
         for_: String,
     },
     Structs {},
-    #[allow(dead_code)] // TODO EXTEST not yet implemented
     ForToplevelsConcat {
         toplevels: Vec<String>,
     },

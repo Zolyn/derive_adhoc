@@ -10,7 +10,6 @@ pub struct ForToplevelsConcatExample {
 }
 
 impl Example for ForToplevelsConcatExample {
-    #[allow(dead_code, unused_variables)] // TODO EXTEST
     fn check(&self, errs: &mut Errors, drivers: &[syn::DeriveInput]) {
         let (got, exp) = match (||{
             let mut got = TokenStream::new();
