@@ -475,6 +475,9 @@ Usualy, it would contain a `$( )` repeating over the fields,
 using `$fdefine` to introduce each one.
 Specifically:
 
+<!--##examples-possibilities-blockquote##-->
+<!--iiiiiiiiiiiiiiiiiiiiiiii fffffffffffffffffffff oooooooooooooooooo ###############-->
+
 ```text
  ${vdefbody VANME FIELDS)}   for unit                FIELDS;          [*] ie  ;
  ${vdefbody VANME FIELDS)}   for tuple             ( FIELDS );
