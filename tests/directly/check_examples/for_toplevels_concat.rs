@@ -12,10 +12,54 @@ pub struct ForToplevelsConcatExample {
 impl Example for ForToplevelsConcatExample {
     #[allow(dead_code, unused_variables)] // TODO EXTEST
     fn check(&self, errs: &mut Errors, drivers: &[syn::DeriveInput]) {
-        eprintln!(
-            "FOR TOPLEVELS CONCAT EXAMPLE {:?}\n{}\n-----\n{}\n-----",
-            self.toplevels, self.input, self.output
-        );
-        // TODO EXTEST
+        let (got, exp) = match (||{
+            let mut got = TokenStream::new();
+
+            let template: Template<TokenAccumulator> =
+                syn::parse_str(&self.input)
+                .map_err(|e| format!("parse template: {}", e))?;
+
+            let exp: TokenStream =
+                syn::parse_str(&self.output)
+                .map_err(|e| format!("parse expected output: {}", e))?;
+
+            for toplevel in &self.toplevels {
+                (||{
+                    let driver = drivers.iter().find(|d| d.ident == toplevel)
+                        .ok_or_else(|| format!("driver not found"))?;
+
+                    let crate_ = &parse_quote!(crate);
+                    got.extend(
+                        Context::call(driver, crate_, None, |ctx| {
+                            let mut out = TokenAccumulator::new();
+                            template.expand(&ctx, &mut out);
+                            out.tokens()
+                        }).map_err(|e| format!("expansion failed: {}", e))?
+                    );
+                    Ok::<_, String>(())
+                })().map_err(|e| format!("toplevel {}: {}", toplevel, e))?;
+            }
+
+            Ok::<_, String>((got, exp))
+        })() {
+            Ok(y) => y,
+            Err(m) => {
+                errs.wrong(self.loc, format_args!("example failed: {}", m));
+                return;
+            }
+        };
+
+        if !similar_token_streams(&got, &exp) {
+            eprintln!("==============================");
+            let mut errs = Errors::new(); // TODO EXTEST remove
+            errs.wrong(self.loc, format_args!("example expansion mismatch:"));
+            mem::forget(errs);
+            eprintln!("expanded for: {}", self.toplevels.join(", "));
+            eprintln!("----- input -----\n{}", self.input.trim_end());
+            eprintln!("----- documented -----\n{}", self.output.trim_end());
+            eprintln!("----- expected (reparsed) -----\n{}", &exp);
+            eprintln!("----- actual -----\n{}", &got);
+            eprintln!("==============================");
+        }
     }
 }
