@@ -1,6 +1,5 @@
 //! Extract examples from the reference manual
 
-use super::possibilities::PossibilitiesExample;
 use super::*;
 
 use std::cell::Cell;

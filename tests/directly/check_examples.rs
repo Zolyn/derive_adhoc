@@ -54,6 +54,7 @@ mod possibilities;
 mod reference_extract;
 
 use for_toplevels_concat::ForToplevelsConcatExample;
+use possibilities::PossibilitiesExample;
 
 const INPUT_FILE: &str = "doc/reference.md";
 
