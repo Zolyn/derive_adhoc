@@ -319,13 +319,17 @@ impl PossibilitiesExample {
         let matched = (|| {
             let mut out = TokenAccumulator::new();
 
-            let handle_syn_error = |e: syn::Error| {
-                //println!("  ERROR {}", &context_desc);
+            let mk_mismatch = |info, got: &dyn Display| {
                 Mismatch {
-                    got: format!("error: {}", e),
-                    info: None,
+                    info,
+                    got: got.to_string(),
                     context_desc: context_desc.clone(),
                 }
+            };
+
+            let handle_syn_error = |e: syn::Error| {
+                //println!("  ERROR {}", &context_desc);
+                mk_mismatch(None, &format_args!("error: {}", e))
             };
 
             let got = (|| {
@@ -347,11 +351,7 @@ impl PossibilitiesExample {
                     )
                     .map_err(|info| {
                         //println!("  MISMATCH {}", &context_desc);
-                        Mismatch {
-                            got: got.to_string(),
-                            info: Some(info),
-                            context_desc: context_desc.clone(),
-                        }
+                        mk_mismatch(Some(info), &got)
                     })?;
                     //println!("  MATCHED {}", &context_desc);
                 },
@@ -362,19 +362,11 @@ impl PossibilitiesExample {
                     };
                     let got = got.map_err(|got| {
                         //println!("  UNEXPECTED-SUCCESS {}", &context_desc);
-                        Mismatch {
-                            got: got.to_string(),
-                            info: None,
-                            context_desc: context_desc.clone(),
-                        }
+                        mk_mismatch(None, &got)
                     })?.to_string();
                     if !got.contains(exp) {
                         //println!("  WRONG-ERROR {}", &context_desc);
-                        return Err(Mismatch {
-                            got,
-                            info: None,
-                            context_desc: context_desc.clone(),
-                        })
+                        return Err(mk_mismatch(None, &got));
                     }
                 }
             }
