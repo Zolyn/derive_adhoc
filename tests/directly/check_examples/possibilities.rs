@@ -306,13 +306,13 @@ impl PossibilitiesExample {
                 //println!("  MATCHED {}", &context_desc);
                 Ok(())
             }
-            Err(e) => {
-                //println!("  ERROR {}", &context_desc);
-                Err(format!("error: {}", e))
-            }
             Ok(s) => {
                 //println!("  MISMATCH {}", &context_desc);
                 Err(s.to_string())
+            }
+            Err(e) => {
+                //println!("  ERROR {}", &context_desc);
+                Err(format!("error: {}", e))
             }
         };
         let matched = matched.map_err(|got| Mismatch { got, context_desc });
