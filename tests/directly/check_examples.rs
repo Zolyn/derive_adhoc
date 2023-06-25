@@ -101,10 +101,12 @@ pub struct DissimilarTokenStreams {
 }
 
 impl DissimilarTokenStreams {
-    fn eprintln(&self) {
+    fn eprintln(&self, in_title: impl Display) {
         use itertools::EitherOrBoth;
         use EitherOrBoth as EOB;
-        eprintln!("----- difference report -----");
+        let in_title = in_title.to_string();
+        eprintln!("----- difference report {}{}-----",
+                  in_title, if in_title.is_empty() { "" } else { " " });
         eprintln!(" expected:        {}", &self.exp);
         eprintln!(" actual:          {}", &self.got);
         eprintln!(" similar prefix:  {}", &self.same);
