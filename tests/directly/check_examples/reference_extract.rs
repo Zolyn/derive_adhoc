@@ -487,7 +487,74 @@ fn extract_by_picture<const N: usize>(
     (p_loc, picture_s): (DocLoc, &str),
     (d_loc, data_s): (DocLoc, &str),
 ) -> Result<[String; N], String> {
-    Err(format!("not yet implemented")) // TODO EXTEST
+    let picture = picture_s.chars().collect_vec();
+    let data: Vec<char> = format!("{:<len$}", data_s, len = picture.len())
+        .chars()
+        .collect();
+
+    let mut used = vec![false; picture.len()];
+    let mut error = Ok(());
+    let output = chars.map(|c| (||{
+        let (lhs, mid, rhs) = mc!(
+            picture_s,
+            format!("([^{c}]*)([{c}]+)([^{c}]*)$"),
+        ).ok_or_else(
+            || format!("picture line has zero or several blocks of '{c}'")
+        )?;
+
+        let a = lhs.len();
+        let b = lhs.len() + mid.len();
+
+        for used in &mut used[a..b] {
+            assert!(!*used, "character '{}' repeated in requests!", c);
+            *used = true;
+        }
+        let part = data[a..b].iter().collect::<String>().trim().to_string();
+
+        Ok::<_, String>(part)
+    })().unwrap_or_else(|e: String| {
+        if error.is_ok() {
+            error = Err(e);
+        }
+        Default::default()
+    }));
+
+    (|| {
+        error?;
+
+        if let Some(wrong) = picture.iter().cloned().position(|c| {
+            !(c.is_whitespace() || c == '#' || chars.iter().any(|tc| c == *tc))
+        }) {
+            return Err(format!(
+r"bad character in picture, not space of '#' or one of {chars:?}
+picture: {picture_s}
+   here: {nil:pad$}^",
+                nil="", pad=wrong,
+            ));
+        }
+
+        for i in 0..data.len() {
+            if data[i].is_whitespace() {
+                continue;
+            }
+            if picture.get(i) == Some(&'#') {
+                continue;
+            }
+            if used.get(i) == Some(&true) {
+                continue;
+            }
+            return Err(
+                format!(
+r"unexpected text, not in a column:
+picture: {picture_s}
+   data: {data_s}
+   here: {nil:pad$}^",
+                    nil="", pad=i,
+                )
+            );
+        }
+        Ok::<_, String>(output)
+    })()
 }
 
 #[allow(dead_code, unreachable_code, unused_variables)] // TODO EXTEST
