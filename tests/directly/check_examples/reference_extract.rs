@@ -402,7 +402,7 @@ fn blockquotes_after_directive<'o, DD>(
         })
 }
 
-fn extract_examples(
+fn process_example_sections(
     input: &Preprocessed,
     errs: &mut Errors,
 ) -> Vec<Box<dyn Example>> {
@@ -459,7 +459,7 @@ pub fn extract(
 
     let structs = extract_structs(&iis);
 
-    let examples = extract_examples(&iis, errs);
+    let examples = process_example_sections(&iis, errs);
 
     for ii in &iis {
         match ii {
