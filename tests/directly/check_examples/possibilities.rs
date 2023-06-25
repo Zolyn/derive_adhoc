@@ -13,7 +13,9 @@ pub struct PossibilitiesExample {
     /// Limit on which contexts to consider
     limit: Limit,
     /// Expected output
-    output: TokenStream,
+    ///
+    /// `Err` means we expected an error containing that string
+    output: Result<TokenStream, String>,
     /// Are *all* the possibilities (subject to `limit`) supposed to match?
     all_must_match: bool,
 }
@@ -131,7 +133,12 @@ impl Tracker {
 
 impl Example for PossibilitiesExample {
     fn print_checking(&self) {
-        println!("checking :{} {} => {}", self.loc, &self.input, &self.output);
+        println!(
+            "checking :{} {} => {}",
+            self.loc,
+            &self.input,
+            self.output_for_messages()
+        );
     }
 
     fn check(&self, errs: &mut Errors, drivers: &[syn::DeriveInput]) {
@@ -161,7 +168,10 @@ impl Example for PossibilitiesExample {
 input: {}
 limit: {:?}
 documented: {}",
-                    m, self.input, self.limit, self.output
+                    m,
+                    self.input,
+                    self.limit,
+                    self.output_for_messages(),
                 );
                 for got in &tracker.other_outputs {
                     eprintln!(
@@ -246,7 +256,7 @@ impl PossibilitiesExample {
         input: &str,
         limit: Limit,
         all_must_match: bool,
-        output: &str,
+        output: Result<&str, &str>,
     ) -> Result<Box<PossibilitiesExample>, String> {
         let parse = |s, what| {
             syn::parse_str(s).map_err(|e| {
@@ -254,7 +264,10 @@ impl PossibilitiesExample {
             })
         };
         let input = parse(input, "input")?;
-        let output = parse(output, "output")?;
+        let output = match output {
+            Ok(exp) => Ok(parse(exp, "output")?),
+            Err(msg) => Err(msg.to_string()),
+        };
         Ok(Box::new(PossibilitiesExample {
             loc,
             input,
@@ -262,6 +275,13 @@ impl PossibilitiesExample {
             all_must_match,
             output,
         }))
+    }
+
+    fn output_for_messages(&self) -> impl Display {
+        match &self.output {
+            Ok(y) => y.to_string(),
+            Err(e) => format!("error: {}", e),
+        }
     }
 
     fn search_one_driver(&self, tracker: &mut Tracker, ctx: &Context<'_>) {
@@ -306,35 +326,56 @@ impl PossibilitiesExample {
         let matched = (|| {
             let mut out = TokenAccumulator::new();
 
-            let handle_syn_error = |e| {
-                //println!("  ERROR {}", &context_desc);
-                Mismatch {
-                    got: format!("error: {}", e),
-                    info: None,
-                    context_desc: context_desc.clone(),
-                }
+            let mk_mismatch = |info, got: &dyn Display| Mismatch {
+                info,
+                got: got.to_string(),
+                context_desc: context_desc.clone(),
             };
 
-            let template: Template<TokenAccumulator> =
-                syn::parse2(input.clone()).map_err(handle_syn_error)?;
+            let handle_syn_error = |e: syn::Error| {
+                //println!("  ERROR {}", &context_desc);
+                mk_mismatch(None, &format_args!("error: {}", e))
+            };
 
-            template.expand(ctx, &mut out);
-            let got = out.tokens().map_err(handle_syn_error)?;
+            let got = (|| {
+                let template: Template<TokenAccumulator> =
+                    syn::parse2(input.clone())?;
 
-            check_expected_actual_similar_tokens(
-                &self.output,
-                &got, //
-            )
-            .map_err(|info| {
-                //println!("  MISMATCH {}", &context_desc);
-                Mismatch {
-                    got: got.to_string(),
-                    info: Some(info),
-                    context_desc: context_desc.clone(),
+                template.expand(ctx, &mut out);
+                let got = out.tokens()?;
+
+                Ok(got)
+            })();
+
+            match &self.output {
+                Ok(exp) => {
+                    let got = got.map_err(handle_syn_error)?;
+                    check_expected_actual_similar_tokens(
+                        &exp, &got, //
+                    )
+                    .map_err(|info| {
+                        //println!("  MISMATCH {}", &context_desc);
+                        mk_mismatch(Some(info), &got)
+                    })?;
+                    //println!("  MATCHED {}", &context_desc);
                 }
-            })?;
-
-            //println!("  MATCHED {}", &context_desc);
+                Err(exp) => {
+                    let got = match got {
+                        Err(n) => Ok(n),
+                        Ok(y) => Err(y),
+                    };
+                    let got = got
+                        .map_err(|got| {
+                            //println!("  UNEXPECTED-SUCCESS {}", &context_desc);
+                            mk_mismatch(None, &got)
+                        })?
+                        .to_string();
+                    if !got.contains(exp) {
+                        //println!("  WRONG-ERROR {}", &context_desc);
+                        return Err(mk_mismatch(None, &got));
+                    }
+                }
+            }
             Ok(())
         })();
 
@@ -366,7 +407,7 @@ fn poc() {
         loc: 42,
         input: input,
         limit: limit,
-        output: output,
+        output: Ok(output),
     }
     .check(&mut Errors::new(), &[driver]);
 }

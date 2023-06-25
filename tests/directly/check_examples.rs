@@ -14,9 +14,14 @@
 //!  * `INPUT` for `TYPE-OR-VARIANT`: `OUTPUT`
 //!  * `INPUT` for `FIELD` in `TYPE-OR-VARIANT`: `OUTPUT`
 //!  * `INPUT` for others: `OUTPUT`
+//!  * `INPUT` ...: nothing
+//!  * `INPUT` ...: error, ``MESSAGE``
 //! ```
 //!
-//! (Others means not any of the preceding contexts.)
+//! ("others" means not any of the preceding contexts.
+//! Note that double backquotes are required for "error,",
+//! which allows individual backquotes in the messages themselves.
+//! The MESSAGE must then be a substring of the actual error.)
 //!
 //! Blockquotes ` ```rust ` are tested separately via rustdoc, so ignored here.
 //!

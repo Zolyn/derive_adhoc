@@ -353,6 +353,24 @@ look in the top-level attributes.
 This allows a template to have uniform handling of attributes
 which should affect how a set of fields should be processed.
 
+#### Examples
+
+ * `${tmeta(simple)}`: `String`
+ * `${tmeta(simple) as ty}`: `String`
+ * `${tmeta(simple) as str}`: `"String"`
+ * `${tmeta(gentype)}`: `Vec<i32>`
+ * `${tmeta(gentype) as ty}`: `Vec<i32>`
+ * `${tmeta(gentype) as str}`: `"Vec<i32>"`
+
+#### Examples involving pasting
+
+ * `${paste Small ${tmeta(simple)}}`: error, ``requires `as ...` ``
+ * `${paste Small ${tmeta(simple) as str}}`: `SmallString`
+ * `${paste Small ${tmeta(simple) as ty}}`: `SmallString`
+ * `${paste Small ${tmeta(gentype) as ty}}`: `SmallVec<i32>`
+ * `${paste $ttype ${tmeta(simple) as str}}`: `UnitString::<C>`
+ * `${paste $ttype ${tmeta(simple) as ty}}`: error, ``multiple nontrivial entries``
+
 ### `${fattrs ...}` `${vattrs ...}` `${tattrs ...}` - other attributes
 
 Expands to non-`#[adhoc()]` attributes.
@@ -745,12 +763,16 @@ are those generated for the following driver types:
 # use std::fmt::Display;
 # use std::convert::TryInto;
 #
+#[derive(Adhoc)]
+#[adhoc(simple="String", gentype="Vec<i32>")]
 pub struct Unit<const C: usize = 1>;
 
+#[derive(Adhoc)]
 struct Tuple<'a, 'l: 'a, T: Display = usize, const C: usize = 1>(
     &'a &'l T,
 );
 
+#[derive(Adhoc)]
 struct Struct<'a, 'l: 'a, T: Display = usize, const C: usize = 1>
 where T: 'l, T: TryInto<u8>
 {
@@ -758,6 +780,7 @@ where T: 'l, T: TryInto<u8>
     field_b: String,
 }
 
+#[derive(Adhoc)]
 pub(crate) enum Enum<'a, 'l: 'a, T: Display = usize, const C: usize = 1>
 where T: 'l, T: TryInto<u8>
 {
