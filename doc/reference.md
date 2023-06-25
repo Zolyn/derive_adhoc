@@ -361,6 +361,9 @@ which should affect how a set of fields should be processed.
  * `${tmeta(gentype)}`: `Vec<i32>`
  * `${tmeta(gentype) as ty}`: `Vec<i32>`
  * `${tmeta(gentype) as str}`: `"Vec<i32>"`
+ * `${vmeta(value)}`: `on struct toplevel`, `on enum variant`
+ * `${fmeta(nested(inner))}` for `field` in `Struct`: `42`
+ * `${fmeta(nested)}`: error, ``tried to expand attribute which is nested list``
 
 #### Examples involving pasting
 
@@ -373,7 +376,7 @@ which should affect how a set of fields should be processed.
 
 ### `${fattrs ...}` `${vattrs ...}` `${tattrs ...}` - other attributes
 
-Expands to non-`#[adhoc()]` attributes.
+Expands to attributes, including non-`#[adhoc()]` ones.
 The attributes can be filtered:
 
   * **`$Xattrs`**: All the attributes
@@ -394,6 +397,26 @@ With `${Xattrs}`, unlike `${Xmeta}`,
      so those attributes are not recognised there.
    * The attributes can be filtered by toplevel attribute name,
      but not deeply manipulated.
+
+#### Examples
+
+##### For `Unit`
+
+<!--##examples-for `Unit`##-->
+
+ * `${tattrs}`: ``#[derive(Adhoc)]``
+ * `${tattrs ! adhoc}`: ``#[derive(Adhoc)]``
+ * `${tattrs missing}`: nothing
+ * `${tattrs derive}`: ``#[derive(Adhoc)]``
+
+##### For `Tuple`
+
+<!--##examples-for `Tuple`##-->
+
+ * `${tattrs}`: ``#[doc=" Title for `Tuple`"] #[derive(Adhoc, Clone)] #[repr(C)]``
+ * `${tattrs repr}`: ``#[repr(C)]``
+ * `${tattrs repr, adhoc}`: ``#[adhoc(ununused)] #[repr(C)]``
+ * `${tattrs ! derive, doc}`: ``#[adhoc(ununused)] #[repr(C)] #[derive_adhoc(SomeOtherTemplate)]``
 
 ### `${paste ...}` - identifier pasting
 
@@ -765,9 +788,14 @@ are those generated for the following driver types:
 #
 #[derive(Adhoc)]
 #[adhoc(simple="String", gentype="Vec<i32>")]
+#[adhoc(value="on struct toplevel")]
 pub struct Unit<const C: usize = 1>;
 
-#[derive(Adhoc)]
+/// Title for `Tuple`
+#[derive(Adhoc, Clone)]
+#[adhoc(ununused)]
+#[repr(C)]
+#[derive_adhoc(SomeOtherTemplate)]
 struct Tuple<'a, 'l: 'a, T: Display = usize, const C: usize = 1>(
     &'a &'l T,
 );
@@ -776,6 +804,7 @@ struct Tuple<'a, 'l: 'a, T: Display = usize, const C: usize = 1>(
 struct Struct<'a, 'l: 'a, T: Display = usize, const C: usize = 1>
 where T: 'l, T: TryInto<u8>
 {
+    #[adhoc(nested(inner = "42"))]
     pub field: &'l &'a T,
     field_b: String,
 }
@@ -784,6 +813,7 @@ where T: 'l, T: TryInto<u8>
 pub(crate) enum Enum<'a, 'l: 'a, T: Display = usize, const C: usize = 1>
 where T: 'l, T: TryInto<u8>
 {
+    #[adhoc(value="on enum variant")]
     UnitVariant,
     TupleVariant(std::iter::Once::<T>),
     NamedVariant { 

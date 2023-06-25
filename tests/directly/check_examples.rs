@@ -14,6 +14,7 @@
 //!  * `INPUT` for `TYPE-OR-VARIANT`: `OUTPUT`
 //!  * `INPUT` for `FIELD` in `TYPE-OR-VARIANT`: `OUTPUT`
 //!  * `INPUT` for others: `OUTPUT`
+//!  * `INPUT` ...: ``OUTPUT``, ...
 //!  * `INPUT` ...: nothing
 //!  * `INPUT` ...: error, ``MESSAGE``
 //! ```

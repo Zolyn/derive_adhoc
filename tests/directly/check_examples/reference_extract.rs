@@ -310,7 +310,13 @@ fn parse_bullet(
     } else {
         let mut outputs = outputs;
         while !outputs.is_empty() {
-            let (p, rest) = match mc!(outputs, "(?m)^`([^`]+)`(?:, (.*)|)$",) {
+            let (p, rest) = match [
+                "(?m)^`([^`]+)`(?:, (.*)|)$",
+                "(?m)^``((?:[^`]+|`[^`])*)``(?:, (.*)|)$",
+            ]
+            .iter()
+            .find_map(|re| mc!(outputs, re))
+            {
                 Some(y) => y,
                 None => {
                     errs.wrong(
