@@ -526,10 +526,11 @@ fn extract_by_picture<const N: usize>(
             !(c.is_whitespace() || c == '#' || chars.iter().any(|tc| c == *tc))
         }) {
             return Err(format!(
-r"bad character in picture, not space of '#' or one of {chars:?}
+                r"bad character in picture, not space of '#' or one of {chars:?}
 picture: {picture_s}
    here: {nil:pad$}^",
-                nil="", pad=wrong,
+                nil = "",
+                pad = wrong,
             ));
         }
 
@@ -543,15 +544,14 @@ picture: {picture_s}
             if used.get(i) == Some(&true) {
                 continue;
             }
-            return Err(
-                format!(
-r"unexpected text, not in a column:
+            return Err(format!(
+                r"unexpected text, not in a column:
 picture: {picture_s}
    data: {data_s}
    here: {nil:pad$}^",
-                    nil="", pad=i,
-                )
-            );
+                nil = "",
+                pad = i,
+            ));
         }
         Ok::<_, String>(output)
     })()
