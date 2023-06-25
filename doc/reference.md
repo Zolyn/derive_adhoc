@@ -376,7 +376,7 @@ which should affect how a set of fields should be processed.
 
 ### `${fattrs ...}` `${vattrs ...}` `${tattrs ...}` - other attributes
 
-Expands to non-`#[adhoc()]` attributes.
+Expands to attributes, including non-`#[adhoc()]` ones.
 The attributes can be filtered:
 
   * **`$Xattrs`**: All the attributes
