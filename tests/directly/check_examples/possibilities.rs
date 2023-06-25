@@ -7,15 +7,15 @@
 use super::*;
 
 pub struct PossibilitiesExample {
-    pub loc: DocLoc,
+    loc: DocLoc,
     /// A derive-adhoc template fragment
-    pub input: TokenStream,
+    input: TokenStream,
     /// Limit on which contexts to consider
-    pub limit: Limit,
+    limit: Limit,
     /// Expected output
-    pub output: TokenStream,
+    output: TokenStream,
     /// Are *all* the possibilities (subject to `limit`) supposed to match?
-    pub all_must_match: bool,
+    all_must_match: bool,
 }
 
 struct Tracker {
@@ -28,6 +28,7 @@ struct Tracker {
 struct Mismatch {
     got: String,
     context_desc: String,
+    info: Option<DissimilarTokenStreams>,
 }
 
 /// Limit on the contexts (in the example structs) that this test is for
@@ -41,8 +42,7 @@ struct Mismatch {
 #[educe(Debug)]
 pub enum Limit {
     True,
-    IsStruct,
-    IsEnum,
+    DaCond(Rc<Subst<BooleanContext>>),
     Name(String),
     Field { f: String, n: String },
     Others(#[educe(Debug(ignore))] Vec<Limit>),
@@ -66,8 +66,15 @@ impl Limit {
         let fname = |n| ctx.fname_s().map(|s| &s == n) == Some(true);
         match self {
             Limit::True => true,
-            Limit::IsStruct => matches!(ctx.top.data, syn::Data::Struct(_)),
-            Limit::IsEnum => matches!(ctx.top.data, syn::Data::Enum(_)),
+            Limit::DaCond(cond) => {
+                cond.eval_bool(ctx)
+                    // Some tests aren't meaningful in some context.
+                    // Eg, we have "for" clauses that check the variant
+                    // kind (unit, tuple, named fields).  That isn't
+                    // meaningful if we're in an enum and not in a variant.
+                    // d-a gives an error there.  We treat it as "skip".
+                    .unwrap_or_default()
+            }
             Limit::Name(n) => tname(n) || vname(n) || fname(n),
             Limit::Field { f, n } => fname(f) && (tname(n) || vname(n)),
             Limit::Others(v) => {
@@ -123,6 +130,10 @@ impl Tracker {
 }
 
 impl Example for PossibilitiesExample {
+    fn print_checking(&self) {
+        println!("checking :{} {} => {}", self.loc, &self.input, &self.output);
+    }
+
     fn check(&self, errs: &mut Errors, drivers: &[syn::DeriveInput]) {
         let mut tracker = Tracker {
             all_must_match: self.all_must_match,
@@ -130,7 +141,6 @@ impl Example for PossibilitiesExample {
             other_outputs: vec![],
             skipped_context_descs: vec![],
         };
-        println!("checking :{} {} => {}", self.loc, &self.input, &self.output);
         //println!("  LIMIT {:?}", &self.limit);
 
         for driver in drivers {
@@ -144,6 +154,7 @@ impl Example for PossibilitiesExample {
             Ok(()) => {}
             Err(m) => {
                 eprintln!();
+                eprintln!("========================================");
                 errs.wrong(self.loc, "example mismatch");
                 eprintln!(
                     r"{}
@@ -152,7 +163,7 @@ limit: {:?}
 documented: {}",
                     m, self.input, self.limit, self.output
                 );
-                for got in tracker.other_outputs {
+                for got in &tracker.other_outputs {
                     eprintln!(
                         "mismatched: {} [{}]",
                         got.got, got.context_desc
@@ -163,13 +174,96 @@ documented: {}",
                 for skip in tracker.skipped_context_descs {
                     eprint!(" [{}]", skip);
                 }
-                eprintln!("\n");
+                eprintln!("");
+                for got in &tracker.other_outputs {
+                    let Some(info) = &got.info else { continue; };
+                    info.eprintln(format!("[{}]", got.context_desc));
+                }
+                eprintln!("========================================");
             }
         }
     }
 }
 
+type LimitViaDaCond = dyn Fn(()) -> SubstDetails<BooleanContext>;
+
+/// Table mapping limit regexp to derive-adhoc `SubstDetails`
+// Breaking this out here allows us to format it nicely
+#[rustfmt::skip]
+const LIMIT_DA_COND_REGEXPS: &[(&str, &'static LimitViaDaCond)] = &[
+    (r"^structs?$",                         &SD::is_struct  as _  ),
+    (r"^enum( variant)?s?$",                &SD::is_enum    as _  ),
+    (r"^braced (?:(?:struct|variant)s?)?$", &SD::v_is_named as _  ),
+    (r"^tuple( variant)?s?$",               &SD::v_is_tuple as _  ),
+    (r"^unit( variant)?s?$",                &SD::v_is_unit  as _  ),
+];
+
+impl Limit {
+    pub fn parse(
+        for_: &str,
+        all_must_match: &mut bool,
+        others: Option<&mut Vec<Limit>>,
+    ) -> Result<Limit, String> {
+        use Limit as L;
+
+        let da_cond = |mk_sd: &dyn Fn(_) -> _| {
+            L::DaCond(Rc::new(Subst {
+                kw_span: Span::call_site(),
+                sd: mk_sd(()),
+                output_marker: PhantomData,
+            }))
+        };
+
+        let limit = if let Some(mk_sd) = LIMIT_DA_COND_REGEXPS
+            .iter()
+            .cloned()
+            .find_map(|(re, mk_sd)| m!(for_, re).then(|| mk_sd))
+        {
+            da_cond(mk_sd)
+        } else if let Some((n,)) = mc!(for_, r"^`(\w+)`$") {
+            L::Name(n.into())
+        } else if let Some((f, n)) = mc!(for_, r"^`(\w+)` in `(\w+)`$") {
+            *all_must_match = true;
+            L::Field { f, n }
+        } else if m!(for_, "^others$") {
+            *all_must_match = true;
+            let others = others
+                .ok_or_else(|| format!(r#""for others" not allowed here"#))?;
+            return Ok(L::Others(mem::take(others)));
+        } else {
+            return Err(format!(r#"unhandled for clause "{}""#, for_));
+        };
+        if let Some(others) = others {
+            others.push(limit.clone());
+        }
+        Ok(limit)
+    }
+}
+
 impl PossibilitiesExample {
+    pub fn new(
+        loc: DocLoc,
+        input: &str,
+        limit: Limit,
+        all_must_match: bool,
+        output: &str,
+    ) -> Result<Box<PossibilitiesExample>, String> {
+        let parse = |s, what| {
+            syn::parse_str(s).map_err(|e| {
+                format!(r#"failed to parse {}: {:?}: {}"#, what, s, e)
+            })
+        };
+        let input = parse(input, "input")?;
+        let output = parse(output, "output")?;
+        Ok(Box::new(PossibilitiesExample {
+            loc,
+            input,
+            limit,
+            all_must_match,
+            output,
+        }))
+    }
+
     fn search_one_driver(&self, tracker: &mut Tracker, ctx: &Context<'_>) {
         self.compare_one_output(tracker, ctx);
         ctx.for_with_within::<WithinVariant, _, _>(|ctx, _| {
@@ -209,43 +303,42 @@ impl PossibilitiesExample {
 
         let input = &self.input;
 
-        let out = (|| {
+        let matched = (|| {
             let mut out = TokenAccumulator::new();
+
+            let handle_syn_error = |e| {
+                //println!("  ERROR {}", &context_desc);
+                Mismatch {
+                    got: format!("error: {}", e),
+                    info: None,
+                    context_desc: context_desc.clone(),
+                }
+            };
+
             let template: Template<TokenAccumulator> =
-                syn::parse2(input.clone())?;
+                syn::parse2(input.clone()).map_err(handle_syn_error)?;
+
             template.expand(ctx, &mut out);
-            out.tokens()
+            let got = out.tokens().map_err(handle_syn_error)?;
+
+            check_expected_actual_similar_tokens(
+                &self.output,
+                &got, //
+            )
+            .map_err(|info| {
+                //println!("  MISMATCH {}", &context_desc);
+                Mismatch {
+                    got: got.to_string(),
+                    info: Some(info),
+                    context_desc: context_desc.clone(),
+                }
+            })?;
+
+            //println!("  MATCHED {}", &context_desc);
+            Ok(())
         })();
 
-        let matched = match out {
-            Ok(got) if self.matches_handling_ellipsis(&got) => {
-                //println!("  MATCHED {}", &context_desc);
-                Ok(())
-            }
-            Err(e) => {
-                //println!("  ERROR {}", &context_desc);
-                Err(format!("error: {}", e))
-            }
-            Ok(s) => {
-                //println!("  MISMATCH {}", &context_desc);
-                Err(s.to_string())
-            }
-        };
-        let matched = matched.map_err(|got| Mismatch { got, context_desc });
         tracker.note(matched);
-    }
-
-    /// If `self` and `TokenStream` are equal-enough
-    /// (see `similar_token_streams`) return true.
-    ///
-    /// Otherwise hopes that `self`'s string representation has a `...`,
-    /// and then expects that `got`'s string matches the implied pattern.
-    /// This does *not* do anything useful about possible spacing
-    /// differences, which may be a latent bug.
-    fn matches_handling_ellipsis(&self, got: &TokenStream) -> bool {
-        // It would be nice to do more with the error (difference) report,
-        // but we'd have to choose which mismatching outputs to report.
-        check_expected_actual_similar_tokens(&self.output, got).is_ok()
     }
 }
 

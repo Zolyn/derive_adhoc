@@ -54,6 +54,7 @@ mod possibilities;
 mod reference_extract;
 
 use for_toplevels_concat::ForToplevelsConcatExample;
+use possibilities::PossibilitiesExample;
 
 const INPUT_FILE: &str = "doc/reference.md";
 
@@ -61,6 +62,7 @@ pub type DocLoc = usize;
 
 /// Something that can be checked
 pub trait Example {
+    fn print_checking(&self);
     fn check(&self, out: &mut Errors, drivers: &[syn::DeriveInput]);
 }
 
@@ -91,7 +93,6 @@ fn bail(loc: DocLoc, msg: impl Display) -> ! {
 }
 
 #[derive(Debug)]
-#[allow(dead_code)] // TODO EX TEST
 pub struct DissimilarTokenStreams {
     exp: TokenStream,
     got: TokenStream,
@@ -100,10 +101,15 @@ pub struct DissimilarTokenStreams {
 }
 
 impl DissimilarTokenStreams {
-    fn eprintln(&self) {
+    fn eprintln(&self, in_title: impl Display) {
         use itertools::EitherOrBoth;
         use EitherOrBoth as EOB;
-        eprintln!("----- difference report -----");
+        let in_title = in_title.to_string();
+        eprintln!(
+            "----- difference report {}{}-----",
+            in_title,
+            if in_title.is_empty() { "" } else { " " }
+        );
         eprintln!(" expected:        {}", &self.exp);
         eprintln!(" actual:          {}", &self.got);
         eprintln!(" similar prefix:  {}", &self.same);
@@ -233,6 +239,7 @@ fn check_examples() {
     let mut errs = Errors::new();
     let (structs, examples) = reference_extract::extract(&mut errs);
     for example in &examples {
+        example.print_checking();
         example.check(&mut errs, &structs);
     }
     eprintln!("checked {} examples", examples.len());

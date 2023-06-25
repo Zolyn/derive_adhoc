@@ -1,6 +1,5 @@
 //! Extract examples from the reference manual
 
-use super::possibilities::PossibilitiesExample;
 use super::*;
 
 use std::cell::Cell;
@@ -24,9 +23,9 @@ enum InputItem {
         depth: usize,
         text: String,
     },
-    #[allow(dead_code)] // paragraphs are just ignored
     Paragraph {
         loc: DocLoc,
+        #[allow(dead_code)] // paragraphs content is not currently used
         content: String,
     },
     Directive {
@@ -38,10 +37,17 @@ enum InputItem {
 
 #[derive(Debug)]
 enum InputDirective {
-    For { for_: String },
+    For {
+        for_: String,
+    },
     Structs {},
-    ForToplevelsConcat { toplevels: Vec<String> },
-    // TODO EXTEST need a way to test the tabular $vdefbody example
+    ForToplevelsConcat {
+        toplevels: Vec<String>,
+    },
+    PossibilitiesBlockquote {
+        heading_picture_loc: DocLoc,
+        heading_picture: String,
+    },
 }
 
 type Preprocessed = Vec<InputItem>;
@@ -151,6 +157,24 @@ fn read_preprocess(errs: &mut Errors) -> Preprocessed {
                 Some(ID::ForToplevelsConcat { toplevels })
             } else if m!(l, "^-structs") {
                 Some(ID::Structs {})
+            } else if m!(l, "^-possibilities-blockquote") {
+                (|| {
+                    let (p_loc, l) = lines.next()?;
+                    let (intro, field1, rest) = mc!(l, r"^(<!--)(.)(.*)-->")
+                        .or_else(|| {
+                            errs.wrong(loc, "possibilities-blockquote not followed by table picture");
+                            None
+                        })?;
+                    Some(ID::PossibilitiesBlockquote {
+                        heading_picture_loc: p_loc,
+                        heading_picture: format!(
+                            "{}{}{}",
+                            field1.repeat(intro.len()),
+                            field1,
+                            rest,
+                        ),
+                    })
+                })()
             } else {
                 errs.wrong(loc, format_args!("unrecgonised directive: {l:?}"));
                 continue;
@@ -198,28 +222,15 @@ fn extract_structs(input: &Preprocessed) -> Vec<syn::DeriveInput> {
             .collect_vec()
     }
 
-    input
-        .iter()
-        .enumerate()
-        .filter_map(|(i, ii)| match ii {
-            II::Directive {
-                loc,
-                used,
-                d: ID::Structs {},
-            } => {
-                used.note();
-                Some((i, loc))
-            }
-            _ => None,
-        })
-        .map(|(i, loc)| match input.get(i + 1) {
-            Some(II::BlockQuote { loc, content, .. }) => {
-                parse_content(*loc, content).into_iter()
-            }
-            _ => bail(*loc, "structs directive not followed by blockquote"),
-        })
-        .flatten()
-        .collect()
+    blockquotes_after_directive(input, |d| match d {
+        ID::Structs {} => Some(()),
+        _ => None,
+    })
+    .map(|(_d_loc, (), bq_loc, content)| {
+        parse_content(bq_loc, content).into_iter()
+    })
+    .flatten()
+    .collect()
 }
 
 #[derive(Default, Debug)]
@@ -266,55 +277,30 @@ fn parse_bullet(
     let limit = match for_ {
         None => possibilities::Limit::True,
         Some((loc, for_, for_used)) => {
-            use possibilities::Limit as L;
             for_used.note();
-            if m!(for_, "^structs?$") {
-                L::IsStruct
-            } else if m!(for_, "^enum( variant)?s?$") {
-                L::IsEnum
-            } else if let Some((n,)) = mc!(for_, r"^`(\w+)`$") {
-                L::Name(n.into())
-            } else if let Some((f, n)) = mc!(for_, r"^`(\w+)` in `(\w+)`$") {
-                all_must_match = true;
-                L::Field { f, n }
-            } else if m!(for_, "^others$") {
-                all_must_match = true;
-                L::Others(mem::take(&mut ss.t_limits))
-            } else {
-                errs.wrong(
-                    loc,
-                    format_args!(r#"unhandled for clause "{}""#, for_),
-                );
-                return;
+            match possibilities::Limit::parse(
+                for_,
+                &mut all_must_match,
+                Some(&mut ss.t_limits),
+            ) {
+                Ok(y) => y,
+                Err(m) => {
+                    errs.wrong(loc, m);
+                    return;
+                }
             }
         }
     };
-    ss.t_limits.push(limit.clone());
 
-    let mut poss = |output: &str| {
-        macro_rules! parse1 { { $v:ident } => {
-            let $v: TokenStream = match syn::parse_str(&$v) {
-                Ok(y) => y,
-                Err(e) => {
-                    errs.wrong(loc, format_args!(
-                        r#"failed to parse {}: {:?}: {}"#,
-                        stringify!($v),
-                        $v,
-                        e
-                    ));
-                    return;
-                },
-            };
-        } }
-        parse1!(input);
-        parse1!(output);
-        examples_out.push(Box::new(PossibilitiesExample {
-            loc,
-            input,
-            limit: limit.clone(),
-            all_must_match,
-            output,
-        }));
+    let mut poss = |output: &str| match PossibilitiesExample::new(
+        loc,
+        &input,
+        limit.clone(),
+        all_must_match,
+        output,
+    ) {
+        Ok(y) => examples_out.push(y),
+        Err(m) => errs.wrong(loc, m),
     };
 
     if m!(outputs, "^nothing$") {
@@ -418,7 +404,36 @@ fn examples_section<'i>(
     }
 }
 
-fn extract_examples(
+fn blockquotes_after_directive<'o, DD>(
+    input: &'o Preprocessed,
+    mut is_introducer: impl FnMut(&InputDirective) -> Option<DD> + 'o,
+) -> impl Iterator<Item = (DocLoc, DD, DocLoc, &'o str)> + 'o {
+    input
+        .iter()
+        .enumerate()
+        .filter_map(move |(i, ii)| match ii {
+            II::Directive {
+                loc: d_loc,
+                used,
+                d,
+            } => {
+                let dd = is_introducer(d)?;
+                used.note();
+                Some((i, *d_loc, dd))
+            }
+            _ => None,
+        })
+        .map(move |(i, d_loc, dd)| match input.get(i + 1) {
+            Some(II::BlockQuote {
+                loc: bq_loc,
+                content,
+                ..
+            }) => (d_loc, dd, *bq_loc, &**content),
+            _ => bail(d_loc, "directive not followed by blockquote"),
+        })
+}
+
+fn process_example_sections(
     input: &Preprocessed,
     errs: &mut Errors,
 ) -> Vec<Box<dyn Example>> {
@@ -468,6 +483,153 @@ fn extract_examples(
     examples_out
 }
 
+fn extract_by_picture<const N: usize>(
+    chars: [char; N],
+    picture_s: &str,
+    data_s: &str,
+) -> Result<[String; N], String> {
+    let picture = picture_s.chars().collect_vec();
+    let data: Vec<char> = format!("{:<len$}", data_s, len = picture.len())
+        .chars()
+        .collect();
+
+    let mut used = vec![false; picture.len()];
+    let mut error = Ok(());
+    let output = chars.map(|c| {
+        (|| {
+            let (lhs, mid, _rhs) =
+                mc!(picture_s, format!("([^{c}]*)([{c}]+)([^{c}]*)$"),)
+                    .ok_or_else(|| {
+                        format!(
+                            "picture line has zero or several blocks of '{c}'"
+                        )
+                    })?;
+
+            let a = lhs.len();
+            let b = lhs.len() + mid.len();
+
+            for used in &mut used[a..b] {
+                assert!(!*used, "character '{}' repeated in requests!", c);
+                *used = true;
+            }
+            let part =
+                data[a..b].iter().collect::<String>().trim().to_string();
+
+            Ok::<_, String>(part)
+        })()
+        .unwrap_or_else(|e: String| {
+            if error.is_ok() {
+                error = Err(e);
+            }
+            Default::default()
+        })
+    });
+
+    (|| {
+        error?;
+
+        if let Some(wrong) = picture.iter().cloned().position(|c| {
+            !(c.is_whitespace() || c == '#' || chars.iter().any(|tc| c == *tc))
+        }) {
+            return Err(format!(
+                r"bad character in picture, not space of '#' or one of {chars:?}
+picture: {picture_s}
+   here: {nil:pad$}^",
+                nil = "",
+                pad = wrong,
+            ));
+        }
+
+        for i in 0..data.len() {
+            if data[i].is_whitespace() {
+                continue;
+            }
+            if picture.get(i) == Some(&'#') {
+                continue;
+            }
+            if used.get(i) == Some(&true) {
+                continue;
+            }
+            return Err(format!(
+                r"unexpected text, not in a column:
+picture: {picture_s}
+   data: {data_s}
+   here: {nil:pad$}^",
+                nil = "",
+                pad = i,
+            ));
+        }
+        Ok::<_, String>(output)
+    })()
+}
+
+fn extract_possibilites_blockquotes(
+    input: &Preprocessed,
+    errs: &mut Errors,
+    examples_out: &mut Vec<Box<dyn Example>>,
+) {
+    for (_d_loc, (p_loc, picture), bq_loc, content) in
+        blockquotes_after_directive(input, |d| match d {
+            ID::PossibilitiesBlockquote {
+                heading_picture_loc: p_loc,
+                heading_picture,
+            } => Some((*p_loc, heading_picture.clone())),
+            _ => None,
+        })
+    {
+        let fields = ['i', 'f', 'o'];
+
+        // Prechecking allows us to bail on the whole blockquote if
+        // the picture is wrong, without requiring extract_by_picture
+        // to distinguish bad pictures from bad data.
+        match extract_by_picture(fields, &picture, "") {
+            Err(m) => {
+                errs.wrong(p_loc, format_args!("invalid picture line: {}", m));
+                return;
+            }
+            Ok([..]) => {}
+        }
+
+        let mut t_limits = vec![];
+
+        for (lno, l) in content.lines().enumerate() {
+            let l_loc = bq_loc + lno + 1;
+
+            match (|| {
+                let columns = extract_by_picture(fields, &picture, l)?;
+                for (c, data) in izip!(fields, &columns) {
+                    if data.is_empty() {
+                        return Err(format!(
+                            "missing information for column '{c}'"
+                        ));
+                    }
+                }
+                let [input, for_, output] = columns;
+
+                let for_ = re!("^for ").replace_all(&for_, "");
+
+                let mut all_must_match = false;
+                let limit = possibilities::Limit::parse(
+                    &for_,
+                    &mut all_must_match,
+                    Some(&mut t_limits),
+                )?;
+
+                PossibilitiesExample::new(
+                    l_loc,
+                    &input,
+                    limit,
+                    all_must_match,
+                    &output,
+                )
+            })() {
+                Ok(example) => examples_out.push(example),
+                Err(m) => errs.wrong(l_loc, m),
+            }
+        }
+    }
+}
+
 pub fn extract(
     errs: &mut Errors,
 ) -> (Vec<syn::DeriveInput>, Vec<Box<dyn Example>>) {
@@ -475,7 +637,9 @@ pub fn extract(
 
     let structs = extract_structs(&iis);
 
-    let examples = extract_examples(&iis, errs);
+    let mut examples = process_example_sections(&iis, errs);
+
+    extract_possibilites_blockquotes(&iis, errs, &mut examples);
 
     for ii in &iis {
         match ii {

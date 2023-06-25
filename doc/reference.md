@@ -475,13 +475,16 @@ Usualy, it would contain a `$( )` repeating over the fields,
 using `$fdefine` to introduce each one.
 Specifically:
 
+<!--##examples-possibilities-blockquote##-->
+<!--iiiiiiiiiiiiiiiiiiiiiii fffffffffffffffffffff oooooooooooooooooo ###############-->
+
 ```text
- ${vdefbody VANME FIELDS)}   for unit                FIELDS;          [*] ie  ;
- ${vdefbody VANME FIELDS)}   for tuple             ( FIELDS );
- ${vdefbody VANME FIELDS)}   for struct            { FIELDS }
- ${vdefbody VANME FIELDS)}   for unit variant      VNAME   FIELDS,    [*] ie  VNAME,
- ${vdefbody VANME FIELDS)}   for tuple variant     VNAME ( FIELDS ),
- ${vdefbody VANME FIELDS)}   for struct variant    VNAME { FIELDS }
+ ${vdefbody VNAME FIELDS}   for unit                FIELDS;          [*] ie  ;
+ ${vdefbody VNAME FIELDS}   for tuple             ( FIELDS );
+ ${vdefbody VNAME FIELDS}   for braced struct     { FIELDS }
+ ${vdefbody VNAME FIELDS}   for unit variant      VNAME   FIELDS,    [*] ie  VNAME,
+ ${vdefbody VNAME FIELDS}   for tuple variant     VNAME ( FIELDS ),
+ ${vdefbody VNAME FIELDS}   for braced variant    VNAME { FIELDS }
 ```
 
 `[*]`: In the unit and unit variant cases,

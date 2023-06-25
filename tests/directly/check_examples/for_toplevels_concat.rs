@@ -10,6 +10,9 @@ pub struct ForToplevelsConcatExample {
 }
 
 impl Example for ForToplevelsConcatExample {
+    fn print_checking(&self) {
+        println!("checking :{} blockquotes input/output", self.loc);
+    }
     fn check(&self, errs: &mut Errors, drivers: &[syn::DeriveInput]) {
         let (got, exp) = match (|| {
             let mut got = TokenStream::new();
@@ -58,7 +61,7 @@ impl Example for ForToplevelsConcatExample {
         eprintln!("==============================");
         errs.wrong(self.loc, format_args!("example expansion mismatch:"));
         eprintln!("expanded for: {}", self.toplevels.join(", "));
-        err.eprintln();
+        err.eprintln("");
         eprintln!("----- input -----\n{}", self.input.trim_end());
         eprintln!("----- documented -----\n{}", self.output.trim_end());
         eprintln!("==============================");
