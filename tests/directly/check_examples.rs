@@ -92,7 +92,6 @@ fn bail(loc: DocLoc, msg: impl Display) -> ! {
 }
 
 #[derive(Debug)]
-#[allow(dead_code)] // TODO EX TEST
 pub struct DissimilarTokenStreams {
     exp: TokenStream,
     got: TokenStream,
