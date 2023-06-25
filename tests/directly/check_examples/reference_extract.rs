@@ -494,30 +494,35 @@ fn extract_by_picture<const N: usize>(
 
     let mut used = vec![false; picture.len()];
     let mut error = Ok(());
-    let output = chars.map(|c| (||{
-        let (lhs, mid, rhs) = mc!(
-            picture_s,
-            format!("([^{c}]*)([{c}]+)([^{c}]*)$"),
-        ).ok_or_else(
-            || format!("picture line has zero or several blocks of '{c}'")
-        )?;
+    let output = chars.map(|c| {
+        (|| {
+            let (lhs, mid, rhs) =
+                mc!(picture_s, format!("([^{c}]*)([{c}]+)([^{c}]*)$"),)
+                    .ok_or_else(|| {
+                        format!(
+                            "picture line has zero or several blocks of '{c}'"
+                        )
+                    })?;
 
-        let a = lhs.len();
-        let b = lhs.len() + mid.len();
+            let a = lhs.len();
+            let b = lhs.len() + mid.len();
 
-        for used in &mut used[a..b] {
-            assert!(!*used, "character '{}' repeated in requests!", c);
-            *used = true;
-        }
-        let part = data[a..b].iter().collect::<String>().trim().to_string();
+            for used in &mut used[a..b] {
+                assert!(!*used, "character '{}' repeated in requests!", c);
+                *used = true;
+            }
+            let part =
+                data[a..b].iter().collect::<String>().trim().to_string();
 
-        Ok::<_, String>(part)
-    })().unwrap_or_else(|e: String| {
-        if error.is_ok() {
-            error = Err(e);
-        }
-        Default::default()
-    }));
+            Ok::<_, String>(part)
+        })()
+        .unwrap_or_else(|e: String| {
+            if error.is_ok() {
+                error = Err(e);
+            }
+            Default::default()
+        })
+    });
 
     (|| {
         error?;
