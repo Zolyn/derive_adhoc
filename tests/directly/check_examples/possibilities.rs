@@ -333,20 +333,6 @@ impl PossibilitiesExample {
         };
         tracker.note(matched);
     }
-
-    /// If `self` and `TokenStream` are equal-enough
-    /// (see `similar_token_streams`) return true.
-    ///
-    /// Otherwise hopes that `self`'s string representation has a `...`,
-    /// and then expects that `got`'s string matches the implied pattern.
-    /// This does *not* do anything useful about possible spacing
-    /// differences, which may be a latent bug.
-    #[allow(dead_code)] // TODO EXTEST
-    fn matches_handling_ellipsis(&self, got: &TokenStream) -> bool {
-        // It would be nice to do more with the error (difference) report,
-        // but we'd have to choose which mismatching outputs to report.
-        check_expected_actual_similar_tokens(&self.output, got).is_ok()
-    }
 }
 
 #[test]
