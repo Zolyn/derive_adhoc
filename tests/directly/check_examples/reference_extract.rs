@@ -224,11 +224,12 @@ fn extract_structs(input: &Preprocessed) -> Vec<syn::DeriveInput> {
     blockquotes_after_directive(input, |d| match d {
         ID::Structs {} => Some(()),
         _ => None,
-    }).map(|(_d_loc, (), bq_loc, content)| {
+    })
+    .map(|(_d_loc, (), bq_loc, content)| {
         parse_content(bq_loc, content).into_iter()
     })
-        .flatten()
-        .collect()
+    .flatten()
+    .collect()
 }
 
 #[derive(Default, Debug)]
