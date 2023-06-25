@@ -484,8 +484,8 @@ fn process_example_sections(
 #[allow(dead_code, unreachable_code, unused_variables)] // TODO EXTEST
 fn extract_by_picture<const N: usize>(
     chars: [char; N],
-    (p_loc, picture_s): (DocLoc, &str),
-    (d_loc, data_s): (DocLoc, &str),
+    picture_s: &str,
+    data_s: &str,
 ) -> Result<[String; N], String> {
     let picture = picture_s.chars().collect_vec();
     let data: Vec<char> = format!("{:<len$}", data_s, len = picture.len())
@@ -583,7 +583,7 @@ fn extract_possibilites_blockquotes(
         // the picture is wrong, without requiring extract_by_picture
         // to distinguish bad pictures from bad data.
         match extract_by_picture(
-            fields, (p_loc, &picture), (_d_loc, ""),
+            fields, &picture, "",
         ) {
             Err(m) => {
                 errs.wrong(p_loc, format_args!("invalid picture line: {}", m));
@@ -599,7 +599,7 @@ fn extract_possibilites_blockquotes(
 
             match (|| {
                 let columns = extract_by_picture(
-                    fields, (p_loc, &picture), (l_loc, l),
+                    fields, &picture, l,
                 )?;
                 for (c, data) in izip!(fields, &columns) {
                     if data.is_empty() {
