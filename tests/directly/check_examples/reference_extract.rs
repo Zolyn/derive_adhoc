@@ -42,6 +42,10 @@ enum InputDirective {
     Structs {},
     ForToplevelsConcat { toplevels: Vec<String> },
     // TODO EXTEST need a way to test the tabular $vdefbody example
+    PossibilitiesBlockquote {
+        #[allow(dead_code)] // TODO EXTEST
+        heading_picture: String,
+    },
 }
 
 type Preprocessed = Vec<InputItem>;
@@ -151,6 +155,24 @@ fn read_preprocess(errs: &mut Errors) -> Preprocessed {
                 Some(ID::ForToplevelsConcat { toplevels })
             } else if m!(l, "^-structs") {
                 Some(ID::Structs {})
+            } else if m!(l, "^-possibilities-blockquote") {
+                let (intro, field1, rest) = match lines.next().and_then(
+                    |(_lno, l)| mc!(l, r"^(<!--)(.)(.*)-->")
+                ) {
+                    Some(y) => y,
+                    None => {
+                        errs.wrong(loc, "possibilities-blockquote not followed by table picture");
+                        continue;
+                    }
+                };
+                Some(ID::PossibilitiesBlockquote {
+                    heading_picture: format!(
+                        "{}{}{}",
+                        field1.repeat(intro.len()),
+                        field1,
+                        rest,
+                    ),
+                })
             } else {
                 errs.wrong(loc, format_args!("unrecgonised directive: {l:?}"));
                 continue;
@@ -452,6 +474,27 @@ fn process_example_sections(
     examples_out
 }
 
+#[allow(dead_code, unreachable_code, unused_variables)] // TODO EXTEST
+fn extract_possibilites_blockquotes(
+    input: &Preprocessed,
+    errs: &mut Errors,
+    examples_out: &mut Vec<Box<dyn Example>>,
+) {
+    // TODO EXTEST this is just to touch the "used"s
+    for ii in input {
+        match ii {
+            II::Directive {
+                used,
+                d: ID::PossibilitiesBlockquote { .. },
+                ..
+            } => {
+                used.note()
+            }
+            _ => {}
+        }
+    }
+}
+
 pub fn extract(
     errs: &mut Errors,
 ) -> (Vec<syn::DeriveInput>, Vec<Box<dyn Example>>) {
@@ -459,7 +502,9 @@ pub fn extract(
 
     let structs = extract_structs(&iis);
 
-    let examples = process_example_sections(&iis, errs);
+    let mut examples = process_example_sections(&iis, errs);
+
+    extract_possibilites_blockquotes(&iis, errs, &mut examples);
 
     for ii in &iis {
         match ii {
