@@ -277,17 +277,15 @@ fn parse_bullet(
     };
     ss.t_limits.push(limit.clone());
 
-    let mut poss = |output: &str| {
-        match PossibilitiesExample::new(
-            loc,
-            &input,
-            limit.clone(),
-            all_must_match,
-            output,
-        ) {
-            Ok(y) => examples_out.push(y),
-            Err(m) => errs.wrong(loc, m),
-        }
+    let mut poss = |output: &str| match PossibilitiesExample::new(
+        loc,
+        &input,
+        limit.clone(),
+        all_must_match,
+        output,
+    ) {
+        Ok(y) => examples_out.push(y),
+        Err(m) => errs.wrong(loc, m),
     };
 
     if m!(outputs, "^nothing$") {
