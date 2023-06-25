@@ -169,6 +169,33 @@ documented: {}",
     }
 }
 
+impl Limit {
+    pub fn parse(
+        for_: &str,
+        all_must_match: &mut bool,
+        others: impl FnOnce() -> Result<Vec<Limit>, String>,
+    ) -> Result<Limit, String> {
+        use Limit as L;
+
+        let limit = if m!(for_, "^structs?$") {
+            L::IsStruct
+        } else if m!(for_, "^enum( variant)?s?$") {
+            L::IsEnum
+        } else if let Some((n,)) = mc!(for_, r"^`(\w+)`$") {
+            L::Name(n.into())
+        } else if let Some((f, n)) = mc!(for_, r"^`(\w+)` in `(\w+)`$") {
+            *all_must_match = true;
+            L::Field { f, n }
+        } else if m!(for_, "^others$") {
+            *all_must_match = true;
+            L::Others(others()?)
+        } else {
+            return Err(format!(r#"unhandled for clause "{}""#, for_));
+        };
+        Ok(limit)
+    }
+}
+
 impl PossibilitiesExample {
     pub fn new(
         loc: DocLoc,

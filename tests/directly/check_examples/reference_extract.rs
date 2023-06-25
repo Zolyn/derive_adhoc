@@ -252,26 +252,17 @@ fn parse_bullet(
     let limit = match for_ {
         None => possibilities::Limit::True,
         Some((loc, for_, for_used)) => {
-            use possibilities::Limit as L;
             for_used.note();
-            if m!(for_, "^structs?$") {
-                L::IsStruct
-            } else if m!(for_, "^enum( variant)?s?$") {
-                L::IsEnum
-            } else if let Some((n,)) = mc!(for_, r"^`(\w+)`$") {
-                L::Name(n.into())
-            } else if let Some((f, n)) = mc!(for_, r"^`(\w+)` in `(\w+)`$") {
-                all_must_match = true;
-                L::Field { f, n }
-            } else if m!(for_, "^others$") {
-                all_must_match = true;
-                L::Others(mem::take(&mut ss.t_limits))
-            } else {
-                errs.wrong(
-                    loc,
-                    format_args!(r#"unhandled for clause "{}""#, for_),
-                );
-                return;
+            match possibilities::Limit::parse(
+                for_,
+                &mut all_must_match,
+                || Ok(mem::take(&mut ss.t_limits)),
+            ) {
+                Ok(y) => y,
+                Err(m) => {
+                    errs.wrong(loc, m);
+                    return;
+                }
             }
         }
     };
