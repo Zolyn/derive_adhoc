@@ -7,15 +7,15 @@
 use super::*;
 
 pub struct PossibilitiesExample {
-    pub loc: DocLoc,
+    loc: DocLoc,
     /// A derive-adhoc template fragment
-    pub input: TokenStream,
+    input: TokenStream,
     /// Limit on which contexts to consider
-    pub limit: Limit,
+    limit: Limit,
     /// Expected output
-    pub output: TokenStream,
+    output: TokenStream,
     /// Are *all* the possibilities (subject to `limit`) supposed to match?
-    pub all_must_match: bool,
+    all_must_match: bool,
 }
 
 struct Tracker {
@@ -170,6 +170,29 @@ documented: {}",
 }
 
 impl PossibilitiesExample {
+    pub fn new(
+        loc: DocLoc,
+        input: &str,
+        limit: Limit,
+        all_must_match: bool,
+        output: &str,
+    ) -> Result<Box<PossibilitiesExample>, String> {
+        let parse = |s, what| {
+            syn::parse_str(s).map_err(|e| {
+                format!(r#"failed to parse {}: {:?}: {}"#, what, s, e)
+            })
+        };
+        let input = parse(input, "input")?;
+        let output = parse(output, "output")?;
+        Ok(Box::new(PossibilitiesExample {
+            loc,
+            input,
+            limit,
+            all_must_match,
+            output,
+        }))
+    }
+
     fn search_one_driver(&self, tracker: &mut Tracker, ctx: &Context<'_>) {
         self.compare_one_output(tracker, ctx);
         ctx.for_with_within::<WithinVariant, _, _>(|ctx, _| {

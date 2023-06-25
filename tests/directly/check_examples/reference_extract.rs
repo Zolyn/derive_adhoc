@@ -278,29 +278,16 @@ fn parse_bullet(
     ss.t_limits.push(limit.clone());
 
     let mut poss = |output: &str| {
-        macro_rules! parse1 { { $v:ident } => {
-            let $v: TokenStream = match syn::parse_str(&$v) {
-                Ok(y) => y,
-                Err(e) => {
-                    errs.wrong(loc, format_args!(
-                        r#"failed to parse {}: {:?}: {}"#,
-                        stringify!($v),
-                        $v,
-                        e
-                    ));
-                    return;
-                },
-            };
-        } }
-        parse1!(input);
-        parse1!(output);
-        examples_out.push(Box::new(PossibilitiesExample {
+        match PossibilitiesExample::new(
             loc,
-            input,
-            limit: limit.clone(),
+            &input,
+            limit.clone(),
             all_must_match,
             output,
-        }));
+        ) {
+            Ok(y) => examples_out.push(y),
+            Err(m) => errs.wrong(loc, m),
+        }
     };
 
     if m!(outputs, "^nothing$") {
