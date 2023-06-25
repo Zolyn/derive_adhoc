@@ -593,9 +593,17 @@ fn extract_possibilites_blockquotes(
             let l_loc = bq_loc + lno + 1;
 
             match (|| {
-                let [input, for_, output] = extract_by_picture(
+                let columns = extract_by_picture(
                     fields, (p_loc, &picture), (l_loc, l),
                 )?;
+                for (c, data) in izip!(fields, &columns) {
+                    if data.is_empty() {
+                        return Err(format!(
+                            "missing information for column '{c}'"
+                        ));
+                    }
+                }
+                let [input, for_, output] = columns;
 
                 let mut all_must_match = false;
                 let limit = possibilities::Limit::parse(
