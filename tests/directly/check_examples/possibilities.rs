@@ -65,7 +65,15 @@ impl Limit {
         let fname = |n| ctx.fname_s().map(|s| &s == n) == Some(true);
         match self {
             Limit::True => true,
-            Limit::DaCond(cond) => cond.eval_bool(ctx).unwrap(),
+            Limit::DaCond(cond) => {
+                cond.eval_bool(ctx)
+                    // Some tests aren't meaningful in some context.
+                    // Eg, we have "for" clauses that check the variant
+                    // kind (unit, tuple, named fields).  That isn't
+                    // meaningful if we're in an enum and not in a variant.
+                    // d-a gives an error there.  We treat it as "skip".
+                    .unwrap_or_default()
+            }
             Limit::Name(n) => tname(n) || vname(n) || fname(n),
             Limit::Field { f, n } => fname(f) && (tname(n) || vname(n)),
             Limit::Others(v) => {
@@ -187,6 +195,12 @@ impl Limit {
             da_cond(SD::is_struct)
         } else if m!(for_, "^enum( variant)?s?$") {
             da_cond(SD::is_enum)
+        } else if m!(for_, "^braced (?:(?:struct|variant)s?)?$") {
+            da_cond(SD::v_is_named)
+        } else if m!(for_, "^tuple( variant)?s?$") {
+            da_cond(SD::v_is_tuple)
+        } else if m!(for_, "^unit( variant)?s?$") {
+            da_cond(SD::v_is_unit)
         } else if let Some((n,)) = mc!(for_, r"^`(\w+)`$") {
             L::Name(n.into())
         } else if let Some((f, n)) = mc!(for_, r"^`(\w+)` in `(\w+)`$") {
