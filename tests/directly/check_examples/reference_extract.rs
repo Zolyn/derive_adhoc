@@ -292,7 +292,7 @@ fn parse_bullet(
         }
     };
 
-    let mut poss = |output: &str| match PossibilitiesExample::new(
+    let mut poss = |output: Result<&_, &_>| match PossibilitiesExample::new(
         loc,
         &input,
         limit.clone(),
@@ -304,7 +304,9 @@ fn parse_bullet(
     };
 
     if m!(outputs, "^nothing$") {
-        poss("");
+        poss(Ok(""));
+    } else if let Some((msg,)) = mc!(outputs, r"error, ``(.*)``$") {
+        poss(Err(msg.trim()));
     } else {
         let mut outputs = outputs;
         while !outputs.is_empty() {
@@ -321,7 +323,7 @@ fn parse_bullet(
                     break;
                 }
             };
-            poss(&p);
+            poss(Ok(&p));
             outputs = rest;
         }
     }
@@ -620,7 +622,7 @@ fn extract_possibilites_blockquotes(
                     &input,
                     limit,
                     all_must_match,
-                    &output,
+                    Ok(&output),
                 )
             })() {
                 Ok(example) => examples_out.push(example),
