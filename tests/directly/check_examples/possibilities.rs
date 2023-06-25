@@ -175,6 +175,19 @@ documented: {}",
     }
 }
 
+type LimitViaDaCond = dyn Fn(()) -> SubstDetails<BooleanContext>;
+
+/// Table mapping limit regexp to derive-adhoc `SubstDetails`
+// Breaking this out here allows us to format it nicely
+#[rustfmt::skip]
+const LIMIT_DA_COND_REGEXPS: &[(&str, &'static LimitViaDaCond)] = &[
+    (r"^structs?$",                         &SD::is_struct  as _  ),
+    (r"^enum( variant)?s?$",                &SD::is_enum    as _  ),
+    (r"^braced (?:(?:struct|variant)s?)?$", &SD::v_is_named as _  ),
+    (r"^tuple( variant)?s?$",               &SD::v_is_tuple as _  ),
+    (r"^unit( variant)?s?$",                &SD::v_is_unit  as _  ),
+];
+
 impl Limit {
     pub fn parse(
         for_: &str,
@@ -183,7 +196,7 @@ impl Limit {
     ) -> Result<Limit, String> {
         use Limit as L;
 
-        let da_cond = |mk_sd: fn(_) -> _| {
+        let da_cond = |mk_sd: &dyn Fn(_) -> _| {
             L::DaCond(Rc::new(Subst {
                 kw_span: Span::call_site(),
                 sd: mk_sd(()),
@@ -191,16 +204,12 @@ impl Limit {
             }))
         };
 
-        let limit = if m!(for_, "^structs?$") {
-            da_cond(SD::is_struct)
-        } else if m!(for_, "^enum( variant)?s?$") {
-            da_cond(SD::is_enum)
-        } else if m!(for_, "^braced (?:(?:struct|variant)s?)?$") {
-            da_cond(SD::v_is_named)
-        } else if m!(for_, "^tuple( variant)?s?$") {
-            da_cond(SD::v_is_tuple)
-        } else if m!(for_, "^unit( variant)?s?$") {
-            da_cond(SD::v_is_unit)
+        let limit = if let Some(mk_sd) = LIMIT_DA_COND_REGEXPS
+            .iter()
+            .cloned()
+            .find_map(|(re, mk_sd)| m!(for_, re).then(|| mk_sd))
+        {
+            da_cond(mk_sd)
         } else if let Some((n,)) = mc!(for_, r"^`(\w+)`$") {
             L::Name(n.into())
         } else if let Some((f, n)) = mc!(for_, r"^`(\w+)` in `(\w+)`$") {
