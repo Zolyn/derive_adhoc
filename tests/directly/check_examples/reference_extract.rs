@@ -37,9 +37,13 @@ enum InputItem {
 
 #[derive(Debug)]
 enum InputDirective {
-    For { for_: String },
+    For {
+        for_: String,
+    },
     Structs {},
-    ForToplevelsConcat { toplevels: Vec<String> },
+    ForToplevelsConcat {
+        toplevels: Vec<String>,
+    },
     PossibilitiesBlockquote {
         heading_picture_loc: DocLoc,
         heading_picture: String,
@@ -578,9 +582,7 @@ fn extract_possibilites_blockquotes(
         // Prechecking allows us to bail on the whole blockquote if
         // the picture is wrong, without requiring extract_by_picture
         // to distinguish bad pictures from bad data.
-        match extract_by_picture(
-            fields, &picture, "",
-        ) {
+        match extract_by_picture(fields, &picture, "") {
             Err(m) => {
                 errs.wrong(p_loc, format_args!("invalid picture line: {}", m));
                 return;
@@ -594,9 +596,7 @@ fn extract_possibilites_blockquotes(
             let l_loc = bq_loc + lno + 1;
 
             match (|| {
-                let columns = extract_by_picture(
-                    fields, &picture, l,
-                )?;
+                let columns = extract_by_picture(fields, &picture, l)?;
                 for (c, data) in izip!(fields, &columns) {
                     if data.is_empty() {
                         return Err(format!(
