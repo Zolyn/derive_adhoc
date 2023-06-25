@@ -412,11 +412,7 @@ fn blockquotes_after_directive<'o, DD>(
         .iter()
         .enumerate()
         .filter_map(move |(i, ii)| match ii {
-            II::Directive {
-                loc,
-                used,
-                d,
-            } => {
+            II::Directive { loc, used, d } => {
                 let dd = is_introducer(d)?;
                 used.note();
                 Some((i, *loc, dd))
