@@ -476,15 +476,15 @@ using `$fdefine` to introduce each one.
 Specifically:
 
 <!--##examples-possibilities-blockquote##-->
-<!--iiiiiiiiiiiiiiiiiiiiiiii fffffffffffffffffffff oooooooooooooooooo ###############-->
+<!--iiiiiiiiiiiiiiiiiiiiiii fffffffffffffffffffff oooooooooooooooooo ###############-->
 
 ```text
- ${vdefbody VANME FIELDS)}   for unit                FIELDS;          [*] ie  ;
- ${vdefbody VANME FIELDS)}   for tuple             ( FIELDS );
- ${vdefbody VANME FIELDS)}   for braced struct     { FIELDS }
- ${vdefbody VANME FIELDS)}   for unit variant      VNAME   FIELDS,    [*] ie  VNAME,
- ${vdefbody VANME FIELDS)}   for tuple variant     VNAME ( FIELDS ),
- ${vdefbody VANME FIELDS)}   for braced variant    VNAME { FIELDS }
+ ${vdefbody VANME FIELDS}   for unit                FIELDS;          [*] ie  ;
+ ${vdefbody VANME FIELDS}   for tuple             ( FIELDS );
+ ${vdefbody VANME FIELDS}   for braced struct     { FIELDS }
+ ${vdefbody VANME FIELDS}   for unit variant      VNAME   FIELDS,    [*] ie  VNAME,
+ ${vdefbody VANME FIELDS}   for tuple variant     VNAME ( FIELDS ),
+ ${vdefbody VANME FIELDS}   for braced variant    VNAME { FIELDS }
 ```
 
 `[*]`: In the unit and unit variant cases,
