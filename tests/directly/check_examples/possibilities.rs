@@ -28,6 +28,8 @@ struct Tracker {
 struct Mismatch {
     got: String,
     context_desc: String,
+    #[allow(dead_code)] // TODO EXTEST
+    info: Option<DissimilarTokenStreams>,
 }
 
 /// Limit on the contexts (in the example structs) that this test is for
@@ -302,20 +304,33 @@ impl PossibilitiesExample {
         })();
 
         let matched = match out {
-            Ok(got) if self.matches_handling_ellipsis(&got) => {
-                //println!("  MATCHED {}", &context_desc);
-                Ok(())
-            }
             Ok(got) => {
-                //println!("  MISMATCH {}", &context_desc);
-                Err(got.to_string())
+                match check_expected_actual_similar_tokens(
+                    &self.output, &got
+                ) {
+                    Ok(y@ ()) => {
+                        //println!("  MATCHED {}", &context_desc);
+                        Ok(y)
+                    },
+                    Err(info) => {
+                        //println!("  MISMATCH {}", &context_desc);
+                        Err(Mismatch {
+                            got: got.to_string(),
+                            info: Some(info),
+                            context_desc,
+                        })
+                    }
+                }
             }
             Err(e) => {
                 //println!("  ERROR {}", &context_desc);
-                Err(format!("error: {}", e))
+                Err(Mismatch {
+                    got: format!("error: {}", e),
+                    info: None,
+                    context_desc,
+                })
             }
         };
-        let matched = matched.map_err(|got| Mismatch { got, context_desc });
         tracker.note(matched);
     }
 
@@ -326,6 +341,7 @@ impl PossibilitiesExample {
     /// and then expects that `got`'s string matches the implied pattern.
     /// This does *not* do anything useful about possible spacing
     /// differences, which may be a latent bug.
+    #[allow(dead_code)] // TODO EXTEST
     fn matches_handling_ellipsis(&self, got: &TokenStream) -> bool {
         // It would be nice to do more with the error (difference) report,
         // but we'd have to choose which mismatching outputs to report.
