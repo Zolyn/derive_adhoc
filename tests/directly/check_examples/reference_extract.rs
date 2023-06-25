@@ -634,7 +634,6 @@ fn extract_possibilites_blockquotes(
     }
 }
 
-#[allow(unused_mut)]
 pub fn extract(
     errs: &mut Errors,
 ) -> (Vec<syn::DeriveInput>, Vec<Box<dyn Example>>) {
@@ -644,16 +643,7 @@ pub fn extract(
 
     let mut examples = process_example_sections(&iis, errs);
 
-    {
-        let mut errs_b = Errors::new(); // TODO EXTEST
-        let mut examples = vec![];
-        let errs = &mut errs_b;
     extract_possibilites_blockquotes(&iis, errs, &mut examples);
-        for example in &examples {
-            example.check(errs, &structs);
-        }
-        mem::forget(errs_b);
-    }
 
     for ii in &iis {
         match ii {
