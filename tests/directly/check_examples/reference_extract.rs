@@ -40,8 +40,6 @@ enum InputDirective {
     For { for_: String },
     Structs {},
     ForToplevelsConcat { toplevels: Vec<String> },
-    // TODO EXTEST need a way to test the tabular $vdefbody example
-    #[allow(dead_code)] // TODO EXTEST
     PossibilitiesBlockquote {
         heading_picture_loc: DocLoc,
         heading_picture: String,
@@ -481,7 +479,6 @@ fn process_example_sections(
     examples_out
 }
 
-#[allow(dead_code, unreachable_code, unused_variables)] // TODO EXTEST
 fn extract_by_picture<const N: usize>(
     chars: [char; N],
     picture_s: &str,
@@ -562,7 +559,6 @@ picture: {picture_s}
     })()
 }
 
-#[allow(dead_code, unreachable_code, unused_variables)] // TODO EXTEST
 fn extract_possibilites_blockquotes(
     input: &Preprocessed,
     errs: &mut Errors,
