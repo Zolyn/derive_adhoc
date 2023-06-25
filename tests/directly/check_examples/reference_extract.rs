@@ -496,7 +496,7 @@ fn extract_by_picture<const N: usize>(
     let mut error = Ok(());
     let output = chars.map(|c| {
         (|| {
-            let (lhs, mid, rhs) =
+            let (lhs, mid, _rhs) =
                 mc!(picture_s, format!("([^{c}]*)([{c}]+)([^{c}]*)$"),)
                     .ok_or_else(|| {
                         format!(
