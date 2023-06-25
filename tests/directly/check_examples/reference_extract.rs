@@ -106,10 +106,7 @@ fn read_preprocess(errs: &mut Errors) -> Preprocessed {
         } else if m!(l, r"^ \* ") {
             let mut bullet: String = l;
             loop {
-                let (_, l) = match lines.peek() {
-                    Some(l) => l,
-                    None => break,
-                };
+                let Some((_, l)) = lines.peek() else { break };
                 if !m!(l, r"^   +\S") {
                     break;
                 }
