@@ -12,7 +12,9 @@ pub impl<T: Debug> T {
 /// `fn re!(l: &str) -> Regex`
 #[macro_export]
 macro_rules! re { { $re:expr $(,)? } => {
-    Regex::new($re).expect(concat!("bad regexp ", $re))
+    match $re {
+        re => Regex::new(&re).expect(&format!("bad regexp {re}")),
+    }
 } }
 /// `fn m!(l: &str, re: &str) -> bool`: does regexp `re` match in `l` ?
 #[macro_export]
