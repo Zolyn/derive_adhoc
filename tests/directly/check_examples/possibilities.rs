@@ -41,8 +41,7 @@ struct Mismatch {
 #[educe(Debug)]
 pub enum Limit {
     True,
-    IsStruct,
-    IsEnum,
+    DaCond(Rc<Subst<BooleanContext>>),
     Name(String),
     Field { f: String, n: String },
     Others(#[educe(Debug(ignore))] Vec<Limit>),
@@ -66,8 +65,7 @@ impl Limit {
         let fname = |n| ctx.fname_s().map(|s| &s == n) == Some(true);
         match self {
             Limit::True => true,
-            Limit::IsStruct => matches!(ctx.top.data, syn::Data::Struct(_)),
-            Limit::IsEnum => matches!(ctx.top.data, syn::Data::Enum(_)),
+            Limit::DaCond(cond) => cond.eval_bool(ctx).unwrap(),
             Limit::Name(n) => tname(n) || vname(n) || fname(n),
             Limit::Field { f, n } => fname(f) && (tname(n) || vname(n)),
             Limit::Others(v) => {
@@ -177,10 +175,18 @@ impl Limit {
     ) -> Result<Limit, String> {
         use Limit as L;
 
+        let da_cond = |mk_sd: fn(_) -> _| {
+            L::DaCond(Rc::new(Subst {
+                kw_span: Span::call_site(),
+                sd: mk_sd(()),
+                output_marker: PhantomData,
+            }))
+        };
+
         let limit = if m!(for_, "^structs?$") {
-            L::IsStruct
+            da_cond(SD::is_struct)
         } else if m!(for_, "^enum( variant)?s?$") {
-            L::IsEnum
+            da_cond(SD::is_enum)
         } else if let Some((n,)) = mc!(for_, r"^`(\w+)`$") {
             L::Name(n.into())
         } else if let Some((f, n)) = mc!(for_, r"^`(\w+)` in `(\w+)`$") {
