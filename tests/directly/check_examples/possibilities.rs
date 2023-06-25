@@ -319,7 +319,7 @@ impl PossibilitiesExample {
             let got = out.tokens().map_err(handle_syn_error)?;
 
             check_expected_actual_similar_tokens(
-                &self.output, &got
+                &self.output, &got, //
             )
             .map_err(|info| {
                 //println!("  MISMATCH {}", &context_desc);
