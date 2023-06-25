@@ -364,10 +364,12 @@ which should affect how a set of fields should be processed.
 
 #### Examples involving pasting
 
+ * `${paste Small ${tmeta(simple)}}`: error, ``requires `as ...` ``
  * `${paste Small ${tmeta(simple) as str}}`: `SmallString`
  * `${paste Small ${tmeta(simple) as ty}}`: `SmallString`
  * `${paste Small ${tmeta(gentype) as ty}}`: `SmallVec<i32>`
  * `${paste $ttype ${tmeta(simple) as str}}`: `UnitString::<C>`
+ * `${paste $ttype ${tmeta(simple) as ty}}`: error, ``multiple nontrivial entries``
 
 ### `${fattrs ...}` `${vattrs ...}` `${tattrs ...}` - other attributes
 
