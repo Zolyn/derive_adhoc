@@ -361,6 +361,9 @@ which should affect how a set of fields should be processed.
  * `${tmeta(gentype)}`: `Vec<i32>`
  * `${tmeta(gentype) as ty}`: `Vec<i32>`
  * `${tmeta(gentype) as str}`: `"Vec<i32>"`
+ * `${vmeta(value)}`: `on struct toplevel`, `on enum variant`
+ * `${fmeta(nested(inner))}` for `field` in `Struct`: `42`
+ * `${fmeta(nested)}`: error, ``tried to expand attribute which is nested list``
 
 #### Examples involving pasting
 
@@ -765,6 +768,7 @@ are those generated for the following driver types:
 #
 #[derive(Adhoc)]
 #[adhoc(simple="String", gentype="Vec<i32>")]
+#[adhoc(value="on struct toplevel")]
 pub struct Unit<const C: usize = 1>;
 
 #[derive(Adhoc)]
@@ -776,6 +780,7 @@ struct Tuple<'a, 'l: 'a, T: Display = usize, const C: usize = 1>(
 struct Struct<'a, 'l: 'a, T: Display = usize, const C: usize = 1>
 where T: 'l, T: TryInto<u8>
 {
+    #[adhoc(nested(inner = "42"))]
     pub field: &'l &'a T,
     field_b: String,
 }
@@ -784,6 +789,7 @@ where T: 'l, T: TryInto<u8>
 pub(crate) enum Enum<'a, 'l: 'a, T: Display = usize, const C: usize = 1>
 where T: 'l, T: TryInto<u8>
 {
+    #[adhoc(value="on enum variant")]
     UnitVariant,
     TupleVariant(std::iter::Once::<T>),
     NamedVariant { 
