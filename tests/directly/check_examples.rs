@@ -105,8 +105,11 @@ impl DissimilarTokenStreams {
         use itertools::EitherOrBoth;
         use EitherOrBoth as EOB;
         let in_title = in_title.to_string();
-        eprintln!("----- difference report {}{}-----",
-                  in_title, if in_title.is_empty() { "" } else { " " });
+        eprintln!(
+            "----- difference report {}{}-----",
+            in_title,
+            if in_title.is_empty() { "" } else { " " }
+        );
         eprintln!(" expected:        {}", &self.exp);
         eprintln!(" actual:          {}", &self.got);
         eprintln!(" similar prefix:  {}", &self.same);
