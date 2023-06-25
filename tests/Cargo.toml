@@ -18,6 +18,8 @@ full = ["derive-adhoc/full"]
 # We can't make macrotest, ui, recent and full default features because
 # in 1.54 (which is why we want this) --no-default-features doesn't work.
 
+case = []
+
 [dependencies]
 derive-adhoc = { path = "..", version = "0.5.0", default_features = false, features = ["minimal-1"] }
 easy-ext = "1"
@@ -33,6 +35,8 @@ sha3 = "0.10"
 strum = { version = "0.24", features = ["derive"] }
 syn = "1.0.61"
 void = "1"
+
+heck = "0.4"
 
 macrotest = { version = "1", optional = true }
 trybuild = "1.0.38"

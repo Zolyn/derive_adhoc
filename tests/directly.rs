@@ -19,5 +19,8 @@ use syn::parse_quote;
 #[path = "../macros/macros.rs"]
 pub(super) mod macros;
 
-#[cfg(feature = "recent")] // examples may not work with old compiler
+#[cfg(all(
+    feature = "recent", // examples may not work with old compiler
+    feature = "case",
+))]
 mod check_examples;
