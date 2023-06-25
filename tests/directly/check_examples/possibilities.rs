@@ -295,42 +295,40 @@ impl PossibilitiesExample {
 
         let input = &self.input;
 
-        let out = (|| {
+        let matched = (|| {
             let mut out = TokenAccumulator::new();
-            let template: Template<TokenAccumulator> =
-                syn::parse2(input.clone())?;
-            template.expand(ctx, &mut out);
-            out.tokens()
-        })();
 
-        let matched = match out {
-            Ok(got) => {
-                match check_expected_actual_similar_tokens(
-                    &self.output, &got
-                ) {
-                    Ok(y@ ()) => {
-                        //println!("  MATCHED {}", &context_desc);
-                        Ok(y)
-                    },
-                    Err(info) => {
-                        //println!("  MISMATCH {}", &context_desc);
-                        Err(Mismatch {
-                            got: got.to_string(),
-                            info: Some(info),
-                            context_desc,
-                        })
-                    }
-                }
-            }
-            Err(e) => {
+            let handle_syn_error = |e| {
                 //println!("  ERROR {}", &context_desc);
-                Err(Mismatch {
+                Mismatch {
                     got: format!("error: {}", e),
                     info: None,
-                    context_desc,
-                })
-            }
-        };
+                    context_desc: context_desc.clone(),
+                }
+            };
+
+            let template: Template<TokenAccumulator> =
+                syn::parse2(input.clone()).map_err(handle_syn_error)?;
+
+            template.expand(ctx, &mut out);
+            let got = out.tokens().map_err(handle_syn_error)?;
+
+            check_expected_actual_similar_tokens(
+                &self.output, &got
+            )
+            .map_err(|info| {
+                //println!("  MISMATCH {}", &context_desc);
+                Mismatch {
+                    got: got.to_string(),
+                    info: Some(info),
+                    context_desc: context_desc.clone(),
+                }
+            })?;
+
+            //println!("  MATCHED {}", &context_desc);
+            Ok(())
+        })();
+
         tracker.note(matched);
     }
 }
