@@ -482,22 +482,72 @@ fn process_example_sections(
 }
 
 #[allow(dead_code, unreachable_code, unused_variables)] // TODO EXTEST
+fn extract_by_picture<const N: usize>(
+    chars: [char; N],
+    (p_loc, picture_s): (DocLoc, &str),
+    (d_loc, data_s): (DocLoc, &str),
+) -> Result<[String; N], String> {
+    Err(format!("not yet implemented")) // TODO EXTEST
+}
+
+#[allow(dead_code, unreachable_code, unused_variables)] // TODO EXTEST
 fn extract_possibilites_blockquotes(
     input: &Preprocessed,
     errs: &mut Errors,
     examples_out: &mut Vec<Box<dyn Example>>,
 ) {
-    // TODO EXTEST this is just to touch the "used"s
-    for ii in input {
-        match ii {
-            II::Directive {
-                used,
-                d: ID::PossibilitiesBlockquote { .. },
-                ..
-            } => {
-                used.note()
+    for (_d_loc, (p_loc, picture), bq_loc, content) in
+        blockquotes_after_directive(input, |d| match d {
+            ID::PossibilitiesBlockquote {
+                heading_picture_loc: p_loc,
+                heading_picture,
+            } => Some((*p_loc, heading_picture.clone())),
+            _ => None,
+        })
+    {
+        let fields = ['i', 'f', 'o'];
+
+        // Prechecking allows us to bail on the whole blockquote if
+        // the picture is wrong, without requiring extract_by_picture
+        // to distinguish bad pictures from bad data.
+        match extract_by_picture(
+            fields, (p_loc, &picture), (_d_loc, ""),
+        ) {
+            Err(m) => {
+                errs.wrong(p_loc, format_args!("invalid picture line: {}", m));
+                return;
             }
-            _ => {}
+            Ok([..]) => {}
+        }
+
+        let mut t_limits = vec![];
+
+        for (lno, l) in content.lines().enumerate() {
+            let l_loc = bq_loc + lno + 1;
+
+            match (|| {
+                let [input, for_, output] = extract_by_picture(
+                    fields, (p_loc, &picture), (l_loc, l),
+                )?;
+
+                let mut all_must_match = false;
+                let limit = possibilities::Limit::parse(
+                    &for_,
+                    &mut all_must_match,
+                    Some(&mut t_limits),
+                )?;
+
+                PossibilitiesExample::new(
+                    l_loc,
+                    &input,
+                    limit,
+                    all_must_match,
+                    &output,
+                )
+            })() {
+                Ok(example) => examples_out.push(example),
+                Err(m) => errs.wrong(l_loc, m),
+            }
         }
     }
 }
