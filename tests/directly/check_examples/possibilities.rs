@@ -306,9 +306,9 @@ impl PossibilitiesExample {
                 //println!("  MATCHED {}", &context_desc);
                 Ok(())
             }
-            Ok(s) => {
+            Ok(got) => {
                 //println!("  MISMATCH {}", &context_desc);
-                Err(s.to_string())
+                Err(got.to_string())
             }
             Err(e) => {
                 //println!("  ERROR {}", &context_desc);
