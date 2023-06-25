@@ -23,9 +23,9 @@ enum InputItem {
         depth: usize,
         text: String,
     },
-    #[allow(dead_code)] // paragraphs are just ignored
     Paragraph {
         loc: DocLoc,
+        #[allow(dead_code)] // paragraphs content is not currently used
         content: String,
     },
     Directive {
