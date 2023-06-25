@@ -353,6 +353,22 @@ look in the top-level attributes.
 This allows a template to have uniform handling of attributes
 which should affect how a set of fields should be processed.
 
+#### Examples
+
+ * `${tmeta(simple)}`: `String`
+ * `${tmeta(simple) as ty}`: `String`
+ * `${tmeta(simple) as str}`: `"String"`
+ * `${tmeta(gentype)}`: `Vec<i32>`
+ * `${tmeta(gentype) as ty}`: `Vec<i32>`
+ * `${tmeta(gentype) as str}`: `"Vec<i32>"`
+
+#### Examples involving pasting
+
+ * `${paste Small ${tmeta(simple) as str}}`: `SmallString`
+ * `${paste Small ${tmeta(simple) as ty}}`: `SmallString`
+ * `${paste Small ${tmeta(gentype) as ty}}`: `SmallVec<i32>`
+ * `${paste $ttype ${tmeta(simple) as str}}`: `UnitString::<C>`
+
 ### `${fattrs ...}` `${vattrs ...}` `${tattrs ...}` - other attributes
 
 Expands to non-`#[adhoc()]` attributes.
@@ -746,6 +762,7 @@ are those generated for the following driver types:
 # use std::convert::TryInto;
 #
 #[derive(Adhoc)]
+#[adhoc(simple="String", gentype="Vec<i32>")]
 pub struct Unit<const C: usize = 1>;
 
 #[derive(Adhoc)]
