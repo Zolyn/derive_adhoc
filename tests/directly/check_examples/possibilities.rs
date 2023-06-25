@@ -130,6 +130,10 @@ impl Tracker {
 }
 
 impl Example for PossibilitiesExample {
+    fn print_checking(&self) {
+        println!("checking :{} {} => {}", self.loc, &self.input, &self.output);
+    }
+
     fn check(&self, errs: &mut Errors, drivers: &[syn::DeriveInput]) {
         let mut tracker = Tracker {
             all_must_match: self.all_must_match,
@@ -137,7 +141,6 @@ impl Example for PossibilitiesExample {
             other_outputs: vec![],
             skipped_context_descs: vec![],
         };
-        println!("checking :{} {} => {}", self.loc, &self.input, &self.output);
         //println!("  LIMIT {:?}", &self.limit);
 
         for driver in drivers {

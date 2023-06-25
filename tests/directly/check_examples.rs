@@ -62,6 +62,7 @@ pub type DocLoc = usize;
 
 /// Something that can be checked
 pub trait Example {
+    fn print_checking(&self);
     fn check(&self, out: &mut Errors, drivers: &[syn::DeriveInput]);
 }
 
@@ -238,6 +239,7 @@ fn check_examples() {
     let mut errs = Errors::new();
     let (structs, examples) = reference_extract::extract(&mut errs);
     for example in &examples {
+        example.print_checking();
         example.check(&mut errs, &structs);
     }
     eprintln!("checked {} examples", examples.len());

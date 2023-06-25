@@ -10,6 +10,9 @@ pub struct ForToplevelsConcatExample {
 }
 
 impl Example for ForToplevelsConcatExample {
+    fn print_checking(&self) {
+        println!("checking :{} blockquotes input/output", self.loc);
+    }
     fn check(&self, errs: &mut Errors, drivers: &[syn::DeriveInput]) {
         let (got, exp) = match (|| {
             let mut got = TokenStream::new();
