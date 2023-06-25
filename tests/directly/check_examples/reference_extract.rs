@@ -42,8 +42,9 @@ enum InputDirective {
     Structs {},
     ForToplevelsConcat { toplevels: Vec<String> },
     // TODO EXTEST need a way to test the tabular $vdefbody example
+    #[allow(dead_code)] // TODO EXTEST
     PossibilitiesBlockquote {
-        #[allow(dead_code)] // TODO EXTEST
+        heading_picture_loc: DocLoc,
         heading_picture: String,
     },
 }
@@ -157,13 +158,14 @@ fn read_preprocess(errs: &mut Errors) -> Preprocessed {
                 Some(ID::Structs {})
             } else if m!(l, "^-possibilities-blockquote") {
                 (|| {
-                    let (_, l) = lines.next()?;
+                    let (p_loc, l) = lines.next()?;
                     let (intro, field1, rest) = mc!(l, r"^(<!--)(.)(.*)-->")
                         .or_else(|| {
                             errs.wrong(loc, "possibilities-blockquote not followed by table picture");
                             None
                         })?;
                     Some(ID::PossibilitiesBlockquote {
+                        heading_picture_loc: p_loc,
                         heading_picture: format!(
                             "{}{}{}",
                             field1.repeat(intro.len()),
@@ -222,8 +224,8 @@ fn extract_structs(input: &Preprocessed) -> Vec<syn::DeriveInput> {
     blockquotes_after_directive(input, |d| match d {
         ID::Structs {} => Some(()),
         _ => None,
-    }).map(|(loc, content, ())| {
-        parse_content(loc, content).into_iter()
+    }).map(|(_d_loc, (), bq_loc, content)| {
+        parse_content(bq_loc, content).into_iter()
     })
         .flatten()
         .collect()
@@ -403,23 +405,29 @@ fn examples_section<'i>(
 fn blockquotes_after_directive<'o, DD>(
     input: &'o Preprocessed,
     mut is_introducer: impl FnMut(&InputDirective) -> Option<DD> + 'o,
-) -> impl Iterator<Item = (DocLoc, &'o str, DD)> + 'o {
+) -> impl Iterator<Item = (DocLoc, DD, DocLoc, &'o str)> + 'o {
     input
         .iter()
         .enumerate()
         .filter_map(move |(i, ii)| match ii {
-            II::Directive { loc, used, d } => {
+            II::Directive {
+                loc: d_loc,
+                used,
+                d,
+            } => {
                 let dd = is_introducer(d)?;
                 used.note();
-                Some((i, *loc, dd))
+                Some((i, *d_loc, dd))
             }
             _ => None,
         })
-        .map(move |(i, loc, dd)| match input.get(i + 1) {
-            Some(II::BlockQuote { loc, content, .. }) => {
-                (*loc, &**content, dd)
-            }
-            _ => bail(loc, "directive not followed by blockquote"),
+        .map(move |(i, d_loc, dd)| match input.get(i + 1) {
+            Some(II::BlockQuote {
+                loc: bq_loc,
+                content,
+                ..
+            }) => (d_loc, dd, *bq_loc, &**content),
+            _ => bail(d_loc, "directive not followed by blockquote"),
         })
 }
 
