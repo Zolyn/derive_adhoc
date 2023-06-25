@@ -745,12 +745,15 @@ are those generated for the following driver types:
 # use std::fmt::Display;
 # use std::convert::TryInto;
 #
+#[derive(Adhoc)]
 pub struct Unit<const C: usize = 1>;
 
+#[derive(Adhoc)]
 struct Tuple<'a, 'l: 'a, T: Display = usize, const C: usize = 1>(
     &'a &'l T,
 );
 
+#[derive(Adhoc)]
 struct Struct<'a, 'l: 'a, T: Display = usize, const C: usize = 1>
 where T: 'l, T: TryInto<u8>
 {
@@ -758,6 +761,7 @@ where T: 'l, T: TryInto<u8>
     field_b: String,
 }
 
+#[derive(Adhoc)]
 pub(crate) enum Enum<'a, 'l: 'a, T: Display = usize, const C: usize = 1>
 where T: 'l, T: TryInto<u8>
 {
