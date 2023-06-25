@@ -256,7 +256,7 @@ fn parse_bullet(
             match possibilities::Limit::parse(
                 for_,
                 &mut all_must_match,
-                || Ok(mem::take(&mut ss.t_limits)),
+                Some(&mut ss.t_limits),
             ) {
                 Ok(y) => y,
                 Err(m) => {
@@ -266,7 +266,6 @@ fn parse_bullet(
             }
         }
     };
-    ss.t_limits.push(limit.clone());
 
     let mut poss = |output: &str| match PossibilitiesExample::new(
         loc,

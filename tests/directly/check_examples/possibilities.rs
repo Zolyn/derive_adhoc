@@ -173,7 +173,7 @@ impl Limit {
     pub fn parse(
         for_: &str,
         all_must_match: &mut bool,
-        others: impl FnOnce() -> Result<Vec<Limit>, String>,
+        others: Option<&mut Vec<Limit>>,
     ) -> Result<Limit, String> {
         use Limit as L;
 
@@ -188,10 +188,15 @@ impl Limit {
             L::Field { f, n }
         } else if m!(for_, "^others$") {
             *all_must_match = true;
-            L::Others(others()?)
+            let others = others
+                .ok_or_else(|| format!(r#""for others" not allowed here"#))?;
+            return Ok(L::Others(mem::take(others)));
         } else {
             return Err(format!(r#"unhandled for clause "{}""#, for_));
         };
+        if let Some(others) = others {
+            others.push(limit.clone());
+        }
         Ok(limit)
     }
 }
