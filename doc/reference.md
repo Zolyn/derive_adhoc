@@ -398,6 +398,26 @@ With `${Xattrs}`, unlike `${Xmeta}`,
    * The attributes can be filtered by toplevel attribute name,
      but not deeply manipulated.
 
+#### Examples
+
+##### For `Unit`
+
+<!--##examples-for `Unit`##-->
+
+ * `${tattrs}`: ``#[derive(Adhoc)]``
+ * `${tattrs ! adhoc}`: ``#[derive(Adhoc)]``
+ * `${tattrs missing}`: nothing
+ * `${tattrs derive}`: ``#[derive(Adhoc)]``
+
+##### For `Tuple`
+
+<!--##examples-for `Tuple`##-->
+
+ * `${tattrs}`: ``#[doc=" Title for `Tuple`"] #[derive(Adhoc, Clone)] #[repr(C)]``
+ * `${tattrs repr}`: ``#[repr(C)]``
+ * `${tattrs repr, adhoc}`: ``#[adhoc(ununused)] #[repr(C)]``
+ * `${tattrs ! derive, doc}`: ``#[adhoc(ununused)] #[repr(C)] #[derive_adhoc(SomeOtherTemplate)]``
+
 ### `${paste ...}` - identifier pasting
 
 Expand the contents and paste it together into a single identifier.
@@ -771,7 +791,11 @@ are those generated for the following driver types:
 #[adhoc(value="on struct toplevel")]
 pub struct Unit<const C: usize = 1>;
 
-#[derive(Adhoc)]
+/// Title for `Tuple`
+#[derive(Adhoc, Clone)]
+#[adhoc(ununused)]
+#[repr(C)]
+#[derive_adhoc(SomeOtherTemplate)]
 struct Tuple<'a, 'l: 'a, T: Display = usize, const C: usize = 1>(
     &'a &'l T,
 );
