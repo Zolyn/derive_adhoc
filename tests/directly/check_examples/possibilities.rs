@@ -28,7 +28,6 @@ struct Tracker {
 struct Mismatch {
     got: String,
     context_desc: String,
-    #[allow(dead_code)] // TODO EXTEST
     info: Option<DissimilarTokenStreams>,
 }
 
@@ -152,6 +151,7 @@ impl Example for PossibilitiesExample {
             Ok(()) => {}
             Err(m) => {
                 eprintln!();
+                eprintln!("========================================");
                 errs.wrong(self.loc, "example mismatch");
                 eprintln!(
                     r"{}
@@ -160,7 +160,7 @@ limit: {:?}
 documented: {}",
                     m, self.input, self.limit, self.output
                 );
-                for got in tracker.other_outputs {
+                for got in &tracker.other_outputs {
                     eprintln!(
                         "mismatched: {} [{}]",
                         got.got, got.context_desc
@@ -171,7 +171,12 @@ documented: {}",
                 for skip in tracker.skipped_context_descs {
                     eprint!(" [{}]", skip);
                 }
-                eprintln!("\n");
+                eprintln!("");
+                for got in &tracker.other_outputs {
+                    let Some(info) = &got.info else { continue; };
+                    info.eprintln(format!("[{}]", got.context_desc));
+                }
+                eprintln!("========================================");
             }
         }
     }
