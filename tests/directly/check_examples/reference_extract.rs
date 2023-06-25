@@ -605,6 +605,8 @@ fn extract_possibilites_blockquotes(
                 }
                 let [input, for_, output] = columns;
 
+                let for_ = re!("^for ").replace_all(&for_, "");
+
                 let mut all_must_match = false;
                 let limit = possibilities::Limit::parse(
                     &for_,
