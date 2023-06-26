@@ -103,6 +103,15 @@
 //! ### The `#[cfg(test)]` modules listed in `tests/tests.rs`
 //!
 //! Each module is compiled, and its `#[test]` functions are run.
+//!
+//! ### `tests/directly/`
+//!
+//! Tests that go through the "back door",
+//! to use the innards of derive-adhoc.
+//!
+//! Currently this is the tests in `directly::check_examples`
+//! which extract examples from `doc/reference.md`
+//! and check that they match real output.
 
 // We don't want to have to cfg-mark all the imports
 #![cfg_attr(
