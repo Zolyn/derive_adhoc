@@ -48,11 +48,6 @@
 //! Testing proc macros is not entirely straightforward,
 //! so there are multiple classes of test with different approaches.
 //!
-//! ## Normal tests directly in this module
-//!
-//! Listed below, with `mod` lines referring to `.rs` files
-//! which contain `#[test]` functions.
-//!
 //! ### `tests/expand/*.rs`
 //!
 //!  - Run with [`trybuild`], and expected to pass.
@@ -100,7 +95,7 @@
 //! Tests compatibility with old, published, versions of derive-adhoc.
 //! See `tests/compat/README.md`.
 //!
-//! ### The `#[cfg(test)]` modules listed in `tests/tests.rs`
+//! ### The normal-ish `#[cfg(test)]` modules listed in here `tests/tests.rs`
 //!
 //! Each module is compiled, and its `#[test]` functions are run.
 //!
