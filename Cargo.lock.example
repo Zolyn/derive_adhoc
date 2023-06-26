@@ -142,6 +142,7 @@ dependencies = [
  "easy-ext",
  "educe",
  "glob",
+ "heck",
  "itertools",
  "macrotest",
  "proc-macro-crate",

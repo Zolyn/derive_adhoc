@@ -41,9 +41,6 @@ foreach my $p (sort keys %{ $macros->{dependencies} }) {
     my ($mi, $mv) = normalise($macros->{dependencies}{$p});
     my $ti = $tests->{dependencies}{$p};
     if (!defined $ti) {
-	if (($mi->{optional} // '') eq 'true') {
-	    next;
-	}
 	bad "missing dependency $p";
 	next;
     }
