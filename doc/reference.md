@@ -693,6 +693,8 @@ which is used to implement the actual case changing.
 
  * `${shouty_snake_case $ttype}`: `ENUM::<'a, 'l, T, C>`
  * `${pascal_case $fname}`: `Field`, `FieldB`
+ * `${pascal_case x_ $fname _y}`: `XFieldBY`
+ * `${paste x_ ${lower_camel_case $fname} _y}`: `x_fieldB_y`
  * `${lower_camel_case $fname}` for tuple: error, ``constructed identifier "0" is invalid``
 
 ## Expansion options
