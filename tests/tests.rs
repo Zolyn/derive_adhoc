@@ -2,8 +2,8 @@
 //!
 //! **Internal, unpublished crate.**
 //!
-//! Separating the tests into their own crate ensures that they
-//! all go through the "front door" of `use derive_adhoc::...`,
+//! Separating these tests into their own crate arranges that they
+//! can go through the "front door" of `use derive_adhoc::...`,
 //! and in particular makes the cross-crate tests uniform with the others.
 //!
 //! ## Invoking the tests
@@ -47,11 +47,6 @@
 //!
 //! Testing proc macros is not entirely straightforward,
 //! so there are multiple classes of test with different approaches.
-//!
-//! ## Normal tests directly in this module
-//!
-//! Listed below, with `mod` lines referring to `.rs` files
-//! which contain `#[test]` functions.
 //!
 //! ### `tests/expand/*.rs`
 //!
@@ -100,9 +95,18 @@
 //! Tests compatibility with old, published, versions of derive-adhoc.
 //! See `tests/compat/README.md`.
 //!
-//! ### The `#[cfg(test)]` modules listed in `tests/tests.rs`
+//! ### The normal-ish `#[cfg(test)]` modules listed in here `tests/tests.rs`
 //!
 //! Each module is compiled, and its `#[test]` functions are run.
+//!
+//! ### `tests/directly/`
+//!
+//! Tests that go through the "back door",
+//! to use the innards of derive-adhoc.
+//!
+//! Currently this is the tests in `directly::check_examples`
+//! which extract examples from `doc/reference.md`
+//! and check that they match real output.
 
 // We don't want to have to cfg-mark all the imports
 #![cfg_attr(
