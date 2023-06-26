@@ -153,7 +153,7 @@ fn mk_ident<'i>(
     } else {
         ident
     };
-    catch_unwind(|| format_ident!("{}", ident, span = out_span)).map_err(
+    let ident = IdentAny::try_from_str(&ident, out_span).map_err(
         |_| {
             let mut err = out_span.error(format_args!(
                 "pasted identifier {:?} is invalid",
@@ -196,7 +196,8 @@ fn mk_ident<'i>(
             }
             err
         },
-    )
+    )?;
+    Ok(ident.0)
 }
 
 impl Items {

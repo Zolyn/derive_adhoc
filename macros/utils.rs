@@ -233,8 +233,22 @@ impl<T: ToTokens> quote::IdentFragment for TokenPastesAsIdent<T> {
 
 //---------- IdentAny ----------
 
+pub struct InvalidIdent;
+
 /// Like `syn::Ident` but parses using `parse_any`, accepting keywords
 pub struct IdentAny(pub syn::Ident);
+impl IdentAny {
+    /// Try to make an identifier from a string
+    //
+    // `format_ident!` and `Ident::new` and so on all panic if the
+    // identifier is invalid.
+    pub fn try_from_str(s: &str, span: Span) -> Result<Self, InvalidIdent> {
+        let mut ident = catch_unwind(|| format_ident!("{}", s, span = span))
+            .map_err(|_| InvalidIdent)?;
+        ident.set_span(span);
+        Ok(IdentAny(ident))
+    }
+}
 impl Parse for IdentAny {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(IdentAny(Ident::parse_any(input)?))
