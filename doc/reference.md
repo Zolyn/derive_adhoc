@@ -467,6 +467,13 @@ The `else if` between arms is also optional,
 but `else` in the fallback clause is mandatory.
 So you can write `${if COND1 { ... } COND2 { ... } else { ... }`.
 
+#### Examples
+
+ * `${if is_enum { E } is_struct { S }}` for `Enum`: `E`
+ * `${if is_enum { E } is_struct { S }}` for others: `S`
+ * `$( ${if v_is_named { N } v_is_tuple { T }} )` for `Enum`: `T N`
+ * `$( ${if v_is_named { N } v_is_tuple { T } else { X }} )` for `Enum`: `X T N`
+
 ### `${select1 COND1 { ... } else if COND2 { ... } else { ... }}` - expect precisely one predicate
 
 Conditionals which insist on expanding exactly one of the branches.
@@ -475,6 +482,12 @@ Syntax is identical to that of `${if }`.
 Exactly one of them must be true;
 or, none of them, but only if an `else` is supplied -
 otherwise it is an error.
+
+#### Examples
+
+ * `${select1 is_enum { E } is_struct { S }}`: `E`, `S`
+ * `${select1 v_is_named { N } v_is_tuple { T }}` for `Enum`: error, ``no conditions matched, and no else clause``
+ * `$( ${select1 v_is_named { N } v_is_tuple { T } else { X }} )` for `Enum`: `X T N`
 
 ### `${for fields { ... }}`, `${for variants { ... }}`, `$( )` - repetition
 
