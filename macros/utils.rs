@@ -242,12 +242,19 @@ impl IdentAny {
     /// Try to make an identifier from a string
     //
     // `format_ident!` and `Ident::new` and so on all panic if the
-    // identifier is invalid.
+    // identifier is invalid.  That's quite inconvenient.  In particular,
+    // it can result in tests spewing junk output with RUST_BACKTRACE=1.
     pub fn try_from_str(s: &str, span: Span) -> Result<Self, InvalidIdent> {
-        let mut ident = catch_unwind(|| format_ident!("{}", s, span = span))
+        let mut ident = syn::parse_str::<IdentAny>(s)
             .map_err(|_| InvalidIdent)?;
-        ident.set_span(span);
-        Ok(IdentAny(ident))
+        ident.0.set_span(span);
+        // parse_str allows surrounding whitespace etc.;
+        // reject things that aren't precisely the resulting identifier
+        // (including, `r#...`)
+        if ident.0.to_string() != s {
+            return Err(InvalidIdent);
+        }
+        Ok(ident)
     }
 }
 impl Parse for IdentAny {
