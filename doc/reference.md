@@ -456,6 +456,10 @@ of the repetition,
 before other expansions.
 Skips this repetition if the `CONDITION` is not true.
 
+#### Example
+
+ * `$( ${when vmeta(value)} ${vmeta(value) as str} )` for `Enum`: `"enum-variant"`
+
 ### `${if COND1 { ... } else if COND2 { ... } else { ... }}` - conditional
 
 Conditionals.  The else clause is, of course, optional.
