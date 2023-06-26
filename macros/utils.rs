@@ -245,8 +245,8 @@ impl IdentAny {
     // identifier is invalid.  That's quite inconvenient.  In particular,
     // it can result in tests spewing junk output with RUST_BACKTRACE=1.
     pub fn try_from_str(s: &str, span: Span) -> Result<Self, InvalidIdent> {
-        let mut ident = syn::parse_str::<IdentAny>(s)
-            .map_err(|_| InvalidIdent)?;
+        let mut ident =
+            syn::parse_str::<IdentAny>(s).map_err(|_| InvalidIdent)?;
         ident.0.set_span(span);
         // parse_str allows surrounding whitespace etc.;
         // reject things that aren't precisely the resulting identifier
