@@ -19,7 +19,7 @@ error: expected one of `.`, `;`, `?`, or an operator, found `<eof>`
 4 | #[adhoc(wrong = "{")]
   |                 ^^^ expected one of `.`, `;`, `?`, or an operator
 
-error: pasted identifier "Bad." is invalid
+error: constructed identifier "Bad." is invalid
   --> ui/badmeta.rs:22:14
    |
 22 |     struct ${paste Bad ${tmeta(dot) as str}};

@@ -442,7 +442,7 @@ and the path prefix and generics reproduced unaltered.
  * `${paste Zingy $ftype Builder}` for `TupleVariant`:
     `std::iter::ZingyOnceBuilder::<T>`
  * `${paste x_ $fname}` for tuple: `x_0`
- * `${paste $fname _x}` for tuple: error, ``pasted identifier "0_x" is invalid``
+ * `${paste $fname _x}` for tuple: error, ``constructed identifier "0_x" is invalid``
 
 ### `${CASE_CHANGE ...}` - case changing
 
@@ -693,7 +693,7 @@ which is used to implement the actual case changing.
 
  * `${shouty_snake_case $ttype}`: `ENUM::<'a, 'l, T, C>`
  * `${pascal_case $fname}`: `Field`, `FieldB`
- * `${lower_camel_case $fname}` for tuple: error, ``pasted identifier "0" is invalid``
+ * `${lower_camel_case $fname}` for tuple: error, ``constructed identifier "0" is invalid``
 
 ## Expansion options
 
