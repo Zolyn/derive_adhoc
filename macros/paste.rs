@@ -154,8 +154,10 @@ fn mk_ident<'i>(
         ident
     };
     let ident = IdentAny::try_from_str(&ident, out_span).map_err(|_| {
-        let mut err = out_span
-            .error(format_args!("constructed identifier {:?} is invalid", ident));
+        let mut err = out_span.error(format_args!(
+            "constructed identifier {:?} is invalid",
+            ident
+        ));
         // We want to show the user where the bad part is.  In
         // particular, if it came from somewhere nontrivial like an
         // ${Xmeta}.  But, we don't want to dump one error for every
