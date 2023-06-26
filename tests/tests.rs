@@ -2,8 +2,8 @@
 //!
 //! **Internal, unpublished crate.**
 //!
-//! Separating the tests into their own crate ensures that they
-//! all go through the "front door" of `use derive_adhoc::...`,
+//! Separating these tests into their own crate arranges that they
+//! can go through the "front door" of `use derive_adhoc::...`,
 //! and in particular makes the cross-crate tests uniform with the others.
 //!
 //! ## Invoking the tests
