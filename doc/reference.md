@@ -393,8 +393,8 @@ With `${Xattrs}`, unlike `${Xmeta}`,
    * All attributes, are included.
    * But `#[adhoc(...)]` and `#[derive_adhoc(...)]` are *excluded* by default,
      because typically they would be rejected by the compiler:
-     the expanded output is no longer within `#[derive(Adhoc)]`,
-     so those attributes are not recognised there.
+     the expanded output is (perhaps) no longer within `#[derive(Adhoc)]`,
+     so those attributes might be unrecognised there.
    * The attributes can be filtered by toplevel attribute name,
      but not deeply manipulated.
 
