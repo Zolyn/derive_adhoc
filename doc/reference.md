@@ -473,6 +473,7 @@ So you can write `${if COND1 { ... } COND2 { ... } else { ... }`.
  * `${if is_enum { E } is_struct { S }}` for others: `S`
  * `$( ${if v_is_named { N } v_is_tuple { T }} )` for `Enum`: `T N`
  * `$( ${if v_is_named { N } v_is_tuple { T } else { X }} )` for `Enum`: `X T N`
+ * `${if v_is_unit { U } tmeta(gentype) { GT }}` for `Unit`: `U`
 
 ### `${select1 COND1 { ... } else if COND2 { ... } else { ... }}` - expect precisely one predicate
 
@@ -488,6 +489,7 @@ otherwise it is an error.
  * `${select1 is_enum { E } is_struct { S }}`: `E`, `S`
  * `${select1 v_is_named { N } v_is_tuple { T }}` for `Enum`: error, ``no conditions matched, and no else clause``
  * `$( ${select1 v_is_named { N } v_is_tuple { T } else { X }} )` for `Enum`: `X T N`
+ * `${select1 v_is_unit { U } tmeta(gentype) { GT }}` for `Unit`: error, ``multiple conditions matched``
 
 ### `${for fields { ... }}`, `${for variants { ... }}`, `$( )` - repetition
 
