@@ -297,20 +297,22 @@ impl<'c> Context<'c> {
                 union_fields = syn::Fields::Named(du.fields.clone());
                 pvariants_one(&union_fields)?
             }
-            syn::Data::Enum(de) => (None, de
-                .variants
-                .iter()
-                .map(|variant| {
-                    let fields = &variant.fields;
-                    let pmetas = preprocess_attrs(&variant.attrs)?;
-                    let pfields = preprocess_fields(&variant.fields)?;
-                    Ok(PreprocessedVariant {
-                        fields,
-                        pmetas,
-                        pfields,
+            syn::Data::Enum(de) => (
+                None,
+                de.variants
+                    .iter()
+                    .map(|variant| {
+                        let fields = &variant.fields;
+                        let pmetas = preprocess_attrs(&variant.attrs)?;
+                        let pfields = preprocess_fields(&variant.fields)?;
+                        Ok(PreprocessedVariant {
+                            fields,
+                            pmetas,
+                            pfields,
+                        })
                     })
-                })
-                .collect::<Result<Vec<_>, syn::Error>>()?),
+                    .collect::<Result<Vec<_>, syn::Error>>()?,
+            ),
         };
 
         // `variant` is None in enums; otherwise it's Some(())
