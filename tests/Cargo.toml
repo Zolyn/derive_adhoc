@@ -33,7 +33,7 @@ proc-macro2 = "1"
 quote = "1"
 sha3 = "0.10"
 strum = { version = "0.24", features = ["derive"] }
-syn = "1.0.61"
+syn = { version = "1.0.61", features = ["extra-traits"] }
 void = "1"
 
 heck = "0.4"
