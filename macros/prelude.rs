@@ -5,6 +5,7 @@
 
 pub use std::borrow::Cow;
 pub use std::cell::RefCell;
+pub use std::cmp::{self, Ordering};
 pub use std::collections::HashSet;
 pub use std::convert::{TryFrom, TryInto};
 pub use std::default::Default;

@@ -208,3 +208,52 @@ impl SubstMetaPath {
         Ok(())
     }
 }
+
+/// Compares two `TokenStream`s for "equivalence"
+///
+/// We intend that two `TokenStream`s count as "equivalent"
+/// if they mean the same thing to the compiler,
+/// modulo any differences in spans.
+///
+/// We also disregard spacing.  This is not 100% justifiable but
+/// I think there are no token sequences differing only in spacing
+/// which are *both* valid and which differ in meaning.
+//
+// Comparing for equality has to be done by steam.
+// And a lot of stringification.
+#[allow(dead_code)] // XXXX
+pub fn tokens_cmp(a: TokenStream, b: TokenStream) -> cmp::Ordering {
+    use proc_macro2::Group;
+
+    fn tt_cmp(a: TokenTree, b: TokenTree) -> Ordering {
+        let discrim = |tt: &_| match tt {
+            TT::Punct(_) => 0,
+            TT::Literal(_) => 1,
+            TT::Ident(_) => 2,
+            TT::Group(_) => 3,
+        };
+
+        discrim(&a).cmp(&discrim(&b))
+            .then_with(|| match (a, b) {
+                (TT::Group(a), TT::Group(b)) => group_cmp(a,b),
+                (l, r) => l.to_string().cmp(&r.to_string())
+            })
+    }
+
+    fn group_cmp(a: Group, b: Group) -> Ordering {
+        let delim = |g: &Group| {
+            proc_macro2::Group::new(g.delimiter(), TokenStream::new())
+                .to_string()
+        };
+        delim(&a).cmp(&delim(&b))
+            .then_with(|| tokens_cmp(a.stream(), b.stream()))
+    }
+
+    for (a, b) in izip!(a, b) {
+        match tt_cmp(a, b) {
+            Ordering::Equal => {}
+            neq => return neq,
+        }
+    }
+    return Ordering::Equal;
+}
