@@ -397,6 +397,7 @@ With `${Xattrs}`, unlike `${Xmeta}`,
      so those attributes might be unrecognised there.
    * The attributes can be filtered by toplevel attribute name,
      but not deeply manipulated.
+   * `$vattrs` does not, for a non-enum, include the top-level attributes .
 
 #### Examples
 
@@ -408,6 +409,7 @@ With `${Xattrs}`, unlike `${Xmeta}`,
  * `${tattrs ! adhoc}`: ``#[derive(Adhoc)]``
  * `${tattrs missing}`: nothing
  * `${tattrs derive}`: ``#[derive(Adhoc)]``
+ * `${vattrs adhoc}`: nothing
 
 ##### For `Tuple`
 
@@ -417,6 +419,10 @@ With `${Xattrs}`, unlike `${Xmeta}`,
  * `${tattrs repr}`: ``#[repr(C)]``
  * `${tattrs repr, adhoc}`: ``#[adhoc(ununused)] #[repr(C)]``
  * `${tattrs ! derive, doc}`: ``#[adhoc(ununused)] #[repr(C)] #[derive_adhoc(SomeOtherTemplate)]``
+
+##### For `Enum`
+
+ * `${vattrs adhoc}` for `UnitVariant`: `#[adhoc(value="enum-variant")]`
 
 ### `${paste ...}` - identifier pasting
 
@@ -458,12 +464,24 @@ of the repetition,
 before other expansions.
 Skips this repetition if the `CONDITION` is not true.
 
+#### Example
+
+ * `$( ${when vmeta(value)} ${vmeta(value) as str} )` for `Enum`: `"enum-variant"`
+
 ### `${if COND1 { ... } else if COND2 { ... } else { ... }}` - conditional
 
 Conditionals.  The else clause is, of course, optional.
 The `else if` between arms is also optional,
 but `else` in the fallback clause is mandatory.
 So you can write `${if COND1 { ... } COND2 { ... } else { ... }`.
+
+#### Examples
+
+ * `${if is_enum { E } is_struct { S }}` for `Enum`: `E`
+ * `${if is_enum { E } is_struct { S }}` for others: `S`
+ * `$( ${if v_is_named { N } v_is_tuple { T }} )` for `Enum`: `T N`
+ * `$( ${if v_is_named { N } v_is_tuple { T } else { X }} )` for `Enum`: `X T N`
+ * `${if v_is_unit { U } tmeta(gentype) { GT }}` for `Unit`: `U`
 
 ### `${select1 COND1 { ... } else if COND2 { ... } else { ... }}` - expect precisely one predicate
 
@@ -473,6 +491,13 @@ Syntax is identical to that of `${if }`.
 Exactly one of them must be true;
 or, none of them, but only if an `else` is supplied -
 otherwise it is an error.
+
+#### Examples
+
+ * `${select1 is_enum { E } is_struct { S }}`: `E`, `S`
+ * `${select1 v_is_named { N } v_is_tuple { T }}` for `Enum`: error, ``no conditions matched, and no else clause``
+ * `$( ${select1 v_is_named { N } v_is_tuple { T } else { X }} )` for `Enum`: `X T N`
+ * `${select1 v_is_unit { U } tmeta(gentype) { GT }}` for `Unit`: error, ``multiple conditions matched``
 
 ### `${for fields { ... }}`, `${for variants { ... }}`, `$( )` - repetition
 

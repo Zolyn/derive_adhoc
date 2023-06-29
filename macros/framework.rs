@@ -286,32 +286,43 @@ impl<'c> Context<'c> {
                 pmetas,
                 pfields,
             };
-            syn::Result::Ok(vec![pvariant])
+            syn::Result::Ok((Some(()), vec![pvariant]))
         };
 
         let union_fields;
 
-        let pvariants = match &driver.data {
+        let (variant, pvariants) = match &driver.data {
             syn::Data::Struct(ds) => pvariants_one(&ds.fields)?,
             syn::Data::Union(du) => {
                 union_fields = syn::Fields::Named(du.fields.clone());
                 pvariants_one(&union_fields)?
             }
-            syn::Data::Enum(de) => de
-                .variants
-                .iter()
-                .map(|variant| {
-                    let fields = &variant.fields;
-                    let pmetas = preprocess_attrs(&variant.attrs)?;
-                    let pfields = preprocess_fields(&variant.fields)?;
-                    Ok(PreprocessedVariant {
-                        fields,
-                        pmetas,
-                        pfields,
+            syn::Data::Enum(de) => (
+                None,
+                de.variants
+                    .iter()
+                    .map(|variant| {
+                        let fields = &variant.fields;
+                        let pmetas = preprocess_attrs(&variant.attrs)?;
+                        let pfields = preprocess_fields(&variant.fields)?;
+                        Ok(PreprocessedVariant {
+                            fields,
+                            pmetas,
+                            pfields,
+                        })
                     })
-                })
-                .collect::<Result<Vec<_>, syn::Error>>()?,
+                    .collect::<Result<Vec<_>, syn::Error>>()?,
+            ),
         };
+
+        // `variant` is None in enums; otherwise it's Some(())
+        // and here we convert it to the real WithinVariant for the fields.
+        let variant = variant.map(|()| WithinVariant {
+            variant: None, // not actually a variant
+            fields: pvariants[0].fields,
+            pmetas: &pvariants[0].pmetas,
+            pfields: &pvariants[0].pfields,
+        });
 
         let ctx = Context {
             top: &driver,
@@ -319,7 +330,7 @@ impl<'c> Context<'c> {
             template_name,
             tmetas: &tmetas,
             field: None,
-            variant: None,
+            variant: variant.as_ref(),
             pvariants: &pvariants,
         };
 
