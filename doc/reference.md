@@ -397,6 +397,7 @@ With `${Xattrs}`, unlike `${Xmeta}`,
      so those attributes might be unrecognised there.
    * The attributes can be filtered by toplevel attribute name,
      but not deeply manipulated.
+   * `$vattrs` does not, for a non-enum, include the top-level attributes .
 
 #### Examples
 
@@ -408,6 +409,7 @@ With `${Xattrs}`, unlike `${Xmeta}`,
  * `${tattrs ! adhoc}`: ``#[derive(Adhoc)]``
  * `${tattrs missing}`: nothing
  * `${tattrs derive}`: ``#[derive(Adhoc)]``
+ * `${vattrs adhoc}`: nothing
 
 ##### For `Tuple`
 
@@ -417,6 +419,10 @@ With `${Xattrs}`, unlike `${Xmeta}`,
  * `${tattrs repr}`: ``#[repr(C)]``
  * `${tattrs repr, adhoc}`: ``#[adhoc(ununused)] #[repr(C)]``
  * `${tattrs ! derive, doc}`: ``#[adhoc(ununused)] #[repr(C)] #[derive_adhoc(SomeOtherTemplate)]``
+
+##### For `Enum`
+
+ * `${vattrs adhoc}` for `UnitVariant`: `#[adhoc(value="enum-variant")]`
 
 ### `${paste ...}` - identifier pasting
 
