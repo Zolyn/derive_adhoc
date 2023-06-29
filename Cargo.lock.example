@@ -40,7 +40,7 @@ version = "0.0.666"
 dependencies = [
  "derive-adhoc-macros 0.2.0",
  "heck",
- "itertools",
+ "itertools 0.11.0",
  "proc-macro-crate",
  "proc-macro2",
  "quote",
@@ -103,7 +103,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2d67b789c5749d46cca038603b02222a4d47ca2aab4433c50f953359808583e7"
 dependencies = [
  "heck",
- "itertools",
+ "itertools 0.10.5",
  "proc-macro-crate",
  "proc-macro2",
  "quote",
@@ -117,7 +117,7 @@ name = "derive-adhoc-macros"
 version = "0.5.0"
 dependencies = [
  "heck",
- "itertools",
+ "itertools 0.11.0",
  "proc-macro-crate",
  "proc-macro2",
  "quote",
@@ -143,7 +143,7 @@ dependencies = [
  "educe",
  "glob",
  "heck",
- "itertools",
+ "itertools 0.11.0",
  "macrotest",
  "proc-macro-crate",
  "proc-macro2",
@@ -258,6 +258,15 @@ name = "itertools"
 version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b0fd2260e829bddf4cb6ea802289de2f86d6a7a690192fbe91b3f46e0f2c8473"
+dependencies = [
+ "either",
+]
+
+[[package]]
+name = "itertools"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1c173a5686ce8bfa551b3563d0c2170bf24ca44da99c7ca4bfdab5418c3fe57"
 dependencies = [
  "either",
 ]
