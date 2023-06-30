@@ -389,8 +389,8 @@ The attributes can be filtered:
 
 With `${Xattrs}`, unlike `${Xmeta}`,
 
-   * The expansion is all of the attributes, including the `#[...]`;
-   * All attributes, are included.
+   * The expansion is the whole of each attribute, including the `#[...]`;
+   * All attributes are included.
    * But `#[adhoc(...)]` and `#[derive_adhoc(...)]` are *excluded* by default,
      because typically they would be rejected by the compiler:
      the expanded output is (perhaps) no longer within `#[derive(Adhoc)]`,
