@@ -89,12 +89,11 @@ impl Example for PossibilitiesExample {
         };
         //println!("  LIMIT {:?}", &self.limit);
 
-        for driver in drivers {
-            Context::call(driver, &parse_quote!(crate), None, |ctx| {
-                Ok(self.search_one_driver(&mut tracker, &ctx))
-            })
-            .unwrap();
-        }
+        for_every_example_context(drivers, |ctx| {
+            self.compare_one_output(&mut tracker, &ctx);
+            Ok::<_, Void>(())
+        })
+        .void_unwrap();
 
         match tracker.finish_ok() {
             Ok(()) => {}
@@ -166,20 +165,6 @@ impl PossibilitiesExample {
             Ok(y) => y.to_string(),
             Err(e) => format!("error: {}", e),
         }
-    }
-
-    fn search_one_driver(&self, tracker: &mut Tracker, ctx: &Context<'_>) {
-        self.compare_one_output(tracker, ctx);
-        ctx.for_with_within::<WithinVariant, _, _>(|ctx, _| {
-            self.compare_one_output(tracker, ctx);
-            ctx.for_with_within::<WithinField, _, _>(|ctx, _| {
-                self.compare_one_output(tracker, ctx);
-                Ok::<_, Void>(())
-            })
-            .unwrap();
-            Ok::<_, Void>(())
-        })
-        .void_unwrap()
     }
 
     fn compare_one_output(&self, tracker: &mut Tracker, ctx: &Context<'_>) {

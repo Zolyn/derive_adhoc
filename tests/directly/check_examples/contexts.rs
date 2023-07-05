@@ -2,6 +2,27 @@
 
 use super::*;
 
+pub fn for_every_example_context<E>(
+    drivers: &[syn::DeriveInput],
+    mut call: impl FnMut(&Context<'_>) -> Result<(), E>,
+) -> Result<(), E> {
+    for driver in drivers {
+        Context::call(driver, &parse_quote!(crate), None, |ctx| {
+            Ok::<_, syn::Error>((|| {
+                call(&ctx)?;
+                ctx.for_with_within::<WithinVariant, _, _>(|ctx, _| {
+                    call(ctx)?;
+                    ctx.for_with_within::<WithinField, _, _>(|ctx, _| {
+                        call(ctx)
+                    })
+                })
+            })())
+        })
+        .unwrap()?;
+    }
+    Ok(())
+}
+
 /// Limit on the contexts (in the example structs) that this test is for
 ///
 /// This was (at an early stage) done with derive-adhoc conditions.
