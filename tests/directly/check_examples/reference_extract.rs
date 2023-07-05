@@ -303,7 +303,47 @@ fn parse_bullet(
         Err(m) => errs.wrong(loc, m),
     };
 
-    if m!(outputs, "^nothing$") {
+    if let Some((mut rhs,)) = mc!(outputs, r"True for (.+)$") {
+        if for_.is_some() {
+            errs.wrong(
+                loc,
+                format_args!("in condition example, `for ...` must be on RHS"),
+            );
+            return;
+        }
+        let mut true_contexts = vec![];
+        while !rhs.is_empty() {
+            let for_ = match mc!(rhs, r"([^,]+)(?:$|, and |, )(.*)") {
+                None => {
+                    errs.wrong(
+                        loc,
+                        format!(
+                 r#"bad True context syntax for condition example: "{}""#,
+                            rhs,
+                        ),
+                    );
+                    break;
+                }
+                Some((for_, new_rhs)) => {
+                    rhs = new_rhs;
+                    for_
+                }
+            };
+            let lim = match Limit::parse(&for_, &mut false, None) {
+                Ok(y) => y,
+                Err(m) => {
+                    errs.wrong(loc, m);
+                    return;
+                }
+            };
+            true_contexts.push((for_, lim));
+        }
+        examples_out.push(Box::new(ConditionExample::new(
+            loc,
+            input,
+            true_contexts,
+        )));
+    } else if m!(outputs, "^nothing$") {
         poss(Ok(""));
     } else if let Some((msg,)) = mc!(outputs, r"error, ``(.*)``$") {
         poss(Err(msg.trim()));
