@@ -184,7 +184,9 @@ impl PossibilitiesExample {
             out
         };
 
-        if !limit.matches(ctx) {
+        if !limit.matches(ctx)
+            // Treat errors "skip".
+            .unwrap_or_default() {
             //println!("  INAPPLICABLE {:?}", &context_desc);
             tracker.note_skip(context_desc);
             return;

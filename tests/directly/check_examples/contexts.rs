@@ -52,20 +52,19 @@ pub impl Context<'_> {
 }
 
 impl Limit {
-    pub fn matches(&self, ctx: &Context<'_>) -> bool {
+    // Some tests aren't meaningful in some context.
+    // Eg, we have "for" clauses that check the variant
+    // kind (unit, tuple, named fields).  That isn't
+    // meaningful if we're in an enum and not in a variant.
+    // d-a gives an error there.  That makes this return `Err`.
+    pub fn matches(&self, ctx: &Context<'_>) -> Result<bool, ()> {
         let tname = |n| &ctx.top.ident.to_string() == n;
         let vname = |n| ctx.vname_s().map(|s| &s == n) == Some(true);
         let fname = |n| ctx.fname_s().map(|s| &s == n) == Some(true);
-        match self {
+        Ok(match self {
             Limit::True => true,
             Limit::DaCond(cond) => {
-                cond.eval_bool(ctx)
-                    // Some tests aren't meaningful in some context.
-                    // Eg, we have "for" clauses that check the variant
-                    // kind (unit, tuple, named fields).  That isn't
-                    // meaningful if we're in an enum and not in a variant.
-                    // d-a gives an error there.  We treat it as "skip".
-                    .unwrap_or_default()
+                cond.eval_bool(ctx).map_err(|_|())?
             }
             Limit::Name(n) => tname(n) || vname(n) || fname(n),
             Limit::Field { f, n } => fname(f) && (tname(n) || vname(n)),
@@ -75,12 +74,15 @@ impl Limit {
                 // Since, in that case, "other" means *other fields*
                 if v.iter().any(|l| matches!(l, Limit::Field { .. })) {
                     if ctx.fname_s().is_none() {
-                        return false;
+                        return Ok(false);
                     }
                 }
-                !v.iter().any(|l| l.matches(ctx))
+                !v.iter().any(|l| l.matches(ctx)
+                              // Treat errors in the others as "no match"
+                              // so if they might match "others"
+                              .unwrap_or_default())
             }
-        }
+        })
     }
 }
 
