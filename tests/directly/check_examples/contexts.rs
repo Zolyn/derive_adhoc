@@ -63,9 +63,7 @@ impl Limit {
         let fname = |n| ctx.fname_s().map(|s| &s == n) == Some(true);
         Ok(match self {
             Limit::True => true,
-            Limit::DaCond(cond) => {
-                cond.eval_bool(ctx).map_err(|_|())?
-            }
+            Limit::DaCond(cond) => cond.eval_bool(ctx).map_err(|_| ())?,
             Limit::Name(n) => tname(n) || vname(n) || fname(n),
             Limit::Field { f, n } => fname(f) && (tname(n) || vname(n)),
             Limit::Others(v) => {
@@ -77,10 +75,12 @@ impl Limit {
                         return Ok(false);
                     }
                 }
-                !v.iter().any(|l| l.matches(ctx)
-                              // Treat errors in the others as "no match"
-                              // so if they might match "others"
-                              .unwrap_or_default())
+                !v.iter().any(|l| {
+                    l.matches(ctx)
+                        // Treat errors in the others as "no match"
+                        // so if they might match "others"
+                        .unwrap_or_default()
+                })
             }
         })
     }
