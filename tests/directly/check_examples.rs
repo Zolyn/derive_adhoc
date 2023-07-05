@@ -55,10 +55,12 @@
 
 use super::*;
 
+mod contexts;
 mod for_toplevels_concat;
 mod possibilities;
 mod reference_extract;
 
+use contexts::{ContextExt as _, Limit};
 use for_toplevels_concat::ForToplevelsConcatExample;
 use possibilities::PossibilitiesExample;
 

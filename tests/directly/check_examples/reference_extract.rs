@@ -236,7 +236,7 @@ fn extract_structs(input: &Preprocessed) -> Vec<syn::DeriveInput> {
 #[derive(Default, Debug)]
 struct SectionState<'i> {
     for_: Option<(DocLoc, &'i String, &'i DirectiveTrackUsed)>,
-    t_limits: Vec<possibilities::Limit>,
+    t_limits: Vec<Limit>,
     bq_input: Option<(DocLoc, &'i String)>,
 }
 
@@ -275,10 +275,10 @@ fn parse_bullet(
 
     let mut all_must_match = false;
     let limit = match for_ {
-        None => possibilities::Limit::True,
+        None => Limit::True,
         Some((loc, for_, for_used)) => {
             for_used.note();
-            match possibilities::Limit::parse(
+            match Limit::parse(
                 for_,
                 &mut all_must_match,
                 Some(&mut ss.t_limits),
@@ -617,7 +617,7 @@ fn extract_possibilites_blockquotes(
                 let for_ = re!("^for ").replace_all(&for_, "");
 
                 let mut all_must_match = false;
-                let limit = possibilities::Limit::parse(
+                let limit = Limit::parse(
                     &for_,
                     &mut all_must_match,
                     Some(&mut t_limits),
