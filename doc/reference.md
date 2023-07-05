@@ -669,10 +669,6 @@ Use `$tdefvariants` when defining a derived type.
 
 Whether and what kind of fields there are.
 
- * `v_is_unit`: True for `struct Unit;`, and `Enum::UnitVariant;`
- * `v_is_tuple`: True for `struct Tuple(...);`, and `Enum::TupleVariant(...);`
- * `v_is_named`: True for `struct Struct {...}`, and `Enum::NamedVariant {...}`
-
 Prefer to avoid these explicit tests,
 when writing a template to work with any shape of structure.
 Instead,
@@ -682,6 +678,12 @@ or via `$vtype`.
 The `Typename { }` syntax can be used for matching and constructing
 all kinds of structures, including units and tuples.
 Use `$vdefbody` and `$fdefine` when defining a derived type.
+
+#### Examples
+
+ * `v_is_unit`: True for `struct Unit;`, and `Enum::UnitVariant;`
+ * `v_is_tuple`: True for `struct Tuple(...);`, and `Enum::TupleVariant(...);`
+ * `v_is_named`: True for `struct Struct {...}`, and `Enum::NamedVariant {...}`
 
 ### `false`, `true`, `not(CONDITION)`, `any(COND1,COND2,...)`, `all(COND1,COND2,...)` -- boolean logic
 
