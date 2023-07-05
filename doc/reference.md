@@ -25,6 +25,7 @@
       * [`$dbg_all_keywords` -- Dump expansions of all keywords to compiler stderr](#dbg_all_keywords---dump-expansions-of-all-keywords-to-compiler-stderr)
    * [Conditions](#conditions)
       * [`fvis`, `tvis` - test for public visibility](#fvis-tvis---test-for-public-visibility)
+      * [Examples](#examples)
       * [`fmeta(NAME)`, `vmeta(NAME)`, `tmeta(NAME)` - `#[adhoc]` attributes](#fmetaname-vmetaname-tmetaname---adhoc-attributes)
       * [`is_struct`, `is_enum`, `is_union`](#is_struct-is_enum-is_union)
       * [`v_is_unit`, `v_is_tuple`, `v_is_named`](#v_is_unit-v_is_tuple-v_is_named)
@@ -653,6 +654,13 @@ the corresponding driver attribute does not need to be a `=LIT`.
 So `Xmeta(SUB(NAME))` is true if the driver has
 `#[adhoc(SUB(NAME(INNER=...)))]` or `#[adhoc(SUB(NAME))]` or
 `#[adhoc(SUB(NAME=LIT))]` or even `#[adhoc(SUB(NAME()))]`.
+
+#### Examples
+
+ * `tmeta(unused)`: True for `Tuple`
+ * `tmeta(gentype)`: True for `Unit`
+ * `vmeta(value)`: True for `Unit`, and `Enum::UnitVariant`
+ * `fmeta(nested)`: True for `field` in `Struct`
 
 ### `is_struct`, `is_enum`, `is_union`
 
