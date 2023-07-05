@@ -417,8 +417,8 @@ With `${Xattrs}`, unlike `${Xmeta}`,
 
  * `${tattrs}`: ``#[doc=" Title for `Tuple`"] #[derive(Adhoc, Clone)] #[repr(C)]``
  * `${tattrs repr}`: ``#[repr(C)]``
- * `${tattrs repr, adhoc}`: ``#[adhoc(ununused)] #[repr(C)]``
- * `${tattrs ! derive, doc}`: ``#[adhoc(ununused)] #[repr(C)] #[derive_adhoc(SomeOtherTemplate)]``
+ * `${tattrs repr, adhoc}`: ``#[adhoc(unused)] #[repr(C)]``
+ * `${tattrs ! derive, doc}`: ``#[adhoc(unused)] #[repr(C)] #[derive_adhoc(SomeOtherTemplate)]``
 
 ##### For `Enum`
 
@@ -829,7 +829,7 @@ pub struct Unit<const C: usize = 1>;
 
 /// Title for `Tuple`
 #[derive(Adhoc, Clone)]
-#[adhoc(ununused)]
+#[adhoc(unused)]
 #[repr(C)]
 #[derive_adhoc(SomeOtherTemplate)]
 struct Tuple<'a, 'l: 'a, T: Display = usize, const C: usize = 1>(
