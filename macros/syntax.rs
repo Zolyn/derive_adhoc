@@ -153,6 +153,7 @@ pub struct SubstIf<O: SubstParseContext> {
 pub enum SubstVis {
     T,
     F,
+    FD,
 }
 
 #[derive(Debug, Clone)]
@@ -692,6 +693,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
 
         keyword! { "tvis": Vis(SubstVis::T, not_in_paste()?) }
         keyword! { "fvis": Vis(SubstVis::F, not_in_paste()?) }
+        keyword! { "fdefvis": Vis(SubstVis::FD, not_in_paste()?) }
 
         keyword! { is_struct(bool_only()?) }
         keyword! { is_enum(bool_only()?) }
@@ -837,9 +839,20 @@ impl SubstVis {
         ctx: &'c Context<'c>,
         tspan: Span,
     ) -> syn::Result<&'c syn::Visibility> {
+        let field_decl_vis =
+            || Ok::<_, syn::Error>(&ctx.field(&tspan)?.field.vis);
         Ok(match self {
             SubstVis::T => &ctx.top.vis,
-            SubstVis::F => &ctx.field(&tspan)?.field.vis,
+            SubstVis::FD => field_decl_vis()?,
+            SubstVis::F => {
+                // Cause an error for fvis in enums, even though
+                // we only look at the toplevel visibility.
+                let field = field_decl_vis()?;
+                match ctx.top.data {
+                    syn::Data::Struct(_) | syn::Data::Union(_) => field,
+                    syn::Data::Enum(_) => &ctx.top.vis,
+                }
+            }
         })
     }
 }

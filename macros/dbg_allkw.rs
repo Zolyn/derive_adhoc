@@ -163,10 +163,12 @@ fn dump_field(mut w: &mut Out, ctx: &Context, wf: &WithinField) -> R {
     expand! { c, $fname }
     expand! { c, $ftype }
     expand! { c, $fvis }
+    expand! { c, $fdefvis }
     expand! { c, $fpatname }
     expand! { c, $fdefine }
 
     bool! { c, fvis }
+    bool! { c, fdefvis }
 
     expand! { c, $fattrs }
 

@@ -365,7 +365,7 @@ E	CASE_CHANGE
 ve	changecase
 
 # These are one SD variant
-dDEB	fvis tvis fmeta vmeta tmeta
+dDEB	fvis fdefvis tvis fmeta vmeta tmeta
 v	vis xmeta
 
 # Doc has both ${for fields ...} and ${for variants ...}, so E is repeated
