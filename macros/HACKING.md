@@ -136,6 +136,11 @@ call
 or
 [`out.append_tokens()`](framework::ExpansionOutput::append_tokens).
 
+You'll also want to add documentation to `doc/reference.md`,
+arrangements for debug printing in `macros/dbg_allkw.rs`,
+test cases in `tests/expand/` and maybe `tests/ui/`,
+and possibly discussion in `doc/introduction.md`.
+
 ### Accessing the driver
 
 Information about the driver (and the current variant and field)
@@ -147,7 +152,7 @@ to get access to the per-field and per-variant details,
 rather than using `Context.variant`
 and open-coding the error handling for `None`.)
 
-### Expansion keysords with content or arguments
+### Expansion keywords with content or arguments
 
 Parse the content from `input`, in the `keyword!` invocation.
 See `tmeta` et al for an example.
