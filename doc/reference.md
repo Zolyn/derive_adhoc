@@ -625,6 +625,8 @@ derive_adhoc! {
 Conditions all start with a `KEYWORD`.
 They are found within `${if }`, `${when }`, and `${select1 }`.
 
+<!-- ## maint/check-keywords-documented conditions ## -->
+
 ### `fvis`, `tvis` - test for public visibility
 
 True iff the field, or the whole toplevel type, is `pub`.
@@ -636,8 +638,6 @@ for example if it is in a private inner module.
 Within-crate visibility, e.g. `pub(crate)`, is treated as "not visible"
 for the purposes of `fvis` and `tvis`
 (although the `$fvis` and `$tvis` expansions will handle those faithfully).
-
-<!-- ## maint/check-keywords-documented conditions ## -->
 
 ### `fmeta(NAME)`, `vmeta(NAME)`, `tmeta(NAME)` - `#[adhoc]` attributes
 
