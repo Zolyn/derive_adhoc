@@ -78,9 +78,7 @@ pub enum SubstDetails<O: SubstParseContext> {
     tdefkwd(O::NotInBool),
 
     // attributes
-    tmeta(SubstMeta<O>),
-    vmeta(SubstMeta<O>),
-    fmeta(SubstMeta<O>),
+    xmeta(SubstMeta<O>),
     tattrs(RawAttr, O::NotInPaste, O::NotInBool),
     vattrs(RawAttr, O::NotInPaste, O::NotInBool),
     fattrs(RawAttr, O::NotInPaste, O::NotInBool),
@@ -159,8 +157,16 @@ pub enum SubstVis {
 
 #[derive(Debug, Clone)]
 pub struct SubstMeta<O: SubstParseContext> {
+    pub level: SubstMetaLevel,
     pub path: SubstMetaPath,
     pub as_: SubstMetaAs<O>,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum SubstMetaLevel {
+    T,
+    V,
+    F,
 }
 
 #[derive(Debug, Clone, AsRefStr, Display)]
@@ -376,8 +382,8 @@ impl<O: SubstParseContext> SubstMetaAs<O> {
     }
 }
 
-impl<O: SubstParseContext> Parse for SubstMeta<O> {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
+impl<O: SubstParseContext> SubstMeta<O> {
+    fn parse(input: ParseStream, level: SubstMetaLevel) -> syn::Result<Self> {
         let path: SubstMetaPath = input.parse()?;
 
         let as_;
@@ -395,7 +401,7 @@ impl<O: SubstParseContext> Parse for SubstMeta<O> {
             as_ = SubstMetaAs::Unspecified(np);
         }
 
-        Ok(SubstMeta { path, as_ })
+        Ok(SubstMeta { path, as_, level })
     }
 }
 
@@ -699,9 +705,10 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         keyword! { tgnames(not_in_paste()?, not_in_bool()?) }
         keyword! { twheres(not_in_paste()?, not_in_bool()?) }
 
-        keyword! { tmeta(input.parse()?) }
-        keyword! { vmeta(input.parse()?) }
-        keyword! { fmeta(input.parse()?) }
+        use SubstMetaLevel as SML;
+        keyword! { "tmeta": xmeta(SubstMeta::parse(input, SML::T)?) }
+        keyword! { "vmeta": xmeta(SubstMeta::parse(input, SML::V)?) }
+        keyword! { "fmeta": xmeta(SubstMeta::parse(input, SML::F)?) }
 
         keyword! { tattrs(input.parse()?, not_in_paste()?, not_in_bool()?) }
         keyword! { vattrs(input.parse()?, not_in_paste()?, not_in_bool()?) }

@@ -41,7 +41,7 @@ impl Subst<BooleanContext> {
         // eprintln!("@@@@@@@@@@@@@@@@@@@@ EVAL {:?}", self);
 
         let eval_meta = |wa: &SubstMeta<_>, pmetas| {
-            let SubstMeta { path, as_} = wa;
+            let SubstMeta { path, as_, level: _ } = wa;
             use SubstMetaAs as SMA;
             match as_ {
                 SMA::Unspecified(..) => {}
@@ -55,9 +55,7 @@ impl Subst<BooleanContext> {
         use syn::Fields as SF;
 
         let r = match &self.sd {
-            SD::tmeta(wa) => eval_meta(wa, &ctx.tmetas),
-            SD::vmeta(wa) => eval_meta(wa, &ctx.variant(wa)?.pmetas),
-            SD::fmeta(wa) => eval_meta(wa, &ctx.field(wa)?.pfield.pmetas),
+            SD::xmeta(wa) => eval_meta(wa, wa.pmetas(ctx)?),
             SD::is_enum(..) => ctx.is_enum(),
             SD::is_struct(..) => matches!(ctx.top.data, syn::Data::Struct(_)),
             SD::is_union(..) => matches!(ctx.top.data, syn::Data::Union(_)),

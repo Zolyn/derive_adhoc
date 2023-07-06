@@ -512,9 +512,7 @@ where
                     format_ident!("f_{}", f.fname(kw_span), span = kw_span);
                 out.append_identfrag_toks(&fpatname);
             }
-            SD::tmeta(wa) => do_meta(wa, out, ctx.tmetas)?,
-            SD::vmeta(wa) => do_meta(wa, out, ctx.variant(wa)?.pmetas)?,
-            SD::fmeta(wa) => do_meta(wa, out, &ctx.field(wa)?.pfield.pmetas)?,
+            SD::xmeta(wa) => do_meta(wa, out, wa.pmetas(ctx)?)?,
 
             SD::Vis(vis, np) => {
                 out.append_tokens(np, vis.syn_vis(ctx, kw_span)?)?
@@ -661,6 +659,22 @@ where
             | SD::all(_, bo) => out.append_bool_only(bo),
         };
         Ok(())
+    }
+}
+
+impl<O> SubstMeta<O>
+where
+    O: SubstParseContext,
+{
+    pub fn pmetas<'c>(
+        &self,
+        ctx: &'c Context<'c>,
+    ) -> syn::Result<&'c PreprocessedMetas> {
+        Ok(match self.level {
+            SubstMetaLevel::T => &ctx.tmetas,
+            SubstMetaLevel::V => &ctx.variant(self)?.pmetas,
+            SubstMetaLevel::F => &ctx.field(self)?.pfield.pmetas,
+        })
     }
 }
 

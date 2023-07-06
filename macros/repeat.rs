@@ -125,9 +125,7 @@ impl<O: SubstParseContext> Subst<O> {
             SD::fpatname(_) => Some(RO::Fields),
             SD::Vis(SubstVis::T, ..) => None,
             SD::Vis(SubstVis::F, ..) => Some(RO::Fields),
-            SD::tmeta(_) => None,
-            SD::vmeta(_) => Some(RO::Variants),
-            SD::fmeta(_) => Some(RO::Fields),
+            SD::xmeta(sm) => sm.repeat_over(),
             SD::tattrs(..) => None,
             SD::vattrs(..) => Some(RO::Variants),
             SD::fattrs(..) => Some(RO::Fields),
@@ -184,6 +182,19 @@ impl<O: SubstParseContext> Subst<O> {
             visitor.set_over(over)?;
         }
         Ok(())
+    }
+}
+
+impl<O> SubstMeta<O>
+where
+    O: SubstParseContext,
+{
+    pub fn repeat_over(&self) -> Option<RepeatOver> {
+        match self.level {
+            SubstMetaLevel::T => None,
+            SubstMetaLevel::V => Some(RO::Variants),
+            SubstMetaLevel::F => Some(RO::Fields),
+        }
     }
 }
 
