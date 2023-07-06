@@ -295,7 +295,7 @@ fn parse_bullet(
         })
     };
 
-    if let Some((mut rhs,)) = mc!(outputs, r"True for (.+)$") {
+    if let Some((mut rhs,)) = mc!(outputs, r"true for (.+)$") {
         if for_.is_some() {
             return Err(format!(
                 "in condition example, `for ...` must be on RHS"
