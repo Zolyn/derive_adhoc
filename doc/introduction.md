@@ -902,17 +902,8 @@ we'll get a more useful error:
 
 
 ```text,ignore
-error: expected driver kind struct, but driver is enum (expected kind)
+error: template defined for struct, but applied to enum
 ```
-
-
-> Actually, that error message isn't all that helpful IMO.
-> Maybe it would be better to say something like:
-> "Template `Constructor` only applies to structs,
-> but we're trying to apply it to an enum."
->
-> IOW, I think that it's not so helpful to refer to "drivers"
-> in the error message. -nickm
 
 ### Working with visibility
 
