@@ -131,7 +131,10 @@ impl Limit {
             .find_map(|(re, mk_sd)| m!(for_, re).then(|| mk_sd))
         {
             da_cond(mk_sd)
-        } else if let Some((n,)) = mc!(for_, r"^`(\w+)`$") {
+        } else if let Some((n,)) = mc!(
+            for_, 
+            r"^`(\w+)`$",
+        ) {
             L::Name(n.into())
         } else if let Some((f, n)) = mc!(for_, r"^`(\w+)` in `(\w+)`$") {
             *all_must_match = true;
