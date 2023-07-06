@@ -136,6 +136,11 @@ call
 or
 [`out.append_tokens()`](framework::ExpansionOutput::append_tokens).
 
+You'll also want to add documentation to `doc/reference.md`,
+arrangements for debug printing in `macros/dbg_allkw.rs`,
+test cases in `tests/expand/` and maybe `tests/ui/`,
+and possibly discussion in `doc/introduction.md`.
+
 ### Accessing the driver
 
 Information about the driver (and the current variant and field)
