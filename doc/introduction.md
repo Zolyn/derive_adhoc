@@ -945,13 +945,6 @@ that expands to the visibility of the current field.
 
 (Since enums variants are always visible, there is no `$vvis`.)
 
- <!--
-> TODO: Document `${if is_enum { $tvis } else { $fvis }}`.
->
-> Or maybe change it so $fvis is `pub` for enums? -nickm
->  See https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/issues/18
- -->
-
 ### Using attributes to make a template take arguments
 
 Let's suppose we want to make our `Constructor` template
