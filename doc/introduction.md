@@ -87,6 +87,7 @@ pub trait NamePrinter {
 }
 
 derive_adhoc::define_derive_adhoc! {
+    /// Derives `NamePrinter`, providing `print_name`
     pub NamePrinter =
     impl $crate::NamePrinter for $ttype {
         fn print_name() {
@@ -104,6 +105,9 @@ The `$crate` syntax will expand to the name of the crate
 in which our template was defined,
 so that when later we expand this template,
 it can find the right template.
+
+We've also added a doc comment,
+which will appear in the public API documentation for our crate.
 
 Additionally, we need to re-export `derive_adhoc`
 from our crate, so that users get the correct version:
