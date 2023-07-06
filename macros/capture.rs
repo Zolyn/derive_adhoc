@@ -115,7 +115,7 @@ pub fn derive_adhoc_derive_macro(
     //  `$$` - taken as a reference to the nightly `$$` macro rules feature
     //     (which we would love to use here, but can't yet)
     //
-    // `$ORGDOLLAR` is a literal dollar which comes from the driver
+    // `$orig_dollar` is a literal dollar which comes from the driver
     // invocation in invocation.rs.  This technique doesn't get the span
     // right.  But getting the span right here is hard without having
     // a whole new quoting scheme - see the discussion in the doc comment
@@ -136,7 +136,7 @@ pub fn derive_adhoc_derive_macro(
         macro_rules! #driver_mac_name {
             {
                 { $($template:tt)* }
-                { ($ORGDOLLAR:tt) $(future:tt)* }
+                { ($orig_dollar:tt) $(future:tt)* }
                 $($tpassthrough:tt)*
             } => {
                 #expand_macro!{

@@ -39,13 +39,13 @@ impl Parse for TemplateDefinition {
     }
 }
 
-/// Replaces every `$` with `$ORGDOLLAR`
+/// Replaces every `$` with `$orig_dollar`
 ///
-/// Eg, where the template says `$fname`, we emit `$ORGDOLLAR fname`.
+/// Eg, where the template says `$fname`, we emit `$orig_dollar fname`.
 /// When this is found in the macro_rules expander part
 /// of a precanned template,
 /// macro_rules doesn't expand
-/// it because `ORGDOLLAR` isn't one of the arguments to the macro.
+/// it because `orig_dollar` isn't one of the arguments to the macro.
 ///
 /// Then, we spot these when parsing the template, and disregard them.
 /// That is done by
@@ -55,7 +55,7 @@ impl Parse for TemplateDefinition {
 ///
 /// This has the weird result that there's a sometimes
 /// (namely, when using a truly-adhoc, rather than precanned template)
-/// an undocumented `ORGDOLLAR` expansion keyword,
+/// an undocumented `orig_dollar` expansion keyword,
 /// with strange behaviour.
 /// No-one is likely to notice this.
 ///
@@ -95,7 +95,7 @@ pub fn escape_dollars(input: TokenStream) -> TokenStream {
                 TT::Group(g)
             }
             TT::Punct(p) if p.as_char() == '$' => {
-                out.extend(quote_spanned! {p.span()=> #p ORGDOLLAR });
+                out.extend(quote_spanned! {p.span()=> #p orig_dollar });
                 continue;
             }
             other => other,

@@ -292,10 +292,10 @@ impl<O: SubstParseContext> Template<O> {
 /// Only `deescape_orig_dollar` is allowed to do that.
 pub struct OrigDollarDeescapedProofToken {}
 
-/// Skip over any `ORIGDOLLAR`
+/// Skip over any `orig_dollar`
 ///
 /// Call this after seeing a `$`.
-/// The `ORIGDOLLAR` (hopefully) came from
+/// The `orig_dollar` (hopefully) came from
 /// [`definition::escape_dollars`](escape_dollars).
 pub fn deescape_orig_dollar(
     input: ParseStream,
@@ -303,7 +303,7 @@ pub fn deescape_orig_dollar(
     input.step(|cursor| {
         let rest = (|| {
             let (ident, rest) = cursor.ident()?;
-            (ident == "ORGDOLLAR").then(|| ())?;
+            (ident == "orig_dollar").then(|| ())?;
             Some(rest)
         })()
         .unwrap_or(*cursor);
