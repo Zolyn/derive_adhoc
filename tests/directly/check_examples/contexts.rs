@@ -132,8 +132,8 @@ impl Limit {
         {
             da_cond(mk_sd)
         } else if let Some((n,)) = mc!(
-            for_, 
-            r"^`(\w+)`$",
+            for_,
+            r"^`(?:struct |Enum::)?(\w+)(?:|\;|\(\.\.\.\)\;| \{\.\.\.\})`$",
         ) {
             L::Name(n.into())
         } else if let Some((f, n)) = mc!(for_, r"^`(\w+)` in `(\w+)`$") {
