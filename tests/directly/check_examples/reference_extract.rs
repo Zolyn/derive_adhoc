@@ -246,21 +246,12 @@ fn parse_bullet(
     errs: &mut Errors,
     ss: &mut SectionState,
     examples_out: &mut Vec<Box<dyn Example>>,
-) {
+) -> Result<(), String> {
     let bullet = re!(r"\n   +").replace_all(bullet, " ");
     let (input, here_for, outputs) =
         match mc!(bullet, r#"(?m)^ \* `([^`]+)`(?: for ([^:]+))?: (.*)$"#) {
             Some(y) => y,
-            None => {
-                errs.wrong(
-                    loc,
-                    format_args!(
-                        "failed to parse bullet point as example: {:?}",
-                        bullet,
-                    ),
-                );
-                return;
-            }
+            None => return Err(format!("syntax not as expected")),
         };
 
     let for_used_buf = Default::default();
@@ -278,6 +269,8 @@ fn parse_bullet(
         None => Limit::True,
         Some((loc, for_, for_used)) => {
             for_used.note();
+            // Explicit error handling because we want to use the right loc:
+            // it might be from an earlier directive.
             match Limit::parse(
                 for_,
                 &mut all_must_match,
@@ -286,7 +279,7 @@ fn parse_bullet(
                 Ok(y) => y,
                 Err(m) => {
                     errs.wrong(loc, m);
-                    return;
+                    return Ok(());
                 }
             }
         }
@@ -305,11 +298,9 @@ fn parse_bullet(
 
     if let Some((mut rhs,)) = mc!(outputs, r"True for (.+)$") {
         if for_.is_some() {
-            errs.wrong(
-                loc,
-                format_args!("in condition example, `for ...` must be on RHS"),
-            );
-            return;
+            return Err(format!(
+                "in condition example, `for ...` must be on RHS"
+            ));
         }
         let mut true_contexts = vec![];
         while !rhs.is_empty() {
@@ -329,13 +320,7 @@ fn parse_bullet(
                     for_
                 }
             };
-            let lim = match Limit::parse(&for_, &mut false, None) {
-                Ok(y) => y,
-                Err(m) => {
-                    errs.wrong(loc, m);
-                    return;
-                }
-            };
+            let lim = Limit::parse(&for_, &mut false, None)?;
             true_contexts.push((for_, lim));
         }
         examples_out.push(Box::new(ConditionExample::new(
@@ -373,6 +358,8 @@ fn parse_bullet(
             outputs = rest;
         }
     }
+
+    Ok(())
 }
 
 fn examples_section<'i>(
@@ -386,7 +373,16 @@ fn examples_section<'i>(
     while let Some(ii) = input.next() {
         match ii {
             II::Bullet { loc, bullet } => {
-                parse_bullet(*loc, bullet, errs, &mut ss, out);
+                match parse_bullet(*loc, bullet, errs, &mut ss, out) {
+                    Ok(()) => {}
+                    Err(e) => errs.wrong(
+                        *loc,
+                        format_args!(
+                            "failed to parse bullet point: {:?}: {}",
+                            bullet, e,
+                        ),
+                    ),
+                }
             }
             II::Directive {
                 loc: d_loc,
