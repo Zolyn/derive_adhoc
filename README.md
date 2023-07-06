@@ -13,12 +13,6 @@ So the template syntax is still subject to change.
 derive-adhoc has seen limited, if any, real-world use.
 So there may well be sharp edges.
 
-The reference documentation is complete,
-but lacks examples for some constructs.
-Refer to the introduction,
-which has a number of worked examples.
-covering much of the functionality,
-
 ## Overview
 
 You can write an ad-hoc template,
@@ -41,16 +35,7 @@ and makes the pieces available via predefined expansion variables.
 Further documentation is available in the `doc_` module(s)
 and the docs for the individual proc macros.
 
-## Examples
-
-There are several examples in
-[our source repo](https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/tree/main/tests/expand).
-You may want to start with
-[`clone.rs`](https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/blob/main/tests/expand/clone.rs),
-and its expansion
-[`clone.expanded.rs`](https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/blob/main/tests/expand/clone.expanded.rs),
-
-### Simple example - providing `Vec` containing enum variant names
+## Simple example - providing `Vec` containing enum variant names
 
 ```
 use derive_adhoc::{define_derive_adhoc, Adhoc};
@@ -83,6 +68,5 @@ assert_eq!(
 
 Why not have a look at our [friendly introduction?](doc_introduction)?
 
-It isn't done yet,
-but it tries to be an approachable guide
-to what `derive_adhoc` is, and how to use it.
+It will walk you through derive-adhoc's most important features,
+with a number of worked examples,
