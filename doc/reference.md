@@ -661,9 +661,9 @@ for the purposes of `fvis` and `tvis`
 
 ### Examples
 
- * `tvis`: True for `Unit`, and `Enum`
- * `fvis`: True for `field` in `Struct`, and fields in `Enum`
- * `fdefvis`: True for `field` in `Struct`
+ * `tvis`: true for `Unit`, and `Enum`
+ * `fvis`: true for `field` in `Struct`, and fields in `Enum`
+ * `fdefvis`: true for `field` in `Struct`
 
 <!--##examples-ignore##-->
 And in each case, false for all others.
@@ -686,10 +686,10 @@ So `Xmeta(SUB(NAME))` is true if the driver has
 
 #### Examples
 
- * `tmeta(unused)`: True for `Tuple`
- * `tmeta(gentype)`: True for `Unit`
- * `vmeta(value)`: True for `Unit`, and `Enum::UnitVariant`
- * `fmeta(nested)`: True for `field` in `Struct`
+ * `tmeta(unused)`: true for `Tuple`
+ * `tmeta(gentype)`: true for `Unit`
+ * `vmeta(value)`: true for `Unit`, and `Enum::UnitVariant`
+ * `fmeta(nested)`: true for `field` in `Struct`
 
 ### `is_struct`, `is_enum`, `is_union`
 
@@ -718,9 +718,9 @@ Use `$vdefbody` and `$fdefine` when defining a derived type.
 
 #### Examples
 
- * `v_is_unit`: True for `struct Unit;`, and `Enum::UnitVariant;`
- * `v_is_tuple`: True for `struct Tuple(...);`, and `Enum::TupleVariant(...);`
- * `v_is_named`: True for `struct Struct {...}`, and `Enum::NamedVariant {...}`
+ * `v_is_unit`: true for `struct Unit;`, and `Enum::UnitVariant;`
+ * `v_is_tuple`: true for `struct Tuple(...);`, and `Enum::TupleVariant(...);`
+ * `v_is_named`: true for `struct Struct {...}`, and `Enum::NamedVariant {...}`
 
 ### `false`, `true`, `not(CONDITION)`, `any(COND1,COND2,...)`, `all(COND1,COND2,...)` -- boolean logic
 
