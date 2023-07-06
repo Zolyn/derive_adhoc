@@ -36,4 +36,9 @@ derive_adhoc! {
     BadOptionsDriver dbg, for struct, for union:
 }
 
+define_derive_adhoc! {
+    #[allow(dead_code)]
+    BadAttributeTemplate:
+}
+
 fn main() {}
