@@ -23,6 +23,17 @@ We expect to increase it cautiously and only with good reason.
 
 ## Changelog
 
+### 0.6.1
+
+#### Fixed
+
+ * Fixed a few broken docs links and similar infelicities.
+
+#### Improved
+
+ * Change dollar-escaping pseudo-keyword to `$orig_dollar`.
+   (Internal change; should not have any user-visible effect.)
+
 ### 0.6.0
 
 #### Breaking
