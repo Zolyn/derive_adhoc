@@ -283,13 +283,15 @@ fn parse_bullet(
         }
     };
 
-    let poss = |output: Result<&_, &_>| PossibilitiesExample::new(
-        loc,
-        &input,
-        limit.clone(),
-        all_must_match,
-        output,
-    );
+    let poss = |output: Result<&_, &_>| {
+        PossibilitiesExample::new(
+            loc,
+            &input,
+            limit.clone(),
+            all_must_match,
+            output,
+        )
+    };
 
     if let Some((mut rhs,)) = mc!(outputs, r"True for (.+)$") {
         if for_.is_some() {
@@ -321,16 +323,19 @@ fn parse_bullet(
     } else {
         let mut outputs = outputs;
         while !outputs.is_empty() {
-            let (p, rest) = [
-                "(?m)^`([^`]+)`(?:, (.*)|)$",
-                "(?m)^``((?:[^`]+|`[^`])*)``(?:, (.*)|)$",
-            ]
-            .iter()
-            .find_map(|re| mc!(outputs, re))
-            .ok_or_else(|| format!(
-                r#"bad (tail of) bullet point examples "{}""#,
-                outputs,
-            ))?;
+            let (p, rest) =
+                [
+                    "(?m)^`([^`]+)`(?:, (.*)|)$",
+                    "(?m)^``((?:[^`]+|`[^`])*)``(?:, (.*)|)$",
+                ]
+                .iter()
+                .find_map(|re| mc!(outputs, re))
+                .ok_or_else(|| {
+                    format!(
+                        r#"bad (tail of) bullet point examples "{}""#,
+                        outputs,
+                    )
+                })?;
             poss(Ok(&p))?;
             outputs = rest;
         }
