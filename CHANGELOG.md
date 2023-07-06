@@ -23,6 +23,36 @@ We expect to increase it cautiously and only with good reason.
 
 ## Changelog
 
+### 0.6.0
+
+#### Breaking
+
+ * `$fvis` and `fvis` now refer to the top-level visibility for enums.
+   (The previous behaviour is now available from `$fdefvis`/`fdefvis`.)
+ * `fmeta` and `vmeta` now fail when used outside a field or variant,
+   rather than searching through the whole item.
+   (`$fmeta` and `$vmeta` didn't search and are unchanged.)
+ * Actually make structs and unions be treated as having one "variant".
+ * `$tdefgens` and `$tgens` include trailing comma when nonempty,
+   as documented and intended.
+
+#### Added
+
+ * `define_derive_adhoc!` supports doc comments.
+ * `$fdefvis`/`fdefvis` for the textual visibility of a field.
+
+#### Fixed
+
+ * Reference doc example snippets: many errors corrected.
+ * Added missing cargo dep on `syn/extra-traits`.
+
+#### Improved
+
+ * Trailing comma no longer added inside generics in `$ttype` `$vtype`.
+ * Relaxed upper dependency bounds for `strum`, `itertools`.
+ * docs: Reference: example snippets: now tested, and many added.
+ * docs: Introduction: now has a Table of Contents.
+
 ### 0.5.0
 
 #### Breaking
