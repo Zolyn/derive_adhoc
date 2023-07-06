@@ -181,9 +181,10 @@ For the effective visibility of an enum field, write
 #### Examples
 
  * `$tvis` for `Unit`: `pub`
- * `$tvis` for `Enum`: `pub(crate)`
+ * `$tvis` for `Enum`: `pub`
  * `$tvis` for others: nothing
  * `$fvis` for `field` in `Struct`: `pub`
+ * `$fvis` for `field_b` in `Struct`: `pub(crate)`
  * `$fvis` for others: nothing
 
 ### `$vpat`, `$fpatname` - pattern matching and value deconstruction
@@ -579,7 +580,7 @@ Expands to (when applied to `Tuple` and `Enum`):
 struct TupleCopy<'a, 'l: 'a, T: Display = usize, const C: usize = 1,>(
     &'a &'l T,
 );
-pub(crate) enum EnumCopy<'a, 'l: 'a, T: Display = usize, const C: usize = 1,> {
+pub enum EnumCopy<'a, 'l: 'a, T: Display = usize, const C: usize = 1,> {
     UnitVariantCopy,
     TupleVariantCopy(std::iter::Once::<T>,),
     NamedVariantCopy { field_copy: &'l &'a T, ... }
@@ -642,7 +643,7 @@ for the purposes of `fvis` and `tvis`
 
 ### Examples
 
- * `tvis`: True for `Unit`
+ * `tvis`: True for `Unit`, and `Enum`
  * `fvis`: True for `field` in `Struct`
 
 <!--##examples-ignore##-->
@@ -861,11 +862,11 @@ where T: 'l, T: TryInto<u8>
 {
     #[adhoc(nested(inner = "42"))]
     pub field: &'l &'a T,
-    field_b: String,
+    pub(crate) field_b: String,
 }
 
 #[derive(Adhoc)]
-pub(crate) enum Enum<'a, 'l: 'a, T: Display = usize, const C: usize = 1>
+pub enum Enum<'a, 'l: 'a, T: Display = usize, const C: usize = 1>
 where T: 'l, T: TryInto<u8>
 {
     #[adhoc(value="enum-variant")]
