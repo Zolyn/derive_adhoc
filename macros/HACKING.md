@@ -14,7 +14,7 @@ and, especially, testing them can be complex.
    * [Reporting errors during template parsing and expansion](#reporting-errors-during-template-parsing-and-expansion)
    * [Adding an expansion keyword](#adding-an-expansion-keyword)
       * [Accessing the driver](#accessing-the-driver)
-      * [Expansion keysords with content or arguments](#expansion-keysords-with-content-or-arguments)
+      * [Expansion keywords with content or arguments](#expansion-keywords-with-content-or-arguments)
       * [Adding a keyword that can appear in `${paste }` and/or `${CASE }`](#adding-a-keyword-that-can-appear-in-paste--andor-case-)
       * [Adding a boolean keyword](#adding-a-boolean-keyword)
 
