@@ -66,7 +66,7 @@ assert_eq!(
 
 ## Next steps
 
-Why not have a look at our [friendly introduction?](doc_introduction)?
+Why not have a look at our [friendly introduction](doc_introduction)?
 
 It will walk you through derive-adhoc's most important features,
 with a number of worked examples,
