@@ -40,28 +40,28 @@ impl Subst<BooleanContext> {
     pub fn eval_bool(&self, ctx: &Context) -> syn::Result<bool> {
         // eprintln!("@@@@@@@@@@@@@@@@@@@@ EVAL {:?}", self);
 
-        let eval_meta = |wa: &SubstMeta<_>, pmetas| {
-            let SubstMeta { path, as_, level: _ } = wa;
-            use SubstMetaAs as SMA;
-            match as_ {
-                SMA::Unspecified(..) => {}
-                SMA::str(nb) |
-                SMA::tokens(nb, ..) |
-                SMA::ty(nb) => void::unreachable(*nb)
-            };
-            is_found(path.search_eval_bool(pmetas))
-        };
         let v_fields = || ctx.variant(&self.kw_span).map(|v| &v.fields);
         use syn::Fields as SF;
 
         let r = match &self.sd {
-            SD::xmeta(wa) => eval_meta(wa, wa.pmetas(ctx)?),
             SD::is_enum(..) => ctx.is_enum(),
             SD::is_struct(..) => matches!(ctx.top.data, syn::Data::Struct(_)),
             SD::is_union(..) => matches!(ctx.top.data, syn::Data::Union(_)),
             SD::v_is_unit(..) => matches!(v_fields()?, SF::Unit),
             SD::v_is_tuple(..) => matches!(v_fields()?, SF::Unnamed(..)),
             SD::v_is_named(..) => matches!(v_fields()?, SF::Named(..)),
+
+            SD::xmeta(wa) => {
+                let SubstMeta { path, as_, level: _ } = wa;
+                use SubstMetaAs as SMA;
+                match as_ {
+                    SMA::Unspecified(..) => {}
+                    SMA::str(nb) |
+                    SMA::tokens(nb, ..) |
+                    SMA::ty(nb) => void::unreachable(*nb)
+                };
+                is_found(path.search_eval_bool(wa.pmetas(ctx)?))
+            }
 
             SD::False(..) => false,
             SD::True(..) => true,
