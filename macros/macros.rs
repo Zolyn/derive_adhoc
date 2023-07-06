@@ -116,7 +116,7 @@ pub fn derive_adhoc_expand(
 /// Expands the template `TEMPLATE` for the type `DataStructureType`,
 ///
 /// `OPTIONS,..` is an optional comma-separated list of
-/// [expansion options](doc_template_syntax/index.html#expansion-options).
+/// [expansion options](doc_reference/index.html#expansion-options).
 ///
 /// The definition of `DataStructureType` must have been decorated
 /// with [`#[derive(Adhoc)]`](crate::Adhoc),
@@ -147,7 +147,7 @@ pub fn derive_adhoc(
 /// `#[derive_adhoc(MyMacro)]`.
 ///
 /// `OPTIONS,..` is an optional comma-separated list of
-/// [expansion options](doc_template_syntax/index.html#expansion-options),
+/// [expansion options](doc_reference/index.html#expansion-options),
 /// which will be applied whenever this template is expanded.
 ///
 /// `DOCS`, if supplied, are used as the rustdocs
@@ -251,7 +251,7 @@ pub fn define_derive_adhoc(
 ///     Each such `MyMacro` is applied to the data structure.
 ///
 ///     You can specify
-///     [expansion options](doc_template_syntax/index.html#expansion-options)
+///     [expansion options](doc_reference/index.html#expansion-options)
 ///     for each such template application, by writing
 ///     `#[derive_adhoc(MyMacro[OPTIONS,..])]`, where
 ///     `[OPTIONS,..]` is a comma-separated list of expansion options
@@ -303,7 +303,7 @@ pub fn define_derive_adhoc(
 ///
 /// The contents of `#[adhoc]` attributes are made available
 /// to templates via the
-/// [`${Xmeta}`](doc_template_syntax/index.html#tmeta-vmeta-fmeta---adhoc-attributes)
+/// [`${Xmeta}`](doc_reference/index.html#tmeta-vmeta-fmeta---adhoc-attributes)
 /// expansions.
 ///
 /// If the template(s) don't use them, they are ignored.

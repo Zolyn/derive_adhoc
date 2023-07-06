@@ -6,9 +6,9 @@ Features are provided to allow for a build with reduced dependencies.
 
  * `full`: Metafeature.
    Enable all reasonable, non-experimental, features.
- * `case`: [Case conversions](../doc_template_syntax/index.html#case-changing),
+ * `case`: [Case conversions](../doc_reference/index.html#case-changing),
    using `heck`.
- * `expect`: the [`expect`](../doc_template_syntax/index.html#expect-items-expect-expr--syntax-check-the-expansion)
+ * `expect`: the [`expect`](../doc_reference/index.html#expect-items-expect-expr--syntax-check-the-expansion)
    expansion option for syntax checking.
  * `minimal-1`: Minimal feature set.  Must be enabled.
 
