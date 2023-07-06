@@ -173,16 +173,7 @@ impl PossibilitiesExample {
         };
         let limit = &self.limit;
 
-        let context_desc = {
-            let mut out = format!("{}", ctx.top.ident);
-            if let Some(vname) = ctx.vname_s() {
-                write!(out, "::{}", vname).unwrap();
-            }
-            if let Some(fname) = ctx.fname_s() {
-                write!(out, ".{}", fname).unwrap();
-            }
-            out
-        };
+        let context_desc = ctx.desc_for_tests();
 
         if !limit
             .matches(ctx)

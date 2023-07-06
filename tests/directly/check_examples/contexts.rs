@@ -49,6 +49,16 @@ pub impl Context<'_> {
         let span = Span::call_site();
         Some(self.field?.fname(span).to_token_stream().to_string())
     }
+    fn desc_for_tests(&self) -> String {
+        let mut out = format!("{}", self.top.ident);
+        if let Some(vname) = self.vname_s() {
+            write!(out, "::{}", vname).unwrap();
+        }
+        if let Some(fname) = self.fname_s() {
+            write!(out, ".{}", fname).unwrap();
+        }
+        out
+    }
 }
 
 impl Limit {
