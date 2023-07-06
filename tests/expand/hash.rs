@@ -9,6 +9,7 @@ use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 
 define_derive_adhoc! {
+    /// Derives `Hash`
     MyHash =
 
     impl<$tgens> Hash for $ttype
