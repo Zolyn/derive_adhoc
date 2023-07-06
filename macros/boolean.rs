@@ -52,13 +52,17 @@ impl Subst<BooleanContext> {
             SD::v_is_named(..) => matches!(v_fields()?, SF::Named(..)),
 
             SD::xmeta(sm) => {
-                let SubstMeta { path, as_, level: _ } = sm;
+                let SubstMeta {
+                    path,
+                    as_,
+                    level: _,
+                } = sm;
                 use SubstMetaAs as SMA;
                 match as_ {
                     SMA::Unspecified(..) => {}
-                    SMA::str(nb) |
-                    SMA::tokens(nb, ..) |
-                    SMA::ty(nb) => void::unreachable(*nb)
+                    SMA::str(nb) | SMA::tokens(nb, ..) | SMA::ty(nb) => {
+                        void::unreachable(*nb)
+                    }
                 };
                 is_found(path.search_eval_bool(sm.pmetas(ctx)?))
             }
