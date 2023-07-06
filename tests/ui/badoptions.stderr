@@ -64,3 +64,9 @@ error: contradictory values for expected driver kind (in `for` option) (second)
    |
 36 |     BadOptionsDriver dbg, for struct, for union:
    |                                           ^^^^^
+
+error: only doc attributes are supported
+  --> ui/badoptions.rs:40:7
+   |
+40 |     #[allow(dead_code)]
+   |       ^^^^^

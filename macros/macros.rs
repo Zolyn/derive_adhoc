@@ -134,8 +134,9 @@ pub fn derive_adhoc(
 
 /// Define a reuseable template
 ///
-/// ```ignore
+/// ```text
 /// define_derive_adhoc! {
+///     [/// DOCS]
 ///     [pub] MyMacro OPTIONS,.. =
 ///     TEMPLATE
 /// }
@@ -148,6 +149,11 @@ pub fn derive_adhoc(
 /// `OPTIONS,..` is an optional comma-separated list of
 /// [expansion options](doc_template_syntax/index.html#expansion-options),
 /// which will be applied whenever this template is expanded.
+///
+/// `DOCS`, if supplied, are used as the rustdocs
+/// for the captured template macro `derive_adhoc_template_MyMacro`.
+/// derive-adhoc will then also append a note about
+/// how to invoke the template.
 ///
 /// ## Captured template macro `derive_adhoc_template_MyMacro`
 ///

@@ -4,6 +4,7 @@ use super::prelude::*;
 
 #[derive(Debug, Clone)]
 struct TemplateDefinition {
+    doc_attrs: Vec<syn::Attribute>,
     vis: Option<syn::VisPublic>,
     templ_name: syn::Ident,
     options: UnprocessedOptions,
@@ -12,15 +13,24 @@ struct TemplateDefinition {
 
 impl Parse for TemplateDefinition {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let vis: Option<_> = input.parse()?;
         // This rejects Rust keywords, which is good because
         // for example `#[derive_adhoc(pub)]` ought not to mean to apply
         // a template called `pub`.  See ticket #1.
+        let doc_attrs = input.call(syn::Attribute::parse_outer)?;
+        for attr in &doc_attrs {
+            if !attr.path.is_ident("doc") {
+                return Err(attr
+                    .path
+                    .error("only doc attributes are supported"));
+            }
+        }
+        let vis: Option<_> = input.parse()?;
         let templ_name = input.parse()?;
         let options = UnprocessedOptions::parse(&input, OpContext::Template)?;
         let _equals: syn::Token![=] = input.parse()?;
         let template = input.parse()?;
         Ok(TemplateDefinition {
+            doc_attrs,
             vis: vis.map(|pub_token| syn::VisPublic { pub_token }),
             templ_name,
             options,
@@ -98,7 +108,16 @@ pub fn escape_dollars(input: TokenStream) -> TokenStream {
 pub fn define_derive_adhoc_func_macro(
     input: TokenStream,
 ) -> Result<TokenStream, syn::Error> {
+    // eprintln!(
+    //     "---------- derive_adhoc_define start input ----------",
+    // );
+    // eprintln!("{}", &input);
+    // eprintln!(
+    //     "---------- derive_adhoc_define end input ----------",
+    // );
+
     let TemplateDefinition {
+        doc_attrs,
         vis,
         templ_name,
         options,
@@ -109,6 +128,17 @@ pub fn define_derive_adhoc_func_macro(
 
     let templ_mac_name =
         format_ident!("derive_adhoc_template_{}", &templ_name);
+
+    let doc_addendum = (!doc_attrs.is_empty()).then(|| {
+        let addendum = format!(
+            r#"
+
+This is a `derive_adhoc` template.  Do not invoke it directly.
+To use it, write: `#[derive(Adhoc)] #[derive_adhoc({})]`."#,
+            templ_name
+        );
+        quote!( #[doc = #addendum] )
+    });
 
     let expand_macro;
     let vis_export;
@@ -127,6 +157,8 @@ pub fn define_derive_adhoc_func_macro(
     // the macro must recent a dollar as its first argument because
     // it is hard to find a dollar otherwise!
     let output = quote! {
+        #( #doc_attrs )*
+        #doc_addendum
         #vis_export
         macro_rules! #templ_mac_name {
             {
