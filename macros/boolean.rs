@@ -40,32 +40,32 @@ impl Subst<BooleanContext> {
     pub fn eval_bool(&self, ctx: &Context) -> syn::Result<bool> {
         // eprintln!("@@@@@@@@@@@@@@@@@@@@ EVAL {:?}", self);
 
-        macro_rules! eval_meta { { $wa:expr, $lev:ident, $($pmetas:tt)* } => { {
-            let SubstMeta { path, as_} = $wa;
-            use SubstMetaAs as SMA;
-            match as_ {
-                SMA::Unspecified(..) => {}
-                SMA::str(nb) |
-                SMA::tokens(nb, ..) |
-                SMA::ty(nb) => void::unreachable(*nb)
-            };
-            is_found(ctx.for_with_within::<$lev,_,_>(|_ctx, within| {
-                path.search_eval_bool(&within . $($pmetas)*)
-            }))
-        } } }
         let v_fields = || ctx.variant(&self.kw_span).map(|v| &v.fields);
         use syn::Fields as SF;
 
         let r = match &self.sd {
-            SD::tmeta(wa) => is_found(wa.path.search_eval_bool(ctx.tmetas)),
-            SD::vmeta(wa) => eval_meta! { wa, WithinVariant, pmetas },
-            SD::fmeta(wa) => eval_meta! { wa, WithinField, pfield.pmetas },
             SD::is_enum(..) => ctx.is_enum(),
             SD::is_struct(..) => matches!(ctx.top.data, syn::Data::Struct(_)),
             SD::is_union(..) => matches!(ctx.top.data, syn::Data::Union(_)),
             SD::v_is_unit(..) => matches!(v_fields()?, SF::Unit),
             SD::v_is_tuple(..) => matches!(v_fields()?, SF::Unnamed(..)),
             SD::v_is_named(..) => matches!(v_fields()?, SF::Named(..)),
+
+            SD::xmeta(sm) => {
+                let SubstMeta {
+                    path,
+                    as_,
+                    level: _,
+                } = sm;
+                use SubstMetaAs as SMA;
+                match as_ {
+                    SMA::Unspecified(..) => {}
+                    SMA::str(nb) | SMA::tokens(nb, ..) | SMA::ty(nb) => {
+                        void::unreachable(*nb)
+                    }
+                };
+                is_found(path.search_eval_bool(sm.pmetas(ctx)?))
+            }
 
             SD::False(..) => false,
             SD::True(..) => true,

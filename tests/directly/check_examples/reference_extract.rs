@@ -236,7 +236,7 @@ fn extract_structs(input: &Preprocessed) -> Vec<syn::DeriveInput> {
 #[derive(Default, Debug)]
 struct SectionState<'i> {
     for_: Option<(DocLoc, &'i String, &'i DirectiveTrackUsed)>,
-    t_limits: Vec<possibilities::Limit>,
+    t_limits: Vec<Limit>,
     bq_input: Option<(DocLoc, &'i String)>,
 }
 
@@ -246,22 +246,11 @@ fn parse_bullet(
     errs: &mut Errors,
     ss: &mut SectionState,
     examples_out: &mut Vec<Box<dyn Example>>,
-) {
+) -> Result<(), String> {
     let bullet = re!(r"\n   +").replace_all(bullet, " ");
     let (input, here_for, outputs) =
-        match mc!(bullet, r#"(?m)^ \* `([^`]+)`(?: for ([^:]+))?: (.*)$"#) {
-            Some(y) => y,
-            None => {
-                errs.wrong(
-                    loc,
-                    format_args!(
-                        "failed to parse bullet point as example: {:?}",
-                        bullet,
-                    ),
-                );
-                return;
-            }
-        };
+        mc!(bullet, r#"(?m)^ \* `([^`]+)`(?: for ([^:]+))?: (.*)$"#)
+            .ok_or_else(|| format!("syntax not as expected"))?;
 
     let for_used_buf = Default::default();
 
@@ -275,10 +264,12 @@ fn parse_bullet(
 
     let mut all_must_match = false;
     let limit = match for_ {
-        None => possibilities::Limit::True,
+        None => Limit::True,
         Some((loc, for_, for_used)) => {
             for_used.note();
-            match possibilities::Limit::parse(
+            // Explicit error handling because we want to use the right loc:
+            // it might be from an earlier directive.
+            match Limit::parse(
                 for_,
                 &mut all_must_match,
                 Some(&mut ss.t_limits),
@@ -286,53 +277,71 @@ fn parse_bullet(
                 Ok(y) => y,
                 Err(m) => {
                     errs.wrong(loc, m);
-                    return;
+                    return Ok(());
                 }
             }
         }
     };
 
-    let mut poss = |output: Result<&_, &_>| match PossibilitiesExample::new(
-        loc,
-        &input,
-        limit.clone(),
-        all_must_match,
-        output,
-    ) {
-        Ok(y) => examples_out.push(y),
-        Err(m) => errs.wrong(loc, m),
+    let poss = |output: Result<&_, &_>| {
+        PossibilitiesExample::new(
+            loc,
+            &input,
+            limit.clone(),
+            all_must_match,
+            output,
+        )
     };
 
-    if m!(outputs, "^nothing$") {
-        poss(Ok(""));
+    if let Some((mut rhs,)) = mc!(outputs, r"True for (.+)$") {
+        if for_.is_some() {
+            return Err(format!(
+                "in condition example, `for ...` must be on RHS"
+            ));
+        }
+        let mut true_contexts = vec![];
+        while !rhs.is_empty() {
+            let (for_, new_rhs) =
+                mc!(rhs, r"([^,]+)(?:$|, and |, )(.*)")
+                .ok_or_else(|| format!(
+                    r#"bad True context syntax for condition example: "{}""#,
+                    rhs,
+                ))?;
+            rhs = new_rhs;
+            let lim = Limit::parse(&for_, &mut false, None)?;
+            true_contexts.push((for_, lim));
+        }
+        examples_out.push(Box::new(ConditionExample::new(
+            loc,
+            input,
+            true_contexts,
+        )));
+    } else if m!(outputs, "^nothing$") {
+        poss(Ok(""))?;
     } else if let Some((msg,)) = mc!(outputs, r"error, ``(.*)``$") {
-        poss(Err(msg.trim()));
+        poss(Err(msg.trim()))?;
     } else {
         let mut outputs = outputs;
         while !outputs.is_empty() {
-            let (p, rest) = match [
-                "(?m)^`([^`]+)`(?:, (.*)|)$",
-                "(?m)^``((?:[^`]+|`[^`])*)``(?:, (.*)|)$",
-            ]
-            .iter()
-            .find_map(|re| mc!(outputs, re))
-            {
-                Some(y) => y,
-                None => {
-                    errs.wrong(
-                        loc,
-                        format!(
-                            r#"bad (tail of) bullet point examples "{}""#,
-                            outputs,
-                        ),
-                    );
-                    break;
-                }
-            };
-            poss(Ok(&p));
+            let (p, rest) =
+                [
+                    "(?m)^`([^`]+)`(?:, (.*)|)$",
+                    "(?m)^``((?:[^`]+|`[^`])*)``(?:, (.*)|)$",
+                ]
+                .iter()
+                .find_map(|re| mc!(outputs, re))
+                .ok_or_else(|| {
+                    format!(
+                        r#"bad (tail of) bullet point examples "{}""#,
+                        outputs,
+                    )
+                })?;
+            poss(Ok(&p))?;
             outputs = rest;
         }
     }
+
+    Ok(())
 }
 
 fn examples_section<'i>(
@@ -346,7 +355,16 @@ fn examples_section<'i>(
     while let Some(ii) = input.next() {
         match ii {
             II::Bullet { loc, bullet } => {
-                parse_bullet(*loc, bullet, errs, &mut ss, out);
+                match parse_bullet(*loc, bullet, errs, &mut ss, out) {
+                    Ok(()) => {}
+                    Err(e) => errs.wrong(
+                        *loc,
+                        format_args!(
+                            "failed to parse bullet point: {:?}: {}",
+                            bullet, e,
+                        ),
+                    ),
+                }
             }
             II::Directive {
                 loc: d_loc,
@@ -617,7 +635,7 @@ fn extract_possibilites_blockquotes(
                 let for_ = re!("^for ").replace_all(&for_, "");
 
                 let mut all_must_match = false;
-                let limit = possibilities::Limit::parse(
+                let limit = Limit::parse(
                     &for_,
                     &mut all_must_match,
                     Some(&mut t_limits),

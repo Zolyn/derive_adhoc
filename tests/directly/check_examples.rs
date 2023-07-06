@@ -17,12 +17,22 @@
 //!  * `INPUT` ...: ``OUTPUT``, ...
 //!  * `INPUT` ...: nothing
 //!  * `INPUT` ...: error, ``MESSAGE``
+//!  * `CONDITION`: True for SOMETHING, SOMETHING, and ...`
 //! ```
 //!
 //! ("others" means not any of the preceding contexts.
 //! Note that double backquotes are required for "error,",
 //! which allows individual backquotes in the messages themselves.
 //! The MESSAGE must then be a substring of the actual error.)
+//!
+//! In an example of a `CONDITION`,
+//! `SOMETHING` can be any of the syntaxes accepted in `for ...`
+//! (but not "others", obviously).
+//! All the contexts for which it returns true must be listed.
+//!
+//! In "for" clauses you can also write
+//! a leading `struct ` or `Enum::`,
+//! and a trailing `;`, `(...);`, or `{...}`.
 //!
 //! Blockquotes ` ```rust ` are tested separately via rustdoc, so ignored here.
 //!
@@ -55,10 +65,14 @@
 
 use super::*;
 
+mod conditions;
+mod contexts;
 mod for_toplevels_concat;
 mod possibilities;
 mod reference_extract;
 
+use conditions::ConditionExample;
+use contexts::{for_every_example_context, ContextExt as _, Limit};
 use for_toplevels_concat::ForToplevelsConcatExample;
 use possibilities::PossibilitiesExample;
 

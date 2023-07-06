@@ -25,6 +25,7 @@
       * [`$dbg_all_keywords` -- Dump expansions of all keywords to compiler stderr](#dbg_all_keywords---dump-expansions-of-all-keywords-to-compiler-stderr)
    * [Conditions](#conditions)
       * [`fvis`, `tvis` - test for public visibility](#fvis-tvis---test-for-public-visibility)
+      * [Examples](#examples)
       * [`fmeta(NAME)`, `vmeta(NAME)`, `tmeta(NAME)` - `#[adhoc]` attributes](#fmetaname-vmetaname-tmetaname---adhoc-attributes)
       * [`is_struct`, `is_enum`, `is_union`](#is_struct-is_enum-is_union)
       * [`v_is_unit`, `v_is_tuple`, `v_is_named`](#v_is_unit-v_is_tuple-v_is_named)
@@ -417,8 +418,8 @@ With `${Xattrs}`, unlike `${Xmeta}`,
 
  * `${tattrs}`: ``#[doc=" Title for `Tuple`"] #[derive(Adhoc, Clone)] #[repr(C)]``
  * `${tattrs repr}`: ``#[repr(C)]``
- * `${tattrs repr, adhoc}`: ``#[adhoc(ununused)] #[repr(C)]``
- * `${tattrs ! derive, doc}`: ``#[adhoc(ununused)] #[repr(C)] #[derive_adhoc(SomeOtherTemplate)]``
+ * `${tattrs repr, adhoc}`: ``#[adhoc(unused)] #[repr(C)]``
+ * `${tattrs ! derive, doc}`: ``#[adhoc(unused)] #[repr(C)] #[derive_adhoc(SomeOtherTemplate)]``
 
 ##### For `Enum`
 
@@ -625,6 +626,8 @@ derive_adhoc! {
 Conditions all start with a `KEYWORD`.
 They are found within `${if }`, `${when }`, and `${select1 }`.
 
+<!-- ## maint/check-keywords-documented conditions ## -->
+
 ### `fvis`, `tvis` - test for public visibility
 
 True iff the field, or the whole toplevel type, is `pub`.
@@ -637,7 +640,14 @@ Within-crate visibility, e.g. `pub(crate)`, is treated as "not visible"
 for the purposes of `fvis` and `tvis`
 (although the `$fvis` and `$tvis` expansions will handle those faithfully).
 
-<!-- ## maint/check-keywords-documented conditions ## -->
+### Examples
+
+ * `tvis`: True for `Unit`
+ * `fvis`: True for `field` in `Struct`
+
+<!--##examples-ignore##-->
+And in each case, false for all others.
+(Refer to the [example structs](structs-used-in-examples), below.)
 
 ### `fmeta(NAME)`, `vmeta(NAME)`, `tmeta(NAME)` - `#[adhoc]` attributes
 
@@ -654,6 +664,13 @@ So `Xmeta(SUB(NAME))` is true if the driver has
 `#[adhoc(SUB(NAME(INNER=...)))]` or `#[adhoc(SUB(NAME))]` or
 `#[adhoc(SUB(NAME=LIT))]` or even `#[adhoc(SUB(NAME()))]`.
 
+#### Examples
+
+ * `tmeta(unused)`: True for `Tuple`
+ * `tmeta(gentype)`: True for `Unit`
+ * `vmeta(value)`: True for `Unit`, and `Enum::UnitVariant`
+ * `fmeta(nested)`: True for `field` in `Struct`
+
 ### `is_struct`, `is_enum`, `is_union`
 
 The driver data structure is a struct, enum, or union, respectively.
@@ -669,10 +686,6 @@ Use `$tdefvariants` when defining a derived type.
 
 Whether and what kind of fields there are.
 
- * `v_is_unit`: True for `struct Unit;`, and `Enum::UnitVariant;`
- * `v_is_tuple`: True for `struct Tuple(...);`, and `Enum::TupleVariant(...);`
- * `v_is_named`: True for `struct Struct {...}`, and `Enum::NamedVariant {...}`
-
 Prefer to avoid these explicit tests,
 when writing a template to work with any shape of structure.
 Instead,
@@ -682,6 +695,12 @@ or via `$vtype`.
 The `Typename { }` syntax can be used for matching and constructing
 all kinds of structures, including units and tuples.
 Use `$vdefbody` and `$fdefine` when defining a derived type.
+
+#### Examples
+
+ * `v_is_unit`: True for `struct Unit;`, and `Enum::UnitVariant;`
+ * `v_is_tuple`: True for `struct Tuple(...);`, and `Enum::TupleVariant(...);`
+ * `v_is_named`: True for `struct Struct {...}`, and `Enum::NamedVariant {...}`
 
 ### `false`, `true`, `not(CONDITION)`, `any(COND1,COND2,...)`, `all(COND1,COND2,...)` -- boolean logic
 
@@ -829,7 +848,7 @@ pub struct Unit<const C: usize = 1>;
 
 /// Title for `Tuple`
 #[derive(Adhoc, Clone)]
-#[adhoc(ununused)]
+#[adhoc(unused)]
 #[repr(C)]
 #[derive_adhoc(SomeOtherTemplate)]
 struct Tuple<'a, 'l: 'a, T: Display = usize, const C: usize = 1>(
