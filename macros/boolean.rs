@@ -51,8 +51,8 @@ impl Subst<BooleanContext> {
             SD::v_is_tuple(..) => matches!(v_fields()?, SF::Unnamed(..)),
             SD::v_is_named(..) => matches!(v_fields()?, SF::Named(..)),
 
-            SD::xmeta(wa) => {
-                let SubstMeta { path, as_, level: _ } = wa;
+            SD::xmeta(sm) => {
+                let SubstMeta { path, as_, level: _ } = sm;
                 use SubstMetaAs as SMA;
                 match as_ {
                     SMA::Unspecified(..) => {}
@@ -60,7 +60,7 @@ impl Subst<BooleanContext> {
                     SMA::tokens(nb, ..) |
                     SMA::ty(nb) => void::unreachable(*nb)
                 };
-                is_found(path.search_eval_bool(wa.pmetas(ctx)?))
+                is_found(path.search_eval_bool(sm.pmetas(ctx)?))
             }
 
             SD::False(..) => false,
