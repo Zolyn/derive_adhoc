@@ -129,6 +129,17 @@ pub fn define_derive_adhoc_func_macro(
     let templ_mac_name =
         format_ident!("derive_adhoc_template_{}", &templ_name);
 
+    let doc_addendum = (!doc_attrs.is_empty()).then(|| {
+        let addendum = format!(
+            r#"
+
+This is a `derive_adhoc` template.  Do not invoke it directly.
+To use it, write: `#[derive(Adhoc)] #[derive_adhoc({})]`."#,
+            templ_name
+        );
+        quote!( #[doc = #addendum] )
+    });
+
     let expand_macro;
     let vis_export;
     match vis {
@@ -147,6 +158,7 @@ pub fn define_derive_adhoc_func_macro(
     // it is hard to find a dollar otherwise!
     let output = quote! {
         #( #doc_attrs )*
+        #doc_addendum
         #vis_export
         macro_rules! #templ_mac_name {
             {
