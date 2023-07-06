@@ -283,15 +283,17 @@ fn parse_bullet(
         }
     };
 
-    let mut poss = |output: Result<&_, &_>| Ok::<_, String>({
-        examples_out.push(PossibilitiesExample::new(
-            loc,
-            &input,
-            limit.clone(),
-            all_must_match,
-            output,
-        )?);
-    });
+    let mut poss = |output: Result<&_, &_>| {
+        Ok::<_, String>({
+            examples_out.push(PossibilitiesExample::new(
+                loc,
+                &input,
+                limit.clone(),
+                all_must_match,
+                output,
+            )?);
+        })
+    };
 
     if let Some((mut rhs,)) = mc!(outputs, r"True for (.+)$") {
         if for_.is_some() {
