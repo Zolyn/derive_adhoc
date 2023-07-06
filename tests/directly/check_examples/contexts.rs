@@ -37,6 +37,7 @@ pub enum Limit {
     DaCond(Rc<Subst<BooleanContext>>),
     Name(String),
     Field { f: String, n: String },
+    Fields { n: String },
     Others(#[educe(Debug(ignore))] Vec<Limit>),
 }
 
@@ -76,6 +77,9 @@ impl Limit {
             Limit::DaCond(cond) => cond.eval_bool(ctx).map_err(|_| ())?,
             Limit::Name(n) => tname(n) || vname(n) || fname(n),
             Limit::Field { f, n } => fname(f) && (tname(n) || vname(n)),
+            Limit::Fields { n } => {
+                ctx.field.is_some() && (tname(n) || vname(n))
+            }
             Limit::Others(v) => {
                 // If we've had any `for field in Type` annotations,
                 // we should skip any contexts that don't have a field.
@@ -139,6 +143,9 @@ impl Limit {
         } else if let Some((f, n)) = mc!(for_, r"^`(\w+)` in `(\w+)`$") {
             *all_must_match = true;
             L::Field { f, n }
+        } else if let Some((n,)) = mc!(for_, r"^fields in `(\w+)`$") {
+            *all_must_match = true;
+            L::Fields { n }
         } else if m!(for_, "^others$") {
             *all_must_match = true;
             let others = others
