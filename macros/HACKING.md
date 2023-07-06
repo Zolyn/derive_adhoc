@@ -147,7 +147,7 @@ to get access to the per-field and per-variant details,
 rather than using `Context.variant`
 and open-coding the error handling for `None`.)
 
-### Expansion keysords with content or arguments
+### Expansion keywords with content or arguments
 
 Parse the content from `input`, in the `keyword!` invocation.
 See `tmeta` et al for an example.
