@@ -1136,6 +1136,9 @@ For example:
    can help with writing careful templates
    that will reject incoherent inputs.
 
+Some of these can be seen in action in test cases in
+[our source repo](https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/tree/main/tests/expand)
+
 Full details are in the [reference].
 
 <!--

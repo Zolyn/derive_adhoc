@@ -35,16 +35,7 @@ and makes the pieces available via predefined expansion variables.
 Further documentation is available in the `doc_` module(s)
 and the docs for the individual proc macros.
 
-## Examples
-
-There are several examples in
-[our source repo](https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/tree/main/tests/expand).
-You may want to start with
-[`clone.rs`](https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/blob/main/tests/expand/clone.rs),
-and its expansion
-[`clone.expanded.rs`](https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/blob/main/tests/expand/clone.expanded.rs),
-
-### Simple example - providing `Vec` containing enum variant names
+## Simple example - providing `Vec` containing enum variant names
 
 ```
 use derive_adhoc::{define_derive_adhoc, Adhoc};
