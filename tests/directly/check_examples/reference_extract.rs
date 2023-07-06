@@ -249,10 +249,8 @@ fn parse_bullet(
 ) -> Result<(), String> {
     let bullet = re!(r"\n   +").replace_all(bullet, " ");
     let (input, here_for, outputs) =
-        match mc!(bullet, r#"(?m)^ \* `([^`]+)`(?: for ([^:]+))?: (.*)$"#) {
-            Some(y) => y,
-            None => return Err(format!("syntax not as expected")),
-        };
+        mc!(bullet, r#"(?m)^ \* `([^`]+)`(?: for ([^:]+))?: (.*)$"#)
+            .ok_or_else(|| format!("syntax not as expected"))?;
 
     let for_used_buf = Default::default();
 
@@ -285,16 +283,13 @@ fn parse_bullet(
         }
     };
 
-    let mut poss = |output: Result<&_, &_>| match PossibilitiesExample::new(
+    let poss = |output: Result<&_, &_>| PossibilitiesExample::new(
         loc,
         &input,
         limit.clone(),
         all_must_match,
         output,
-    ) {
-        Ok(y) => examples_out.push(y),
-        Err(m) => errs.wrong(loc, m),
-    };
+    );
 
     if let Some((mut rhs,)) = mc!(outputs, r"True for (.+)$") {
         if for_.is_some() {
@@ -304,22 +299,13 @@ fn parse_bullet(
         }
         let mut true_contexts = vec![];
         while !rhs.is_empty() {
-            let for_ = match mc!(rhs, r"([^,]+)(?:$|, and |, )(.*)") {
-                None => {
-                    errs.wrong(
-                        loc,
-                        format!(
-                 r#"bad True context syntax for condition example: "{}""#,
-                            rhs,
-                        ),
-                    );
-                    break;
-                }
-                Some((for_, new_rhs)) => {
-                    rhs = new_rhs;
-                    for_
-                }
-            };
+            let (for_, new_rhs) =
+                mc!(rhs, r"([^,]+)(?:$|, and |, )(.*)")
+                .ok_or_else(|| format!(
+                    r#"bad True context syntax for condition example: "{}""#,
+                    rhs,
+                ))?;
+            rhs = new_rhs;
             let lim = Limit::parse(&for_, &mut false, None)?;
             true_contexts.push((for_, lim));
         }
@@ -329,32 +315,23 @@ fn parse_bullet(
             true_contexts,
         )));
     } else if m!(outputs, "^nothing$") {
-        poss(Ok(""));
+        poss(Ok(""))?;
     } else if let Some((msg,)) = mc!(outputs, r"error, ``(.*)``$") {
-        poss(Err(msg.trim()));
+        poss(Err(msg.trim()))?;
     } else {
         let mut outputs = outputs;
         while !outputs.is_empty() {
-            let (p, rest) = match [
+            let (p, rest) = [
                 "(?m)^`([^`]+)`(?:, (.*)|)$",
                 "(?m)^``((?:[^`]+|`[^`])*)``(?:, (.*)|)$",
             ]
             .iter()
             .find_map(|re| mc!(outputs, re))
-            {
-                Some(y) => y,
-                None => {
-                    errs.wrong(
-                        loc,
-                        format!(
-                            r#"bad (tail of) bullet point examples "{}""#,
-                            outputs,
-                        ),
-                    );
-                    break;
-                }
-            };
-            poss(Ok(&p));
+            .ok_or_else(|| format!(
+                r#"bad (tail of) bullet point examples "{}""#,
+                outputs,
+            ))?;
+            poss(Ok(&p))?;
             outputs = rest;
         }
     }
