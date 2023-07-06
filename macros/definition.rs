@@ -98,6 +98,14 @@ pub fn escape_dollars(input: TokenStream) -> TokenStream {
 pub fn define_derive_adhoc_func_macro(
     input: TokenStream,
 ) -> Result<TokenStream, syn::Error> {
+    // eprintln!(
+    //     "---------- derive_adhoc_define start input ----------",
+    // );
+    // eprintln!("{}", &input);
+    // eprintln!(
+    //     "---------- derive_adhoc_define end input ----------",
+    // );
+
     let TemplateDefinition {
         vis,
         templ_name,
