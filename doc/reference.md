@@ -640,6 +640,15 @@ Within-crate visibility, e.g. `pub(crate)`, is treated as "not visible"
 for the purposes of `fvis` and `tvis`
 (although the `$fvis` and `$tvis` expansions will handle those faithfully).
 
+### Examples
+
+ * `tvis`: True for `Unit`
+ * `fvis`: True for `field` in `Struct`
+
+<!--##examples-ignore##-->
+And in each case, false for all others.
+(Refer to the [example structs](structs-used-in-examples), below.)
+
 ### `fmeta(NAME)`, `vmeta(NAME)`, `tmeta(NAME)` - `#[adhoc]` attributes
 
 Looks for `#[adhoc(NAME)]`.
