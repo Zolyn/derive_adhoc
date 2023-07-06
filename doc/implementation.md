@@ -39,7 +39,7 @@ When applied to (e.g.) `pub struct StructName`, generates this
 ```rust,ignore
     macro_rules! derive_adhoc_driver_StructName { {
         { $($template:tt)* }
-        { ($ORGDOLLAR:tt) $(future:tt)* }
+        { ($orig_dollar:tt) $(future:tt)* }
         $($tpassthrough:tt)* 
      } => {
         derive_adhoc_expand!{
@@ -54,7 +54,7 @@ When applied to (e.g.) `pub struct StructName`, generates this
 (The extra `{ }` parts after the driver and template
 include space for future expansion.)
 
-In the `pub struct` part every `$` is replaced with `$ORGDOLLAR`,
+In the `pub struct` part every `$` is replaced with `$orig_dollar`,
 to use the `$` passed in at the invocation site.
 
 ### 2. `derive_adhoc!` function-like proc macro for applying to a template
@@ -131,14 +131,14 @@ Expands to
     } }
 ```
 
-Except, every `$` in the TEMPLATE is replaced with `$ORIGDOLLAR`.
+Except, every `$` in the TEMPLATE is replaced with `$orig_dollar`.
 This is because a `macro_rules!` template
 is not capable of generating a
 literal in the expansion `$`.
 (With the still-unstable
 [`decl_macro`](https://github.com/rust-lang/rust/issues/83527)
 feature, `$$` does this.)
-The template expansion engine treats `$ORGDOLLAR` as just a single `$`.
+The template expansion engine treats `$orig_dollar` as just a single `$`.
 
 (Again, the extra `{ }` parts after the driver and template
 include space for future expansion.)
