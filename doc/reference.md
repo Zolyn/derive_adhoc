@@ -7,7 +7,7 @@
    * [Repetition and nesting](#repetition-and-nesting)
    * [Expansions](#expansions)
       * [`$fname`, `$vname`, `$tname` - names](#fname-vname-tname---names)
-      * [`$fvis`, `$tvis` - visibility](#fvis-tvis---visibility)
+      * [`$fvis`, `$tvis`, `$fdefvis` - visibility](#fvis-tvis-fdefvis---visibility)
       * [`$vpat`, `$fpatname` - pattern matching and value deconstruction](#vpat-fpatname---pattern-matching-and-value-deconstruction)
       * [`$ftype`, `$vtype`, `$ttype`, `$tdeftype` - types](#ftype-vtype-ttype-tdeftype---types)
       * [`$tgens`, `$tgnames`, `$twheres`, `$tdefgens` - generics](#tgens-tgnames-twheres-tdefgens---generics)
@@ -24,7 +24,7 @@
       * [`$tdefvariants`, `$vdefbody`, `$fdefine` - tools for defining types](#tdefvariants-vdefbody-fdefine---tools-for-defining-types)
       * [`$dbg_all_keywords` -- Dump expansions of all keywords to compiler stderr](#dbg_all_keywords---dump-expansions-of-all-keywords-to-compiler-stderr)
    * [Conditions](#conditions)
-      * [`fvis`, `tvis` - test for public visibility](#fvis-tvis---test-for-public-visibility)
+      * [`fvis`, `tvis`, `fdefvis` - test for public visibility](#fvis-tvis-fdefvis---test-for-public-visibility)
       * [Examples](#examples)
       * [`fmeta(NAME)`, `vmeta(NAME)`, `tmeta(NAME)` - `#[adhoc]` attributes](#fmetaname-vmetaname-tmetaname---adhoc-attributes)
       * [`is_struct`, `is_enum`, `is_union`](#is_struct-is_enum-is_union)
@@ -163,28 +163,46 @@ Instead, use `$vpat`, `$fpatname`, or `${paste ... $fname ...}`.
  * `$vname`: `UnitVariant`
  * `$tname`: `Tuple`, `Struct`, `Enum`
 
-### `$fvis`, `$tvis` - visibility
+### `$fvis`, `$tvis`, `$fdefvis` - visibility
 
-The declared visibility of the field, or toplevel type.
+The visibility of the field, or toplevel type.
 
 Expands to `pub`, `pub(crate)`, etc.
-Expands to nothing for private types or private struct fields.
+Expands to nothing for private types or fields.
 
-Always expands to nothing for enum fields,
+This looks only at the syntax in the driver definition;
+an item which is `pub` might still not be reachable,
+for example if it is in a private inner module.
+
+#### Enums and visibility
+
+In Rust,
+enum variants and fields don't have separate visibility;
+they inherit visibility from the enum itself.
+So there is no `$vvis`.
+
+For enum fields, `$fvis` expands to the same as `$tvis`.
+Use `$fvis` for the effective visibility of a field,
+eg when defining a derived method.
+
+`$fdefvis` is precisely what was written in the driver field definition,
+so always expands to nothing for enum fields -
 even though those might be public.
-Variants don't have visibility -
-Rust enum variants inherit visibility from the enum itself -
-so there is no `$vvis`.
-For the effective visibility of an enum field, write
-`${if is_enum { $tvis } else { $fvis }}`.
+Use `$deffvis` when defining a new enum.
 
 #### Examples
 
  * `$tvis` for `Unit`: `pub`
- * `$tvis` for `Enum`: `pub(crate)`
+ * `$tvis` for `Enum`: `pub`
  * `$tvis` for others: nothing
  * `$fvis` for `field` in `Struct`: `pub`
+ * `$fvis` for `field_b` in `Struct`: `pub(crate)`
+ * `$fvis` for fields in `Enum`: `pub`
  * `$fvis` for others: nothing
+ * `$fdefvis` for `field` in `Struct`: `pub`
+ * `$fdefvis` for `field_b` in `Struct`: `pub(crate)`
+ * `$fdefvis` for fields in `Enum`: nothing
+ * `$fdefvis` for others: nothing
 
 ### `$vpat`, `$fpatname` - pattern matching and value deconstruction
 
@@ -567,7 +585,7 @@ will probably be syntactically invalid in context.
 $tvis $tdefkwd ${paste $tname Copy}<$tdefgens>
 ${tdefvariants $(
     ${vdefbody ${paste $vname Copy} $(
-        $fvis ${fdefine ${paste $fname _copy}} $ftype,
+        $fdefvis ${fdefine ${paste $fname _copy}} $ftype,
     ) }
 ) }
 ```
@@ -579,7 +597,7 @@ Expands to (when applied to `Tuple` and `Enum`):
 struct TupleCopy<'a, 'l: 'a, T: Display = usize, const C: usize = 1,>(
     &'a &'l T,
 );
-pub(crate) enum EnumCopy<'a, 'l: 'a, T: Display = usize, const C: usize = 1,> {
+pub enum EnumCopy<'a, 'l: 'a, T: Display = usize, const C: usize = 1,> {
     UnitVariantCopy,
     TupleVariantCopy(std::iter::Once::<T>,),
     NamedVariantCopy { field_copy: &'l &'a T, ... }
@@ -628,13 +646,14 @@ They are found within `${if }`, `${when }`, and `${select1 }`.
 
 <!-- ## maint/check-keywords-documented conditions ## -->
 
-### `fvis`, `tvis` - test for public visibility
+### `fvis`, `tvis`, `fdefvis` - test for public visibility
 
 True iff the field, or the whole toplevel type, is `pub`.
 
-This tests only the syntax in the driver definition;
-a type which is `pub` might still not be reachable,
-for example if it is in a private inner module.
+See
+[`$fvis`, `$tvis` and `$fdefvis`](#fvis-tvis-fdefvis---visibility)
+for details of the semantics (especially for enums),
+and the difference between `$fvis` and `$fdefvis`.
 
 Within-crate visibility, e.g. `pub(crate)`, is treated as "not visible"
 for the purposes of `fvis` and `tvis`
@@ -642,8 +661,9 @@ for the purposes of `fvis` and `tvis`
 
 ### Examples
 
- * `tvis`: True for `Unit`
- * `fvis`: True for `field` in `Struct`
+ * `tvis`: True for `Unit`, and `Enum`
+ * `fvis`: True for `field` in `Struct`, and fields in `Enum`
+ * `fdefvis`: True for `field` in `Struct`
 
 <!--##examples-ignore##-->
 And in each case, false for all others.
@@ -861,11 +881,11 @@ where T: 'l, T: TryInto<u8>
 {
     #[adhoc(nested(inner = "42"))]
     pub field: &'l &'a T,
-    field_b: String,
+    pub(crate) field_b: String,
 }
 
 #[derive(Adhoc)]
-pub(crate) enum Enum<'a, 'l: 'a, T: Display = usize, const C: usize = 1>
+pub enum Enum<'a, 'l: 'a, T: Display = usize, const C: usize = 1>
 where T: 'l, T: TryInto<u8>
 {
     #[adhoc(value="enum-variant")]

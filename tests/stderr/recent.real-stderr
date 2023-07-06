@@ -37,9 +37,11 @@ variant Tuple, field 0:
         $fname       =>  0
         $ftype       =>  usize
         $fvis        =>  
+        $fdefvis     =>  
         $fpatname    =>  f_0
         $fdefine     =>  
         fvis         =   false
+        fdefvis      =   false
         $fattrs      =>  
 variant Struct:
         $vname       =>  Struct
@@ -54,9 +56,11 @@ variant Struct, field field:
         $fname       =>  field
         $ftype       =>  String
         $fvis        =>  
+        $fdefvis     =>  
         $fpatname    =>  f_field
         $fdefine     =>  field :
         fvis         =   false
+        fdefvis      =   false
         $fattrs      =>  
 ---------- derive-adhoc expansions dump for Enum (end) ----------
 ---------- derive-adhoc expansions dump for Unit (start) ----------
@@ -116,9 +120,11 @@ value, field 0:
         $fname       =>  0
         $ftype       =>  usize
         $fvis        =>  
+        $fdefvis     =>  
         $fpatname    =>  f_0
         $fdefine     =>  
         fvis         =   false
+        fdefvis      =   false
         $fattrs      =>  
 ---------- derive-adhoc expansions dump for Tuple (end) ----------
 ---------- derive-adhoc expansions dump for Struct (start) ----------
@@ -151,9 +157,11 @@ value, field field:
         $fname       =>  field
         $ftype       =>  String
         $fvis        =>  
+        $fdefvis     =>  
         $fpatname    =>  f_field
         $fdefine     =>  field :
         fvis         =   false
+        fdefvis      =   false
         $fattrs      =>  
 ---------- derive-adhoc expansions dump for Struct (end) ----------
 ---------- derive-adhoc expansion of ReferenceVersion for Tuple (start) ----------
