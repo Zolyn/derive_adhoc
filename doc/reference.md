@@ -667,7 +667,7 @@ for the purposes of `fvis` and `tvis`
 
 <!--##examples-ignore##-->
 And in each case, false for all others.
-(Refer to the [example structs](structs-used-in-examples), below.)
+(Refer to the [example structs](#structs-used-in-examples), below.)
 
 ### `fmeta(NAME)`, `vmeta(NAME)`, `tmeta(NAME)` - `#[adhoc]` attributes
 
