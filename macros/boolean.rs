@@ -117,6 +117,7 @@ impl Subst<BooleanContext> {
             | SD::paste(_, not_in_bool)
             | SD::ChangeCase(_, _, not_in_bool)
             | SD::when(_, not_in_bool)
+            | SD::define(_, not_in_bool)
             | SD::For(_, not_in_bool)
             | SD::If(_, not_in_bool)
             | SD::select1(_, not_in_bool)

@@ -155,6 +155,7 @@ impl<O: SubstParseContext> Subst<O> {
                 None
             }
             SD::when(..) => None, // out-of-place when, ignore it
+            SD::define(..) => None,
             SD::not(cond, _) => {
                 cond.analyse_repeat(visitor)?;
                 None

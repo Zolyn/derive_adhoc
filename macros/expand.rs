@@ -328,8 +328,24 @@ where
     TemplateElement<O>: Expand<O>,
     O: ExpansionOutput,
 {
-    fn expand(&self, ctx: &Context, out: &mut O) {
+    fn expand(&self, ctx_in: &Context, out: &mut O) {
+        let mut ctx_buf;
+        let mut definitions_here = vec![];
+        let mut ctx = ctx_in;
         for element in &self.elements {
+            if let TE::Subst(Subst {
+                sd: SD::define(def, _),
+                ..
+            }) = element
+            {
+                definitions_here.push(def);
+                ctx_buf = ctx_in.clone();
+                ctx_buf.definitions.earlier = Some(&ctx_in.definitions);
+                ctx_buf.definitions.here = &definitions_here;
+                ctx = &ctx_buf;
+                continue;
+            }
+
             let () = element
                 .expand(ctx, out)
                 .unwrap_or_else(|err| out.record_error(err));
@@ -634,6 +650,8 @@ where
                 content.expand(ctx, &mut items);
                 items.assemble(out, Some(*case))?;
             }
+
+            SD::define(..) => todo!(), // XXXX
 
             SD::when(..) => out.write_error(
                 &kw_span,

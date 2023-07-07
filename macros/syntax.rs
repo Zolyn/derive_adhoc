@@ -110,6 +110,8 @@ pub enum SubstDetails<O: SubstParseContext> {
 
     // special
     when(Box<Subst<BooleanContext>>, O::NotInBool),
+    #[allow(dead_code)] // XXXX
+    define(Definition, O::NotInBool),
 
     // expressions
     False(O::BoolOnly),
@@ -133,6 +135,24 @@ pub enum SubstDetails<O: SubstParseContext> {
     dbg_all_keywords(O::NotInBool),
 
     Crate(O::NotInPaste, O::NotInBool),
+}
+
+#[derive(Debug)]
+#[allow(dead_code)] // XXXX
+pub struct Definition {
+    pub name: DefinitionName,
+    pub body_span: Span,
+    pub body: DefinitionBody,
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct DefinitionName(syn::Ident);
+
+#[derive(Debug)]
+#[allow(dead_code)] // XXXX
+pub enum DefinitionBody {
+    Normal(Template<TokenAccumulator>),
+    Paste(Template<paste::Items>),
 }
 
 #[derive(Debug)]
