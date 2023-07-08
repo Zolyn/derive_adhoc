@@ -44,7 +44,6 @@ pub struct RepeatedTemplate<O: SubstParseContext> {
 pub struct Subst<O: SubstParseContext> {
     pub kw_span: Span,
     pub sd: SubstDetails<O>,
-    pub output_marker: PhantomData<O>,
 }
 
 /// Enum representing nature and payload of a substitution
@@ -624,12 +623,10 @@ impl<O: SubstParseContext> Subst<O> {
 impl<O: SubstParseContext> Parse for Subst<O> {
     fn parse<'i>(input: ParseStream<'i>) -> syn::Result<Self> {
         let kw: IdentAny = input.parse()?;
-        let output_marker = PhantomData;
         let from_sd = |sd| {
             Ok(Subst {
                 sd,
                 kw_span: kw.span(),
-                output_marker,
             })
         };
 
