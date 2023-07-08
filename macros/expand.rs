@@ -688,6 +688,35 @@ where
     }
 }
 
+pub struct DefinitionsIter<'c>(Option<&'c Definitions<'c>>);
+
+impl<'c> Iterator for DefinitionsIter<'c> {
+    type Item = &'c [&'c Definition];
+    fn next(&mut self) -> Option<Self::Item> {
+        let here = self.0?;
+        let r = here.here;
+        self.0 = here.earlier;
+        Some(r)
+    }
+}
+
+impl<'c> IntoIterator for &'c Definitions<'c> {
+    type Item = <DefinitionsIter<'c> as Iterator>::Item;
+    type IntoIter = DefinitionsIter<'c>;
+    fn into_iter(self) -> DefinitionsIter<'c> {
+        DefinitionsIter(Some(self))
+    }
+}
+
+impl Definitions<'_> {
+    pub fn find(&self, name: &DefinitionName) -> Option<&Definition> {
+        self.into_iter()
+            .flatten()
+            .find(|def| &def.name == name)
+            .cloned()
+    }
+}
+
 impl<O> SubstMeta<O>
 where
     O: SubstParseContext,
