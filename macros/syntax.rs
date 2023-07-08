@@ -112,6 +112,7 @@ pub enum SubstDetails<O: SubstParseContext> {
     when(Box<Subst<BooleanContext>>, O::NotInBool),
     #[allow(dead_code)] // XXXX
     define(Definition, O::NotInBool),
+    UserDefined(DefinitionName, O::NotInBool),
 
     // expressions
     False(O::BoolOnly),
@@ -244,6 +245,12 @@ pub struct RawAttrEntry {
 
 /// Error returned by `DefinitionName::try_from(syn::Ident)`
 pub struct InvalidDefinitionName;
+
+impl Spanned for DefinitionName {
+    fn span(&self) -> Span {
+        self.0.span()
+    }
+}
 
 impl TryFrom<syn::Ident> for DefinitionName {
     type Error = InvalidDefinitionName;
@@ -864,6 +871,10 @@ impl<O: SubstParseContext> Parse for Subst<O> {
                 case,
                 not_in_bool()?,
             ));
+        }
+
+        if let Ok(user_defined) = kw.clone().try_into() {
+            return from_sd(SD::UserDefined(user_defined, not_in_bool()?));
         }
 
         Err(kw.error("unknown derive-adhoc keyword"))
