@@ -688,8 +688,6 @@ if `BODY` was precisely an invocation of `${paste }`.
 
 ### Examples
 
-<!--##examples-ignore##-->
-<!--XXXX don't ignore these examples-->
  * `${define VN $vname} ${for variants { $VN }}`:
    `UnitVariant TupleVariant NamedVariant`
  * `${define FN ${paste $fname _}} ${paste ${for fields { "F" $FN }}}`:
