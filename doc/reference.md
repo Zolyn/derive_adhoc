@@ -24,6 +24,7 @@
       * [`$tdefkwd` - keyword introducing the new data structure](#tdefkwd---keyword-introducing-the-new-data-structure)
       * [`$tdefvariants`, `$vdefbody`, `$fdefine` - tools for defining types](#tdefvariants-vdefbody-fdefine---tools-for-defining-types)
       * [`$dbg_all_keywords` -- Dump expansions of all keywords to compiler stderr](#dbg_all_keywords---dump-expansions-of-all-keywords-to-compiler-stderr)
+      * [`${define ...}` - user-defined expansions](#define----user-defined-expansions)
    * [Conditions](#conditions)
       * [`fvis`, `tvis`, `fdefvis` - test for public visibility](#fvis-tvis-fdefvis---test-for-public-visibility)
       * [Examples](#examples)
@@ -657,6 +658,42 @@ derive_adhoc! {
     // ... rest of the template you're developing ...
 }
 ```
+
+### `${define ...}` - user-defined expansions
+
+`${define NAME BODY}` defines a reuseable piece of template.
+Afterwards, `$NAME` (and `${NAME}`) expand `BODY`.
+
+`NAME` is an identifier.
+It may not start with a lowercase letter or underscore:
+those expansion names are reserved for
+derive-adhoc's built-in functionality.
+
+`BODY` is in the
+[standard syntax for positional arguments](#named-and-positional-template-arguments-to-expansions-and-conditions).
+
+`NAME` is visible after its definition in the same template or group,
+including in inner templates and groups.
+Definitions may be re-defined by inner scopes.
+Binding is dynamic,
+both for derive-adhoc built-ins and other user definitions:
+`BODY` is captured without expansion at the site of `$define`,
+and expansions used in it are expanded according
+to the values and definitions prevailing
+in the context where `$NAME` is used.
+
+`${NAME}` may only be used
+inside `${paste}` and case changing
+if `BODY` was precisely an invocation of `${paste }`.
+
+### Examples
+
+<!--##examples-ignore##-->
+<!--XXXX don't ignore these examples-->
+ * `${define VN $vname} ${for variants { $VN }}`:
+   `UnitVariant TupleVariant NamedVariant`
+ * `${define FN ${paste $fname _}} ${paste ${for fields { "F" $FN }}}`:
+   `F0_`, `Ffield_Ffield_b_`
 
 ## Conditions
 
