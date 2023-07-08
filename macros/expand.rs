@@ -660,6 +660,30 @@ where
                 // and exclude it, but that would be super invasive.
                 "${define } only allowed in a full template",
             ),
+            SD::UserDefined(name, _) => {
+                let def = ctx.definitions.find(name).ok_or_else(|| {
+                    name.error("user-defined expansion not fund")
+                })?;
+                match &def.body {
+                    DefinitionBody::Paste(content) => {
+                        paste::expand(ctx, def.body_span, content, out)?;
+                    }
+                    DefinitionBody::Normal(content) => {
+                        let not_in_paste = O::not_in_paste(&kw_span).map_err(
+                            |mut unpasteable| {
+                                unpasteable.combine(def.body_span.error(
+ "user-defined expansion is not pasteable because it isn't, itself, ${paste }"
+                                ));
+                                unpasteable
+                            },
+                        )?;
+                        out.append_tokens_with(&not_in_paste, |out| {
+                            content.expand(ctx, out);
+                            Ok(())
+                        })?;
+                    }
+                }
+            }
 
             SD::when(..) => out.write_error(
                 &kw_span,
