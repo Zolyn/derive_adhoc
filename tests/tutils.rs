@@ -13,7 +13,9 @@ pub impl<T: Debug> T {
 #[macro_export]
 macro_rules! re { { $re:expr $(,)? } => {
     match $re {
-        re => Regex::new(&re).expect(&format!("bad regexp {re}")),
+        re => 
+                Regex::new(&re).expect(&format!("bad regexp {re}"))
+        ,
     }
 } }
 /// `fn m!(l: &str, re: &str) -> bool`: does regexp `re` match in `l` ?
