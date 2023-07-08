@@ -145,6 +145,7 @@ dependencies = [
  "heck",
  "itertools 0.11.0",
  "macrotest",
+ "once_cell",
  "proc-macro-crate",
  "proc-macro2",
  "quote",
