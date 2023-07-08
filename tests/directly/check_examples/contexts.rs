@@ -125,7 +125,6 @@ impl Limit {
             L::DaCond(Rc::new(Subst {
                 kw_span: Span::call_site(),
                 sd: mk_sd(()),
-                output_marker: PhantomData,
             }))
         };
 
