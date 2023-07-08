@@ -2,7 +2,7 @@
 //!
 //! Refer to `idpaste.expanded.rs` to see what this generates.
 
-#![allow(dead_code)]
+#![allow(dead_code, unused_variables)]
 
 use derive_adhoc::{derive_adhoc, Adhoc};
 
@@ -65,6 +65,31 @@ derive_adhoc! {
 
     struct ${pascal_case ${paste wom_ ${shouty_snake_case $tname}
                            ${if true { _bat } else { _noise }}}};
+}
+
+#[derive(Adhoc)]
+enum EdgeCases {
+    Tuple(u32),
+    Struct { r#for: u32, r#unneeded: u32 },
+}
+
+derive_adhoc! {
+    EdgeCases:
+
+    impl $ttype {
+        fn ${paste edge_ ${paste "0" _end}}() {}
+        fn ${paste edge_ $( $fname )}() {}
+        $(
+            fn ${paste binding_ ${paste $fname} _end}() {}
+            // `: `ok_0_tail`, `ok_field_tail`
+        )
+        fn body() {
+            $(
+                ${when v_is_named}
+                let $fname = ();
+            )
+        }
+    }
 }
 
 fn main() {}
