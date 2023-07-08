@@ -627,9 +627,7 @@ where
             SD::Crate(np, ..) => out.append_tokens(np, &ctx.template_crate)?,
 
             SD::paste(content, ..) => {
-                let mut items = paste::Items::new(kw_span);
-                content.expand(ctx, &mut items);
-                items.assemble(out, None)?;
+                paste::expand(ctx, kw_span, content, out)?;
             }
             SD::ChangeCase(content, case, ..) => {
                 let mut items = paste::Items::new(kw_span);

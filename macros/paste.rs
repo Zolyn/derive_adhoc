@@ -478,6 +478,17 @@ fn ident_from_str() {
     chk_err("0");
 }
 
+pub fn expand(
+    ctx: &Context<'_>,
+    kw_span: Span,
+    content: &Template<paste::Items>,
+    out: &mut impl ExpansionOutput,
+) -> syn::Result<()> {
+    let mut items = paste::Items::new(kw_span);
+    content.expand(ctx, &mut items);
+    items.assemble(out, None)
+}
+
 impl Items {
     fn append_atom(&mut self, item: Item) {
         match &item {
