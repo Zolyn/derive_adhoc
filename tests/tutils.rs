@@ -13,9 +13,13 @@ pub impl<T: Debug> T {
 #[macro_export]
 macro_rules! re { { $re:expr $(,)? } => {
     match $re {
-        re => 
+        re => {
+            use once_cell::sync::OnceCell;
+            static RE: OnceCell<Regex> = OnceCell::new();
+            RE.get_or_init(|| 
                 Regex::new(&re).expect(&format!("bad regexp {re}"))
-        ,
+            )
+        }
     }
 } }
 /// `fn m!(l: &str, re: &str) -> bool`: does regexp `re` match in `l` ?
