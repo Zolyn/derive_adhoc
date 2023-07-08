@@ -26,8 +26,7 @@ define_derive_adhoc! {
         ) }
     ) }
 
-    $IMPL From<&'reference $ttype>
-    for $REF_TYPE {
+    $IMPL From<&'reference $ttype> for $REF_TYPE {
         fn from(ref_to_owned: &'reference $ttype) -> Self {
             match ref_to_owned { $(
                 $vpat => ${vtype self=${paste $ttype Reference}} { $(
@@ -37,9 +36,7 @@ define_derive_adhoc! {
         }
     }
 
-    $IMPL $REF_TYPE
-    where $( $ftype: Clone, )
-    {
+    $IMPL $REF_TYPE where $( $ftype: Clone, ) {
         fn cloned(&self) -> $ttype {
             match self { $(
                 ${vpat self=Self} => $vtype { $(
