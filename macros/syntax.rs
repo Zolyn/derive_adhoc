@@ -242,6 +242,83 @@ pub struct RawAttrEntry {
     pub path: syn::Path,
 }
 
+/// Error returned by `DefinitionName::try_from(syn::Ident)`
+pub struct InvalidDefinitionName;
+
+impl TryFrom<syn::Ident> for DefinitionName {
+    type Error = InvalidDefinitionName;
+    fn try_from(ident: syn::Ident) -> Result<Self, InvalidDefinitionName> {
+        // We allow any identifier except those which start with a
+        // lowercase letter or `_`.  Lowercase letters, and `_`, are
+        // reserved for builtin functionality.  We don't restrict the
+        // exclusion to *ascii* lowercase letters, even though we
+        // don't intend any non-ascii keywords, because that might be
+        // confusing.  proc_macros receive identifiers in NFC, so
+        // we don't need to worry about whether this rule might depend
+        // on the input representation.
+        let s = ident.to_string();
+        let c = s.chars().next().expect("identifer was empty string!");
+        if c.is_lowercase() {
+            Err(InvalidDefinitionName)
+        } else {
+            Ok(DefinitionName(ident))
+        }
+    }
+}
+
+impl Parse for DefinitionName {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let ident = input.call(Ident::parse_any)?;
+        let span = ident.span();
+        Ok(ident.try_into().map_err(|InvalidDefinitionName| {
+            span.error(
+                "invalid name for definition - may not start with lowercase",
+            )
+        })?)
+    }
+}
+impl Parse for Definition {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let name = input.parse()?;
+        let body_span = input.span();
+        let mut body = Template::parse_single_or_braced(input)?;
+
+        // Is it precisely an invocation of ${paste } ?
+        let body = match (|| {
+            if body.elements.len() != 1 {
+                return None;
+            }
+            let Template { elements } = &mut body;
+            // This is tedious.  We really want to move match on a vec.
+            match elements.pop().expect("just checked length") {
+                TE::Subst(Subst {
+                    kw_span,
+                    sd: SD::paste(items, not_in_bool),
+                }) => Some(Template {
+                    elements: vec![TE::Subst(Subst {
+                        kw_span,
+                        sd: SD::paste(items, not_in_bool),
+                    })],
+                }),
+                other => {
+                    // Oops, put it back
+                    elements.push(other);
+                    None
+                }
+            }
+        })() {
+            Some(paste) => DefinitionBody::Paste(paste),
+            None => DefinitionBody::Normal(body),
+        };
+
+        Ok(Definition {
+            name,
+            body_span,
+            body,
+        })
+    }
+}
+
 impl<O: SubstParseContext> Spanned for Subst<O> {
     fn span(&self) -> Span {
         self.kw_span
@@ -760,6 +837,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
 
         keyword! { paste(Template::parse(input)?, not_in_bool()?) }
         keyword! { when(input.parse()?, not_in_bool()?) }
+        keyword! { define(input.parse()?, not_in_bool()?) }
 
         keyword! { "false": False(bool_only()?) }
         keyword! { "true": True(bool_only()?) }
