@@ -16,6 +16,8 @@ define_derive_adhoc! {
     ReferenceVersion dbg =
 
     ${define REFERENCE ${paste $tname Reference}}
+    ${define IMPL { impl<'reference, $tgens> }}
+    ${define REF_TYPE { $REFERENCE<'reference, $tgnames> }}
 
     $tvis $tdefkwd $REFERENCE<'reference, $tdefgens>
     ${tdefvariants $(
@@ -24,8 +26,8 @@ define_derive_adhoc! {
         ) }
     ) }
 
-    impl<'reference, $tgens> From<&'reference $ttype>
-    for $REFERENCE<'reference, $tgnames> {
+    $IMPL From<&'reference $ttype>
+    for $REF_TYPE {
         fn from(ref_to_owned: &'reference $ttype) -> Self {
             match ref_to_owned { $(
                 $vpat => ${vtype self=${paste $ttype Reference}} { $(
@@ -35,7 +37,7 @@ define_derive_adhoc! {
         }
     }
 
-    impl<'reference, $tgens> $REFERENCE<'reference, $tgnames>
+    $IMPL $REF_TYPE
     where $( $ftype: Clone, )
     {
         fn cloned(&self) -> $ttype {
