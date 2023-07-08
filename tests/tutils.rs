@@ -9,12 +9,30 @@ pub impl<T: Debug> T {
     }
 }
 
+/// Compile `re` into a [`Regex`], with cacheing
+// Not using lazy_regex because we sometimes make our
+// regexps with format! so they aren't static
+#[cfg(feature = "recent")] // Doesn't work on 1.54; Mutex::new isn't const
+pub fn compile_re_cached(re: &str) -> Regex {
+    use std::sync::Mutex;
+    static CACHE: Mutex<Option<HashMap<String, Regex>>> = Mutex::new(None);
+
+    let mut guard = CACHE.lock().unwrap();
+    let cache = guard.get_or_insert_with(|| Default::default());
+    match cache.get(re) {
+        None => {
+            let re = Regex::new(re).expect(&format!("bad regexp {re}"));
+            cache.entry(re.to_string()).or_insert(re)
+        }
+        Some(re) => re,
+    }
+    .clone()
+}
+
 /// `fn re!(l: &str) -> Regex`
 #[macro_export]
 macro_rules! re { { $re:expr $(,)? } => {
-    match $re {
-        re => Regex::new(&re).expect(&format!("bad regexp {re}")),
-    }
+    compile_re_cached($re.as_ref())
 } }
 /// `fn m!(l: &str, re: &str) -> bool`: does regexp `re` match in `l` ?
 #[macro_export]
