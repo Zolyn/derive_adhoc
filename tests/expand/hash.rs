@@ -12,13 +12,15 @@ define_derive_adhoc! {
     /// Derives `Hash`
     MyHash =
 
+    ${defcond F_HASH not(fmeta(hash(skip))) }
+
     impl<$tgens> Hash for $ttype
     where $twheres
-          $( ${when not(fmeta(hash(skip)))}
+          $( ${when F_HASH}
              $ftype : Hash , )
     {
         fn hash<H : Hasher>(&self, state: &mut H) {
-            $( ${when not(fmeta(hash(skip)))}
+            $( ${when F_HASH}
                self.$fname.hash(state); )
         }
     }
