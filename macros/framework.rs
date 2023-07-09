@@ -12,6 +12,7 @@ pub use super::repeat::*;
 pub use super::syntax::*;
 
 pub(super) use super::paste;
+pub(super) use super::paste::{IdentFrag, IdentFragInfallible};
 
 /// Context during expansion
 ///
@@ -126,10 +127,10 @@ pub trait ExpansionOutput: SubstParseContext {
     ///
     /// Uses the `IdentFragment` for identifier pasting,
     /// and the `ToTokens` for general expansion.
-    fn append_identfrag_toks<I: quote::IdentFragment + ToTokens>(
+    fn append_identfrag_toks<I: IdentFrag>(
         &mut self,
         ident: &I,
-    );
+    ) -> Result<(), I::BadIdent>;
 
     /// Append a Rust path (scoped identifier, perhaps with generics)
     ///
@@ -144,15 +145,17 @@ pub trait ExpansionOutput: SubstParseContext {
     /// This is a "more complex" expansion,
     /// in the terminology of the template reference:
     /// If a paste contains more than one, it is an error.
-    fn append_idpath<A, B>(
+    fn append_idpath<A, B, I>(
         &mut self,
         template_entry_span: Span,
         pre: A,
-        ident: &syn::Ident,
+        ident: &I,
         post: B,
-    ) where
+    ) -> Result<(), I::BadIdent>
+    where
         A: FnOnce(&mut TokenAccumulator),
-        B: FnOnce(&mut TokenAccumulator);
+        B: FnOnce(&mut TokenAccumulator),
+        I: IdentFrag;
 
     /// Append a [`syn::LitStr`](struct@syn::LitStr)
     ///
@@ -407,25 +410,31 @@ impl ExpansionOutput for TokenAccumulator {
     fn append_display<L: Display + Spanned + ToTokens>(&mut self, lit: &L) {
         self.append(lit)
     }
-    fn append_identfrag_toks<I: quote::IdentFragment + ToTokens>(
+    fn append_identfrag_toks<I: IdentFrag>(
         &mut self,
         ident: &I,
-    ) {
-        self.append(ident)
+    ) -> Result<(), I::BadIdent> {
+        self.with_tokens(
+            |out| ident.frag_to_tokens(out), //
+        )
+        .unwrap_or(Ok(()))
     }
-    fn append_idpath<A, B>(
+    fn append_idpath<A, B, I>(
         &mut self,
         _te_span: Span,
         pre: A,
-        ident: &syn::Ident,
+        ident: &I,
         post: B,
-    ) where
+    ) -> Result<(), I::BadIdent>
+    where
         A: FnOnce(&mut TokenAccumulator),
         B: FnOnce(&mut TokenAccumulator),
+        I: IdentFrag,
     {
         pre(self);
-        self.append(ident);
+        self.append_identfrag_toks(ident)?;
         post(self);
+        Ok(())
     }
     fn append_syn_litstr(&mut self, lit: &syn::LitStr) {
         self.append(lit);

@@ -12,6 +12,17 @@ pub struct Items {
     tspan: Span,
     items: Vec<Item>,
     errors: Vec<syn::Error>,
+    atoms: Vec<AtomForReport>,
+}
+
+/// One spanned input element, for use when reporting bad ident errors
+///
+/// We call this an "atom"; in nested pastes,
+/// the atoms are the original input items.
+#[derive(Debug, Clone)]
+pub struct AtomForReport {
+    text: String,
+    span: Span,
 }
 
 #[derive(Debug)]
@@ -32,6 +43,92 @@ enum Item {
         te_span: Span,
     },
 }
+
+//---------- IdentFrag ----------
+
+/// Uninhabited "bad identifier" error for conversions from already-tokens
+#[derive(Copy, Clone, Debug)]
+pub struct IdentFragInfallible(pub Void);
+
+impl From<IdentFragInfallible> for syn::Error {
+    fn from(i: IdentFragInfallible) -> syn::Error {
+        void::unreachable(i.0)
+    }
+}
+
+impl IdentFragInfallible {
+    pub fn unreachable(&self) -> ! {
+        void::unreachable(self.0)
+    }
+}
+
+/// For use with `ExpansionOutput.append_identfrag_toks` etc.
+///
+/// Sort of like `quote::IdentFragment`.
+/// But:
+///
+///  * Strings available directly, not via the inconvenient `fmt`,
+///  * identifier construction doesn't involve `format_ident!` and panics.
+///  * `paste::InputAtom` passed through separately,
+///
+/// The main purpose of this trait is to allow deferral of errors
+/// from constructing bad identifiers.  Some *inputs* (implementors
+/// of `IdentFrag`, typically those which are already tokens) can
+/// infallibly be appended as tokens.
+///
+/// But paste results aren't converted to identifiers until the last
+/// moment: they can'tbed converted infallibly, and the error surfaces
+/// in `convert_to_ident`.
+///
+/// The framework methods `append_*ident*` propagate any error to the
+/// call site.  Call sites which pass already-tokens can just use `?`
+/// to convert the uninhabited error to `syn::Error` - or they can
+/// use `IdentFragInfallible::unreachable`.
+///
+/// Call sites which pass actually-fallible content (ie, paste results)
+/// end up with a `syn::Error`.
+pub trait IdentFrag: Spanned {
+    type BadIdent: Clone;
+
+    /// (Try to) convert to tokens (ie, real `Ident`)
+    ///
+    /// Depending on the implementor, this might be fallible, or not.
+    fn frag_to_tokens(
+        &self,
+        out: &mut TokenStream,
+    ) -> Result<(), Self::BadIdent>;
+
+    /// The fragment as a string
+    fn fragment(&self) -> String;
+
+    /// Transfer information about the atoms in this `IdentFrag` into `out`
+    ///
+    /// If, ultimately, a bad identifier is constructed using
+    /// some of this input,
+    /// these atoms will be reported.
+    fn note_atoms(&self, out: &mut Vec<AtomForReport>) {
+        out.push(AtomForReport {
+            text: self.fragment(),
+            span: self.span(),
+        });
+    }
+}
+
+impl<T: ToTokens + quote::IdentFragment + Display> IdentFrag for T {
+    type BadIdent = IdentFragInfallible;
+    fn frag_to_tokens(
+        &self,
+        out: &mut TokenStream,
+    ) -> Result<(), IdentFragInfallible> {
+        Ok(self.to_tokens(out))
+    }
+
+    fn fragment(&self) -> String {
+        self.to_string()
+    }
+}
+
+//---------- case conversion ----------
 
 /// Define cases using heck
 ///
@@ -120,13 +217,80 @@ define_cases! {
     AsShoutySnakeCase   "shouty_snake_case"                        ,
 }
 
+//---------- TokenPastesAsIdent ----------
+
+/// For use with `ExpansionOutput.push_identfrag_toks`
+///
+/// Will then write out `T` as its tokens.
+/// In identifier pasting, converts the tokens to a string first
+/// (so they had better be identifiers, or ident fragments).
+pub struct TokenPastesAsIdent<T>(pub T);
+
+impl<T: ToTokens> Spanned for TokenPastesAsIdent<T> {
+    fn span(&self) -> Span {
+        self.0.span()
+    }
+}
+
+impl<T: ToTokens> IdentFrag for TokenPastesAsIdent<T> {
+    type BadIdent = IdentFragInfallible;
+
+    fn frag_to_tokens(
+        &self,
+        out: &mut TokenStream,
+    ) -> Result<(), Self::BadIdent> {
+        Ok(self.0.to_tokens(out))
+    }
+
+    fn fragment(&self) -> String {
+        self.0.to_token_stream().to_string()
+    }
+}
+
+//---------- implementation ----------
+
 impl Items {
     pub fn new(tspan: Span) -> Self {
         Items {
             tspan,
             items: vec![],
             errors: vec![],
+            atoms: vec![],
         }
+    }
+}
+
+/// Core of the results from mk_ident
+#[derive(Debug)]
+struct Pasted {
+    /// String if we're to make an identifier, or for more pasting
+    whole: String,
+    /// Span if we're to make an identifier
+    span: Span,
+    /// What to consider complaining about if we can't make an identifier
+    atoms: Vec<AtomForReport>,
+}
+
+impl Spanned for Pasted {
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+impl IdentFrag for Pasted {
+    type BadIdent = syn::Error;
+
+    fn fragment(&self) -> String {
+        self.whole.clone()
+    }
+
+    fn note_atoms(&self, atoms: &mut Vec<AtomForReport>) {
+        atoms.extend(self.atoms.iter().cloned())
+    }
+
+    fn frag_to_tokens(&self, out: &mut TokenStream) -> syn::Result<()> {
+        let ident = convert_to_ident(self)?;
+        ident.to_tokens(out);
+        Ok(())
     }
 }
 
@@ -146,17 +310,94 @@ fn mk_ident<'i>(
     out_span: Span,
     change_case: Option<ChangeCase>,
     pieces: impl Iterator<Item = Piece<'i>> + Clone,
-) -> syn::Result<syn::Ident> {
-    let ident = pieces.clone().map(|i| i.0).collect::<String>();
-    let ident = if let Some(change_case) = change_case {
-        change_case.apply(&ident)
+    atoms: Vec<AtomForReport>,
+) -> Pasted {
+    let whole = pieces.clone().map(|i| i.0).collect::<String>();
+    let whole = if let Some(change_case) = change_case {
+        change_case.apply(&whole)
     } else {
-        ident
+        whole
     };
-    let ident = IdentAny::try_from_str(&ident, out_span).map_err(|_| {
-        let mut err = out_span.error(format_args!(
+    Pasted {
+        span: out_span,
+        whole,
+        atoms,
+    }
+}
+
+/// Error that stands in for the `syn::Error` from an invalid identifier
+///
+/// We don't expose this outside this module.
+/// It's used internally in `convert_to_ident`, and in tests.
+#[derive(Eq, PartialEq, Debug)]
+struct InvalidIdent;
+
+/// Obtain an actual `syn::Ident` from the results of pasting
+//
+/// The meat of `<Pasted as IdentFrag>::frag_to_tokens`.
+/// Split off largely to save on rightward drift.
+fn convert_to_ident(pasted: &Pasted) -> syn::Result<syn::Ident> {
+    // Try to make an identifier from a string
+    //
+    // `format_ident!` and `Ident::new` and so on all panic if the
+    // identifier is invalid.  That's quite inconvenient.  In particular,
+    // it can result in tests spewing junk output with RUST_BACKTRACE=1.
+    //
+    // syn::parse_str isn't perfect either:
+    //
+    // 1. It accepts whitespace and perhaps other irregularities.
+    //    We want to accept only precisely the identifier string.
+    //
+    // 2. It generates random extra errors, via some out of band means,
+    //    if the string can't be tokenised.
+    //    Eg, `<proc_macro2::TokenStream as FromStr>::parse("0_end")`
+    //    generates a spurious complaint to stderr as well as
+    //    a strange OK result containing a literal.
+    //    This doesn't matter very much for our purposes because we
+    //    never try to completely *swallow* a bad identifier error -
+    //    we always surface an error of our own, and the extra one
+    //    from parse_str is tolerable.
+    //
+    // 3. The syn::Error from an invalid identifier is not very illuminating.
+    //    So we discard it, and replace it with our own.
+    //
+    // 4. Just parsing Ident won't accept keywords.  We could use
+    //    IdentAny but that would give us keywords *as non-raw identifiers*
+    //    but we need *raw* identifiers if the string was a keyword:
+    //    i.e., in that case we want a raw identifier instead.
+    //    (This can happen if pasting or case changing generates a keyword,
+    //    or if a raw identifier euqal to a keyword is pasted with nothing.)
+    let mut ident = (|| {
+        let s = &pasted.whole;
+
+        let prefixed;
+        let (ident, comparator) = match syn::parse_str::<Ident>(s) {
+            Ok(ident) => {
+                // parse_str thought it was a valid identifier as-is
+                (ident, s)
+            }
+            Err(_) => {
+                // Problem 4 (needs raw) has arisen maybe?
+                prefixed = format!("r#{}", s);
+                let ident = syn::parse_str::<Ident>(&prefixed)
+                    // Oh, it doesn't parse this way either, bail
+                    .map_err(|_| InvalidIdent)?;
+                (ident, &prefixed)
+            }
+        };
+
+        // Check for problem 1 (accepting extraneous spaces etc.)
+        if &ident.to_string() != comparator {
+            return Err(InvalidIdent);
+        }
+
+        Ok(ident)
+    })()
+    .map_err(|_| {
+        // Make our own error (see problem 3 above)
+        let mut err = pasted.span.error(format_args!(
             "constructed identifier {:?} is invalid",
-            ident
+            &pasted.whole,
         ));
         // We want to show the user where the bad part is.  In
         // particular, if it came from somewhere nontrivial like an
@@ -165,8 +406,14 @@ fn mk_ident<'i>(
         // identifiers, in the template right next to the ${paste}.
         // So, try out each input bit and see if it would make an
         // identifier by itself.
-        for ((piece, pspan), pfx) in izip!(
-            pieces,
+        for (
+            AtomForReport {
+                text: piece,
+                span: pspan,
+            },
+            pfx,
+        ) in izip!(
+            &pasted.atoms,
             // The first entry must be valid as an identifier start.
             // The subsequent entries, we prepend with "X".  If the first
             // entry was empty, that would be reported too.  This may
@@ -174,10 +421,6 @@ fn mk_ident<'i>(
             // "probably".
             chain!(iter::once(""), iter::repeat("X")),
         ) {
-            let pspan = match pspan {
-                Some(s) => s,
-                None => continue,
-            };
             // We accept keywords.  If the problem was that the output
             // was a keyword because one of the inputs was, we hope that
             // this is because one of the other inputs was empty.
@@ -196,24 +439,81 @@ fn mk_ident<'i>(
         }
         err
     })?;
-    Ok(ident.0)
+
+    ident.set_span(pasted.span);
+    Ok(ident)
+}
+
+#[test]
+fn ident_from_str() {
+    let span = Span::call_site();
+    let chk = |s: &str, exp: Result<&str, _>| {
+        let p = Pasted {
+            whole: s.to_string(),
+            span,
+            atoms: vec![],
+        };
+        let parsed = convert_to_ident(&p)
+            .map(|i| i.to_string())
+            .map_err(|_| InvalidIdent);
+        let exp = exp.map(|i| i.to_string());
+        assert_eq!(parsed, exp);
+    };
+    let chk_ok = |s| chk(s, Ok(s));
+    let chk_err = |s| chk(s, Err(InvalidIdent));
+
+    chk("for", Ok("r#for"));
+    chk_ok("r#for");
+    chk_ok("_thing");
+    chk_ok("thing_");
+    chk_ok("r#raw");
+    chk_err("");
+    chk_err("a b");
+    chk_err("spc ");
+    chk_err(" spc");
+    chk_err("r#a spc");
+    chk_err(" r#a ");
+    chk_err(" r#for ");
+    chk_err("r#r#doubly_raw");
+    chk_err("0");
 }
 
 impl Items {
-    fn append_item(&mut self, item: Item) {
+    fn append_atom(&mut self, item: Item) {
+        match &item {
+            Item::Plain {
+                text,
+                span: Some(span),
+                ..
+            }
+            | Item::Complex {
+                text,
+                te_span: span,
+                ..
+            } => {
+                self.atoms.push(AtomForReport {
+                    text: text.clone(),
+                    span: *span,
+                });
+            }
+            Item::Plain { span: None, .. } => {}
+        };
+        self.items.push(item);
+    }
+    fn append_item_raw(&mut self, item: Item) {
         self.items.push(item);
     }
     /// Append a plain entry from something `Display`
     ///
     /// Like `ExpansionOutput::append_display` but doesn't need `Spanned`
     fn append_plain<V: Display>(&mut self, span: Span, v: V) {
-        self.append_item(Item::Plain {
+        self.append_atom(Item::Plain {
             text: v.to_string(),
             span: Some(span),
         })
     }
     pub fn append_fixed_string(&mut self, text: &'static str) {
-        self.append_item(Item::Plain {
+        self.append_atom(Item::Plain {
             text: text.into(),
             span: None,
         })
@@ -239,16 +539,21 @@ impl Items {
             return Ok(());
         }
 
-        match Self::assemble_inner(self.tspan, self.items, change_case)? {
+        match Self::assemble_inner(
+            self.tspan,
+            self.items,
+            change_case,
+            self.atoms,
+        )? {
             Either::Left(ident) => out.append_identfrag_toks(
                 &ident, //
-            ),
+            )?,
             Either::Right((tspan, pre, ident, post)) => out.append_idpath(
                 tspan,
                 |ta| ta.append(pre),
                 &ident,
                 |ta| ta.append(post),
-            ),
+            )?,
         }
 
         Ok(())
@@ -267,9 +572,9 @@ impl Items {
         tspan: Span,
         items: Vec<Item>,
         change_case: Option<ChangeCase>,
-    ) -> syn::Result<
-        Either<syn::Ident, (Span, TokenStream, syn::Ident, TokenStream)>,
-    > {
+        atoms: Vec<AtomForReport>,
+    ) -> syn::Result<Either<Pasted, (Span, TokenStream, Pasted, TokenStream)>>
+    {
         // We must always use a similar span when we emit identifiers
         // that are going to be used to bind variables, or the hygiene
         // system doesn't think they're the same identifier.
@@ -319,7 +624,7 @@ impl Items {
             let (items_before, items) = items.split_at_mut(nontrivial);
             let nontrivial = &mut items[0];
 
-            let mk_ident_nt = |(text, txspan): Piece| {
+            let mk_ident_nt = |(text, txspan): Piece, atoms| {
                 mk_ident(
                     out_span,
                     change_case,
@@ -328,6 +633,7 @@ impl Items {
                         iter::once((text, txspan)),
                         plain_strs(items_after),
                     ),
+                    atoms,
                 )
             };
 
@@ -341,7 +647,7 @@ impl Items {
                     return Ok(Either::Right((
                         tspan,
                         mem::take(pre),
-                        mk_ident_nt((text, Some(*te_span)))?,
+                        mk_ident_nt((text, Some(*te_span)), atoms),
                         mem::take(post),
                     )))
                 }
@@ -349,7 +655,7 @@ impl Items {
             }
         } else {
             return Ok(Either::Left(
-                mk_ident(out_span, change_case, plain_strs(&items))?, //
+                mk_ident(out_span, change_case, plain_strs(&items), atoms), //
             ));
         }
     }
@@ -374,39 +680,31 @@ impl ExpansionOutput for Items {
     fn append_display<S: Display + Spanned>(&mut self, plain: &S) {
         self.append_plain(plain.span(), plain);
     }
-    fn append_identfrag_toks<I: quote::IdentFragment + ToTokens>(
+    fn append_identfrag_toks<I: IdentFrag>(
         &mut self,
         ident: &I,
-    ) {
-        // We could just use format_ident! but that would give us an Ident
-        // and we'd have to cons again to get the String we want.
-        // This helper type avoids that.
-        use quote::IdentFragment as QIF;
-        struct AsIdentFragment<'i, I>(&'i I);
-        impl<'i, I: QIF> Display for AsIdentFragment<'i, I> {
-            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                QIF::fmt(&self.0, f)
-            }
-        }
-        // There's <I as IdentFragment>::span too, which returns Option
-        let span = <I as Spanned>::span(ident);
-        self.append_plain(span, AsIdentFragment(ident));
+    ) -> Result<(), I::BadIdent> {
+        ident.note_atoms(&mut self.atoms);
+        self.append_plain(ident.span(), ident.fragment());
+        Ok(())
     }
-    fn append_idpath<A, B>(
+    fn append_idpath<A, B, I>(
         &mut self,
         te_span: Span,
         pre_: A,
-        ident: &syn::Ident,
+        ident: &I,
         post_: B,
-    ) where
+    ) -> Result<(), I::BadIdent>
+    where
         A: FnOnce(&mut TokenAccumulator),
         B: FnOnce(&mut TokenAccumulator),
+        I: IdentFrag,
     {
         let mut pre = TokenAccumulator::new();
         pre_(&mut pre);
         let mut post = TokenAccumulator::new();
         post_(&mut post);
-        let text = ident.to_string();
+        let text = ident.fragment();
         let mut handle_err = |prepost: TokenAccumulator| {
             prepost.tokens().unwrap_or_else(|err| {
                 self.record_error(err);
@@ -415,12 +713,14 @@ impl ExpansionOutput for Items {
         };
         let pre = handle_err(pre);
         let post = handle_err(post);
-        self.append_item(Item::Complex {
+        ident.note_atoms(&mut self.atoms);
+        self.append_item_raw(Item::Complex {
             pre,
             post,
             text,
             te_span,
         });
+        Ok(())
     }
     fn append_syn_litstr(&mut self, lit: &syn::LitStr) {
         self.append_plain(lit.span(), lit.value());
@@ -453,7 +753,7 @@ impl ExpansionOutput for Items {
                         post,
                         te_span,
                     };
-                    self.append_item(item)
+                    self.append_atom(item)
                 }
                 x => {
                     return Err(x.error(
@@ -485,7 +785,7 @@ impl ExpansionOutput for Items {
 impl Expand<Items> for TemplateElement<Items> {
     fn expand(&self, ctx: &Context, out: &mut Items) -> syn::Result<()> {
         match self {
-            TE::Ident(ident) => out.append_identfrag_toks(&ident),
+            TE::Ident(ident) => out.append_identfrag_toks(&ident)?,
             TE::LitStr(lit) => out.append_syn_litstr(&lit),
             TE::Subst(e) => e.expand(ctx, out)?,
             TE::Repeat(e) => e.expand(ctx, out),

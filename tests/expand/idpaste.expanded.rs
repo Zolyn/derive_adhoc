@@ -1,7 +1,7 @@
 //! Examples / test cases for identifier pasting.
 //!
 //! Refer to `idpaste.expanded.rs` to see what this generates.
-#![allow(dead_code)]
+#![allow(dead_code, unused_variables)]
 use derive_adhoc::{derive_adhoc, Adhoc};
 type FieldType = ();
 struct TypeNames {
@@ -31,4 +31,22 @@ struct PreExpandNamePost {
     k: String,
 }
 struct WomExpandNameBat;
+enum EdgeCases {
+    Tuple(u32),
+    Struct { r#for: u32, unneeded: u32 },
+}
+impl EdgeCases {
+    fn edge_0_end() {}
+    fn edge_0forunneeded() {}
+    fn r#enum() {}
+    fn binding_0_end() {}
+    fn binding_for_end() {}
+    fn binding_unneeded_end() {}
+    fn body() {
+        let r#for = ();
+        let r#for = ();
+        let unneeded = ();
+        let unneeded = ();
+    }
+}
 fn main() {}

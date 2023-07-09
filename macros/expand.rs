@@ -311,7 +311,7 @@ impl SubstVPat {
                 } else {
                     paste.append_fixed_string("f_");
                 }
-                paste.append_identfrag_toks(&field.fname(kw_span));
+                paste.append_identfrag_toks(&field.fname(kw_span))?;
                 paste.assemble(out, None)?;
                 out.append(Token![,](kw_span));
 
@@ -470,6 +470,7 @@ where
                     out.append(Token![>](kw_span));
                 },
             )
+            .unwrap_or_else(|e| e.unreachable())
         };
 
         let do_maybe_delimited_group = |out, np, delim, content| {
@@ -492,15 +493,15 @@ where
         };
 
         match self {
-            SD::tname(_) => out.append_identfrag_toks(&ctx.top.ident),
+            SD::tname(_) => out.append_identfrag_toks(&ctx.top.ident)?,
             SD::ttype(_) => do_ttype(out, Some(()), &do_tgnames),
             SD::tdeftype(_) => do_ttype(out, None, &do_tgens),
             SD::vname(_) => {
-                out.append_identfrag_toks(&ctx.syn_variant(&kw_span)?.ident)
+                out.append_identfrag_toks(&ctx.syn_variant(&kw_span)?.ident)?
             }
             SD::fname(_) => {
                 let fname = ctx.field(&kw_span)?.fname(kw_span);
-                out.append_identfrag_toks(&fname);
+                out.append_identfrag_toks(&fname)?;
             }
             SD::ftype(_) => {
                 let f = ctx.field(&kw_span)?;
@@ -509,8 +510,8 @@ where
             SD::fpatname(_) => {
                 let f = ctx.field(&kw_span)?;
                 let fpatname =
-                    format_ident!("f_{}", f.fname(kw_span), span = kw_span);
-                out.append_identfrag_toks(&fpatname);
+                    Ident::new(&format!("f_{}", f.fname(kw_span)), kw_span);
+                out.append_identfrag_toks(&fpatname)?;
             }
             SD::xmeta(sm) => do_meta(sm, out, sm.pmetas(ctx)?)?,
 
@@ -523,6 +524,7 @@ where
                     O: ExpansionOutput,
                 {
                     out.append_identfrag_toks(&TokenPastesAsIdent(t))
+                        .unwrap_or_else(|e| e.unreachable());
                 }
                 use syn::Data::*;
                 match &ctx.top.data {
@@ -911,18 +913,24 @@ impl<'w> WithinField<'w> {
     }
 }
 
-impl quote::IdentFragment for Fname<'_> {
+impl IdentFrag for Fname<'_> {
+    type BadIdent = IdentFragInfallible;
+    fn frag_to_tokens(
+        &self,
+        out: &mut TokenStream,
+    ) -> Result<(), IdentFragInfallible> {
+        Ok(self.to_tokens(out))
+    }
+    fn fragment(&self) -> String {
+        self.to_string()
+    }
+}
+impl Display for Fname<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Fname::Name(v) => quote::IdentFragment::fmt(v, f),
             Fname::Index(v) => quote::IdentFragment::fmt(v, f),
         }
-    }
-    fn span(&self) -> Option<Span> {
-        Some(match self {
-            Fname::Name(v) => (*v).span(),
-            Fname::Index(v) => v.span,
-        })
     }
 }
 impl ToTokens for Fname<'_> {

@@ -211,52 +211,16 @@ impl Drop for ErrorAccumulator {
     }
 }
 
-//---------- TokenAsIdent ----------
-
-/// For use with `ExpansionOutput.push_identfrag_toks`
-///
-/// Will then write out `T` as its tokens.
-/// In identifier pasting, converts the tokens to a string first
-/// (so they had better be identifiers, or ident fragments).
-pub struct TokenPastesAsIdent<T>(pub T);
-
-impl<T: ToTokens> ToTokens for TokenPastesAsIdent<T> {
-    fn to_tokens(&self, out: &mut TokenStream) {
-        self.0.to_tokens(out)
-    }
-}
-impl<T: ToTokens> quote::IdentFragment for TokenPastesAsIdent<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Display::fmt(&self.0.to_token_stream(), f)
-    }
-}
-
 //---------- IdentAny ----------
 
-#[derive(Eq, PartialEq, Debug)]
-pub struct InvalidIdent;
-
 /// Like `syn::Ident` but parses using `parse_any`, accepting keywords
+///
+/// Used for derive-adhoc's own keywords, which can be Rust keywords,
+/// or identifiers.
+///
+/// Needs care when used with user data, since it might be a keyword,
+/// in which case it's not really an *identifier*.
 pub struct IdentAny(pub syn::Ident);
-impl IdentAny {
-    /// Try to make an identifier from a string
-    //
-    // `format_ident!` and `Ident::new` and so on all panic if the
-    // identifier is invalid.  That's quite inconvenient.  In particular,
-    // it can result in tests spewing junk output with RUST_BACKTRACE=1.
-    pub fn try_from_str(s: &str, span: Span) -> Result<Self, InvalidIdent> {
-        let mut ident =
-            syn::parse_str::<IdentAny>(s).map_err(|_| InvalidIdent)?;
-        ident.0.set_span(span);
-        // parse_str allows surrounding whitespace etc.;
-        // reject things that aren't precisely the resulting identifier
-        // (including, `r#...`)
-        if ident.0.to_string() != s {
-            return Err(InvalidIdent);
-        }
-        Ok(ident)
-    }
-}
 impl Parse for IdentAny {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(IdentAny(Ident::parse_any(input)?))
@@ -277,30 +241,6 @@ impl<T: AsRef<str> + ?Sized> PartialEq<T> for IdentAny {
     fn eq(&self, rhs: &T) -> bool {
         self.0.eq(rhs)
     }
-}
-
-#[test]
-fn ident_from_str() {
-    let span = Span::call_site();
-    let chk = |s, exp| {
-        assert_eq!(
-            IdentAny::try_from_str(s, span).map(|i| i.to_string()),
-            exp,
-        );
-    };
-    let chk_ok = |s| chk(s, Ok(s.to_string()));
-    let chk_err = |s| chk(s, Err(InvalidIdent));
-
-    chk_ok("for");
-    chk_ok("_thing");
-    chk_ok("thing_");
-    chk_ok("r#raw");
-    chk_err("");
-    chk_err("a b");
-    chk_err("spc ");
-    chk_err(" spc");
-    chk_err("r#r#doubly_raw");
-    chk_err("0");
 }
 
 //---------- expand_macro_name ----------

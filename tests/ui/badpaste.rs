@@ -22,4 +22,11 @@ derive_adhoc! {
     struct ${paste $tname ${tmeta(something)}};
 }
 
+derive_adhoc! {
+    DataType:
+
+    // This expands to "r#struct Broken { }"
+    ${paste tdefkwed} Broken { }
+}
+
 fn main() {}
