@@ -301,12 +301,51 @@ fn mk_ident<'i>(
 /// The meat of `<Pasted as IdentFrag>::frag_to_tokens`.
 /// Split off largely to save on rightward drift.
 fn convert_to_ident(pasted: &Pasted) -> syn::Result<syn::Ident> {
-    let ident = &pasted.whole;
-    let out_span = pasted.span;
-    let ident = IdentAny::try_from_str(&ident, out_span).map_err(|_| {
-        let mut err = out_span.error(format_args!(
+    // Try to make an identifier from a string
+    //
+    // `format_ident!` and `Ident::new` and so on all panic if the
+    // identifier is invalid.  That's quite inconvenient.  In particular,
+    // it can result in tests spewing junk output with RUST_BACKTRACE=1.
+    //
+    // syn::parse_str isn't perfect either:
+    //
+    // 1. It accepts whitespace and perhaps other irregularities.
+    //    We want to accept only precisely the identifier string.
+    //
+    // 2. It generates random extra errors, via some out of band means,
+    //    if the string can't be tokenised.
+    //    Eg, `<proc_macro2::TokenStream as FromStr>::parse("0_end")`
+    //    generates a spurious complaint to stderr as well as
+    //    a strange OK result containing a literal.
+    //    This doesn't matter very much for our purposes because we
+    //    never try to completely *swallow* a bad identifier error -
+    //    we always surface an error of our own, and the extra one
+    //    from parse_str is tolerable.
+    //
+    // 3. The syn::Error from an invalid identifier is not very illuminating.
+    //    So we discard it, and replace it with our own.
+    let mut ident = (|| {
+        let s = &pasted.whole;
+
+        let (ident, comparator) = {
+            let IdentAny(ident) = syn::parse_str(s)
+                    .map_err(|_| InvalidIdent)?;
+
+            (ident, s)
+        };
+
+        // Check for problem 1 (accepting extraneous spaces etc.)
+        if &ident.to_string() != comparator {
+            return Err(InvalidIdent);
+        }
+
+        Ok(ident)
+    })()
+    .map_err(|_| {
+        // Make our own error (see problem 3 above)
+        let mut err = pasted.span.error(format_args!(
             "constructed identifier {:?} is invalid",
-            ident
+            &pasted.whole,
         ));
         // We want to show the user where the bad part is.  In
         // particular, if it came from somewhere nontrivial like an
@@ -348,19 +387,27 @@ fn convert_to_ident(pasted: &Pasted) -> syn::Result<syn::Ident> {
         }
         err
     })?;
-    Ok(ident.0)
+
+    ident.set_span(pasted.span);
+    Ok(ident)
 }
 
 #[test]
 fn ident_from_str() {
     let span = Span::call_site();
-    let chk = |s, exp| {
-        assert_eq!(
-            IdentAny::try_from_str(s, span).map(|i| i.to_string()),
-            exp,
-        );
+    let chk = |s: &str, exp: Result<&str, _>| {
+        let p = Pasted {
+            whole: s.to_string(),
+            span,
+            atoms: vec![],
+        };
+        let parsed = convert_to_ident(&p)
+            .map(|i| i.to_string())
+            .map_err(|_| InvalidIdent);
+        let exp = exp.map(|i| i.to_string());
+        assert_eq!(parsed, exp);
     };
-    let chk_ok = |s| chk(s, Ok(s.to_string()));
+    let chk_ok = |s| chk(s, Ok(s));
     let chk_err = |s| chk(s, Err(InvalidIdent));
 
     chk_ok("for");
