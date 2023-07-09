@@ -244,9 +244,6 @@ impl<T: ToTokens> super::paste::IdentFrag for TokenPastesAsIdent<T> {
 
 //---------- IdentAny ----------
 
-#[derive(Eq, PartialEq, Debug)]
-pub struct InvalidIdent;
-
 /// Like `syn::Ident` but parses using `parse_any`, accepting keywords
 ///
 /// Used for derive-adhoc's own keywords, which can be Rust keywords,

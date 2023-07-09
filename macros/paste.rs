@@ -296,6 +296,13 @@ fn mk_ident<'i>(
     }
 }
 
+/// Error that stands in for the `syn::Error` from an invalid identifier
+///
+/// We don't expose this outside this module.
+/// It's used internally in `convert_to_ident`, and in tests.
+#[derive(Eq, PartialEq, Debug)]
+struct InvalidIdent;
+
 /// Obtain an actual `syn::Ident` from the results of pasting
 //
 /// The meat of `<Pasted as IdentFrag>::frag_to_tokens`.
