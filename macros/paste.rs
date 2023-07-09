@@ -324,14 +324,30 @@ fn convert_to_ident(pasted: &Pasted) -> syn::Result<syn::Ident> {
     //
     // 3. The syn::Error from an invalid identifier is not very illuminating.
     //    So we discard it, and replace it with our own.
+    //
+    // 4. Just parsing Ident won't accept keywords.  We could use
+    //    IdentAny but that would give us keywords *as non-raw identifiers*
+    //    but we need *raw* identifiers if the string was a keyword:
+    //    i.e., in that case we want a raw identifier instead.
+    //    (This can happen if pasting or case changing generates a keyword,
+    //    or if a raw identifier euqal to a keyword is pasted with nothing.)
     let mut ident = (|| {
         let s = &pasted.whole;
 
-        let (ident, comparator) = {
-            let IdentAny(ident) = syn::parse_str(s)
+        let prefixed;
+        let (ident, comparator) = match syn::parse_str::<Ident>(s) {
+            Ok(ident) => {
+                // parse_str thought it was a valid identifier as-is
+                (ident, s)
+            }
+            Err(_) => {
+                // Problem 4 (needs raw) has arisen maybe?
+                prefixed = format!("r#{}", s);
+                let ident = syn::parse_str::<Ident>(&prefixed)
+                    // Oh, it doesn't parse this way either, bail
                     .map_err(|_| InvalidIdent)?;
-
-            (ident, s)
+                (ident, &prefixed)
+            }
         };
 
         // Check for problem 1 (accepting extraneous spaces etc.)
@@ -410,7 +426,8 @@ fn ident_from_str() {
     let chk_ok = |s| chk(s, Ok(s));
     let chk_err = |s| chk(s, Err(InvalidIdent));
 
-    chk_ok("for");
+    chk("for", Ok("r#for"));
+    chk_ok("r#for");
     chk_ok("_thing");
     chk_ok("thing_");
     chk_ok("r#raw");
@@ -418,6 +435,9 @@ fn ident_from_str() {
     chk_err("a b");
     chk_err("spc ");
     chk_err(" spc");
+    chk_err("r#a spc");
+    chk_err(" r#a ");
+    chk_err(" r#for ");
     chk_err("r#r#doubly_raw");
     chk_err("0");
 }
