@@ -261,7 +261,11 @@ impl Items {
             return Ok(());
         }
 
-        match Self::assemble_inner(self.tspan, self.items, change_case)? {
+        match Self::assemble_inner(
+            self.tspan,
+            self.items,
+            change_case,
+        )? {
             Either::Left(ident) => out.append_identfrag_toks(
                 &ident, //
             )?,
