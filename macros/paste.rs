@@ -12,6 +12,17 @@ pub struct Items {
     tspan: Span,
     items: Vec<Item>,
     errors: Vec<syn::Error>,
+    atoms: Vec<AtomForReport>,
+}
+
+/// One spanned input element, for use when reporting bad ident errors
+///
+/// We call this an "atom"; in nested pastes,
+/// the atoms are the original input items.
+#[derive(Debug, Clone)]
+pub struct AtomForReport {
+    text: String,
+    span: Span,
 }
 
 #[derive(Debug)]
@@ -148,8 +159,20 @@ impl Items {
             tspan,
             items: vec![],
             errors: vec![],
+            atoms: vec![],
         }
     }
+}
+
+/// Core of the results from mk_ident
+#[derive(Debug)]
+struct Pasted {
+    /// String if we're to make an identifier, or for more pasting
+    whole: String,
+    /// Span if we're to make an identifier
+    span: Span,
+    /// What to consider complaining about if we can't make an identifier
+    atoms: Vec<AtomForReport>,
 }
 
 /// Element of input to `mk_ident`: one bit of the leaf identifier
@@ -168,13 +191,29 @@ fn mk_ident<'i>(
     out_span: Span,
     change_case: Option<ChangeCase>,
     pieces: impl Iterator<Item = Piece<'i>> + Clone,
-) -> syn::Result<syn::Ident> {
+    atoms: Vec<AtomForReport>,
+) -> Pasted {
+    // XXXX rename ident to whole
     let ident = pieces.clone().map(|i| i.0).collect::<String>();
     let ident = if let Some(change_case) = change_case {
         change_case.apply(&ident)
     } else {
         ident
     };
+    Pasted {
+        span: out_span,
+        whole: ident,
+        atoms,
+    }
+}
+
+/// Obtain an actual `syn::Ident` from the results of pasting
+//
+/// The meat of `<Pasted as IdentFrag>::frag_to_tokens`.
+/// Split off largely to save on rightward drift.
+fn convert_to_ident(pasted: &Pasted) -> syn::Result<syn::Ident> {
+    let ident = &pasted.whole;
+    let out_span = pasted.span;
     let ident = IdentAny::try_from_str(&ident, out_span).map_err(|_| {
         let mut err = out_span.error(format_args!(
             "constructed identifier {:?} is invalid",
@@ -187,8 +226,8 @@ fn mk_ident<'i>(
         // identifiers, in the template right next to the ${paste}.
         // So, try out each input bit and see if it would make an
         // identifier by itself.
-        for ((piece, pspan), pfx) in izip!(
-            pieces,
+        for (AtomForReport { text: piece, span: pspan }, pfx) in izip!(
+            &pasted.atoms,
             // The first entry must be valid as an identifier start.
             // The subsequent entries, we prepend with "X".  If the first
             // entry was empty, that would be reported too.  This may
@@ -196,10 +235,6 @@ fn mk_ident<'i>(
             // "probably".
             chain!(iter::once(""), iter::repeat("X")),
         ) {
-            let pspan = match pspan {
-                Some(s) => s,
-                None => continue,
-            };
             // We accept keywords.  If the problem was that the output
             // was a keyword because one of the inputs was, we hope that
             // this is because one of the other inputs was empty.
@@ -222,20 +257,41 @@ fn mk_ident<'i>(
 }
 
 impl Items {
-    fn append_item(&mut self, item: Item) {
+    fn append_atom(&mut self, item: Item) {
+        match &item {
+            Item::Plain {
+                text,
+                span: Some(span),
+                ..
+            }
+            | Item::Complex {
+                text,
+                te_span: span,
+                ..
+            } => {
+                self.atoms.push(AtomForReport {
+                    text: text.clone(),
+                    span: *span,
+                });
+            }
+            Item::Plain { span: None, .. } => {}
+        };
+        self.items.push(item);
+    }
+    fn append_item_raw(&mut self, item: Item) {
         self.items.push(item);
     }
     /// Append a plain entry from something `Display`
     ///
     /// Like `ExpansionOutput::append_display` but doesn't need `Spanned`
     fn append_plain<V: Display>(&mut self, span: Span, v: V) {
-        self.append_item(Item::Plain {
+        self.append_atom(Item::Plain {
             text: v.to_string(),
             span: Some(span),
         })
     }
     pub fn append_fixed_string(&mut self, text: &'static str) {
-        self.append_item(Item::Plain {
+        self.append_atom(Item::Plain {
             text: text.into(),
             span: None,
         })
@@ -265,14 +321,15 @@ impl Items {
             self.tspan,
             self.items,
             change_case,
+            self.atoms,
         )? {
             Either::Left(ident) => out.append_identfrag_toks(
-                &ident, //
+                &convert_to_ident(&ident)?, //
             )?,
             Either::Right((tspan, pre, ident, post)) => out.append_idpath(
                 tspan,
                 |ta| ta.append(pre),
-                &ident,
+                &convert_to_ident(&ident)?,
                 |ta| ta.append(post),
             )?,
         }
@@ -293,8 +350,9 @@ impl Items {
         tspan: Span,
         items: Vec<Item>,
         change_case: Option<ChangeCase>,
+        atoms: Vec<AtomForReport>,
     ) -> syn::Result<
-        Either<syn::Ident, (Span, TokenStream, syn::Ident, TokenStream)>,
+        Either<Pasted, (Span, TokenStream, Pasted, TokenStream)>,
     > {
         // We must always use a similar span when we emit identifiers
         // that are going to be used to bind variables, or the hygiene
@@ -345,7 +403,7 @@ impl Items {
             let (items_before, items) = items.split_at_mut(nontrivial);
             let nontrivial = &mut items[0];
 
-            let mk_ident_nt = |(text, txspan): Piece| {
+            let mk_ident_nt = |(text, txspan): Piece, atoms| {
                 mk_ident(
                     out_span,
                     change_case,
@@ -354,6 +412,7 @@ impl Items {
                         iter::once((text, txspan)),
                         plain_strs(items_after),
                     ),
+                    atoms,
                 )
             };
 
@@ -367,7 +426,7 @@ impl Items {
                     return Ok(Either::Right((
                         tspan,
                         mem::take(pre),
-                        mk_ident_nt((text, Some(*te_span)))?,
+                        mk_ident_nt((text, Some(*te_span)), atoms),
                         mem::take(post),
                     )))
                 }
@@ -375,7 +434,7 @@ impl Items {
             }
         } else {
             return Ok(Either::Left(
-                mk_ident(out_span, change_case, plain_strs(&items))?, //
+                mk_ident(out_span, change_case, plain_strs(&items), atoms), //
             ));
         }
     }
@@ -443,7 +502,8 @@ impl ExpansionOutput for Items {
         };
         let pre = handle_err(pre);
         let post = handle_err(post);
-        self.append_item(Item::Complex {
+        let _: &Ident = ident; // XXX Record atoms when this is not an Ident
+        self.append_item_raw(Item::Complex {
             pre,
             post,
             text,
@@ -482,7 +542,7 @@ impl ExpansionOutput for Items {
                         post,
                         te_span,
                     };
-                    self.append_item(item)
+                    self.append_atom(item)
                 }
                 x => {
                     return Err(x.error(
