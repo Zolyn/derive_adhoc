@@ -255,6 +255,11 @@ impl IdentAny {
     // `format_ident!` and `Ident::new` and so on all panic if the
     // identifier is invalid.  That's quite inconvenient.  In particular,
     // it can result in tests spewing junk output with RUST_BACKTRACE=1.
+    //
+    // syn::parse_str isn't perfect either: it generates random extra
+    // errors, via some out of band means, if the string can't be tokenised.
+    // Eg, `<proc_macro2::TokenStream as FromStr>::parse("0_end")`
+    // generates a spurious complaint to stderr as well a strange OK result.
     pub fn try_from_str(s: &str, span: Span) -> Result<Self, InvalidIdent> {
         let mut ident =
             syn::parse_str::<IdentAny>(s).map_err(|_| InvalidIdent)?;
