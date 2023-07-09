@@ -39,10 +39,10 @@ pub use super::paste::TokenPastesAsIdent;
 pub use super::utils::advise_incompatibility;
 pub use super::utils::expand_macro_name;
 pub use super::utils::ErrorAccumulator;
+pub use super::utils::ToTokensPunctComposable;
 pub use super::utils::{braced_group, delimit_token_group};
 pub use super::utils::{Concatenated, Discard};
 pub use super::utils::{ErrorLoc, IdentAny, MakeError};
-pub use super::utils::{ToTokensPunctComposable};
 pub(super) use super::{check, dbg_allkw, framework};
 
 pub use super::expand::*;
