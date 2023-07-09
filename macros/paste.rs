@@ -282,16 +282,15 @@ fn mk_ident<'i>(
     pieces: impl Iterator<Item = Piece<'i>> + Clone,
     atoms: Vec<AtomForReport>,
 ) -> Pasted {
-    // XXXX rename ident to whole
-    let ident = pieces.clone().map(|i| i.0).collect::<String>();
-    let ident = if let Some(change_case) = change_case {
-        change_case.apply(&ident)
+    let whole = pieces.clone().map(|i| i.0).collect::<String>();
+    let whole = if let Some(change_case) = change_case {
+        change_case.apply(&whole)
     } else {
-        ident
+        whole
     };
     Pasted {
         span: out_span,
-        whole: ident,
+        whole,
         atoms,
     }
 }
