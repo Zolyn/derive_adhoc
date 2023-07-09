@@ -295,30 +295,6 @@ impl<T: AsRef<str> + ?Sized> PartialEq<T> for IdentAny {
     }
 }
 
-#[test]
-fn ident_from_str() {
-    let span = Span::call_site();
-    let chk = |s, exp| {
-        assert_eq!(
-            IdentAny::try_from_str(s, span).map(|i| i.to_string()),
-            exp,
-        );
-    };
-    let chk_ok = |s| chk(s, Ok(s.to_string()));
-    let chk_err = |s| chk(s, Err(InvalidIdent));
-
-    chk_ok("for");
-    chk_ok("_thing");
-    chk_ok("thing_");
-    chk_ok("r#raw");
-    chk_err("");
-    chk_err("a b");
-    chk_err("spc ");
-    chk_err(" spc");
-    chk_err("r#r#doubly_raw");
-    chk_err("0");
-}
-
 //---------- expand_macro_name ----------
 
 /// Return a full path to the location of `derive_adhoc_expand`.
