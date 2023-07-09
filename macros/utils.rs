@@ -211,37 +211,6 @@ impl Drop for ErrorAccumulator {
     }
 }
 
-//---------- TokenAsIdent ----------
-
-/// For use with `ExpansionOutput.push_identfrag_toks`
-///
-/// Will then write out `T` as its tokens.
-/// In identifier pasting, converts the tokens to a string first
-/// (so they had better be identifiers, or ident fragments).
-pub struct TokenPastesAsIdent<T>(pub T);
-
-impl<T: ToTokens> Spanned for TokenPastesAsIdent<T> {
-    fn span(&self) -> Span {
-        self.0.span()
-    }
-}
-
-// XXXX TODO move this to paste.rs, and remove qualified names
-impl<T: ToTokens> super::paste::IdentFrag for TokenPastesAsIdent<T> {
-    type BadIdent = super::paste::IdentFragInfallible;
-
-    fn frag_to_tokens(
-        &self,
-        out: &mut TokenStream,
-    ) -> Result<(), Self::BadIdent> {
-        Ok(self.0.to_tokens(out))
-    }
-
-    fn fragment(&self) -> String {
-        self.0.to_token_stream().to_string()
-    }
-}
-
 //---------- IdentAny ----------
 
 /// Like `syn::Ident` but parses using `parse_any`, accepting keywords

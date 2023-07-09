@@ -217,6 +217,36 @@ define_cases! {
     AsShoutySnakeCase   "shouty_snake_case"                        ,
 }
 
+//---------- TokenPastesAsIdent ----------
+
+/// For use with `ExpansionOutput.push_identfrag_toks`
+///
+/// Will then write out `T` as its tokens.
+/// In identifier pasting, converts the tokens to a string first
+/// (so they had better be identifiers, or ident fragments).
+pub struct TokenPastesAsIdent<T>(pub T);
+
+impl<T: ToTokens> Spanned for TokenPastesAsIdent<T> {
+    fn span(&self) -> Span {
+        self.0.span()
+    }
+}
+
+impl<T: ToTokens> IdentFrag for TokenPastesAsIdent<T> {
+    type BadIdent = IdentFragInfallible;
+
+    fn frag_to_tokens(
+        &self,
+        out: &mut TokenStream,
+    ) -> Result<(), Self::BadIdent> {
+        Ok(self.0.to_tokens(out))
+    }
+
+    fn fragment(&self) -> String {
+        self.0.to_token_stream().to_string()
+    }
+}
+
 //---------- implementation ----------
 
 impl Items {
