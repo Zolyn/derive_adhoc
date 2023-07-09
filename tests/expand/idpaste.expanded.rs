@@ -38,11 +38,14 @@ enum EdgeCases {
 impl EdgeCases {
     fn edge_0_end() {}
     fn edge_0forunneeded() {}
+    fn r#enum() {}
     fn binding_0_end() {}
     fn binding_for_end() {}
     fn binding_unneeded_end() {}
     fn body() {
         let r#for = ();
+        let r#for = ();
+        let unneeded = ();
         let unneeded = ();
     }
 }

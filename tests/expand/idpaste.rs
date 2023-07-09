@@ -79,6 +79,7 @@ derive_adhoc! {
     impl $ttype {
         fn ${paste edge_ ${paste "0" _end}}() {}
         fn ${paste edge_ $( $fname )}() {}
+        fn ${paste $tdefkwd}() {}
         $(
             fn ${paste binding_ ${paste $fname} _end}() {}
             // `: `ok_0_tail`, `ok_field_tail`
@@ -87,6 +88,7 @@ derive_adhoc! {
             $(
                 ${when v_is_named}
                 let $fname = ();
+                let ${paste $fname} = ();
             )
         }
     }

@@ -21,3 +21,9 @@ error: unexpected end of input, $Xmeta in paste requires `as ...`
    |
 22 |     struct ${paste $tname ${tmeta(something)}};
    |                                             ^
+
+error: expected one of `!` or `::`, found `Broken`
+  --> ui/badpaste.rs:29:23
+   |
+29 |     ${paste tdefkwed} Broken { }
+   |                       ^^^^^^ expected one of `!` or `::`
