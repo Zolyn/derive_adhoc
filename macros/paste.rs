@@ -226,7 +226,13 @@ fn convert_to_ident(pasted: &Pasted) -> syn::Result<syn::Ident> {
         // identifiers, in the template right next to the ${paste}.
         // So, try out each input bit and see if it would make an
         // identifier by itself.
-        for (AtomForReport { text: piece, span: pspan }, pfx) in izip!(
+        for (
+            AtomForReport {
+                text: piece,
+                span: pspan,
+            },
+            pfx,
+        ) in izip!(
             &pasted.atoms,
             // The first entry must be valid as an identifier start.
             // The subsequent entries, we prepend with "X".  If the first
@@ -351,9 +357,8 @@ impl Items {
         items: Vec<Item>,
         change_case: Option<ChangeCase>,
         atoms: Vec<AtomForReport>,
-    ) -> syn::Result<
-        Either<Pasted, (Span, TokenStream, Pasted, TokenStream)>,
-    > {
+    ) -> syn::Result<Either<Pasted, (Span, TokenStream, Pasted, TokenStream)>>
+    {
         // We must always use a similar span when we emit identifiers
         // that are going to be used to bind variables, or the hygiene
         // system doesn't think they're the same identifier.
