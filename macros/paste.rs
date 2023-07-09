@@ -62,6 +62,72 @@ impl IdentFragInfallible {
     }
 }
 
+/// For use with `ExpansionOutput.append_identfrag_toks` etc.
+///
+/// Sort of like `quote::IdentFragment`.
+/// But:
+///
+///  * Strings available directly, not via the inconvenient `fmt`,
+///  * identifier construction doesn't involve `format_ident!` and panics.
+///  * `paste::InputAtom` passed through separately,
+///
+/// The main purpose of this trait is to allow deferral of errors
+/// from constructing bad identifiers.  Some *inputs* (implementors
+/// of `IdentFrag`, typically those which are already tokens) can
+/// infallibly be appended as tokens.
+///
+/// But paste results aren't converted to identifiers until the last
+/// moment: they can'tbed converted infallibly, and the error surfaces
+/// in `convert_to_ident`.
+///
+/// The framework methods `append_*ident*` propagate any error to the
+/// call site.  Call sites which pass already-tokens can just use `?`
+/// to convert the uninhabited error to `syn::Error` - or they can
+/// use `IdentFragInfallible::unreachable`.
+///
+/// Call sites which pass actually-fallible content (ie, paste results)
+/// end up with a `syn::Error`.
+pub trait IdentFrag: Spanned {
+    type BadIdent: Clone;
+
+    /// (Try to) convert to tokens (ie, real `Ident`)
+    ///
+    /// Depending on the implementor, this might be fallible, or not.
+    fn frag_to_tokens(
+        &self,
+        out: &mut TokenStream,
+    ) -> Result<(), Self::BadIdent>;
+
+    /// The fragment as a string
+    fn fragment(&self) -> String;
+
+    /// Transfer information about the atoms in this `IdentFrag` into `out`
+    ///
+    /// If, ultimately, a bad identifier is constructed using
+    /// some of this input,
+    /// these atoms will be reported.
+    fn note_atoms(&self, out: &mut Vec<AtomForReport>) {
+        out.push(AtomForReport {
+            text: self.fragment(),
+            span: self.span(),
+        });
+    }
+}
+
+impl<T: ToTokens + quote::IdentFragment + Display> IdentFrag for T {
+    type BadIdent = IdentFragInfallible;
+    fn frag_to_tokens(
+        &self,
+        out: &mut TokenStream,
+    ) -> Result<(), IdentFragInfallible> {
+        Ok(self.to_tokens(out))
+    }
+
+    fn fragment(&self) -> String {
+        self.to_string()
+    }
+}
+
 //---------- case conversion ----------
 
 /// Define cases using heck
@@ -173,6 +239,29 @@ struct Pasted {
     span: Span,
     /// What to consider complaining about if we can't make an identifier
     atoms: Vec<AtomForReport>,
+}
+
+impl Spanned for Pasted {
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+impl IdentFrag for Pasted {
+    type BadIdent = syn::Error;
+
+    fn fragment(&self) -> String {
+        self.whole.clone()
+    }
+
+    fn note_atoms(&self, atoms: &mut Vec<AtomForReport>) {
+        atoms.extend(self.atoms.iter().cloned())
+    }
+
+    fn frag_to_tokens(&self, out: &mut TokenStream) -> syn::Result<()> {
+        let ident = convert_to_ident(self)?;
+        ident.to_tokens(out);
+        Ok(())
+    }
 }
 
 /// Element of input to `mk_ident`: one bit of the leaf identifier
@@ -330,12 +419,12 @@ impl Items {
             self.atoms,
         )? {
             Either::Left(ident) => out.append_identfrag_toks(
-                &convert_to_ident(&ident)?, //
+                &ident, //
             )?,
             Either::Right((tspan, pre, ident, post)) => out.append_idpath(
                 tspan,
                 |ta| ta.append(pre),
-                &convert_to_ident(&ident)?,
+                &ident,
                 |ta| ta.append(post),
             )?,
         }
@@ -464,41 +553,31 @@ impl ExpansionOutput for Items {
     fn append_display<S: Display + Spanned>(&mut self, plain: &S) {
         self.append_plain(plain.span(), plain);
     }
-    fn append_identfrag_toks<I: quote::IdentFragment + ToTokens>(
+    fn append_identfrag_toks<I: IdentFrag>(
         &mut self,
         ident: &I,
-    ) -> Result<(), IdentFragInfallible> {
-        // We could just use format_ident! but that would give us an Ident
-        // and we'd have to cons again to get the String we want.
-        // This helper type avoids that.
-        use quote::IdentFragment as QIF;
-        struct AsIdentFragment<'i, I>(&'i I);
-        impl<'i, I: QIF> Display for AsIdentFragment<'i, I> {
-            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                QIF::fmt(&self.0, f)
-            }
-        }
-        // There's <I as IdentFragment>::span too, which returns Option
-        let span = <I as Spanned>::span(ident);
-        self.append_plain(span, AsIdentFragment(ident));
+    ) -> Result<(), I::BadIdent> {
+        ident.note_atoms(&mut self.atoms);
+        self.append_plain(ident.span(), ident.fragment());
         Ok(())
     }
-    fn append_idpath<A, B>(
+    fn append_idpath<A, B, I>(
         &mut self,
         te_span: Span,
         pre_: A,
-        ident: &syn::Ident,
+        ident: &I,
         post_: B,
-    ) -> Result<(), IdentFragInfallible>
+    ) -> Result<(), I::BadIdent>
     where
         A: FnOnce(&mut TokenAccumulator),
         B: FnOnce(&mut TokenAccumulator),
+        I: IdentFrag,
     {
         let mut pre = TokenAccumulator::new();
         pre_(&mut pre);
         let mut post = TokenAccumulator::new();
         post_(&mut post);
-        let text = ident.to_string();
+        let text = ident.fragment();
         let mut handle_err = |prepost: TokenAccumulator| {
             prepost.tokens().unwrap_or_else(|err| {
                 self.record_error(err);
@@ -507,7 +586,7 @@ impl ExpansionOutput for Items {
         };
         let pre = handle_err(pre);
         let post = handle_err(post);
-        let _: &Ident = ident; // XXX Record atoms when this is not an Ident
+        ident.note_atoms(&mut self.atoms);
         self.append_item_raw(Item::Complex {
             pre,
             post,

@@ -510,7 +510,7 @@ where
             SD::fpatname(_) => {
                 let f = ctx.field(&kw_span)?;
                 let fpatname =
-                    format_ident!("f_{}", f.fname(kw_span), span = kw_span);
+                    Ident::new(&format!("f_{}", f.fname(kw_span)), kw_span);
                 out.append_identfrag_toks(&fpatname)?;
             }
             SD::xmeta(sm) => do_meta(sm, out, sm.pmetas(ctx)?)?,
@@ -913,18 +913,24 @@ impl<'w> WithinField<'w> {
     }
 }
 
-impl quote::IdentFragment for Fname<'_> {
+impl IdentFrag for Fname<'_> {
+    type BadIdent = IdentFragInfallible;
+    fn frag_to_tokens(
+        &self,
+        out: &mut TokenStream,
+    ) -> Result<(), IdentFragInfallible> {
+        Ok(self.to_tokens(out))
+    }
+    fn fragment(&self) -> String {
+        self.to_string()
+    }
+}
+impl Display for Fname<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Fname::Name(v) => quote::IdentFragment::fmt(v, f),
             Fname::Index(v) => quote::IdentFragment::fmt(v, f),
         }
-    }
-    fn span(&self) -> Option<Span> {
-        Some(match self {
-            Fname::Name(v) => (*v).span(),
-            Fname::Index(v) => v.span,
-        })
     }
 }
 impl ToTokens for Fname<'_> {

@@ -220,14 +220,25 @@ impl Drop for ErrorAccumulator {
 /// (so they had better be identifiers, or ident fragments).
 pub struct TokenPastesAsIdent<T>(pub T);
 
-impl<T: ToTokens> ToTokens for TokenPastesAsIdent<T> {
-    fn to_tokens(&self, out: &mut TokenStream) {
-        self.0.to_tokens(out)
+impl<T: ToTokens> Spanned for TokenPastesAsIdent<T> {
+    fn span(&self) -> Span {
+        self.0.span()
     }
 }
-impl<T: ToTokens> quote::IdentFragment for TokenPastesAsIdent<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Display::fmt(&self.0.to_token_stream(), f)
+
+// XXXX TODO move this to paste.rs, and remove qualified names
+impl<T: ToTokens> super::paste::IdentFrag for TokenPastesAsIdent<T> {
+    type BadIdent = super::paste::IdentFragInfallible;
+
+    fn frag_to_tokens(
+        &self,
+        out: &mut TokenStream,
+    ) -> Result<(), Self::BadIdent> {
+        Ok(self.0.to_tokens(out))
+    }
+
+    fn fragment(&self) -> String {
+        self.0.to_token_stream().to_string()
     }
 }
 
