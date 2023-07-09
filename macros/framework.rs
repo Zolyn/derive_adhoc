@@ -12,6 +12,7 @@ pub use super::repeat::*;
 pub use super::syntax::*;
 
 pub(super) use super::paste;
+pub(super) use super::paste::IdentFragInfallible;
 
 /// Context during expansion
 ///
@@ -129,7 +130,7 @@ pub trait ExpansionOutput: SubstParseContext {
     fn append_identfrag_toks<I: quote::IdentFragment + ToTokens>(
         &mut self,
         ident: &I,
-    );
+    ) -> Result<(), IdentFragInfallible>;
 
     /// Append a Rust path (scoped identifier, perhaps with generics)
     ///
@@ -150,7 +151,8 @@ pub trait ExpansionOutput: SubstParseContext {
         pre: A,
         ident: &syn::Ident,
         post: B,
-    ) where
+    ) -> Result<(), IdentFragInfallible>
+    where
         A: FnOnce(&mut TokenAccumulator),
         B: FnOnce(&mut TokenAccumulator);
 
@@ -410,8 +412,9 @@ impl ExpansionOutput for TokenAccumulator {
     fn append_identfrag_toks<I: quote::IdentFragment + ToTokens>(
         &mut self,
         ident: &I,
-    ) {
-        self.append(ident)
+    ) -> Result<(), IdentFragInfallible> {
+        self.append(ident);
+        Ok(())
     }
     fn append_idpath<A, B>(
         &mut self,
@@ -419,13 +422,15 @@ impl ExpansionOutput for TokenAccumulator {
         pre: A,
         ident: &syn::Ident,
         post: B,
-    ) where
+    ) -> Result<(), IdentFragInfallible>
+    where
         A: FnOnce(&mut TokenAccumulator),
         B: FnOnce(&mut TokenAccumulator),
     {
         pre(self);
         self.append(ident);
         post(self);
+        Ok(())
     }
     fn append_syn_litstr(&mut self, lit: &syn::LitStr) {
         self.append(lit);

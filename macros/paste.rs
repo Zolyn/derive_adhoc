@@ -33,6 +33,24 @@ enum Item {
     },
 }
 
+//---------- IdentFrag ----------
+
+/// Uninhabited "bad identifier" error for conversions from already-tokens
+#[derive(Copy, Clone, Debug)]
+pub struct IdentFragInfallible(pub Void);
+
+impl From<IdentFragInfallible> for syn::Error {
+    fn from(i: IdentFragInfallible) -> syn::Error {
+        void::unreachable(i.0)
+    }
+}
+
+impl IdentFragInfallible {
+    pub fn unreachable(&self) -> ! {
+        void::unreachable(self.0)
+    }
+}
+
 //---------- case conversion ----------
 
 /// Define cases using heck
@@ -246,13 +264,13 @@ impl Items {
         match Self::assemble_inner(self.tspan, self.items, change_case)? {
             Either::Left(ident) => out.append_identfrag_toks(
                 &ident, //
-            ),
+            )?,
             Either::Right((tspan, pre, ident, post)) => out.append_idpath(
                 tspan,
                 |ta| ta.append(pre),
                 &ident,
                 |ta| ta.append(post),
-            ),
+            )?,
         }
 
         Ok(())
@@ -381,7 +399,7 @@ impl ExpansionOutput for Items {
     fn append_identfrag_toks<I: quote::IdentFragment + ToTokens>(
         &mut self,
         ident: &I,
-    ) {
+    ) -> Result<(), IdentFragInfallible> {
         // We could just use format_ident! but that would give us an Ident
         // and we'd have to cons again to get the String we want.
         // This helper type avoids that.
@@ -395,6 +413,7 @@ impl ExpansionOutput for Items {
         // There's <I as IdentFragment>::span too, which returns Option
         let span = <I as Spanned>::span(ident);
         self.append_plain(span, AsIdentFragment(ident));
+        Ok(())
     }
     fn append_idpath<A, B>(
         &mut self,
@@ -402,7 +421,8 @@ impl ExpansionOutput for Items {
         pre_: A,
         ident: &syn::Ident,
         post_: B,
-    ) where
+    ) -> Result<(), IdentFragInfallible>
+    where
         A: FnOnce(&mut TokenAccumulator),
         B: FnOnce(&mut TokenAccumulator),
     {
@@ -425,6 +445,7 @@ impl ExpansionOutput for Items {
             text,
             te_span,
         });
+        Ok(())
     }
     fn append_syn_litstr(&mut self, lit: &syn::LitStr) {
         self.append_plain(lit.span(), lit.value());
@@ -489,7 +510,7 @@ impl ExpansionOutput for Items {
 impl Expand<Items> for TemplateElement<Items> {
     fn expand(&self, ctx: &Context, out: &mut Items) -> syn::Result<()> {
         match self {
-            TE::Ident(ident) => out.append_identfrag_toks(&ident),
+            TE::Ident(ident) => out.append_identfrag_toks(&ident)?,
             TE::LitStr(lit) => out.append_syn_litstr(&lit),
             TE::Subst(e) => e.expand(ctx, out)?,
             TE::Repeat(e) => e.expand(ctx, out),
