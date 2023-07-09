@@ -33,6 +33,8 @@ enum Item {
     },
 }
 
+//---------- case conversion ----------
+
 /// Define cases using heck
 ///
 /// heck doesn't provide standard names for case conversions,
@@ -119,6 +121,8 @@ define_cases! {
     AsSnakeCase         "snake_case"                               ,
     AsShoutySnakeCase   "shouty_snake_case"                        ,
 }
+
+//---------- implementation ----------
 
 impl Items {
     pub fn new(tspan: Span) -> Self {
