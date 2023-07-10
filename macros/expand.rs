@@ -702,6 +702,7 @@ where
             | SD::v_is_unit(bo)
             | SD::v_is_tuple(bo)
             | SD::v_is_named(bo)
+            | SD::UserDefCond(_, bo)
             | SD::False(bo)
             | SD::True(bo)
             | SD::not(_, bo)

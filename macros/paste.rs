@@ -685,6 +685,9 @@ impl SubstParseContext for Items {
         Err(span
             .error("not allowed in within ${paste ...} (or case_changing)"))
     }
+    fn expansion_or_bool() -> Either<(), Void> {
+        Either::Left(())
+    }
 }
 
 impl ExpansionOutput for Items {

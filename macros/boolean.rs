@@ -34,6 +34,9 @@ impl SubstParseContext for BooleanContext {
             "derive-adhoc construct is an expansion - not valid in a condition",
         ))
     }
+    fn expansion_or_bool() -> Either<Void, ()> {
+        Either::Right(())
+    }
 }
 
 impl Subst<BooleanContext> {
@@ -65,6 +68,14 @@ impl Subst<BooleanContext> {
                     }
                 };
                 is_found(path.search_eval_bool(sm.pmetas(ctx)?))
+            }
+
+            SD::UserDefCond(name, _) => {
+                let def: &Definition<DefCondBody> =
+                    ctx.definitions.find(name).ok_or_else(|| {
+                        name.error("user-defined condition not fund")
+                    })?;
+                def.body.eval_bool(ctx)?
             }
 
             SD::False(..) => false,
