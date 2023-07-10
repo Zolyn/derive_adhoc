@@ -659,10 +659,14 @@ derive_adhoc! {
 }
 ```
 
-### `${define ...}` - user-defined expansions
+### `${define ...}`, `${defcond ...}` - user-defined expansions and conditions
 
 `${define NAME BODY}` defines a reuseable piece of template.
 Afterwards, `$NAME` (and `${NAME}`) expand `BODY`.
+
+`${defcond NAME CONDITION}` defines a reuseable condition.
+Afterwards, the name `NAME` can be used as a condition -
+evaluating `CONDITION`.
 
 `NAME` is an identifier.
 It may not start with a lowercase letter or underscore:
@@ -672,26 +676,62 @@ derive-adhoc's built-in functionality.
 `BODY` is in the
 [standard syntax for positional arguments](#named-and-positional-template-arguments-to-expansions-and-conditions).
 
+`CONDITION` is in the standard syntax for a condition.
+
 `NAME` is visible after its definition in the same template or group,
 including in inner templates and groups.
 Definitions may be re-defined by inner scopes.
-Binding is dynamic,
-both for derive-adhoc built-ins and other user definitions:
-`BODY` is captured without expansion at the site of `$define`,
-and expansions used in it are expanded according
+Scope is dynamic,
+both for derive-adhoc built-ins and user definitions:
+`BODY` and `CONDITION` are captured
+without expansion/evaluation at the site of `$define`/`$defcond`,
+and the contents expanded/evaluated
+each time according
 to the values and definitions prevailing
-in the context where `$NAME` is used.
+in the dynamic context where `NAME` is used.
 
 `${NAME}` may only be used
-inside `${paste}` and case changing
+inside `${paste}` (and case changing)
 if `BODY` was precisely an invocation of `${paste }`.
 
-### Examples
+You can define an expansion and a condition with the same name;
+they won't interfere.
+
+#### Examples
 
  * `${define VN $vname} ${for variants { $VN }}`:
    `UnitVariant TupleVariant NamedVariant`
  * `${define FN ${paste $fname _}} ${paste ${for fields { "F" $FN }}}`:
    `F0_`, `Ffield_Ffield_b_`
+
+##### Example including a condition
+
+```rust,ignore
+${define T_FIELDS ${paste $tname Fields}}
+${defcond F_ENABLE all(fvis, v_is_named)}
+$tvis struct $T_FIELDS { $(
+    ${when F_ENABLE} $fvis $fname: bool,
+) }
+$tvis const ${shouty_snake_case ALL_ $T_FIELDS}: $T_FIELDS = { $(
+    ${when F_ENABLE} $fname: true,
+) };
+```
+
+<!--##examples-for-toplevels-concat Unit Tuple Struct##-->
+Expands to (for `Unit`, `Tuple` and `Struct`):
+
+```rust,ignore
+pub struct UnitFields {}
+pub const ALL_UNIT_FIELDS: UnitFields = {};
+struct TupleFields {}
+const ALL_TUPLE_FIELDS: TupleFields = {};
+struct StructFields {
+    pub field: bool,
+}
+const ALL_STRUCT_FIELDS: StructFields = {
+    field: true,
+};
+```
 
 ## Conditions
 
