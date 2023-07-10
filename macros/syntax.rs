@@ -111,7 +111,6 @@ pub enum SubstDetails<O: SubstParseContext> {
     // special
     when(Box<Subst<BooleanContext>>, O::NotInBool),
     define(Definition<DefinitionBody>, O::NotInBool),
-    #[allow(dead_code)] // XXXX
     defcond(Definition<DefCondBody>, O::NotInBool),
     UserDefined(DefinitionName, O::NotInBool),
     UserDefCond(DefinitionName, O::BoolOnly),
@@ -320,6 +319,18 @@ impl Parse for Definition<DefinitionBody> {
             None => DefinitionBody::Normal(body),
         };
 
+        Ok(Definition {
+            name,
+            body_span,
+            body,
+        })
+    }
+}
+impl Parse for Definition<DefCondBody> {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let name = input.parse()?;
+        let body_span = input.span();
+        let body = Box::new(input.parse()?);
         Ok(Definition {
             name,
             body_span,
@@ -847,6 +858,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         keyword! { paste(Template::parse(input)?, not_in_bool()?) }
         keyword! { when(input.parse()?, not_in_bool()?) }
         keyword! { define(input.parse()?, not_in_bool()?) }
+        keyword! { defcond(input.parse()?, not_in_bool()?) }
 
         keyword! { "false": False(bool_only()?) }
         keyword! { "true": True(bool_only()?) }
