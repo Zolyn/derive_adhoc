@@ -332,19 +332,29 @@ where
         let mut ctx_buf;
         let mut definitions_here = vec![];
         let mut ctx = ctx_in;
+
         for element in &self.elements {
-            if let TE::Subst(Subst {
-                sd: SD::define(def, _),
-                ..
-            }) = element
-            {
-                definitions_here.push(def);
-                ctx_buf = ctx_in.clone();
-                ctx_buf.definitions.earlier = Some(&ctx_in.definitions);
-                ctx_buf.definitions.here = &definitions_here;
-                ctx = &ctx_buf;
-                continue;
-            }
+            macro_rules! handle_definition { {
+                $variant:ident, $store:expr
+            } => {
+                if let TE::Subst(Subst {
+                    sd: SD::$variant(def, _),
+                    ..
+                }) = element
+                {
+                    // Doing this with a macro makes it nice and obvious
+                    // to the borrow checker.
+                    $store.push(def);
+                    ctx_buf = ctx_in.clone();
+                    ctx_buf.definitions.earlier = Some(&ctx_in.definitions);
+                    ctx_buf.definitions.here = &definitions_here;
+                    ctx = &ctx_buf;
+                    continue;
+                }
+
+            } }
+
+            handle_definition!(define, definitions_here);
 
             let () = element
                 .expand(ctx, out)
