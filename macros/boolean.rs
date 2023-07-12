@@ -70,26 +70,7 @@ impl Subst<BooleanContext> {
                 is_found(path.search_eval_bool(sm.pmetas(ctx)?))
             }
 
-            SD::UserDefCond(name, _) => {
-                let def: &Definition<DefCondBody> =
-                    ctx.definitions.find(name).ok_or_else(|| {
-                        let mut error =
-                            name.error("user-defined condition not fund");
-                        if let Some::<&Definition<DefinitionBody>>(def) =
-                            ctx.definitions.find(name)
-                        {
-                            // Condition syntax looks like fine tokens,
-                            // so the ${define } wouldn't spot this mistake.
-                            error.combine(
-                                def.name.error(
- "this user-defined expansion used as a condition (perhaps you meant ${defcond ?}"
-                                )
-                            );
-                        }
-                        error
-                    })?;
-                def.body.eval_bool(ctx)?
-            }
+            SD::UserDefCond(name, _) => name.lookup_eval_bool(ctx)?,
 
             SD::False(..) => false,
             SD::True(..) => true,
@@ -151,6 +132,30 @@ impl Subst<BooleanContext> {
             | SD::Crate(_, not_in_bool) => void::unreachable(*not_in_bool),
         };
         Ok(r)
+    }
+}
+
+impl DefinitionName {
+    fn lookup_eval_bool(&self, ctx: &Context<'_>) -> syn::Result<bool> {
+        let def: &Definition<DefCondBody> =
+            ctx.definitions.find(self).ok_or_else(|| {
+                let mut error =
+                    self.error("user-defined condition not fund");
+                if let Some::<&Definition<DefinitionBody>>(def) =
+                    ctx.definitions.find(self)
+                {
+                    // Condition syntax looks like fine tokens,
+                    // so the ${define } wouldn't spot this mistake.
+                    error.combine(
+                        def.name.error(
+"this user-defined expansion used as a condition (perhaps you meant ${defcond ?}"
+                        )
+                    );
+                }
+                error
+            })?;
+
+        def.body.eval_bool(ctx)
     }
 }
 
