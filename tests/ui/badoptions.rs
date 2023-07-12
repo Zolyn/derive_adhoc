@@ -41,4 +41,16 @@ define_derive_adhoc! {
     BadAttributeTemplate:
 }
 
+derive_adhoc! {
+    BadOptionsDriver:
+
+    ${define DEF {}}
+    ${defcond COND true}
+
+    $DEF
+    $COND
+    ${if COND {}}
+    ${if DEF {}}
+}
+
 fn main() {}

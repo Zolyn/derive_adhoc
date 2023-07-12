@@ -70,3 +70,15 @@ error: only doc attributes are supported
    |
 40 |     #[allow(dead_code)]
    |       ^^^^^
+
+error: user-defined expansion not fund
+  --> ui/badoptions.rs:51:6
+   |
+51 |     $COND
+   |      ^^^^
+
+error: user-defined condition not fund
+  --> ui/badoptions.rs:53:10
+   |
+53 |     ${if DEF {}}
+   |          ^^^
