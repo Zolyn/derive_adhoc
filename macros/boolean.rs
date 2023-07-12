@@ -73,7 +73,20 @@ impl Subst<BooleanContext> {
             SD::UserDefCond(name, _) => {
                 let def: &Definition<DefCondBody> =
                     ctx.definitions.find(name).ok_or_else(|| {
-                        name.error("user-defined condition not fund")
+                        let mut error =
+                            name.error("user-defined condition not fund");
+                        if let Some::<&Definition<DefinitionBody>>(def) =
+                            ctx.definitions.find(name)
+                        {
+                            // Condition syntax looks like fine tokens,
+                            // so the ${define } wouldn't spot this mistake.
+                            error.combine(
+                                def.name.error(
+ "this user-defined expansion used as a condition (perhaps you meant ${defcond ?}"
+                                )
+                            );
+                        }
+                        error
                     })?;
                 def.body.eval_bool(ctx)?
             }

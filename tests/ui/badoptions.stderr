@@ -82,3 +82,9 @@ error: user-defined condition not fund
    |
 53 |     ${if DEF {}}
    |          ^^^
+
+error: this user-defined expansion used as a condition (perhaps you meant ${defcond ?}
+  --> ui/badoptions.rs:47:14
+   |
+47 |     ${define DEF {}}
+   |              ^^^
