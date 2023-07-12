@@ -137,23 +137,19 @@ impl Subst<BooleanContext> {
 
 impl DefinitionName {
     fn lookup_eval_bool(&self, ctx: &Context<'_>) -> syn::Result<bool> {
-        let def: &Definition<DefCondBody> =
-            ctx.definitions.find(self).ok_or_else(|| {
-                let mut error =
-                    self.error("user-defined condition not fund");
-                if let Some::<&Definition<DefinitionBody>>(def) =
-                    ctx.definitions.find(self)
-                {
-                    // Condition syntax looks like fine tokens,
-                    // so the ${define } wouldn't spot this mistake.
-                    error.combine(
-                        def.name.error(
+        let def = ctx.definitions.find::<DefCondBody>(self).ok_or_else(|| {
+            let mut error = self.error("user-defined condition not fund");
+            if let Some(def) = ctx.definitions.find::<DefinitionBody>(self) {
+                // Condition syntax looks like fine tokens,
+                // so the ${define } wouldn't spot this mistake.
+                error.combine(
+                    def.name.error(
 "this user-defined expansion used as a condition (perhaps you meant ${defcond ?}"
-                        )
-                    );
-                }
-                error
-            })?;
+                    )
+                );
+            }
+            error
+        })?;
 
         def.body.eval_bool(ctx)
     }
