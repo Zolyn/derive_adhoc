@@ -731,6 +731,7 @@ impl<'c> Definitions<'c> {
 
     pub fn find(&self, name: &DefinitionName) -> Option<&Definition> {
         self.iter()
+            .map(|l| l.iter().rev())
             .flatten()
             .find(|def| &def.name == name)
             .cloned()
