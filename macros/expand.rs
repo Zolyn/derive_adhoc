@@ -651,14 +651,14 @@ where
                 items.assemble(out, Some(*case))?;
             }
 
-            SD::define(..) => out.write_error(
+            SD::define(..) | SD::defcond(..) => out.write_error(
                 &kw_span,
                 // I think this is impossible.  It could only occur if
                 // someone parsed a Subst or SubstDetails that wasn't
                 // in a Template.  It is Template.expand() that handles this.
                 // We could possibly use proof tokens to see if this happens
                 // and exclude it, but that would be super invasive.
-                "${define } only allowed in a full template",
+                "${define } and ${defcond } only allowed in a full template",
             ),
             SD::UserDefined(name, _) => {
                 let def = ctx.definitions.find(name).ok_or_else(|| {
@@ -757,6 +757,11 @@ impl<'c> Definitions<'c> {
 impl<'c> AsRef<[&'c Definition<DefinitionBody>]> for Definitions<'c> {
     fn as_ref(&self) -> &[&'c Definition<DefinitionBody>] {
         self.here
+    }
+}
+impl<'c> AsRef<[&'c Definition<DefCondBody>]> for Definitions<'c> {
+    fn as_ref(&self) -> &[&'c Definition<DefCondBody>] {
+        self.conds
     }
 }
 
