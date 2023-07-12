@@ -724,17 +724,13 @@ impl<'c> Iterator for DefinitionsIter<'c> {
     }
 }
 
-impl<'c> IntoIterator for &'c Definitions<'c> {
-    type Item = <DefinitionsIter<'c> as Iterator>::Item;
-    type IntoIter = DefinitionsIter<'c>;
-    fn into_iter(self) -> DefinitionsIter<'c> {
+impl<'c> Definitions<'c> {
+    pub fn iter(&'c self) -> DefinitionsIter<'c> {
         DefinitionsIter(Some(self))
     }
-}
 
-impl Definitions<'_> {
     pub fn find(&self, name: &DefinitionName) -> Option<&Definition> {
-        self.into_iter()
+        self.iter()
             .flatten()
             .find(|def| &def.name == name)
             .cloned()
