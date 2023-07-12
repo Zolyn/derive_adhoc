@@ -65,6 +65,7 @@ pub struct WithinField<'c> {
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Definitions<'c> {
     pub here: &'c [&'c Definition<DefinitionBody>],
+    pub conds: &'c [&'c Definition<DefCondBody>],
     pub earlier: Option<&'c Definitions<'c>>,
 }
 

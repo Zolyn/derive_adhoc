@@ -111,6 +111,8 @@ pub enum SubstDetails<O: SubstParseContext> {
     // special
     when(Box<Subst<BooleanContext>>, O::NotInBool),
     define(Definition<DefinitionBody>, O::NotInBool),
+    #[allow(dead_code)] // XXXX
+    defcond(Definition<DefCondBody>, O::NotInBool),
     UserDefined(DefinitionName, O::NotInBool),
 
     // expressions
@@ -152,6 +154,8 @@ pub enum DefinitionBody {
     Normal(Template<TokenAccumulator>),
     Paste(Template<paste::Items>),
 }
+
+pub type DefCondBody = Box<Subst<BooleanContext>>;
 
 #[derive(Debug)]
 pub struct SubstIf<O: SubstParseContext> {
