@@ -109,12 +109,6 @@ pub trait SubstParseContext {
             "derive-adhoc keyword is a condition - not valid as an expansion",
         ))
     }
-
-    /// Returns associated type for the kind of context
-    ///
-    ///  * Left<NotInBool> if we're in an expansion context
-    ///  * Right<BoolOnly> if we're in a boolean context
-    fn expansion_or_bool() -> Either<Self::NotInBool, Self::BoolOnly>;
 }
 
 /// Expansion output accumulator, for a template lexical context
@@ -416,9 +410,6 @@ impl SubstParseContext for TokenAccumulator {
     }
     fn not_in_paste(_: &impl Spanned) -> syn::Result<()> {
         Ok(())
-    }
-    fn expansion_or_bool() -> Either<(), Void> {
-        Either::Left(())
     }
 
     type BoolOnly = Void;
