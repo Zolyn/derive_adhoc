@@ -331,6 +331,7 @@ where
     fn expand(&self, ctx_in: &Context, out: &mut O) {
         let mut ctx_buf;
         let mut definitions_here = vec![];
+        let mut defconds_here = vec![];
         let mut ctx = ctx_in;
 
         for element in &self.elements {
@@ -348,6 +349,7 @@ where
                     ctx_buf = ctx_in.clone();
                     ctx_buf.definitions.earlier = Some(&ctx_in.definitions);
                     ctx_buf.definitions.here = &definitions_here;
+                    ctx_buf.definitions.conds = &defconds_here;
                     ctx = &ctx_buf;
                     continue;
                 }
@@ -355,6 +357,7 @@ where
             } }
 
             handle_definition!(define, definitions_here);
+            handle_definition!(defcond, defconds_here);
 
             let () = element
                 .expand(ctx, out)
