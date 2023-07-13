@@ -34,9 +34,6 @@ impl SubstParseContext for BooleanContext {
             "derive-adhoc construct is an expansion - not valid in a condition",
         ))
     }
-    fn expansion_or_bool() -> Either<Void, ()> {
-        Either::Right(())
-    }
 }
 
 impl Subst<BooleanContext> {
