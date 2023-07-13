@@ -110,7 +110,7 @@ pub enum SubstDetails<O: SubstParseContext> {
 
     // special
     when(Box<Subst<BooleanContext>>, O::NotInBool),
-    define(Definition, O::NotInBool),
+    define(Definition<DefinitionBody>, O::NotInBool),
     UserDefined(DefinitionName, O::NotInBool),
 
     // expressions
@@ -138,10 +138,10 @@ pub enum SubstDetails<O: SubstParseContext> {
 }
 
 #[derive(Debug)]
-pub struct Definition {
+pub struct Definition<B> {
     pub name: DefinitionName,
     pub body_span: Span,
-    pub body: DefinitionBody,
+    pub body: B,
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -281,7 +281,7 @@ impl Parse for DefinitionName {
         })?)
     }
 }
-impl Parse for Definition {
+impl Parse for Definition<DefinitionBody> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let name = input.parse()?;
         let body_span = input.span();
