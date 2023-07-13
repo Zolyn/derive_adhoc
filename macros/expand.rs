@@ -729,7 +729,10 @@ impl<'c> Definitions<'c> {
         DefinitionsIter(Some(self))
     }
 
-    pub fn find(&self, name: &DefinitionName) -> Option<&Definition> {
+    pub fn find(
+        &'c self,
+        name: &DefinitionName,
+    ) -> Option<&'c Definition> {
         self.iter()
             .map(|l| l.iter().rev())
             .flatten()
