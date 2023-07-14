@@ -29,6 +29,8 @@ pub struct Context<'c> {
     pub field: Option<&'c WithinField<'c>>,
     pub pvariants: &'c [PreprocessedVariant<'c>],
     pub definitions: Definitions<'c>,
+    pub nesting_depth: u16,
+    pub nesting_parent: Option<(&'c Context<'c>, &'c DefinitionName)>,
 }
 
 #[derive(Debug, Clone)]
@@ -344,6 +346,8 @@ impl<'c> Context<'c> {
             variant: variant.as_ref(),
             pvariants: &pvariants,
             definitions: Default::default(),
+            nesting_depth: 0,
+            nesting_parent: None,
         };
 
         f(ctx)

@@ -2,6 +2,8 @@
 
 use super::framework::*;
 
+pub const NESTING_LIMIT: u16 = 100;
+
 pub use RepeatOver as RO;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Display)]
@@ -372,5 +374,23 @@ impl<'c> Context<'c> {
             why.span().error("expansion only valid in enums")
         })?;
         Ok(r)
+    }
+
+    pub fn deeper<B>(
+        &'c self,
+        def: &'c Definition<B>,
+    ) -> syn::Result<Context<'c>> {
+        let nesting_depth = self.nesting_depth + 1;
+        if nesting_depth > NESTING_LIMIT {
+            return Err(def.name.error(format_args!(
+                "user-defined definitions nested more than {} deep",
+                NESTING_LIMIT
+            )));
+        }
+        Ok(Context {
+            nesting_depth,
+            nesting_parent: Some((self, &def.name)),
+            ..*self
+        })
     }
 }
