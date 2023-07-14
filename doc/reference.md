@@ -24,7 +24,7 @@
       * [`$tdefkwd` - keyword introducing the new data structure](#tdefkwd---keyword-introducing-the-new-data-structure)
       * [`$tdefvariants`, `$vdefbody`, `$fdefine` - tools for defining types](#tdefvariants-vdefbody-fdefine---tools-for-defining-types)
       * [`$dbg_all_keywords` -- Dump expansions of all keywords to compiler stderr](#dbg_all_keywords---dump-expansions-of-all-keywords-to-compiler-stderr)
-      * [`${define ...}` - user-defined expansions](#define----user-defined-expansions)
+      * [`${define ...}`, `${defcond ...}` - user-defined expansions and conditions](#define--defcond----user-defined-expansions-and-conditions)
    * [Conditions](#conditions)
       * [`fvis`, `tvis`, `fdefvis` - test for public visibility](#fvis-tvis-fdefvis---test-for-public-visibility)
       * [Examples](#examples)
