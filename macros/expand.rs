@@ -674,10 +674,9 @@ where
                 "${define } and ${defcond } only allowed in a full template",
             ),
             SD::UserDefined(name) => {
-                let def = ctx.definitions.find(name).ok_or_else(|| {
+                let (def, ctx) = ctx.find_definition(name)?.ok_or_else(|| {
                     name.error("user-defined expansion not fund")
                 })?;
-                let ctx = ctx.deeper(def)?;
                 match &def.body {
                     DefinitionBody::Paste(content) => {
                         paste::expand(&ctx, def.body_span, content, out)?;
@@ -752,7 +751,10 @@ impl<'c> Definitions<'c> {
         DefinitionsIter(Some(self), PhantomData)
     }
 
-    pub fn find<B>(
+    /// Find the definition of `name` as a `B`, without recursion checking
+    ///
+    /// The caller is responsible for preventing unbounded recursion.
+    pub fn find_raw<B>(
         &'c self,
         name: &DefinitionName,
     ) -> Option<&'c Definition<B>>
