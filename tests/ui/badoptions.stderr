@@ -95,7 +95,7 @@ error: probably-recursive user-defined expansion/condition (more than 100 deep)
 59 |     ${define DEF $DEF}
    |              ^^^
 
-error: reference involved in too-deep expansion/condition, depth 100
+error: reference involved in too-deep expansion/condition, depth 1
   --> ui/badoptions.rs:59:19
    |
 59 |     ${define DEF $DEF}
