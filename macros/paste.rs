@@ -685,6 +685,8 @@ impl SubstParseContext for Items {
         Err(span
             .error("not allowed in within ${paste ...} (or case_changing)"))
     }
+
+    type SpecialParseContext = ();
 }
 
 impl ExpansionOutput for Items {

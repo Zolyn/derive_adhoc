@@ -71,6 +71,20 @@ pub struct Definitions<'c> {
     pub earlier: Option<&'c Definitions<'c>>,
 }
 
+/// Special processing instructions returned by
+/// [`special_before_element_hook`](SubstParseContext::special_before_element_hook)
+pub enum SpecialInstructions {
+    /// This template is finished
+    ///
+    /// Stop parsing this `Template` though perhaps
+    /// the surrounding `Group` is not finished.
+    ///
+    /// The parser for whatever called `Template::parse`
+    /// will continue.
+    #[allow(dead_code)] // XXXX
+    EndOfTemplate,
+}
+
 /// Surrounding lexical context during parsing
 ///
 /// This is the kind of lexical context a piece of a template appears in.
@@ -110,6 +124,26 @@ pub trait SubstParseContext {
         Err(span.error(
             "derive-adhoc keyword is a condition - not valid as an expansion",
         ))
+    }
+
+    /// For communicating through `parse_special`
+    type SpecialParseContext: Default;
+
+    /// Handle any special syntax for a special kind of template context.
+    ///
+    /// This method is called only when parsing multi-element [`Template`]s,
+    /// It's a hook, called before parsing each `TemplateElement`.
+    ///
+    /// It should consume any special syntax as appropriate,
+    ///
+    /// The default implementation is a no-op.
+    /// The only non-default implementation is in `paste.rs`, for `$<...>` -
+    /// see [`paste::AngleBrackets`].
+    fn special_before_element_hook(
+        _special: &mut Self::SpecialParseContext,
+        _input: ParseStream,
+    ) -> syn::Result<Option<SpecialInstructions>> {
+        Ok(None)
     }
 }
 
@@ -417,6 +451,8 @@ impl SubstParseContext for TokenAccumulator {
     }
 
     type BoolOnly = Void;
+
+    type SpecialParseContext = ();
 }
 
 impl ExpansionOutput for TokenAccumulator {

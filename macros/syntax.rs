@@ -358,14 +358,31 @@ impl Spanned for SubstMetaPath {
 
 impl<O: SubstParseContext> Parse for Template<O> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
+        Template::parse_special(input, &mut Default::default())
+    }
+}
+
+impl<O: SubstParseContext> Template<O> {
+    fn parse_special(
+        input: ParseStream,
+        mut special: &mut O::SpecialParseContext,
+    ) -> syn::Result<Self> {
         // eprintln!("@@@@@@@@@@ PARSE {}", &input);
         let mut good = vec![];
         let mut errors = ErrorAccumulator::default();
         while !input.is_empty() {
+            let special = &mut special;
+            match errors.handle_in(|| {
+                O::special_before_element_hook(special, input)
+            }) {
+                Some(None) => {},
+                None | // error! quit parsing
+                Some(Some(SpecialInstructions::EndOfTemplate)) => break,
+            }
             errors.handle_in(|| {
                 let elem = input.parse()?;
                 good.push(elem);
-                Ok(())
+                Ok(special)
             });
         }
         errors.finish_with(Template { elements: good })
