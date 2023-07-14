@@ -414,7 +414,7 @@ impl<'c> Context<'c> {
                     let (ctx, call) = (*ascend)?;
                     *ascend = ctx.nesting_parent;
                     Some((call, ctx.nesting_depth))
-                }
+                },
             )
             .collect_vec();
 
@@ -422,13 +422,16 @@ impl<'c> Context<'c> {
             // to display less deep entries (earlier ones), which are
             // furthest away in the stack chain.
 
-            let calls = calls.iter().rev().unique_by(
-                // De-dup by pointer identity on the name as found
-                // at the call site.  These are all references
-                // nodes in our template AST, so this is correct.
-                |(call,_)| *call as *const DefinitionName
-            )
-            .collect_vec();
+            let calls = calls
+                .iter()
+                .rev()
+                .unique_by(
+                    // De-dup by pointer identity on the name as found
+                    // at the call site.  These are all references
+                    // nodes in our template AST, so this is correct.
+                    |(call, _)| *call as *const DefinitionName,
+                )
+                .collect_vec();
 
             // We report the deepest errors first, since they're
             // definitely implicated in the cycle and more interesting.

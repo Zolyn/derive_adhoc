@@ -674,9 +674,10 @@ where
                 "${define } and ${defcond } only allowed in a full template",
             ),
             SD::UserDefined(name) => {
-                let (def, ctx) = ctx.find_definition(name)?.ok_or_else(|| {
-                    name.error("user-defined expansion not fund")
-                })?;
+                let (def, ctx) =
+                    ctx.find_definition(name)?.ok_or_else(|| {
+                        name.error("user-defined expansion not fund")
+                    })?;
                 match &def.body {
                     DefinitionBody::Paste(content) => {
                         paste::expand(&ctx, def.body_span, content, out)?;
