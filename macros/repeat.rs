@@ -158,7 +158,6 @@ impl<O: SubstParseContext> Subst<O> {
             SD::define(..) => None,
             SD::defcond(..) => None,
             SD::UserDefined(..) => None,
-            SD::UserDefCond(..) => None,
             SD::not(cond, _) => {
                 cond.analyse_repeat(visitor)?;
                 None

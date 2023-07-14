@@ -70,7 +70,7 @@ impl Subst<BooleanContext> {
                 is_found(path.search_eval_bool(sm.pmetas(ctx)?))
             }
 
-            SD::UserDefCond(name, _) => name.lookup_eval_bool(ctx)?,
+            SD::UserDefined(name) => name.lookup_eval_bool(ctx)?,
 
             SD::False(..) => false,
             SD::True(..) => true,
@@ -124,7 +124,6 @@ impl Subst<BooleanContext> {
             | SD::when(_, not_in_bool)
             | SD::define(_, not_in_bool)
             | SD::defcond(_, not_in_bool)
-            | SD::UserDefined(_, not_in_bool)
             | SD::For(_, not_in_bool)
             | SD::If(_, not_in_bool)
             | SD::select1(_, not_in_bool)
