@@ -376,7 +376,24 @@ impl<'c> Context<'c> {
         Ok(r)
     }
 
-    pub fn deeper<B>(
+    pub fn find_definition<B>(
+        &'c self,
+        name: &DefinitionName,
+    ) -> syn::Result<Option<(&'c Definition<B>, Context<'c>)>>
+    where
+        Definitions<'c>: AsRef<[&'c Definition<B>]>,
+        B: 'static,
+    {
+        let def = match self.definitions.find_raw(name) {
+            Some(y) => y,
+            None => return Ok(None),
+        };
+
+        let ctx = self.deeper(def)?;
+        Ok(Some((def, ctx)))
+    }
+
+    fn deeper<B>(
         &'c self,
         def: &'c Definition<B>,
     ) -> syn::Result<Context<'c>> {
