@@ -53,4 +53,11 @@ derive_adhoc! {
     ${if DEF {}}
 }
 
+derive_adhoc! {
+    BadOptionsDriver:
+
+    ${define DEF $DEF}
+    $DEF
+}
+
 fn main() {}
