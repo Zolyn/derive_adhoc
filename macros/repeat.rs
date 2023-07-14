@@ -378,35 +378,35 @@ impl<'c> Context<'c> {
 
     pub fn find_definition<B>(
         &'c self,
-        name: &DefinitionName,
+        call: &'c DefinitionName,
     ) -> syn::Result<Option<(&'c Definition<B>, Context<'c>)>>
     where
         Definitions<'c>: AsRef<[&'c Definition<B>]>,
         B: 'static,
     {
-        let def = match self.definitions.find_raw(name) {
+        let def = match self.definitions.find_raw(call) {
             Some(y) => y,
             None => return Ok(None),
         };
 
-        let ctx = self.deeper(def)?;
+        let ctx = self.deeper(call)?;
         Ok(Some((def, ctx)))
     }
 
-    fn deeper<B>(
+    fn deeper(
         &'c self,
-        def: &'c Definition<B>,
+        call: &'c DefinitionName,
     ) -> syn::Result<Context<'c>> {
         let nesting_depth = self.nesting_depth + 1;
         if nesting_depth > NESTING_LIMIT {
-            return Err(def.name.error(format_args!(
-                "user-defined definitions nested more than {} deep",
+            return Err(call.error(format_args!(
+ "user-defined expansion/condition references nested more than {} deep",
                 NESTING_LIMIT
             )));
         }
         Ok(Context {
             nesting_depth,
-            nesting_parent: Some((self, &def.name)),
+            nesting_parent: Some((self, call)),
             ..*self
         })
     }
