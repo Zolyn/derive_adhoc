@@ -677,9 +677,10 @@ where
                 let def = ctx.definitions.find(name).ok_or_else(|| {
                     name.error("user-defined expansion not fund")
                 })?;
+                let ctx = ctx.deeper(def)?;
                 match &def.body {
                     DefinitionBody::Paste(content) => {
-                        paste::expand(ctx, def.body_span, content, out)?;
+                        paste::expand(&ctx, def.body_span, content, out)?;
                     }
                     DefinitionBody::Normal(content) => {
                         let not_in_paste = O::not_in_paste(&kw_span).map_err(
@@ -691,7 +692,7 @@ where
                             },
                         )?;
                         out.append_tokens_with(&not_in_paste, |out| {
-                            content.expand(ctx, out);
+                            content.expand(&ctx, out);
                             Ok(())
                         })?;
                     }

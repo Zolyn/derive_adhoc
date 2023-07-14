@@ -147,7 +147,9 @@ impl DefinitionName {
             error
         })?;
 
-        def.body.eval_bool(ctx)
+        let ctx = ctx.deeper(def)?;
+
+        def.body.eval_bool(&ctx)
     }
 }
 
