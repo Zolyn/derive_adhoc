@@ -14,7 +14,7 @@
       * [`$tgens`, `$tgnames`, `$twheres`, `$tdefgens` - generics](#tgens-tgnames-twheres-tdefgens---generics)
       * [`${tmeta(...)}` `${vmeta(...)}` `${fmeta(...)}` - `#[adhoc]` attributes](#tmeta-vmeta-fmeta---adhoc-attributes)
       * [`${fattrs ...}` `${vattrs ...}` `${tattrs ...}` - other attributes](#fattrs--vattrs--tattrs----other-attributes)
-      * [`${paste ...}` - identifier pasting](#paste----identifier-pasting)
+      * [`$<...>`, `${paste ...}` - identifier pasting](#-paste----identifier-pasting)
       * [`${CASE_CHANGE ...}` - case changing](#case_change----case-changing)
       * [`${when CONDITION}` - filtering out repetitions by a predicate](#when-condition---filtering-out-repetitions-by-a-predicate)
       * [`${if COND1 { ... } else if COND2 { ... } else { ... }}` - conditional](#if-cond1----else-if-cond2----else------conditional)
@@ -57,6 +57,8 @@ In general the syntax is:
  * `${KEYWORD ARGS...}`: Invoke with parameters.
  * `$( .... )`: Repetition (abbreviated, automatic, form).
    (Note: there is no `+` or `*` after the `)`)
+ * `$< .... >`: Identifier pasting (shorthand for
+   [`${paste ...}`](#-paste----identifier-pasting)).
 
 In all cases, `$KEYWORD` is equivalent to `${KEYWORD}`.
 You can pass a `$` through
@@ -106,7 +108,7 @@ Each `ARG` must be one of:
 
  * `IDENTIFIER`
  * `LITERAL` (eg, `NUMBER` or `"STRING"`)
- * `$EXPANSION` or `${EXPANSION}` or `${EXPANSION...}`
+ * `$EXPANSION` or `${EXPANSION}` or `${EXPANSION...}` or `$<...>`
  * `{ STUFF }`, where `STUFF` is expanded.
    (The `{ }` just for delimiting the value, and are discarded).
 
@@ -172,7 +174,8 @@ For tuple fields, `$fname` is the field number.
 It might clash with other local variables;
 and, unlike most other expansions,
 `$fname` has the hygiene span of the driver field name.
-Instead, use `$vpat`, `$fpatname`, or `${paste ... $fname ...}`.
+Instead, use `$vpat`, `$fpatname`,
+or `${paste ... $fname ...}` (`$<... $fname ...>`).
 
 #### Examples
 
@@ -245,7 +248,7 @@ where `FNAME` is the actual field name (or tuple field number).
  * `fprefix`: prefix to use for the local bindings.
    Useful if you need to bind multiple values at once.
    Default is `f_`.
-   When using this, use `${paste FPREFIX $fname}`
+   When using this, use pasting (`$<FPREFIX $fname>`)
    rather than `$fpatname`.
 
 These use derive-adhoc's usual
@@ -256,7 +259,7 @@ These use derive-adhoc's usual
  * `$vpat` for structs: `Unit { }`, `Tuple { 0: f_0, }`
  * `$vpat` for enum variant: `Enum::NamedVariant { field: f_field, ... }`
  * `$fpatname`: `f_0`, `f_field`
- * `${vpat self=${paste $tname Reference} vname=${paste Ref $vname} fprefix=other_}`: `EnumReference::RefNamedVariant { field: other_field, ... }`
+ * `${vpat self=$<$tname Reference> vname=$<Ref $vname> fprefix=other_}`: `EnumReference::RefNamedVariant { field: other_field, ... }`
 
 ### `$ftype`, `$vtype`, `$ttype`, `$tdeftype` - types
 
@@ -275,7 +278,7 @@ since `$vtype` works with enums too.
 
 `$tdeftype` is
 the top-level driver type name in a form suitable for defining
-a new type with a derived name (eg, using `${paste...}`).
+a new type with a derived name (eg, using pasting).
 Contains all the necessary generics, with bounds,
 within `<...>` but without an introducing `::`.
 
@@ -295,7 +298,7 @@ Use `$vpat` for that.
  * `vname`: variant name.  Default is `$vname`.
    Not expanded for structs.
 
-These can be used with `${paste }`
+These can be used with pasting
 to name related (derived) types and variants.
 
 They use derive-adhoc's usual
@@ -308,7 +311,7 @@ They use derive-adhoc's usual
  * `$vtype` for enum variant: `Enum::TupleVariant::<'a, 'l, T, C>`
  * `$ttype`: `Enum::<'a, 'l, T, C>`
  * `$tdeftype`: `Enum<'a, 'l: 'a, T: Display = usize, const C: usize = 1>`
- * `${vtype self=${paste $ttype Reference} vname=${paste Ref $vname}}`
+ * `${vtype self=$<$ttype Reference> vname=$<Ref $vname>}`
    for enum variant:
    `EnumReference::RefTupleVariant::<'a, 'l, T, C>`
 
@@ -373,7 +376,7 @@ Accesses macro parameters passed via `#[adhoc(...)]` attributes.
      with the same contents as
      the string provided for `VALUE`.
      Ie, the attribute's string value is *not* parsed.
-     Within `${paste }` and `${CASE_CHANGE }`,
+     Within pasting and case changing,
      the provided string becomes part of the pasted identifier
      (and so must consist of legal identifier characters).
 
@@ -409,12 +412,12 @@ which should affect how a set of fields should be processed.
 
 #### Examples involving pasting
 
- * `${paste Small ${tmeta(simple)}}`: error, ``requires `as ...` ``
- * `${paste Small ${tmeta(simple) as str}}`: `SmallString`
- * `${paste Small ${tmeta(simple) as ty}}`: `SmallString`
- * `${paste Small ${tmeta(gentype) as ty}}`: `SmallVec<i32>`
- * `${paste $ttype ${tmeta(simple) as str}}`: `UnitString::<C>`
- * `${paste $ttype ${tmeta(simple) as ty}}`: error, ``multiple nontrivial entries``
+ * `$<Small ${tmeta(simple)}>`: error, ``requires `as ...` ``
+ * `$<Small ${tmeta(simple) as str}>`: `SmallString`
+ * `$<Small ${tmeta(simple) as ty}>`: `SmallString`
+ * `$<Small ${tmeta(gentype) as ty}>`: `SmallVec<i32>`
+ * `$<$ttype ${tmeta(simple) as str}>`: `UnitString::<C>`
+ * `$<$ttype ${tmeta(simple) as ty}>`: error, ``multiple nontrivial entries``
 
 ### `${fattrs ...}` `${vattrs ...}` `${tattrs ...}` - other attributes
 
@@ -466,13 +469,14 @@ With `${Xattrs}`, unlike `${Xmeta}`,
 
  * `${vattrs adhoc}` for `UnitVariant`: `#[adhoc(value="enum-variant")]`
 
-### `${paste ...}` - identifier pasting
+### `$<...>`, `${paste ...}` - identifier pasting
 
 Expand the contents and paste it together into a single identifier.
 The contents may only contain identifer fragments, strings (`"..."`),
 and (certain) expansions.
 Supported expansions are `$ftype`, `$ttype`, `$tdeftype`, `$Xname`,
 `${Xmeta as ty}`, `${Xmeta as str}`,
+`$<...>`,
 `${paste ...}`,
 `${CASE_CHANGE ...}`,
 `$tdefkwd`,
@@ -487,7 +491,7 @@ and the path prefix and generics reproduced unaltered.
 
 #### Example
 
- * `${paste Zingy $ftype Builder}` for `TupleVariant`:
+ * `$<Zingy $ftype Builder>` for `TupleVariant`:
     `std::iter::ZingyOnceBuilder::<T>`
  * `${paste x_ $fname}` for tuple: `x_0`
  * `${paste $fname _x}` for tuple: error, ``constructed identifier "0_x" is invalid``
@@ -605,10 +609,10 @@ will probably be syntactically invalid in context.
 #### Example
 
 ```text
-$tvis $tdefkwd ${paste $tname Copy}<$tdefgens>
+$tvis $tdefkwd $<$tname Copy><$tdefgens>
 ${tdefvariants $(
-    ${vdefbody ${paste $vname Copy} $(
-        $fdefvis ${fdefine ${paste $fname _copy}} $ftype,
+    ${vdefbody $<$vname Copy> $(
+        $fdefvis ${fdefine $<$fname _copy>} $ftype,
     ) }
 ) }
 ```
@@ -694,8 +698,8 @@ to the values and definitions prevailing
 in the dynamic context where `NAME` is used.
 
 `${NAME}` may only be used
-inside `${paste}` (and case changing)
-if `BODY` was precisely an invocation of `${paste }`.
+inside pasting and case changing
+if `BODY` was precisely an invocation of `${paste }` or `$<...>`.
 
 You can define an expansion and a condition with the same name;
 they won't interfere.
@@ -704,7 +708,7 @@ they won't interfere.
 
  * `${define VN $vname} ${for variants { $VN }}`:
    `UnitVariant TupleVariant NamedVariant`
- * `${define FN ${paste $fname _}} ${paste ${for fields { "F" $FN }}}`:
+ * `${define FN $<$fname _>} $<${for fields { "F" $FN }}>`:
    `F0_`, `Ffield_Ffield_b_`
 
 ##### Example including a condition
@@ -833,7 +837,7 @@ If the content's expansion is a path, only the final segment is changed.
 
 The content must be valid within `${paste }`,
 and is treated the same way.
-`${CASE_CHANGE }` may appear within `${paste }` and vice versa.
+`${CASE_CHANGE }` may appear within pasting and vice versa.
 
 This table shows the supported case styles.
 Note that changing the case can add and remove underscores.
@@ -855,7 +859,7 @@ which is used to implement the actual case changing.
  * `${shouty_snake_case $ttype}`: `ENUM::<'a, 'l, T, C>`
  * `${pascal_case $fname}`: `Field`, `FieldB`
  * `${pascal_case x_ $fname _y}`: `XFieldBY`
- * `${paste x_ ${lower_camel_case $fname} _y}`: `x_fieldB_y`
+ * `$<x_ ${lower_camel_case $fname} _y>`: `x_fieldB_y`
  * `${lower_camel_case $fname}` for tuple: error, ``constructed identifier "0" is invalid``
 
 ## Expansion options
