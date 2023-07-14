@@ -20,13 +20,13 @@ image: "rust:latest"
 # Running tests without --workspace is useful because that way cargo
 # won't add features to our dependencies that we didn't actually enable
 # *in the derive-adhoc or derive-adhoc-macros crates*.
-cargo-check:
+cargo-check-deps:
   stage: test
   script:
     - mv Cargo.lock.example Cargo.lock
     - cargo check --locked --verbose --all-features
 
-cargo-check-workspace:
+cargo-check:
   stage: test
   script:
     - mv Cargo.lock.example Cargo.lock
