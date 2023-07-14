@@ -233,7 +233,7 @@ since those are not allowed in patterns.)
 Each field is bound to a local variant `f_FNAME`,
 where `FNAME` is the actual field name (or tuple field number).
 
-`$vpatname` expands to `f_FNAME` for the current field.
+`$fpatname` expands to `f_FNAME` for the current field.
 
 #### `$vpat` named arguments
 
