@@ -88,3 +88,9 @@ error: this user-defined expansion used as a condition (perhaps you meant ${defc
    |
 47 |     ${define DEF {}}
    |              ^^^
+
+error: user-defined definitions nested more than 100 deep
+  --> ui/badoptions.rs:59:14
+   |
+59 |     ${define DEF $DEF}
+   |              ^^^
