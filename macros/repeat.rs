@@ -389,24 +389,39 @@ impl<'c> Context<'c> {
             None => return Ok(None),
         };
 
-        let ctx = self.deeper(call)?;
+        let ctx = self.deeper(&def.name, call)?;
         Ok(Some((def, ctx)))
     }
 
     fn deeper(
         &'c self,
+        def: &'c DefinitionName,
         call: &'c DefinitionName,
     ) -> syn::Result<Context<'c>> {
         let nesting_depth = self.nesting_depth + 1;
+        let stack_entry = (self, call);
         if nesting_depth > NESTING_LIMIT {
-            return Err(call.error(format_args!(
- "user-defined expansion/condition references nested more than {} deep",
+            let mut errs = def.error(format_args!(
+ "probably-recursive user-defined expansion/condition (more than {} deep)",
                 NESTING_LIMIT
-            )));
+            ));
+            let mut ascend = Some(stack_entry);
+            let mut done = HashSet::<*const DefinitionName>::new();
+            while let Some((ctx, call)) = ascend {
+                ascend = ctx.nesting_parent;
+                if !done.insert(call) {
+                    continue
+                }
+                errs.combine(call.error(format_args!(
+ "reference involved in too-deep expansion/condition, depth {}",
+                    ctx.nesting_depth
+                )));
+            }
+            return Err(errs);
         }
         Ok(Context {
             nesting_depth,
-            nesting_parent: Some((self, call)),
+            nesting_parent: Some(stack_entry),
             ..*self
         })
     }

@@ -89,8 +89,20 @@ error: this user-defined expansion used as a condition (perhaps you meant ${defc
 47 |     ${define DEF {}}
    |              ^^^
 
-error: user-defined expansion/condition references nested more than 100 deep
+error: probably-recursive user-defined expansion/condition (more than 100 deep)
+  --> ui/badoptions.rs:59:14
+   |
+59 |     ${define DEF $DEF}
+   |              ^^^
+
+error: reference involved in too-deep expansion/condition, depth 100
   --> ui/badoptions.rs:59:19
    |
 59 |     ${define DEF $DEF}
    |                   ^^^
+
+error: reference involved in too-deep expansion/condition, depth 0
+  --> ui/badoptions.rs:60:6
+   |
+60 |     $DEF
+   |      ^^^
