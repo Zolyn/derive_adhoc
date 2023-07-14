@@ -673,7 +673,7 @@ where
                 // and exclude it, but that would be super invasive.
                 "${define } and ${defcond } only allowed in a full template",
             ),
-            SD::UserDefined(name, _) => {
+            SD::UserDefined(name) => {
                 let def = ctx.definitions.find(name).ok_or_else(|| {
                     name.error("user-defined expansion not fund")
                 })?;
@@ -715,7 +715,6 @@ where
             | SD::v_is_unit(bo)
             | SD::v_is_tuple(bo)
             | SD::v_is_named(bo)
-            | SD::UserDefCond(_, bo)
             | SD::False(bo)
             | SD::True(bo)
             | SD::not(_, bo)

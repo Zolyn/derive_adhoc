@@ -112,8 +112,7 @@ pub enum SubstDetails<O: SubstParseContext> {
     when(Box<Subst<BooleanContext>>, O::NotInBool),
     define(Definition<DefinitionBody>, O::NotInBool),
     defcond(Definition<DefCondBody>, O::NotInBool),
-    UserDefined(DefinitionName, O::NotInBool),
-    UserDefCond(DefinitionName, O::BoolOnly),
+    UserDefined(DefinitionName),
 
     // expressions
     False(O::BoolOnly),
@@ -888,14 +887,7 @@ impl<O: SubstParseContext> Parse for Subst<O> {
         }
 
         if let Ok(user_defined) = kw.clone().try_into() {
-            return from_sd(match O::expansion_or_bool() {
-                Either::Left(not_in_bool) => {
-                    SD::UserDefined(user_defined, not_in_bool)
-                }
-                Either::Right(bool_only) => {
-                    SD::UserDefCond(user_defined, bool_only)
-                }
-            });
+            return from_sd(SD::UserDefined(user_defined));
         }
 
         Err(kw.error("unknown derive-adhoc keyword"))
