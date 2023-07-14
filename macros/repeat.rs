@@ -408,6 +408,7 @@ impl<'c> Context<'c> {
             ));
             // And the unique reference sites from the call stack
             let calls = itertools::unfold(
+                //
                 Some(stack_entry),
                 |ascend| {
                     let (ctx, call) = (*ascend)?;
