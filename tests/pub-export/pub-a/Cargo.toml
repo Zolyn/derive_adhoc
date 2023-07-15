@@ -9,7 +9,7 @@ description="pub testing crates - part A"
 publish = false
 
 [dependencies]
-derive-adhoc = { path = "../../..", version = "0.6.1" }
+derive-adhoc = { path = "../../..", version = "0.7.0" }
 
 [lib]
 path = "pub-a.rs"

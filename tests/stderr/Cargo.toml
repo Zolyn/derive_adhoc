@@ -11,7 +11,7 @@ description="stderr testing crates - does not build"
 publish = false
 
 [dependencies]
-derive-adhoc = { path = "../..", version = "0.6.1", features = ["full"] }
+derive-adhoc = { path = "../..", version = "0.7.0", features = ["full"] }
 
 [features]
 # The purpose of this crate is to fail the build, with error messages
