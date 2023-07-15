@@ -431,6 +431,8 @@ impl<O: SubstParseContext> Parse for TemplateElement<O> {
         let input_span = input.span();
         let not_in_paste = || O::not_in_paste(&input_span);
 
+        let backtracked = input.fork();
+
         Ok(match input.parse()? {
             TT::Group(group) => {
                 let delim_span = group.span_open();
@@ -449,6 +451,16 @@ impl<O: SubstParseContext> Parse for TemplateElement<O> {
                 syn::Lit::Str(s) => TE::LitStr(s),
                 other => TE::Literal(other, not_in_paste()?),
             },
+            TT::Punct(tok) if tok.as_char() == '#' => {
+                if let Ok(attr) = syn::Attribute::parse_inner(&backtracked) {
+                    if let Some(attr) = attr.first() {
+                        return Err(attr.error(
+    "inner attributes are reserved syntax, anywhere in derive-adhoc templates"
+                        ));
+                    }
+                }
+                TE::Punct(tok, not_in_paste()?)
+            }
             TT::Punct(tok) if tok.as_char() != '$' => {
                 TE::Punct(tok, not_in_paste()?)
             }
