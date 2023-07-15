@@ -23,6 +23,26 @@ We expect to increase it cautiously and only with good reason.
 
 ## Changelog
 
+### 0.7.0
+
+#### Breaking
+
+ * Reject inner attributes (`#![...]` and `//!...`) anywhere in templates:
+   these are now reserve for future expansion.
+   To resolve: use inner attributes instead.
+
+#### Added
+
+ * New `${define }` and `${defcond }` facility for reuseable template
+   fragments and conditions, to save repetition in templates.  (#14)
+ * Abbreviated `$<...>` syntax for `${paste ...}`.  (#23)
+
+#### Fixed
+
+ * Allow nested pasting when intermediate pastes aren't valid idents.
+ * Fixed bugs relating to pasting of keywords and raw identifiers.
+ * docs: Fixed minor bugs in the reference.
+
 ### 0.6.1
 
 #### Fixed
