@@ -726,62 +726,6 @@ where
     }
 }
 
-pub struct DefinitionsIter<'c, B>(
-    Option<&'c Definitions<'c>>,
-    PhantomData<&'c B>,
-);
-
-impl<'c, B> Iterator for DefinitionsIter<'c, B>
-where
-    Definitions<'c>: AsRef<[&'c Definition<B>]>,
-{
-    type Item = &'c [&'c Definition<B>];
-    fn next(&mut self) -> Option<Self::Item> {
-        let here = self.0?;
-        let r = here.as_ref();
-        self.0 = here.earlier;
-        Some(r)
-    }
-}
-
-impl<'c> Definitions<'c> {
-    pub fn iter<B>(&'c self) -> DefinitionsIter<'c, B>
-    where
-        Definitions<'c>: AsRef<[&'c Definition<B>]>,
-    {
-        DefinitionsIter(Some(self), PhantomData)
-    }
-
-    /// Find the definition of `name` as a `B`, without recursion checking
-    ///
-    /// The caller is responsible for preventing unbounded recursion.
-    pub fn find_raw<B>(
-        &'c self,
-        name: &DefinitionName,
-    ) -> Option<&'c Definition<B>>
-    where
-        Definitions<'c>: AsRef<[&'c Definition<B>]>,
-        B: 'static,
-    {
-        self.iter()
-            .map(|l| l.iter().rev())
-            .flatten()
-            .find(|def| &def.name == name)
-            .cloned()
-    }
-}
-
-impl<'c> AsRef<[&'c Definition<DefinitionBody>]> for Definitions<'c> {
-    fn as_ref(&self) -> &[&'c Definition<DefinitionBody>] {
-        self.here
-    }
-}
-impl<'c> AsRef<[&'c Definition<DefCondBody>]> for Definitions<'c> {
-    fn as_ref(&self) -> &[&'c Definition<DefCondBody>] {
-        self.conds
-    }
-}
-
 impl<O> SubstMeta<O>
 where
     O: SubstParseContext,
