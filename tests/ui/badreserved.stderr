@@ -1,0 +1,25 @@
+error: expected one of: `$`, parentheses, curly braces, identifier
+  --> ui/badreserved.rs:10:6
+   |
+10 |     $[ future ]
+   |      ^
+
+error: expected one of: `$`, parentheses, curly braces, identifier
+  --> ui/badreserved.rs:15:6
+   |
+15 |     $< paste? >
+   |      ^
+
+error: expected one of: `$`, parentheses, curly braces, identifier
+  --> ui/badreserved.rs:20:6
+   |
+20 |     $r#"template content?"#
+   |      ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `define_derive_adhoc`
+ --> ui/badreserved.rs:3:20
+  |
+3 | use derive_adhoc::{define_derive_adhoc, derive_adhoc, Adhoc};
+  |                    ^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
