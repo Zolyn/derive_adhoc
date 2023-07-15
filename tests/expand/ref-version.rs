@@ -15,15 +15,18 @@ define_derive_adhoc! {
     // The output from this `dbg` is tested via tests/stderr/stderr-lib.rs
     ReferenceVersion dbg =
 
-    $tvis $tdefkwd ${paste $tname Reference}<'reference, $tdefgens>
+    ${define REFERENCE ${paste $tname Reference}}
+    ${define IMPL { impl<'reference, $tgens> }}
+    ${define REF_TYPE { $REFERENCE<'reference, $tgnames> }}
+
+    $tvis $tdefkwd $REFERENCE<'reference, $tdefgens>
     ${tdefvariants $(
         ${vdefbody $vname $(
             $fvis ${fdefine $fname} &'reference $ftype,
         ) }
     ) }
 
-    impl<'reference, $tgens> From<&'reference $ttype>
-    for ${paste $tname Reference}<'reference, $tgnames> {
+    $IMPL From<&'reference $ttype> for $REF_TYPE {
         fn from(ref_to_owned: &'reference $ttype) -> Self {
             match ref_to_owned { $(
                 $vpat => ${vtype self=${paste $ttype Reference}} { $(
@@ -33,9 +36,7 @@ define_derive_adhoc! {
         }
     }
 
-    impl<'reference, $tgens> ${paste $tname Reference}<'reference, $tgnames>
-    where $( $ftype: Clone, )
-    {
+    $IMPL $REF_TYPE where $( $ftype: Clone, ) {
         fn cloned(&self) -> $ttype {
             match self { $(
                 ${vpat self=Self} => $vtype { $(

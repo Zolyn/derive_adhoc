@@ -2,6 +2,8 @@
 
 use super::framework::*;
 
+pub const NESTING_LIMIT: u16 = 100;
+
 pub use RepeatOver as RO;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Display)]
@@ -155,6 +157,9 @@ impl<O: SubstParseContext> Subst<O> {
                 None
             }
             SD::when(..) => None, // out-of-place when, ignore it
+            SD::define(..) => None,
+            SD::defcond(..) => None,
+            SD::UserDefined(..) => None,
             SD::not(cond, _) => {
                 cond.analyse_repeat(visitor)?;
                 None
@@ -369,5 +374,80 @@ impl<'c> Context<'c> {
             why.span().error("expansion only valid in enums")
         })?;
         Ok(r)
+    }
+
+    pub fn find_definition<B>(
+        &'c self,
+        call: &'c DefinitionName,
+    ) -> syn::Result<Option<(&'c Definition<B>, Context<'c>)>>
+    where
+        Definitions<'c>: AsRef<[&'c Definition<B>]>,
+        B: 'static,
+    {
+        let def = match self.definitions.find_raw(call) {
+            Some(y) => y,
+            None => return Ok(None),
+        };
+
+        let ctx = self.deeper(&def.name, call)?;
+        Ok(Some((def, ctx)))
+    }
+
+    fn deeper(
+        &'c self,
+        def: &'c DefinitionName,
+        call: &'c DefinitionName,
+    ) -> syn::Result<Context<'c>> {
+        let nesting_depth = self.nesting_depth + 1;
+        let stack_entry = (self, call);
+        if nesting_depth > NESTING_LIMIT {
+            // We report the definition site of the innermost reference:
+            let mut errs = def.error(format_args!(
+ "probably-recursive user-defined expansion/condition (more than {} deep)",
+                NESTING_LIMIT
+            ));
+            // And the unique reference sites from the call stack
+            let calls = itertools::unfold(
+                //
+                Some(stack_entry),
+                |ascend| {
+                    let (ctx, call) = (*ascend)?;
+                    *ascend = ctx.nesting_parent;
+                    Some((call, ctx.nesting_depth))
+                },
+            )
+            .collect_vec();
+
+            // Collect and reverse because we preferentially want
+            // to display less deep entries (earlier ones), which are
+            // furthest away in the stack chain.
+
+            let calls = calls
+                .iter()
+                .rev()
+                .unique_by(
+                    // De-dup by pointer identity on the name as found
+                    // at the call site.  These are all references
+                    // nodes in our template AST, so this is correct.
+                    |(call, _)| *call as *const DefinitionName,
+                )
+                .collect_vec();
+
+            // We report the deepest errors first, since they're
+            // definitely implicated in the cycle and more interesting.
+            // (So this involves collecting and reversing again.)
+            for (call, depth) in calls.iter().rev() {
+                errs.combine(call.error(format_args!(
+             "reference involved in too-deep expansion/condition, depth {}",
+                    depth,
+                )));
+            }
+            return Err(errs);
+        }
+        Ok(Context {
+            nesting_depth,
+            nesting_parent: Some(stack_entry),
+            ..*self
+        })
     }
 }

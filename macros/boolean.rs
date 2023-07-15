@@ -67,6 +67,8 @@ impl Subst<BooleanContext> {
                 is_found(path.search_eval_bool(sm.pmetas(ctx)?))
             }
 
+            SD::UserDefined(name) => name.lookup_eval_bool(ctx)?,
+
             SD::False(..) => false,
             SD::True(..) => true,
 
@@ -117,6 +119,8 @@ impl Subst<BooleanContext> {
             | SD::paste(_, not_in_bool)
             | SD::ChangeCase(_, _, not_in_bool)
             | SD::when(_, not_in_bool)
+            | SD::define(_, not_in_bool)
+            | SD::defcond(_, not_in_bool)
             | SD::For(_, not_in_bool)
             | SD::If(_, not_in_bool)
             | SD::select1(_, not_in_bool)
@@ -124,6 +128,26 @@ impl Subst<BooleanContext> {
             | SD::Crate(_, not_in_bool) => void::unreachable(*not_in_bool),
         };
         Ok(r)
+    }
+}
+
+impl DefinitionName {
+    fn lookup_eval_bool(&self, ctx: &Context<'_>) -> syn::Result<bool> {
+        let (def, ctx) = ctx.find_definition::<DefCondBody>(self)?.ok_or_else(|| {
+            let mut error = self.error("user-defined condition not fund");
+            if let Some(def) = ctx.definitions.find_raw::<DefinitionBody>(self) {
+                // Condition syntax looks like fine tokens,
+                // so the ${define } wouldn't spot this mistake.
+                error.combine(
+                    def.name.error(
+"this user-defined expansion used as a condition (perhaps you meant ${defcond ?}"
+                    )
+                );
+            }
+            error
+        })?;
+
+        def.body.eval_bool(&ctx)
     }
 }
 

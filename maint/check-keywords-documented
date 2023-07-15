@@ -364,9 +364,14 @@ __DATA__
 E	CASE_CHANGE
 ve	changecase
 
-# These are one SD variant
-dDEB	fvis fdefvis tvis fmeta vmeta tmeta
-v	vis xmeta
+# These are combined SD variants
+dDEB	fvis fdefvis tvis
+v	vis
+dDEB	fmeta vmeta tmeta
+v	xmeta
 
 # Doc has both ${for fields ...} and ${for variants ...}, so E is repeated
 veEE	for
+
+# User-defined keywords
+v	userdefined

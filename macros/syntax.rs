@@ -110,6 +110,9 @@ pub enum SubstDetails<O: SubstParseContext> {
 
     // special
     when(Box<Subst<BooleanContext>>, O::NotInBool),
+    define(Definition<DefinitionBody>, O::NotInBool),
+    defcond(Definition<DefCondBody>, O::NotInBool),
+    UserDefined(DefinitionName),
 
     // expressions
     False(O::BoolOnly),
@@ -134,6 +137,24 @@ pub enum SubstDetails<O: SubstParseContext> {
 
     Crate(O::NotInPaste, O::NotInBool),
 }
+
+#[derive(Debug)]
+pub struct Definition<B> {
+    pub name: DefinitionName,
+    pub body_span: Span,
+    pub body: B,
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct DefinitionName(syn::Ident);
+
+#[derive(Debug)]
+pub enum DefinitionBody {
+    Normal(Template<TokenAccumulator>),
+    Paste(Template<paste::Items>),
+}
+
+pub type DefCondBody = Box<Subst<BooleanContext>>;
 
 #[derive(Debug)]
 pub struct SubstIf<O: SubstParseContext> {
@@ -220,6 +241,101 @@ pub enum RawAttr {
 #[derive(Debug, Clone)]
 pub struct RawAttrEntry {
     pub path: syn::Path,
+}
+
+/// Error returned by `DefinitionName::try_from(syn::Ident)`
+pub struct InvalidDefinitionName;
+
+impl Spanned for DefinitionName {
+    fn span(&self) -> Span {
+        self.0.span()
+    }
+}
+
+impl TryFrom<syn::Ident> for DefinitionName {
+    type Error = InvalidDefinitionName;
+    fn try_from(ident: syn::Ident) -> Result<Self, InvalidDefinitionName> {
+        // We allow any identifier except those which start with a
+        // lowercase letter or `_`.  Lowercase letters, and `_`, are
+        // reserved for builtin functionality.  We don't restrict the
+        // exclusion to *ascii* lowercase letters, even though we
+        // don't intend any non-ascii keywords, because that might be
+        // confusing.  proc_macros receive identifiers in NFC, so
+        // we don't need to worry about whether this rule might depend
+        // on the input representation.
+        let s = ident.to_string();
+        let c = s.chars().next().expect("identifer was empty string!");
+        if c.is_lowercase() {
+            Err(InvalidDefinitionName)
+        } else {
+            Ok(DefinitionName(ident))
+        }
+    }
+}
+
+impl Parse for DefinitionName {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let ident = input.call(Ident::parse_any)?;
+        let span = ident.span();
+        Ok(ident.try_into().map_err(|InvalidDefinitionName| {
+            span.error(
+                "invalid name for definition - may not start with lowercase",
+            )
+        })?)
+    }
+}
+impl Parse for Definition<DefinitionBody> {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let name = input.parse()?;
+        let body_span = input.span();
+        let mut body = Template::parse_single_or_braced(input)?;
+
+        // Is it precisely an invocation of ${paste } ?
+        let body = match (|| {
+            if body.elements.len() != 1 {
+                return None;
+            }
+            let Template { elements } = &mut body;
+            // This is tedious.  We really want to move match on a vec.
+            match elements.pop().expect("just checked length") {
+                TE::Subst(Subst {
+                    kw_span,
+                    sd: SD::paste(items, not_in_bool),
+                }) => Some(Template {
+                    elements: vec![TE::Subst(Subst {
+                        kw_span,
+                        sd: SD::paste(items, not_in_bool),
+                    })],
+                }),
+                other => {
+                    // Oops, put it back
+                    elements.push(other);
+                    None
+                }
+            }
+        })() {
+            Some(paste) => DefinitionBody::Paste(paste),
+            None => DefinitionBody::Normal(body),
+        };
+
+        Ok(Definition {
+            name,
+            body_span,
+            body,
+        })
+    }
+}
+impl Parse for Definition<DefCondBody> {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let name = input.parse()?;
+        let body_span = input.span();
+        let body = Box::new(input.parse()?);
+        Ok(Definition {
+            name,
+            body_span,
+            body,
+        })
+    }
 }
 
 impl<O: SubstParseContext> Spanned for Subst<O> {
@@ -740,6 +856,8 @@ impl<O: SubstParseContext> Parse for Subst<O> {
 
         keyword! { paste(Template::parse(input)?, not_in_bool()?) }
         keyword! { when(input.parse()?, not_in_bool()?) }
+        keyword! { define(input.parse()?, not_in_bool()?) }
+        keyword! { defcond(input.parse()?, not_in_bool()?) }
 
         keyword! { "false": False(bool_only()?) }
         keyword! { "true": True(bool_only()?) }
@@ -766,6 +884,10 @@ impl<O: SubstParseContext> Parse for Subst<O> {
                 case,
                 not_in_bool()?,
             ));
+        }
+
+        if let Ok(user_defined) = kw.clone().try_into() {
+            return from_sd(SD::UserDefined(user_defined));
         }
 
         Err(kw.error("unknown derive-adhoc keyword"))

@@ -328,8 +328,37 @@ where
     TemplateElement<O>: Expand<O>,
     O: ExpansionOutput,
 {
-    fn expand(&self, ctx: &Context, out: &mut O) {
+    fn expand(&self, ctx_in: &Context, out: &mut O) {
+        let mut ctx_buf;
+        let mut definitions_here = vec![];
+        let mut defconds_here = vec![];
+        let mut ctx = ctx_in;
+
         for element in &self.elements {
+            macro_rules! handle_definition { {
+                $variant:ident, $store:expr
+            } => {
+                if let TE::Subst(Subst {
+                    sd: SD::$variant(def, _),
+                    ..
+                }) = element
+                {
+                    // Doing this with a macro makes it nice and obvious
+                    // to the borrow checker.
+                    $store.push(def);
+                    ctx_buf = ctx_in.clone();
+                    ctx_buf.definitions.earlier = Some(&ctx_in.definitions);
+                    ctx_buf.definitions.here = &definitions_here;
+                    ctx_buf.definitions.conds = &defconds_here;
+                    ctx = &ctx_buf;
+                    continue;
+                }
+
+            } }
+
+            handle_definition!(define, definitions_here);
+            handle_definition!(defcond, defconds_here);
+
             let () = element
                 .expand(ctx, out)
                 .unwrap_or_else(|err| out.record_error(err));
@@ -627,14 +656,47 @@ where
             SD::Crate(np, ..) => out.append_tokens(np, &ctx.template_crate)?,
 
             SD::paste(content, ..) => {
-                let mut items = paste::Items::new(kw_span);
-                content.expand(ctx, &mut items);
-                items.assemble(out, None)?;
+                paste::expand(ctx, kw_span, content, out)?;
             }
             SD::ChangeCase(content, case, ..) => {
                 let mut items = paste::Items::new(kw_span);
                 content.expand(ctx, &mut items);
                 items.assemble(out, Some(*case))?;
+            }
+
+            SD::define(..) | SD::defcond(..) => out.write_error(
+                &kw_span,
+                // I think this is impossible.  It could only occur if
+                // someone parsed a Subst or SubstDetails that wasn't
+                // in a Template.  It is Template.expand() that handles this.
+                // We could possibly use proof tokens to see if this happens
+                // and exclude it, but that would be super invasive.
+                "${define } and ${defcond } only allowed in a full template",
+            ),
+            SD::UserDefined(name) => {
+                let (def, ctx) =
+                    ctx.find_definition(name)?.ok_or_else(|| {
+                        name.error("user-defined expansion not fund")
+                    })?;
+                match &def.body {
+                    DefinitionBody::Paste(content) => {
+                        paste::expand(&ctx, def.body_span, content, out)?;
+                    }
+                    DefinitionBody::Normal(content) => {
+                        let not_in_paste = O::not_in_paste(&kw_span).map_err(
+                            |mut unpasteable| {
+                                unpasteable.combine(def.body_span.error(
+ "user-defined expansion is not pasteable because it isn't, itself, ${paste }"
+                                ));
+                                unpasteable
+                            },
+                        )?;
+                        out.append_tokens_with(&not_in_paste, |out| {
+                            content.expand(&ctx, out);
+                            Ok(())
+                        })?;
+                    }
+                }
             }
 
             SD::when(..) => out.write_error(
@@ -661,6 +723,62 @@ where
             | SD::all(_, bo) => out.append_bool_only(bo),
         };
         Ok(())
+    }
+}
+
+pub struct DefinitionsIter<'c, B>(
+    Option<&'c Definitions<'c>>,
+    PhantomData<&'c B>,
+);
+
+impl<'c, B> Iterator for DefinitionsIter<'c, B>
+where
+    Definitions<'c>: AsRef<[&'c Definition<B>]>,
+{
+    type Item = &'c [&'c Definition<B>];
+    fn next(&mut self) -> Option<Self::Item> {
+        let here = self.0?;
+        let r = here.as_ref();
+        self.0 = here.earlier;
+        Some(r)
+    }
+}
+
+impl<'c> Definitions<'c> {
+    pub fn iter<B>(&'c self) -> DefinitionsIter<'c, B>
+    where
+        Definitions<'c>: AsRef<[&'c Definition<B>]>,
+    {
+        DefinitionsIter(Some(self), PhantomData)
+    }
+
+    /// Find the definition of `name` as a `B`, without recursion checking
+    ///
+    /// The caller is responsible for preventing unbounded recursion.
+    pub fn find_raw<B>(
+        &'c self,
+        name: &DefinitionName,
+    ) -> Option<&'c Definition<B>>
+    where
+        Definitions<'c>: AsRef<[&'c Definition<B>]>,
+        B: 'static,
+    {
+        self.iter()
+            .map(|l| l.iter().rev())
+            .flatten()
+            .find(|def| &def.name == name)
+            .cloned()
+    }
+}
+
+impl<'c> AsRef<[&'c Definition<DefinitionBody>]> for Definitions<'c> {
+    fn as_ref(&self) -> &[&'c Definition<DefinitionBody>] {
+        self.here
+    }
+}
+impl<'c> AsRef<[&'c Definition<DefCondBody>]> for Definitions<'c> {
+    fn as_ref(&self) -> &[&'c Definition<DefCondBody>] {
+        self.conds
     }
 }
 

@@ -28,6 +28,9 @@ pub struct Context<'c> {
     pub variant: Option<&'c WithinVariant<'c>>,
     pub field: Option<&'c WithinField<'c>>,
     pub pvariants: &'c [PreprocessedVariant<'c>],
+    pub definitions: Definitions<'c>,
+    pub nesting_depth: u16,
+    pub nesting_parent: Option<(&'c Context<'c>, &'c DefinitionName)>,
 }
 
 #[derive(Debug, Clone)]
@@ -59,6 +62,13 @@ pub struct WithinField<'c> {
     pub field: &'c syn::Field,
     pub pfield: &'c PreprocessedField,
     pub index: u32,
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Definitions<'c> {
+    pub here: &'c [&'c Definition<DefinitionBody>],
+    pub conds: &'c [&'c Definition<DefCondBody>],
+    pub earlier: Option<&'c Definitions<'c>>,
 }
 
 /// Surrounding lexical context during parsing
@@ -335,6 +345,9 @@ impl<'c> Context<'c> {
             field: None,
             variant: variant.as_ref(),
             pvariants: &pvariants,
+            definitions: Default::default(),
+            nesting_depth: 0,
+            nesting_parent: None,
         };
 
         f(ctx)

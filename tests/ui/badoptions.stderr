@@ -70,3 +70,39 @@ error: only doc attributes are supported
    |
 40 |     #[allow(dead_code)]
    |       ^^^^^
+
+error: user-defined expansion not fund
+  --> ui/badoptions.rs:51:6
+   |
+51 |     $COND
+   |      ^^^^
+
+error: user-defined condition not fund
+  --> ui/badoptions.rs:53:10
+   |
+53 |     ${if DEF {}}
+   |          ^^^
+
+error: this user-defined expansion used as a condition (perhaps you meant ${defcond ?}
+  --> ui/badoptions.rs:47:14
+   |
+47 |     ${define DEF {}}
+   |              ^^^
+
+error: probably-recursive user-defined expansion/condition (more than 100 deep)
+  --> ui/badoptions.rs:59:14
+   |
+59 |     ${define DEF $DEF}
+   |              ^^^
+
+error: reference involved in too-deep expansion/condition, depth 1
+  --> ui/badoptions.rs:59:19
+   |
+59 |     ${define DEF $DEF}
+   |                   ^^^
+
+error: reference involved in too-deep expansion/condition, depth 0
+  --> ui/badoptions.rs:60:6
+   |
+60 |     $DEF
+   |      ^^^
