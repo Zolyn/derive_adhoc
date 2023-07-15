@@ -127,16 +127,6 @@ impl Parse for DeriveAdhocExpandInput {
     }
 }
 
-impl Spanned for MetaNode<'_> {
-    fn span(&self) -> Span {
-        match self {
-            MN::Unit(span) => *span,
-            MN::Deeper(span) => *span,
-            MN::Lit(lit) => lit.span(),
-        }
-    }
-}
-
 impl<O> Expand<O> for SubstIf<O>
 where
     Template<O>: ExpandInfallible<O>,
@@ -820,6 +810,16 @@ where
 
     let thing: T = s.parse()?;
     Ok(thing)
+}
+
+impl Spanned for MetaNode<'_> {
+    fn span(&self) -> Span {
+        match self {
+            MN::Unit(span) => *span,
+            MN::Deeper(span) => *span,
+            MN::Lit(lit) => lit.span(),
+        }
+    }
 }
 
 impl<'l> MetaNode<'l> {
