@@ -22,6 +22,12 @@ error: inner attributes are reserved syntax, anywhere in derive-adhoc templates
 27 |         //! template doc comment?
    |         ^^^^^^^^^^^^^^^^^^^^^^^^^
 
+error: expected one of: `$`, parentheses, curly braces, identifier
+  --> ui/badreserved.rs:34:6
+   |
+34 |     $/// template doc comment?
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^
+
 warning: unused import: `define_derive_adhoc`
  --> ui/badreserved.rs:3:20
   |

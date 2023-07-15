@@ -28,4 +28,12 @@ derive_adhoc! {
     }
 }
 
+derive_adhoc! {
+    ReserveDriver:
+
+    $/// template doc comment?
+    mod prevent {
+    }
+}
+
 fn main() {}
