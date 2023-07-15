@@ -51,7 +51,11 @@ refspecs=()
 for tbranch in $BASE_BRANCHES; do
     refspecs+=(+"refs/heads/$tbranch:$(tlref)")
 done
-git fetch "$ORIGIN" "${refspecs[@]}"
+
+# TODO really we want something like the converse of
+#  git fetch --shallow-exclude
+# but it doesn't seem to exist.
+git fetch --unshallow "$ORIGIN" "${refspecs[@]}"
 
 for tbranch in $BASE_BRANCHES; do
     trevlist="$(tlref)..HEAD"
