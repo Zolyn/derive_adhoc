@@ -471,7 +471,7 @@ With `${Xattrs}`, unlike `${Xmeta}`,
 
 ### `$<...>`, `${paste ...}` - identifier pasting
 
-Expand the contents and paste it together into a single identifier.
+Expands the contents and paste it together into a single identifier.
 The contents may only contain identifer fragments, strings (`"..."`),
 and (certain) expansions.
 Supported expansions are `$ftype`, `$ttype`, `$tdeftype`, `$Xname`,
