@@ -4,7 +4,7 @@
 # in any case.  The word is not matched if there are word-characters
 # abutted to it.
 
-set -e
+set -ex
 set -o pipefail
 
 ORIGIN=origin
@@ -66,6 +66,8 @@ done
 echo "Testing every commit not already on $branch"
 
 commits=$(git rev-list --reverse "$revlist")
+
+set +x
 
 i=0
 for commit in $commits; do
