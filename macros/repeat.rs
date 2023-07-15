@@ -375,7 +375,11 @@ impl<'c> Context<'c> {
         })?;
         Ok(r)
     }
+}
 
+//---------- definitions (user-defined keywords) ----------
+
+impl<'c> Context<'c> {
     pub fn find_definition<B>(
         &'c self,
         call: &'c DefinitionName,
