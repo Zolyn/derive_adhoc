@@ -127,16 +127,6 @@ impl Parse for DeriveAdhocExpandInput {
     }
 }
 
-impl Spanned for MetaNode<'_> {
-    fn span(&self) -> Span {
-        match self {
-            MN::Unit(span) => *span,
-            MN::Deeper(span) => *span,
-            MN::Lit(lit) => lit.span(),
-        }
-    }
-}
-
 impl<O> Expand<O> for SubstIf<O>
 where
     Template<O>: ExpandInfallible<O>,
@@ -673,31 +663,7 @@ where
                 // and exclude it, but that would be super invasive.
                 "${define } and ${defcond } only allowed in a full template",
             ),
-            SD::UserDefined(name) => {
-                let (def, ctx) =
-                    ctx.find_definition(name)?.ok_or_else(|| {
-                        name.error("user-defined expansion not fund")
-                    })?;
-                match &def.body {
-                    DefinitionBody::Paste(content) => {
-                        paste::expand(&ctx, def.body_span, content, out)?;
-                    }
-                    DefinitionBody::Normal(content) => {
-                        let not_in_paste = O::not_in_paste(&kw_span).map_err(
-                            |mut unpasteable| {
-                                unpasteable.combine(def.body_span.error(
- "user-defined expansion is not pasteable because it isn't, itself, ${paste }"
-                                ));
-                                unpasteable
-                            },
-                        )?;
-                        out.append_tokens_with(&not_in_paste, |out| {
-                            content.expand(&ctx, out);
-                            Ok(())
-                        })?;
-                    }
-                }
-            }
+            SD::UserDefined(name) => name.lookup_expand(ctx, out)?,
 
             SD::when(..) => out.write_error(
                 &kw_span,
@@ -726,59 +692,34 @@ where
     }
 }
 
-pub struct DefinitionsIter<'c, B>(
-    Option<&'c Definitions<'c>>,
-    PhantomData<&'c B>,
-);
-
-impl<'c, B> Iterator for DefinitionsIter<'c, B>
-where
-    Definitions<'c>: AsRef<[&'c Definition<B>]>,
-{
-    type Item = &'c [&'c Definition<B>];
-    fn next(&mut self) -> Option<Self::Item> {
-        let here = self.0?;
-        let r = here.as_ref();
-        self.0 = here.earlier;
-        Some(r)
-    }
-}
-
-impl<'c> Definitions<'c> {
-    pub fn iter<B>(&'c self) -> DefinitionsIter<'c, B>
-    where
-        Definitions<'c>: AsRef<[&'c Definition<B>]>,
-    {
-        DefinitionsIter(Some(self), PhantomData)
-    }
-
-    /// Find the definition of `name` as a `B`, without recursion checking
-    ///
-    /// The caller is responsible for preventing unbounded recursion.
-    pub fn find_raw<B>(
-        &'c self,
-        name: &DefinitionName,
-    ) -> Option<&'c Definition<B>>
-    where
-        Definitions<'c>: AsRef<[&'c Definition<B>]>,
-        B: 'static,
-    {
-        self.iter()
-            .map(|l| l.iter().rev())
-            .flatten()
-            .find(|def| &def.name == name)
-            .cloned()
-    }
-}
-
-impl<'c> AsRef<[&'c Definition<DefinitionBody>]> for Definitions<'c> {
-    fn as_ref(&self) -> &[&'c Definition<DefinitionBody>] {
-        self.here
-    }
-}
-impl<'c> AsRef<[&'c Definition<DefCondBody>]> for Definitions<'c> {
-    fn as_ref(&self) -> &[&'c Definition<DefCondBody>] {
-        self.conds
+impl DefinitionName {
+    fn lookup_expand<O: ExpansionOutput>(
+        &self,
+        ctx: &Context<'_>,
+        out: &mut O,
+    ) -> syn::Result<()> {
+        let (def, ctx) = ctx
+            .find_definition(self)?
+            .ok_or_else(|| self.error("user-defined expansion not fund"))?;
+        match &def.body {
+            DefinitionBody::Paste(content) => {
+                paste::expand(&ctx, def.body_span, content, out)?;
+            }
+            DefinitionBody::Normal(content) => {
+                let not_in_paste =
+                    O::not_in_paste(self).map_err(|mut unpasteable| {
+                        unpasteable.combine(def.body_span.error(
+ "user-defined expansion is not pasteable because it isn't, itself, ${paste }"
+                        ));
+                        unpasteable
+                    })?;
+                out.append_tokens_with(&not_in_paste, |out| {
+                    content.expand(&ctx, out);
+                    Ok(())
+                })?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -876,6 +817,16 @@ where
 
     let thing: T = s.parse()?;
     Ok(thing)
+}
+
+impl Spanned for MetaNode<'_> {
+    fn span(&self) -> Span {
+        match self {
+            MN::Unit(span) => *span,
+            MN::Deeper(span) => *span,
+            MN::Lit(lit) => lit.span(),
+        }
+    }
 }
 
 impl<'l> MetaNode<'l> {
