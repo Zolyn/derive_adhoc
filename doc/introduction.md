@@ -768,6 +768,14 @@ There are other case-changers:
   * `${shouty_snake_case MyIdent}` becomes `MY_IDENT`.
   * `${snake_case MyIdent}` becomes `my_ident`, as you've already seen.
 
+You can abbreviate `${paste ...}` as `$<...>`.
+
+<!--
+  TODO: Should we show `$<...>` instead of `${paste ...}`?
+  Maybe we should principally advertise `$<...>`, everywhere,
+  and de-emphasise `${paste ...}`.
+ -->
+
 #### A note on syntax
 
 In this last section,
@@ -1126,6 +1134,10 @@ For example:
  * `${select1}`
    can help with writing careful templates
    that will reject incoherent inputs.
+
+ * `#{define }` and `${defcond }`
+   to make user-defined reuseable template keywords,
+   to save repetition in templates.
 
 Some of these can be seen in action in test cases in
 [our source repo](https://gitlab.torproject.org/Diziet/rust-derive-adhoc/-/tree/main/tests/expand)
