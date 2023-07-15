@@ -27,7 +27,6 @@
       * [`${define ...}`, `${defcond ...}` - user-defined expansions and conditions](#define--defcond----user-defined-expansions-and-conditions)
    * [Conditions](#conditions)
       * [`fvis`, `tvis`, `fdefvis` - test for public visibility](#fvis-tvis-fdefvis---test-for-public-visibility)
-      * [Examples](#examples)
       * [`fmeta(NAME)`, `vmeta(NAME)`, `tmeta(NAME)` - `#[adhoc]` attributes](#fmetaname-vmetaname-tmetaname---adhoc-attributes)
       * [`is_struct`, `is_enum`, `is_union`](#is_struct-is_enum-is_union)
       * [`v_is_unit`, `v_is_tuple`, `v_is_named`](#v_is_unit-v_is_tuple-v_is_named)
@@ -756,7 +755,7 @@ Within-crate visibility, e.g. `pub(crate)`, is treated as "not visible"
 for the purposes of `fvis` and `tvis`
 (although the `$fvis` and `$tvis` expansions will handle those faithfully).
 
-### Examples
+#### Examples
 
  * `tvis`: true for `Unit`, and `Enum`
  * `fvis`: true for `field` in `Struct`, and fields in `Enum`
