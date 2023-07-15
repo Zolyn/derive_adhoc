@@ -698,9 +698,9 @@ impl SubstParseContext for Items {
                 state.found_close = true;
                 return Ok(Some(SpecialInstructions::EndOfTemplate));
             } else {
-                return Err(input.error(
-                    "stray > within curly-bracketed ${paste }"
-                ));
+                return Err(
+                    input.error("stray > within curly-bracketed ${paste }")
+                );
             }
         }
         return Ok(None);
@@ -716,9 +716,9 @@ pub struct AngleBrackets {
 impl AngleBrackets {
     pub fn finish(self, start_span: Span) -> syn::Result<()> {
         if !self.found_close {
-            return Err(start_span.error(
-                "unmatched paste $< start - missing >"
-            ));
+            return Err(
+                start_span.error("unmatched paste $< start - missing >")
+            );
         }
         Ok(())
     }
