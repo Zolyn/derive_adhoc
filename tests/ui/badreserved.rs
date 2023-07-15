@@ -12,7 +12,8 @@ derive_adhoc! {
 
 derive_adhoc! {
     ReserveDriver:
-    $< paste? >
+    $<ident:upper>
+    ${paste ident:upper}
 }
 
 derive_adhoc! {
