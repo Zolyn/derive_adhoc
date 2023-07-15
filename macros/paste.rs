@@ -685,6 +685,43 @@ impl SubstParseContext for Items {
         Err(span
             .error("not allowed in within ${paste ...} (or case_changing)"))
     }
+
+    type SpecialParseContext = Option<AngleBrackets>;
+
+    fn special_before_element_hook(
+        special: &mut Option<AngleBrackets>,
+        input: ParseStream,
+    ) -> syn::Result<Option<SpecialInstructions>> {
+        if input.peek(Token![>]) {
+            if let Some(state) = special {
+                let _: Token![>] = input.parse()?;
+                state.found_close = true;
+                return Ok(Some(SpecialInstructions::EndOfTemplate));
+            } else {
+                return Err(
+                    input.error("stray > within curly-bracketed ${paste }")
+                );
+            }
+        }
+        return Ok(None);
+    }
+}
+
+/// Parsing state for `$<...>`
+#[derive(Default)]
+pub struct AngleBrackets {
+    found_close: bool,
+}
+
+impl AngleBrackets {
+    pub fn finish(self, start_span: Span) -> syn::Result<()> {
+        if !self.found_close {
+            return Err(
+                start_span.error("unmatched paste $< start - missing >")
+            );
+        }
+        Ok(())
+    }
 }
 
 impl ExpansionOutput for Items {

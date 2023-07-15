@@ -15,7 +15,7 @@ define_derive_adhoc! {
     // The output from this `dbg` is tested via tests/stderr/stderr-lib.rs
     ReferenceVersion dbg =
 
-    ${define REFERENCE ${paste $tname Reference}}
+    ${define REFERENCE $<$tname Reference>}
     ${define IMPL { impl<'reference, $tgens> }}
     ${define REF_TYPE { $REFERENCE<'reference, $tgnames> }}
 
@@ -29,7 +29,7 @@ define_derive_adhoc! {
     $IMPL From<&'reference $ttype> for $REF_TYPE {
         fn from(ref_to_owned: &'reference $ttype) -> Self {
             match ref_to_owned { $(
-                $vpat => ${vtype self=${paste $ttype Reference}} { $(
+                $vpat => ${vtype self=$<$ttype Reference>} { $(
                     $fname: $fpatname,
                 ) },
             ) }

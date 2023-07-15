@@ -34,6 +34,8 @@ impl SubstParseContext for BooleanContext {
             "derive-adhoc construct is an expansion - not valid in a condition",
         ))
     }
+
+    type SpecialParseContext = ();
 }
 
 impl Subst<BooleanContext> {

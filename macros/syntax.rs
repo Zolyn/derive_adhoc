@@ -290,7 +290,7 @@ impl Parse for Definition<DefinitionBody> {
         let body_span = input.span();
         let mut body = Template::parse_single_or_braced(input)?;
 
-        // Is it precisely an invocation of ${paste } ?
+        // Is it precisely an invocation of ${paste } or $< > ?
         let body = match (|| {
             if body.elements.len() != 1 {
                 return None;
@@ -358,14 +358,31 @@ impl Spanned for SubstMetaPath {
 
 impl<O: SubstParseContext> Parse for Template<O> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
+        Template::parse_special(input, &mut Default::default())
+    }
+}
+
+impl<O: SubstParseContext> Template<O> {
+    fn parse_special(
+        input: ParseStream,
+        mut special: &mut O::SpecialParseContext,
+    ) -> syn::Result<Self> {
         // eprintln!("@@@@@@@@@@ PARSE {}", &input);
         let mut good = vec![];
         let mut errors = ErrorAccumulator::default();
         while !input.is_empty() {
+            let special = &mut special;
+            match errors.handle_in(|| {
+                O::special_before_element_hook(special, input)
+            }) {
+                Some(None) => {},
+                None | // error! quit parsing
+                Some(Some(SpecialInstructions::EndOfTemplate)) => break,
+            }
             errors.handle_in(|| {
                 let elem = input.parse()?;
                 good.push(elem);
-                Ok(())
+                Ok(special)
             });
         }
         errors.finish_with(Template { elements: good })
@@ -741,6 +758,17 @@ impl<O: SubstParseContext> Subst<O> {
             let exp: TokenTree = input.parse()?; // get it as TT
             let exp = syn::parse2(exp.to_token_stream())?;
             Ok(exp)
+        } else if la.peek(Token![<]) {
+            let angle: Token![<] = input.parse()?;
+            let state = paste::AngleBrackets::default();
+            let mut special = Some(state);
+            let template = Template::parse_special(input, &mut special)?;
+            let state = special.unwrap();
+            state.finish(angle.span())?;
+            Ok(Subst {
+                kw_span: angle.span(),
+                sd: SD::paste(template, O::not_in_bool(&angle)?),
+            })
         } else {
             return Err(la.error());
         }
