@@ -663,31 +663,7 @@ where
                 // and exclude it, but that would be super invasive.
                 "${define } and ${defcond } only allowed in a full template",
             ),
-            SD::UserDefined(name) => {
-                let (def, ctx) =
-                    ctx.find_definition(name)?.ok_or_else(|| {
-                        name.error("user-defined expansion not fund")
-                    })?;
-                match &def.body {
-                    DefinitionBody::Paste(content) => {
-                        paste::expand(&ctx, def.body_span, content, out)?;
-                    }
-                    DefinitionBody::Normal(content) => {
-                        let not_in_paste = O::not_in_paste(&kw_span).map_err(
-                            |mut unpasteable| {
-                                unpasteable.combine(def.body_span.error(
- "user-defined expansion is not pasteable because it isn't, itself, ${paste }"
-                                ));
-                                unpasteable
-                            },
-                        )?;
-                        out.append_tokens_with(&not_in_paste, |out| {
-                            content.expand(&ctx, out);
-                            Ok(())
-                        })?;
-                    }
-                }
-            }
+            SD::UserDefined(name) => name.lookup_expand(ctx, out)?,
 
             SD::when(..) => out.write_error(
                 &kw_span,
@@ -712,6 +688,39 @@ where
             | SD::any(_, bo)
             | SD::all(_, bo) => out.append_bool_only(bo),
         };
+        Ok(())
+    }
+}
+
+impl DefinitionName {
+    fn lookup_expand<O: ExpansionOutput>(
+        &self,
+        ctx: &Context<'_>,
+        out: &mut O,
+    ) -> syn::Result<()> {
+        let (def, ctx) =
+            ctx.find_definition(self)?.ok_or_else(|| {
+                self.error("user-defined expansion not fund")
+            })?;
+        match &def.body {
+            DefinitionBody::Paste(content) => {
+                paste::expand(&ctx, def.body_span, content, out)?;
+            }
+            DefinitionBody::Normal(content) => {
+                let not_in_paste = O::not_in_paste(self).map_err(
+                    |mut unpasteable| {
+                        unpasteable.combine(def.body_span.error(
+ "user-defined expansion is not pasteable because it isn't, itself, ${paste }"
+                        ));
+                        unpasteable
+                    },
+                )?;
+                out.append_tokens_with(&not_in_paste, |out| {
+                    content.expand(&ctx, out);
+                    Ok(())
+                })?;
+            }
+        }
         Ok(())
     }
 }
