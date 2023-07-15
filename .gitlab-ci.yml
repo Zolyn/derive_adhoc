@@ -2,6 +2,7 @@
 # https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Rust.gitlab-ci.yml
 
 stages:
+  - XXXX
   - test
   - comprehensive
 
@@ -111,7 +112,7 @@ check-doc-examples:
 # or the cargo expand version.  Workaround: I believe doing that as
 # the only commit in an MR will still work.
 every-commit:
-  stage: comprehensive
+  stage: XXXX
   image: rustlang/rust@sha256:415b7c22ab4a8a3ec3efc9cc8d7b018964f0c6757fff27bbd110e0ed92566321
   script:
     - ./maint/via-cargo-install-in-ci cargo-expand --locked --version=1.0.44 --features=prettyplease
