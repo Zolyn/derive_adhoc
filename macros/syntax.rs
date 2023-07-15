@@ -290,7 +290,7 @@ impl Parse for Definition<DefinitionBody> {
         let body_span = input.span();
         let mut body = Template::parse_single_or_braced(input)?;
 
-        // Is it precisely an invocation of ${paste } ?
+        // Is it precisely an invocation of ${paste } or $< > ?
         let body = match (|| {
             if body.elements.len() != 1 {
                 return None;
@@ -758,6 +758,17 @@ impl<O: SubstParseContext> Subst<O> {
             let exp: TokenTree = input.parse()?; // get it as TT
             let exp = syn::parse2(exp.to_token_stream())?;
             Ok(exp)
+        } else if la.peek(Token![<]) {
+            let angle: Token![<] = input.parse()?;
+            let state = paste::AngleBrackets::default();
+            let mut special = Some(state);
+            let template = Template::parse_special(input, &mut special)?;
+            let state = special.unwrap();
+            state.finish(angle.span())?;
+            Ok(Subst {
+                kw_span: angle.span(),
+                sd: SD::paste(template, O::not_in_bool(&angle)?),
+            })
         } else {
             return Err(la.error());
         }

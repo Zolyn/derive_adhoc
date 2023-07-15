@@ -81,7 +81,6 @@ pub enum SpecialInstructions {
     ///
     /// The parser for whatever called `Template::parse`
     /// will continue.
-    #[allow(dead_code)] // XXXX
     EndOfTemplate,
 }
 
