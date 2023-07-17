@@ -455,17 +455,17 @@ that come *after* the `#[derive(..., Adhoc, ...)]`.
 
 <!--##examples-for `Unit`##-->
 
- * `${tattrs}`: ``#[derive(Adhoc)] #[derive(Clone)]``
- * `${tattrs ! adhoc}`: ``#[derive(Adhoc)]  #[derive(Clone)]``
+ * `${tattrs}`: ``#[derive(Clone)]``
+ * `${tattrs ! adhoc}`: ``#[derive(Clone)]``
  * `${tattrs missing}`: nothing
- * `${tattrs derive}`: ``#[derive(Adhoc)] #[derive(Clone)]``
+ * `${tattrs derive}`: ``#[derive(Clone)]``
  * `${vattrs adhoc}`: nothing
 
 ##### For `Tuple`
 
 <!--##examples-for `Tuple`##-->
 
- * `${tattrs}`: ``#[derive(Adhoc, Clone)] #[doc=" Title for `Tuple`"] #[repr(C)]``
+ * `${tattrs}`: ``#[doc=" Title for `Tuple`"] #[repr(C)]``
  * `${tattrs repr}`: ``#[repr(C)]``
  * `${tattrs repr, adhoc}`: ``#[adhoc(unused)] #[repr(C)]``
  * `${tattrs ! derive, doc}`: ``#[adhoc(unused)] #[repr(C)] #[derive_adhoc(SomeOtherTemplate)]``
