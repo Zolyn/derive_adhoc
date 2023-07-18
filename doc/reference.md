@@ -465,7 +465,7 @@ that come *after* the `#[derive(..., Adhoc, ...)]`.
 
 <!--##examples-for `Tuple`##-->
 
- * `${tattrs}`: ``#[doc=" Title for `Tuple`"] #[derive(Adhoc, Clone)] #[repr(C)]``
+ * `${tattrs}`: ``#[derive(Adhoc, Clone)] #[doc=" Title for `Tuple`"] #[repr(C)]``
  * `${tattrs repr}`: ``#[repr(C)]``
  * `${tattrs repr, adhoc}`: ``#[adhoc(unused)] #[repr(C)]``
  * `${tattrs ! derive, doc}`: ``#[adhoc(unused)] #[repr(C)] #[derive_adhoc(SomeOtherTemplate)]``
@@ -973,8 +973,8 @@ are those generated for the following driver types:
 #[adhoc(value="unit-toplevel")]
 pub struct Unit<const C: usize = 1>;
 
-/// Title for `Tuple`
 #[derive(Adhoc, Clone)]
+/// Title for `Tuple`
 #[adhoc(unused)]
 #[repr(C)]
 #[derive_adhoc(SomeOtherTemplate)]
