@@ -455,10 +455,10 @@ that come *after* the `#[derive(..., Adhoc, ...)]`.
 
 <!--##examples-for `Unit`##-->
 
- * `${tattrs}`: ``#[derive(Adhoc)]``
- * `${tattrs ! adhoc}`: ``#[derive(Adhoc)]``
+ * `${tattrs}`: ``#[derive(Adhoc)] #[derive(Clone)]``
+ * `${tattrs ! adhoc}`: ``#[derive(Adhoc)]  #[derive(Clone)]``
  * `${tattrs missing}`: nothing
- * `${tattrs derive}`: ``#[derive(Adhoc)]``
+ * `${tattrs derive}`: ``#[derive(Adhoc)] #[derive(Clone)]``
  * `${vattrs adhoc}`: nothing
 
 ##### For `Tuple`
@@ -968,6 +968,7 @@ are those generated for the following driver types:
 # use std::convert::TryInto;
 #
 #[derive(Adhoc)]
+#[derive(Clone)]
 #[adhoc(simple="String", gentype="Vec<i32>")]
 #[adhoc(value="unit-toplevel")]
 pub struct Unit<const C: usize = 1>;
