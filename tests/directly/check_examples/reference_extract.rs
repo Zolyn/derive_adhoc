@@ -230,6 +230,35 @@ fn extract_structs(input: &Preprocessed) -> Vec<syn::DeriveInput> {
         parse_content(bq_loc, content).into_iter()
     })
     .flatten()
+    .map(|mut derive_input| {
+        let mut seen_d_a = false;
+        derive_input.attrs.retain(|attr| {
+            seen_d_a
+                || (|| {
+                    // IEFI simulates a long if let && chain
+                    matches!(attr.style, syn::AttrStyle::Outer)
+                        .then_some(())?;
+                    attr.path.is_ident("derive").then_some(())?;
+                    let ml = match attr.parse_meta().ok()? {
+                        syn::Meta::List(ml) => ml,
+                        _ => None?,
+                    };
+                    ml.nested.iter().find_map(|nm| match nm {
+                        syn::NestedMeta::Meta(syn::Meta::Path(p))
+                            if p.is_ident("Adhoc") =>
+                        {
+                            Some(())
+                        }
+                        _ => None,
+                    })?;
+
+                    seen_d_a = true;
+                    Some(false)
+                })()
+                .unwrap_or_default()
+        });
+        derive_input
+    })
     .collect()
 }
 

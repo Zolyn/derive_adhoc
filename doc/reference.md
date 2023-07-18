@@ -443,23 +443,29 @@ With `${Xattrs}`, unlike `${Xmeta}`,
      but not deeply manipulated.
    * `$vattrs` does not, for a non-enum, include the top-level attributes .
 
+Note that derive macros,
+only see attributes
+that come *after* the `#[derive(...)]` that invoked them.
+So derive-adhoc templates only see attributes
+that come *after* the `#[derive(..., Adhoc, ...)]`.
+
 #### Examples
 
 ##### For `Unit`
 
 <!--##examples-for `Unit`##-->
 
- * `${tattrs}`: ``#[derive(Adhoc)]``
- * `${tattrs ! adhoc}`: ``#[derive(Adhoc)]``
+ * `${tattrs}`: ``#[derive(Clone)]``
+ * `${tattrs ! adhoc}`: ``#[derive(Clone)]``
  * `${tattrs missing}`: nothing
- * `${tattrs derive}`: ``#[derive(Adhoc)]``
+ * `${tattrs derive}`: ``#[derive(Clone)]``
  * `${vattrs adhoc}`: nothing
 
 ##### For `Tuple`
 
 <!--##examples-for `Tuple`##-->
 
- * `${tattrs}`: ``#[doc=" Title for `Tuple`"] #[derive(Adhoc, Clone)] #[repr(C)]``
+ * `${tattrs}`: ``#[doc=" Title for `Tuple`"] #[repr(C)]``
  * `${tattrs repr}`: ``#[repr(C)]``
  * `${tattrs repr, adhoc}`: ``#[adhoc(unused)] #[repr(C)]``
  * `${tattrs ! derive, doc}`: ``#[adhoc(unused)] #[repr(C)] #[derive_adhoc(SomeOtherTemplate)]``
@@ -962,12 +968,13 @@ are those generated for the following driver types:
 # use std::convert::TryInto;
 #
 #[derive(Adhoc)]
+#[derive(Clone)]
 #[adhoc(simple="String", gentype="Vec<i32>")]
 #[adhoc(value="unit-toplevel")]
 pub struct Unit<const C: usize = 1>;
 
-/// Title for `Tuple`
 #[derive(Adhoc, Clone)]
+/// Title for `Tuple`
 #[adhoc(unused)]
 #[repr(C)]
 #[derive_adhoc(SomeOtherTemplate)]
