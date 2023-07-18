@@ -443,6 +443,12 @@ With `${Xattrs}`, unlike `${Xmeta}`,
      but not deeply manipulated.
    * `$vattrs` does not, for a non-enum, include the top-level attributes .
 
+Note that derive macros,
+only see attributes
+that come *after* the `#[derive(...)]` that invoked them.
+So derive-adhoc templates only see attributes
+that come *after* the `#[derive(..., Adhoc, ...)]`.
+
 #### Examples
 
 ##### For `Unit`
