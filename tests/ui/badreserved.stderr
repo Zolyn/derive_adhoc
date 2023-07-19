@@ -34,6 +34,18 @@ error: expected one of: `$`, parentheses, curly braces, identifier, `<`
 35 |     $/// template doc comment?
    |      ^^^^^^^^^^^^^^^^^^^^^^^^^
 
+error: expected ident
+  --> ui/badreserved.rs:43:14
+   |
+43 |     ${define 0 { mod x {} }}
+   |              ^
+
+error: expected one of: `$`, parentheses, curly braces, identifier, `<`
+  --> ui/badreserved.rs:44:6
+   |
+44 |     $0
+   |      ^
+
 warning: unused import: `define_derive_adhoc`
  --> ui/badreserved.rs:3:20
   |

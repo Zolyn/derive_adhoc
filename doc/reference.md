@@ -362,7 +362,7 @@ Accesses macro parameters passed via `#[adhoc(...)]` attributes.
    Looks for `#[adhoc(SUB(NAME="VALUE"))]`.
    The `#[adhoc()]` is parsed as
    a set of nested, comma-separated, lists.
-   So this could would find `NAME` 
+   So this would find `NAME` 
    in `#[adhoc(SUB1,SUB(N1,NAME="VALUE",N2),SUB2)]`.
    The path can be arbitrarily deep, e.g.: `${Xmeta(L1(L2(L3(ATTR))))}`.
 
@@ -476,7 +476,7 @@ that come *after* the `#[derive(..., Adhoc, ...)]`.
 
 ### `$<...>`, `${paste ...}` - identifier pasting
 
-Expands the contents and paste it together into a single identifier.
+Expands the contents and pastes it together into a single identifier.
 The contents may only contain identifer fragments, strings (`"..."`),
 and (certain) expansions.
 Supported expansions are `$ftype`, `$ttype`, `$tdeftype`, `$Xname`,

@@ -37,4 +37,11 @@ derive_adhoc! {
     }
 }
 
+derive_adhoc! {
+    ReserveDriver:
+
+    ${define 0 { mod x {} }}
+    $0
+}
+
 fn main() {}

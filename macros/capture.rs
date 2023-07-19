@@ -60,6 +60,10 @@ pub fn derive_adhoc_derive_macro(
     // a bit like syn::DeriveInput.
     let driver: syn::DeriveInput = syn::parse2(driver_stream.clone())?;
 
+    // eprintln!("---------- #[derive(Adhoc)] got start ----------");
+    // eprintln!("{}", &driver_stream);
+    // eprintln!("---------- #[derive(Adhoc)] got end ----------");
+
     let driver_mac_name =
         format_ident!("derive_adhoc_driver_{}", &driver.ident);
 
