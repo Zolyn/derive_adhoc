@@ -1,6 +1,6 @@
 [package]
 name = "derive-adhoc"
-version = "0.7.0"
+version = "0.7.1"
 edition = "2018"
 license="MIT"
 authors=["Ian Jackson <ijackson@chiark.greenend.org.uk>",
@@ -42,6 +42,6 @@ case = ["derive-adhoc-macros/case", "heck"]
 expect = ["derive-adhoc-macros/expect"]
 
 [dependencies]
-derive-adhoc-macros = { path = "macros", version = "=0.7.0", default_features = false }
+derive-adhoc-macros = { path = "macros", version = "=0.7.1", default_features = false }
 # This dependency is *here* only for the link to `heck` in the docs.
 heck = { version = "0.4", optional = true }
