@@ -23,6 +23,10 @@ We expect to increase it cautiously and only with good reason.
 
 ## Changelog
 
+### 0.7.1
+
+ * Fix reference documentation examples for `$Xattr`.
+
 ### 0.7.0
 
 #### Breaking
