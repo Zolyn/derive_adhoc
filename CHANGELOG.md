@@ -25,6 +25,8 @@ We expect to increase it cautiously and only with good reason.
 
 ### 0.7.1
 
+#### Fixed
+
  * Fix reference documentation examples for `$Xattr`.
 
 ### 0.7.0
