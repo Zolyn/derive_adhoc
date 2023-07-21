@@ -274,6 +274,8 @@ pub trait ExpansionOutput: SubstParseContext {
             Ok(())
         })
     }
+
+    fn default_subst_meta_as() -> SubstMetaAs<Self>;
 }
 
 /// Convenience trait providing `item.expand()`
@@ -508,5 +510,9 @@ impl ExpansionOutput for TokenAccumulator {
         } else {
             self.0 = Err(err)
         }
+    }
+
+    fn default_subst_meta_as() -> SubstMetaAs<Self> {
+        SubstMetaAs::tokens((), ())
     }
 }

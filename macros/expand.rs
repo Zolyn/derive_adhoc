@@ -833,7 +833,7 @@ impl<'l> MetaNode<'l> {
     fn expand<O>(
         &self,
         tspan: Span,
-        as_: &SubstMetaAs<O>,
+        as_: &Option<SubstMetaAs<O>>,
         out: &mut O,
     ) -> syn::Result<()>
     where
@@ -852,8 +852,18 @@ impl<'l> MetaNode<'l> {
         };
 
         use SubstMetaAs as SMA;
+
+        let default_buf;
+        let as_ = match as_ {
+            Some(as_) => as_,
+            None => {
+                default_buf = O::default_subst_meta_as();
+                &default_buf
+            }
+        };
+
         match as_ {
-            SMA::Unspecified(np) | SMA::tokens(_, np) => {
+            SMA::tokens(_, np) => {
                 let tokens: TokenStream =
                     metavalue_lit_as(lit, tspan, &"tokens")?;
                 out.append_tokens(np, tokens)?;

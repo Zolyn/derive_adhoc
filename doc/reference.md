@@ -375,6 +375,8 @@ Accesses macro parameters passed via `#[adhoc(...)]` attributes.
      with the same contents as
      the string provided for `VALUE`.
      Ie, the attribute's string value is *not* parsed.
+     This is the default within pasting and case changing,
+     if no `as` was specified.
      Within pasting and case changing,
      the provided string becomes part of the pasted identifier
      (and so must consist of legal identifier characters).
@@ -386,7 +388,6 @@ Accesses macro parameters passed via `#[adhoc(...)]` attributes.
     * **`tokens`**:
      `VALUE` is parsed as an arbtitrary sequence of tokens
      (`TokenStream`).
-     Equivalent to not specifying `as`.
 
 When expanding `${Xmeta}`,
 it is an error if the value was not specified in the driver,
@@ -411,7 +412,7 @@ which should affect how a set of fields should be processed.
 
 #### Examples involving pasting
 
- * `$<Small ${tmeta(simple)}>`: error, ``requires `as ...` ``
+ * `$<Small ${tmeta(simple)}>`: `SmallString`
  * `$<Small ${tmeta(simple) as str}>`: `SmallString`
  * `$<Small ${tmeta(simple) as ty}>`: `SmallString`
  * `$<Small ${tmeta(gentype) as ty}>`: `SmallVec<i32>`

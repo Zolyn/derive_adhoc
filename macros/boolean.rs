@@ -60,10 +60,11 @@ impl Subst<BooleanContext> {
                     level: _,
                 } = sm;
                 use SubstMetaAs as SMA;
-                match as_ {
-                    SMA::Unspecified(..) => {}
-                    SMA::str(nb) | SMA::tokens(nb, ..) | SMA::ty(nb) => {
-                        void::unreachable(*nb)
+                if let Some(as_) = as_ {
+                    match as_ {
+                        SMA::str(nb) | SMA::tokens(nb, ..) | SMA::ty(nb) => {
+                            void::unreachable(*nb)
+                        }
                     }
                 };
                 is_found(path.search_eval_bool(sm.pmetas(ctx)?))

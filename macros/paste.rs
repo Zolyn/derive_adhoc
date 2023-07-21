@@ -828,6 +828,10 @@ impl ExpansionOutput for Items {
     fn record_error(&mut self, err: syn::Error) {
         self.errors.push(err);
     }
+
+    fn default_subst_meta_as() -> SubstMetaAs<Self> {
+        SubstMetaAs::str(())
+    }
 }
 
 impl Expand<Items> for TemplateElement<Items> {
