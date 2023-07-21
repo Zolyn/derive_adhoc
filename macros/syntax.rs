@@ -180,7 +180,7 @@ pub enum SubstVis {
 pub struct SubstMeta<O: SubstParseContext> {
     pub level: SubstMetaLevel,
     pub path: SubstMetaPath,
-    pub as_: SubstMetaAs<O>,
+    pub as_: Option<SubstMetaAs<O>>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -193,7 +193,6 @@ pub enum SubstMetaLevel {
 #[derive(Debug, Clone, AsRefStr, Display)]
 #[allow(non_camel_case_types)] // clearer to use the exact ident
 pub enum SubstMetaAs<O: SubstParseContext> {
-    Unspecified(O::NotInPaste),
     tokens(O::NotInBool, O::NotInPaste),
     ty(O::NotInBool),
     str(O::NotInBool),
@@ -538,12 +537,9 @@ impl<O: SubstParseContext> SubstMeta<O> {
             let nb = O::not_in_bool(&as_token).map_err(|_| {
                 as_token.error("`Xmeta as ...` not allowed in conditions")
             })?;
-            as_ = SubstMetaAs::parse(input, nb)?;
+            as_ = Some(SubstMetaAs::parse(input, nb)?);
         } else {
-            let np = O::not_in_paste(&input.span()).map_err(|_| {
-                input.error("$Xmeta in paste requires `as ...`")
-            })?;
-            as_ = SubstMetaAs::Unspecified(np);
+            as_ = None;
         }
 
         Ok(SubstMeta { path, as_, level })

@@ -1,29 +1,35 @@
 error: multiple nontrivial entries in ${paste ...}
-  --> ui/badpaste.rs:13:18
+  --> ui/badpaste.rs:14:18
    |
-13 |         ${paste $ttype _ $ftype}
+14 |         ${paste $ttype _ $ftype}
    |                  ^^^^^
 
 error: multiple nontrivial entries in ${paste ...}
-  --> ui/badpaste.rs:13:27
+  --> ui/badpaste.rs:14:27
    |
-13 |         ${paste $ttype _ $ftype}
+14 |         ${paste $ttype _ $ftype}
    |                           ^^^^^
 
 error: not allowed in within ${paste ...} (or case_changing)
-  --> ui/badpaste.rs:20:29
+  --> ui/badpaste.rs:21:29
    |
-20 |     struct ${paste $tname _ 42};
+21 |     struct ${paste $tname _ 42};
    |                             ^^
 
-error: unexpected end of input, $Xmeta in paste requires `as ...`
-  --> ui/badpaste.rs:22:45
+error: multiple nontrivial entries in ${paste ...}
+  --> ui/badpaste.rs:27:21
    |
-22 |     struct ${paste $tname ${tmeta(something)}};
-   |                                             ^
+27 |     struct ${paste $ttype ${tmeta(something) as ty}};
+   |                     ^^^^^
+
+error: multiple nontrivial entries in ${paste ...}
+  --> ui/badpaste.rs:27:35
+   |
+27 |     struct ${paste $ttype ${tmeta(something) as ty}};
+   |                                   ^^^^^^^^^
 
 error: expected one of `!` or `::`, found `Broken`
-  --> ui/badpaste.rs:29:23
+  --> ui/badpaste.rs:34:23
    |
-29 |     ${paste tdefkwed} Broken { }
+34 |     ${paste tdefkwed} Broken { }
    |                       ^^^^^^ expected one of `!` or `::`

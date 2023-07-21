@@ -108,7 +108,7 @@ pub enum SpecialInstructions {
 /// used during parsing.
 /// So this generates a parse error at parse time,
 /// if a construct appears in the wrong place.
-pub trait SubstParseContext {
+pub trait SubstParseContext: Sized {
     /// Uninhabited iff this lexical context is within `${paste }`
     type NotInPaste: Debug + Copy + Sized;
     /// Uninhabited iff this lexical context is within a condition.
@@ -274,6 +274,8 @@ pub trait ExpansionOutput: SubstParseContext {
             Ok(())
         })
     }
+
+    fn default_subst_meta_as() -> SubstMetaAs<Self>;
 }
 
 /// Convenience trait providing `item.expand()`
@@ -508,5 +510,9 @@ impl ExpansionOutput for TokenAccumulator {
         } else {
             self.0 = Err(err)
         }
+    }
+
+    fn default_subst_meta_as() -> SubstMetaAs<Self> {
+        SubstMetaAs::tokens((), ())
     }
 }
