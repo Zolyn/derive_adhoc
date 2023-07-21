@@ -16,8 +16,20 @@ error: not allowed in within ${paste ...} (or case_changing)
 21 |     struct ${paste $tname _ 42};
    |                             ^^
 
-error: expected one of `!` or `::`, found `Broken`
-  --> ui/badpaste.rs:30:23
+error: multiple nontrivial entries in ${paste ...}
+  --> ui/badpaste.rs:27:21
    |
-30 |     ${paste tdefkwed} Broken { }
+27 |     struct ${paste $ttype ${tmeta(something) as ty}};
+   |                     ^^^^^
+
+error: multiple nontrivial entries in ${paste ...}
+  --> ui/badpaste.rs:27:35
+   |
+27 |     struct ${paste $ttype ${tmeta(something) as ty}};
+   |                                   ^^^^^^^^^
+
+error: expected one of `!` or `::`, found `Broken`
+  --> ui/badpaste.rs:34:23
+   |
+34 |     ${paste tdefkwed} Broken { }
    |                       ^^^^^^ expected one of `!` or `::`

@@ -19,8 +19,12 @@ derive_adhoc! {
     DataType:
 
     struct ${paste $tname _ 42};
+}
 
-    struct ${paste $tname ${tmeta(something)}};
+derive_adhoc! {
+    DataType:
+
+    struct ${paste $ttype ${tmeta(something) as ty}};
 }
 
 derive_adhoc! {
