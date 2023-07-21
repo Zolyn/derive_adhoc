@@ -851,17 +851,17 @@ impl<'l> MetaNode<'l> {
             MN::Lit(lit) => lit,
         };
 
-        use SubstMetaAs as SMS;
+        use SubstMetaAs as SMA;
         match as_ {
-            SMS::Unspecified(np) | SMS::tokens(_, np) => {
+            SMA::Unspecified(np) | SMA::tokens(_, np) => {
                 let tokens: TokenStream =
                     metavalue_lit_as(lit, tspan, &"tokens")?;
                 out.append_tokens(np, tokens)?;
             }
-            as_ @ SMS::ty(..) => {
+            as_ @ SMA::ty(..) => {
                 out.append_syn_type(tspan, &metavalue_lit_as(lit, tspan, as_)?)
             }
-            SMS::str(..) => {
+            SMA::str(..) => {
                 let s = metavalue_litstr(
                     lit,
                     tspan,
