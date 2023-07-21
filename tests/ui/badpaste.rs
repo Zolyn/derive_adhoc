@@ -1,6 +1,7 @@
 use derive_adhoc::{derive_adhoc, Adhoc};
 
 #[derive(Adhoc)]
+#[adhoc(something = "Box<char>")]
 struct DataType {
     foo: u8,
     bar: Vec<String>,
