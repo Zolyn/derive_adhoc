@@ -23,6 +23,13 @@ We expect to increase it cautiously and only with good reason.
 
 ## Changelog
 
+### 0.7.2
+
+#### Added
+
+ * `${Xmeta(...)}` within pasting now defaults to `... as str`,
+   so that doesn't need to be specified each time.
+
 ### 0.7.1
 
 #### Fixed
