@@ -108,7 +108,7 @@ pub enum SpecialInstructions {
 /// used during parsing.
 /// So this generates a parse error at parse time,
 /// if a construct appears in the wrong place.
-pub trait SubstParseContext {
+pub trait SubstParseContext: Sized {
     /// Uninhabited iff this lexical context is within `${paste }`
     type NotInPaste: Debug + Copy + Sized;
     /// Uninhabited iff this lexical context is within a condition.
