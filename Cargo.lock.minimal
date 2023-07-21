@@ -65,9 +65,9 @@ dependencies = [
 
 [[package]]
 name = "derive-adhoc"
-version = "0.7.1"
+version = "0.7.2"
 dependencies = [
- "derive-adhoc-macros 0.7.1",
+ "derive-adhoc-macros 0.7.2",
  "heck",
 ]
 
@@ -89,7 +89,7 @@ dependencies = [
 
 [[package]]
 name = "derive-adhoc-macros"
-version = "0.7.1"
+version = "0.7.2"
 dependencies = [
  "heck",
  "itertools",
@@ -106,14 +106,14 @@ dependencies = [
 name = "derive-adhoc-stderr-test"
 version = "0.0.1"
 dependencies = [
- "derive-adhoc 0.7.1",
+ "derive-adhoc 0.7.2",
 ]
 
 [[package]]
 name = "derive-adhoc-tests"
 version = "0.0.1"
 dependencies = [
- "derive-adhoc 0.7.1",
+ "derive-adhoc 0.7.2",
  "easy-ext",
  "educe",
  "glob",
@@ -324,7 +324,7 @@ dependencies = [
 name = "pub-a"
 version = "0.0.1"
 dependencies = [
- "derive-adhoc 0.7.1",
+ "derive-adhoc 0.7.2",
 ]
 
 [[package]]
