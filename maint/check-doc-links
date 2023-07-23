@@ -1,0 +1,40 @@
+#!/bin/bash
+#
+# Check rustdoc HTML links and anchors
+
+set -e
+set -o pipefail
+
+# nailing-cargo -E --- maint/check-doc-links
+
+${CARGO-cargo ${NAILINGCARGO_TOOLCHAIN}} \
+    doc --locked  --all-features -pderive-adhoc
+
+chk_dir=target/doc.link-check
+
+rm -rf target/doc.link-check
+cp -al target/doc $chk_dir
+
+# Fix up https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=425632
+# And also href="#" links that rustdoc likes to put in for some reason
+
+find $chk_dir -name \*.html -print0 |
+xargs -0r -- perl -i~ -pe '
+	s{\bid=("[^"]+")[^<>]*\>}{$&<a name=$1>}g;
+	s{\bhref="#"}{}g
+'
+
+linklint -out linklint.errors -error -root $chk_dir /derive_adhoc/@
+
+cat linklint.errors
+
+set +e
+grep ERROR linklint.errors
+rc=$?
+set -e
+
+case $rc in
+0) echo >&2 '** found linkcheck errors **'; exit 1;;
+1) ;;
+*) echo >&2 "linkcheck failed $rc"; exit 1;;
+esac
