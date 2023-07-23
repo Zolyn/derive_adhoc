@@ -478,9 +478,9 @@ where
         let do_ttype = |out: &mut O, colons: Option<()>, do_some_gens| {
             let _: &dyn Fn(&mut _, bool) = do_some_gens; // specify type
             let gens = &ctx.top.generics;
-            let colons = gens.lt_token.and_then(|_| {
-                colons.map(|()| Token![::](kw_span))
-            });
+            let colons = gens
+                .lt_token
+                .and_then(|_| colons.map(|()| Token![::](kw_span)));
             out.append_idpath(
                 kw_span,
                 |_| {},
