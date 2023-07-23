@@ -233,11 +233,10 @@ pub fn tokens_cmp(a: TokenStream, b: TokenStream) -> cmp::Ordering {
             TT::Group(_) => 3,
         };
 
-        discrim(&a).cmp(&discrim(&b))
-            .then_with(|| match (a, b) {
-                (TT::Group(a), TT::Group(b)) => group_cmp(a,b),
-                (l, r) => l.to_string().cmp(&r.to_string())
-            })
+        discrim(&a).cmp(&discrim(&b)).then_with(|| match (a, b) {
+            (TT::Group(a), TT::Group(b)) => group_cmp(a, b),
+            (l, r) => l.to_string().cmp(&r.to_string()),
+        })
     }
 
     fn group_cmp(a: Group, b: Group) -> Ordering {
@@ -245,7 +244,8 @@ pub fn tokens_cmp(a: TokenStream, b: TokenStream) -> cmp::Ordering {
             proc_macro2::Group::new(g.delimiter(), TokenStream::new())
                 .to_string()
         };
-        delim(&a).cmp(&delim(&b))
+        delim(&a)
+            .cmp(&delim(&b))
             .then_with(|| tokens_cmp(a.stream(), b.stream()))
     }
 
