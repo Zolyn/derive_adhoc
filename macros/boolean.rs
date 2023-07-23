@@ -228,6 +228,19 @@ impl SubstMetaPath {
 /// We also disregard spacing.  This is not 100% justifiable but
 /// I think there are no token sequences differing only in spacing
 /// which are *both* valid and which differ in meaning.
+///
+/// ### Why ?!
+///
+/// `< <` and `<<` demonstrate that it is not possible to provide
+/// a fully correct and coherent equality function on Rust tokens,
+/// without knowing the parsing context:
+///
+/// In places where `<<` is a shift operator, `< <` is not legal.
+/// But in places where `<<` introduces two lots of generics,
+/// `<<` means the same.
+///
+/// I think a function which treats `< <` and `<<` as equal is more useful
+/// than one that doesn't, because it will DTRT for types.
 //
 // Comparing for equality has to be done by steam.
 // And a lot of stringification.
