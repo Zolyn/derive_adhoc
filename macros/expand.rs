@@ -477,16 +477,19 @@ where
         // Handles $ttype and $tdeftype, and, indirectly, $vtype
         let do_ttype = |out: &mut O, colons: Option<()>, do_some_gens| {
             let _: &dyn Fn(&mut _, bool) = do_some_gens; // specify type
-            let colons = colons.map(|()| Token![::](kw_span));
+            let gens = &ctx.top.generics;
+            let colons = gens
+                .lt_token
+                .and_then(|_| colons.map(|()| Token![::](kw_span)));
             out.append_idpath(
                 kw_span,
                 |_| {},
                 &ctx.top.ident,
                 |out| {
                     out.append(colons);
-                    out.append(Token![<](kw_span));
+                    out.append(gens.lt_token);
                     do_some_gens(out, false);
-                    out.append(Token![>](kw_span));
+                    out.append(gens.gt_token);
                 },
             )
             .unwrap_or_else(|e| e.unreachable())
