@@ -23,6 +23,21 @@ We expect to increase it cautiously and only with good reason.
 
 ## Changelog
 
+### 0.7.3
+
+#### Added
+
+ * `approx_equal` condition, for testing a form of token stream equivalence.
+
+#### Fixed
+
+ * docs: Corrected some internal links to refer to the correct anchors.
+
+#### Improved
+
+ * `$ttype`, `$tdeftype` and `$vtype` no longer include `::<>` or `<>`
+   unless the original toplevel driver definition did.
+
 ### 0.7.2
 
 #### Added
