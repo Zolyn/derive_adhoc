@@ -303,7 +303,7 @@ pub fn define_derive_adhoc(
 ///
 /// The contents of `#[adhoc]` attributes are made available
 /// to templates via the
-/// [`${Xmeta}`](doc_reference/index.html#tmeta-vmeta-fmeta---adhoc-attributes)
+/// [`${Xmeta}`](doc_reference/index.html#tmeta-vmeta-fmeta--adhoc-attributes)
 /// expansions.
 ///
 /// If the template(s) don't use them, they are ignored.
