@@ -1,12 +1,12 @@
 ---------- derive-adhoc expansions dump for Enum (start) ----------
 top-level:
         $tname       =>  Enum
-        $ttype       =>  Enum :: < >
+        $ttype       =>  Enum
         $tvis        =>  
         $tgens       =>  
         $tgnames     =>  
         $twheres     =>  
-        $tdeftype    =>  Enum < >
+        $tdeftype    =>  Enum
         $tdefgens    =>  
         $tdefkwd     =>  enum
         ${ tdefvariants VARIANTS } => { VARIANTS }
@@ -17,7 +17,7 @@ top-level:
         $tattrs      =>  #[allow(dead_code)]
 variant Unit:
         $vname       =>  Unit
-        $vtype       =>  Enum :: Unit :: < >
+        $vtype       =>  Enum :: Unit
         $vpat        =>  Enum :: Unit {}
         ${ vdefbody VNAME FIELDS .. } => VNAME FIELDS ..,
         v_is_unit    =   true
@@ -26,7 +26,7 @@ variant Unit:
         $vattrs      =>  
 variant Tuple:
         $vname       =>  Tuple
-        $vtype       =>  Enum :: Tuple :: < >
+        $vtype       =>  Enum :: Tuple
         $vpat        =>  Enum :: Tuple { 0 : f_0, }
         ${ vdefbody VNAME FIELDS .. } => VNAME(FIELDS ..),
         v_is_unit    =   false
@@ -45,7 +45,7 @@ variant Tuple, field 0:
         $fattrs      =>  
 variant Struct:
         $vname       =>  Struct
-        $vtype       =>  Enum :: Struct :: < >
+        $vtype       =>  Enum :: Struct
         $vpat        =>  Enum :: Struct { field : f_field, }
         ${ vdefbody VNAME FIELDS .. } => VNAME { FIELDS .. }
         v_is_unit    =   false
@@ -66,12 +66,12 @@ variant Struct, field field:
 ---------- derive-adhoc expansions dump for Unit (start) ----------
 top-level:
         $tname       =>  Unit
-        $ttype       =>  Unit :: < >
+        $ttype       =>  Unit
         $tvis        =>  
         $tgens       =>  
         $tgnames     =>  
         $twheres     =>  
-        $tdeftype    =>  Unit < >
+        $tdeftype    =>  Unit
         $tdefgens    =>  
         $tdefkwd     =>  struct
         ${ tdefvariants VARIANTS } => VARIANTS
@@ -82,7 +82,7 @@ top-level:
         $tattrs      =>  #[allow(dead_code)]
 value:
         $vname       =>  <error>
-        $vtype       =>  Unit :: < >
+        $vtype       =>  Unit
         $vpat        =>  Unit {}
         ${ vdefbody VNAME FIELDS .. } => FIELDS .. ;
         v_is_unit    =   true
@@ -93,12 +93,12 @@ value:
 ---------- derive-adhoc expansions dump for Tuple (start) ----------
 top-level:
         $tname       =>  Tuple
-        $ttype       =>  Tuple :: < >
+        $ttype       =>  Tuple
         $tvis        =>  
         $tgens       =>  
         $tgnames     =>  
         $twheres     =>  
-        $tdeftype    =>  Tuple < >
+        $tdeftype    =>  Tuple
         $tdefgens    =>  
         $tdefkwd     =>  struct
         ${ tdefvariants VARIANTS } => VARIANTS
@@ -109,7 +109,7 @@ top-level:
         $tattrs      =>  #[allow(dead_code)]
 value:
         $vname       =>  <error>
-        $vtype       =>  Tuple :: < >
+        $vtype       =>  Tuple
         $vpat        =>  Tuple { 0 : f_0, }
         ${ vdefbody VNAME FIELDS .. } => (FIELDS ..) ;
         v_is_unit    =   false
@@ -130,12 +130,12 @@ value, field 0:
 ---------- derive-adhoc expansions dump for Struct (start) ----------
 top-level:
         $tname       =>  Struct
-        $ttype       =>  Struct :: < >
+        $ttype       =>  Struct
         $tvis        =>  
         $tgens       =>  
         $tgnames     =>  
         $twheres     =>  
-        $tdeftype    =>  Struct < >
+        $tdeftype    =>  Struct
         $tdefgens    =>  
         $tdefkwd     =>  struct
         ${ tdefvariants VARIANTS } => VARIANTS
@@ -146,7 +146,7 @@ top-level:
         $tattrs      =>  #[allow(dead_code)]
 value:
         $vname       =>  <error>
-        $vtype       =>  Struct :: < >
+        $vtype       =>  Struct
         $vpat        =>  Struct { field : f_field, }
         ${ vdefbody VNAME FIELDS .. } => { FIELDS .. }
         v_is_unit    =   false
