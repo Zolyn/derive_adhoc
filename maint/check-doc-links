@@ -21,7 +21,7 @@ cp -al target/doc $chk_dir
 find $chk_dir -name \*.html -print0 |
 xargs -0r -- perl -i~ -pe '
 	s{\bid=("[^"]+")[^<>]*\>}{$&<a name=$1>}g;
-	s{\bhref="#"}{}g
+	s{\bhref="#"}{}g;
 '
 
 linklint -out linklint.errors -error -root $chk_dir /derive_adhoc/@

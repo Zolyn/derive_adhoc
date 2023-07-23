@@ -57,7 +57,7 @@ In general the syntax is:
  * `$( .... )`: Repetition (abbreviated, automatic, form).
    (Note: there is no `+` or `*` after the `)`)
  * `$< .... >`: Identifier pasting (shorthand for
-   [`${paste ...}`](#-paste----identifier-pasting)).
+   [`${paste ...}`](#-paste---identifier-pasting)).
 
 In all cases, `$KEYWORD` is equivalent to `${KEYWORD}`.
 You can pass a `$` through
@@ -758,7 +758,7 @@ They are found within `${if }`, `${when }`, and `${select1 }`.
 True iff the field, or the whole toplevel type, is `pub`.
 
 See
-[`$fvis`, `$tvis` and `$fdefvis`](#fvis-tvis-fdefvis---visibility)
+[`$fvis`, `$tvis` and `$fdefvis`](#fvis-tvis-fdefvis--visibility)
 for details of the semantics (especially for enums),
 and the difference between `$fvis` and `$fdefvis`.
 
