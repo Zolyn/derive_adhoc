@@ -165,6 +165,16 @@ cargo-doc-all:
     - jq --raw-output '. | select(.message.level) | .message.rendered' <rustdoc.json |tee rustdoc.errors
     - test ! -s rustdoc.errors
 
+# Check that our principal crate doesn't have broken links
+check-doc-links:
+  stage: comprehensive
+  allow_failure: true
+  script:
+    - apt-get update
+    - apt-get -y install linklint
+    - mv Cargo.lock.example Cargo.lock
+    - maint/check-doc-links
+
 # Test our MSRV and Cargo.toml minimal versions
 #
 # We don't enable any of the optional fatures in derive-adhoc-tests.
