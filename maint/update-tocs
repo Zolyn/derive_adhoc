@@ -31,7 +31,7 @@ process_file () {
 	print "   " x $depth, "* ";
 	chomp;
 	my $txt = $_;
-	s{-+}{-}g;
+	s{--+}{}g;
 	s{[^- \w]}{}g;
 	y/ A-Z/-a-z/;
 	print "[$txt](#$_)\n";
