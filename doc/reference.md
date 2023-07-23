@@ -7,27 +7,27 @@
       * [Named and positional template arguments to expansions and conditions](#named-and-positional-template-arguments-to-expansions-and-conditions)
    * [Repetition and nesting](#repetition-and-nesting)
    * [Expansions](#expansions)
-      * [`$fname`, `$vname`, `$tname` - names](#fname-vname-tname---names)
-      * [`$fvis`, `$tvis`, `$fdefvis` - visibility](#fvis-tvis-fdefvis---visibility)
-      * [`$vpat`, `$fpatname` - pattern matching and value deconstruction](#vpat-fpatname---pattern-matching-and-value-deconstruction)
-      * [`$ftype`, `$vtype`, `$ttype`, `$tdeftype` - types](#ftype-vtype-ttype-tdeftype---types)
-      * [`$tgens`, `$tgnames`, `$twheres`, `$tdefgens` - generics](#tgens-tgnames-twheres-tdefgens---generics)
-      * [`${tmeta(...)}` `${vmeta(...)}` `${fmeta(...)}` - `#[adhoc]` attributes](#tmeta-vmeta-fmeta---adhoc-attributes)
-      * [`${fattrs ...}` `${vattrs ...}` `${tattrs ...}` - other attributes](#fattrs--vattrs--tattrs----other-attributes)
-      * [`$<...>`, `${paste ...}` - identifier pasting](#-paste----identifier-pasting)
-      * [`${CASE_CHANGE ...}` - case changing](#case_change----case-changing)
-      * [`${when CONDITION}` - filtering out repetitions by a predicate](#when-condition---filtering-out-repetitions-by-a-predicate)
-      * [`${if COND1 { ... } else if COND2 { ... } else { ... }}` - conditional](#if-cond1----else-if-cond2----else------conditional)
-      * [`${select1 COND1 { ... } else if COND2 { ... } else { ... }}` - expect precisely one predicate](#select1-cond1----else-if-cond2----else------expect-precisely-one-predicate)
-      * [`${for fields { ... }}`, `${for variants { ... }}`, `$( )` - repetition](#for-fields----for-variants--------repetition)
-      * [`$crate` - root of template crate](#crate---root-of-template-crate)
-      * [`$tdefkwd` - keyword introducing the new data structure](#tdefkwd---keyword-introducing-the-new-data-structure)
-      * [`$tdefvariants`, `$vdefbody`, `$fdefine` - tools for defining types](#tdefvariants-vdefbody-fdefine---tools-for-defining-types)
+      * [`$fname`, `$vname`, `$tname` -- names](#fname-vname-tname--names)
+      * [`$fvis`, `$tvis`, `$fdefvis` -- visibility](#fvis-tvis-fdefvis--visibility)
+      * [`$vpat`, `$fpatname` -- pattern matching and value deconstruction](#vpat-fpatname--pattern-matching-and-value-deconstruction)
+      * [`$ftype`, `$vtype`, `$ttype`, `$tdeftype` -- types](#ftype-vtype-ttype-tdeftype--types)
+      * [`$tgens`, `$tgnames`, `$twheres`, `$tdefgens` -- generics](#tgens-tgnames-twheres-tdefgens--generics)
+      * [`${tmeta(...)}` `${vmeta(...)}` `${fmeta(...)}` -- `#[adhoc]` attributes](#tmeta-vmeta-fmeta--adhoc-attributes)
+      * [`${fattrs ...}` `${vattrs ...}` `${tattrs ...}` -- other attributes](#fattrs--vattrs--tattrs---other-attributes)
+      * [`$<...>`, `${paste ...}` -- identifier pasting](#-paste---identifier-pasting)
+      * [`${CASE_CHANGE ...}` -- case changing](#case_change---case-changing)
+      * [`${when CONDITION}` -- filtering out repetitions by a predicate](#when-condition--filtering-out-repetitions-by-a-predicate)
+      * [`${if COND1 { ... } else if COND2 { ... } else { ... }}` -- conditional](#if-cond1----else-if-cond2----else-----conditional)
+      * [`${select1 COND1 { ... } else if COND2 { ... } else { ... }}` -- expect precisely one predicate](#select1-cond1----else-if-cond2----else-----expect-precisely-one-predicate)
+      * [`${for fields { ... }}`, `${for variants { ... }}`, `$( )` -- repetition](#for-fields----for-variants-------repetition)
+      * [`$crate` -- root of template crate](#crate--root-of-template-crate)
+      * [`$tdefkwd` -- keyword introducing the new data structure](#tdefkwd--keyword-introducing-the-new-data-structure)
+      * [`$tdefvariants`, `$vdefbody`, `$fdefine` -- tools for defining types](#tdefvariants-vdefbody-fdefine--tools-for-defining-types)
       * [`$dbg_all_keywords` -- Dump expansions of all keywords to compiler stderr](#dbg_all_keywords--dump-expansions-of-all-keywords-to-compiler-stderr)
-      * [`${define ...}`, `${defcond ...}` - user-defined expansions and conditions](#define--defcond----user-defined-expansions-and-conditions)
+      * [`${define ...}`, `${defcond ...}` -- user-defined expansions and conditions](#define--defcond---user-defined-expansions-and-conditions)
    * [Conditions](#conditions)
-      * [`fvis`, `tvis`, `fdefvis` - test for public visibility](#fvis-tvis-fdefvis---test-for-public-visibility)
-      * [`fmeta(NAME)`, `vmeta(NAME)`, `tmeta(NAME)` - `#[adhoc]` attributes](#fmetaname-vmetaname-tmetaname---adhoc-attributes)
+      * [`fvis`, `tvis`, `fdefvis` -- test for public visibility](#fvis-tvis-fdefvis--test-for-public-visibility)
+      * [`fmeta(NAME)`, `vmeta(NAME)`, `tmeta(NAME)` -- `#[adhoc]` attributes](#fmetaname-vmetaname-tmetaname--adhoc-attributes)
       * [`is_struct`, `is_enum`, `is_union`](#is_struct-is_enum-is_union)
       * [`v_is_unit`, `v_is_tuple`, `v_is_named`](#v_is_unit-v_is_tuple-v_is_named)
       * [`false`, `true`, `not(CONDITION)`, `any(COND1,COND2,...)`, `all(COND1,COND2,...)` -- boolean logic](#false-true-notcondition-anycond1cond2-allcond1cond2--boolean-logic)
@@ -163,7 +163,7 @@ shown below.
 
 <!-- ## maint/check-keywords-documented expansions ## -->
 
-### `$fname`, `$vname`, `$tname` - names
+### `$fname`, `$vname`, `$tname` -- names
 
 The name of the field, variant, or toplevel type.
 This is an the identifier (without any path or generics).
@@ -182,7 +182,7 @@ or `${paste ... $fname ...}` (`$<... $fname ...>`).
  * `$vname`: `UnitVariant`
  * `$tname`: `Tuple`, `Struct`, `Enum`
 
-### `$fvis`, `$tvis`, `$fdefvis` - visibility
+### `$fvis`, `$tvis`, `$fdefvis` -- visibility
 
 The visibility of the field, or toplevel type.
 
@@ -223,7 +223,7 @@ Use `$deffvis` when defining a new enum.
  * `$fdefvis` for fields in `Enum`: nothing
  * `$fdefvis` for others: nothing
 
-### `$vpat`, `$fpatname` - pattern matching and value deconstruction
+### `$vpat`, `$fpatname` -- pattern matching and value deconstruction
 
 `$vpat` expands to a pattern
 suitable for matching a value of the top-level type.
@@ -260,7 +260,7 @@ These use derive-adhoc's usual
  * `$fpatname`: `f_0`, `f_field`
  * `${vpat self=$<$tname Reference> vname=$<Ref $vname> fprefix=other_}`: `EnumReference::RefNamedVariant { field: other_field, ... }`
 
-### `$ftype`, `$vtype`, `$ttype`, `$tdeftype` - types
+### `$ftype`, `$vtype`, `$ttype`, `$tdeftype` -- types
 
 The type of the field, variant, or the toplevel type.
 
@@ -314,7 +314,7 @@ They use derive-adhoc's usual
    for enum variant:
    `EnumReference::RefTupleVariant::<'a, 'l, T, C>`
 
-### `$tgens`, `$tgnames`, `$twheres`, `$tdefgens` - generics
+### `$tgens`, `$tgnames`, `$twheres`, `$tdefgens` -- generics
 
 Generic parameters and bounds, from the toplevel type,
 in various forms.
@@ -348,7 +348,7 @@ so for full support of generic types the template must expand both.
  * `$twheres`: `T: 'l, T: TryInto<u8>,`
  * `$tdefgens`: `'a, 'l: 'a, T: Display = usize, const C: usize = 1,`
 
-### `${tmeta(...)}` `${vmeta(...)}` `${fmeta(...)}` - `#[adhoc]` attributes
+### `${tmeta(...)}` `${vmeta(...)}` `${fmeta(...)}` -- `#[adhoc]` attributes
 
 Accesses macro parameters passed via `#[adhoc(...)]` attributes.
 
@@ -419,7 +419,7 @@ which should affect how a set of fields should be processed.
  * `$<$ttype ${tmeta(simple) as str}>`: `UnitString::<C>`
  * `$<$ttype ${tmeta(simple) as ty}>`: error, ``multiple nontrivial entries``
 
-### `${fattrs ...}` `${vattrs ...}` `${tattrs ...}` - other attributes
+### `${fattrs ...}` `${vattrs ...}` `${tattrs ...}` -- other attributes
 
 Expands to attributes, including non-`#[adhoc()]` ones.
 The attributes can be filtered:
@@ -475,7 +475,7 @@ that come *after* the `#[derive(..., Adhoc, ...)]`.
 
  * `${vattrs adhoc}` for `UnitVariant`: `#[adhoc(value="enum-variant")]`
 
-### `$<...>`, `${paste ...}` - identifier pasting
+### `$<...>`, `${paste ...}` -- identifier pasting
 
 Expands the contents and pastes it together into a single identifier.
 The contents may only contain identifer fragments, strings (`"..."`),
@@ -502,14 +502,14 @@ and the path prefix and generics reproduced unaltered.
  * `${paste x_ $fname}` for tuple: `x_0`
  * `${paste $fname _x}` for tuple: error, ``constructed identifier "0_x" is invalid``
 
-### `${CASE_CHANGE ...}` - case changing
+### `${CASE_CHANGE ...}` -- case changing
 
 Expands the content, and changes its case
 (eg. uppercase to lowercase, etc.
 See [Case changing](#case-changing).
 `CASE_CHANGE` is one of the values listed there.
 
-### `${when CONDITION}` - filtering out repetitions by a predicate
+### `${when CONDITION}` -- filtering out repetitions by a predicate
 
 Allowed only within repetitions, and only at the toplevel
 of the repetition,
@@ -520,7 +520,7 @@ Skips this repetition if the `CONDITION` is not true.
 
  * `$( ${when vmeta(value)} ${vmeta(value) as str} )` for `Enum`: `"enum-variant"`
 
-### `${if COND1 { ... } else if COND2 { ... } else { ... }}` - conditional
+### `${if COND1 { ... } else if COND2 { ... } else { ... }}` -- conditional
 
 Conditionals.  The else clause is, of course, optional.
 The `else if` between arms is also optional,
@@ -535,7 +535,7 @@ So you can write `${if COND1 { ... } COND2 { ... } else { ... }`.
  * `$( ${if v_is_named { N } v_is_tuple { T } else { X }} )` for `Enum`: `X T N`
  * `${if v_is_unit { U } tmeta(gentype) { GT }}` for `Unit`: `U`
 
-### `${select1 COND1 { ... } else if COND2 { ... } else { ... }}` - expect precisely one predicate
+### `${select1 COND1 { ... } else if COND2 { ... } else { ... }}` -- expect precisely one predicate
 
 Conditionals which insist on expanding exactly one of the branches.
 Syntax is identical to that of `${if }`.
@@ -551,14 +551,14 @@ otherwise it is an error.
  * `$( ${select1 v_is_named { N } v_is_tuple { T } else { X }} )` for `Enum`: `X T N`
  * `${select1 v_is_unit { U } tmeta(gentype) { GT }}` for `Unit`: error, ``multiple conditions matched``
 
-### `${for fields { ... }}`, `${for variants { ... }}`, `$( )` - repetition
+### `${for fields { ... }}`, `${for variants { ... }}`, `$( )` -- repetition
 
 `${for ...}` expands the contents once per field, or once per variant.
 
 `$( ... )` expands the input with an appropriate number of iterations -
 see [Repetition and nesting](#repetition-and-nesting).
 
-### `$crate` - root of template crate
+### `$crate` -- root of template crate
 
 `$crate` always refers to the root of the crate 
 defining the template.
@@ -571,11 +571,11 @@ it refers to the current crate, ie simply `crate`.
 This is similar to the `$crate` builtin expansion
 in `macro_rules!`.
 
-### `$tdefkwd` - keyword introducing the new data structure
+### `$tdefkwd` -- keyword introducing the new data structure
 
 Expands to `struct`, `enum`, or `union`.
 
-### `$tdefvariants`, `$vdefbody`, `$fdefine` - tools for defining types
+### `$tdefvariants`, `$vdefbody`, `$fdefine` -- tools for defining types
 
 These, used together, allow the template to expand to a
 new definition, mirroring the driver type in form.
@@ -672,7 +672,7 @@ derive_adhoc! {
 }
 ```
 
-### `${define ...}`, `${defcond ...}` - user-defined expansions and conditions
+### `${define ...}`, `${defcond ...}` -- user-defined expansions and conditions
 
 `${define NAME BODY}` defines a reuseable piece of template.
 Afterwards, `$NAME` (and `${NAME}`) expand `BODY`.
@@ -753,7 +753,7 @@ They are found within `${if }`, `${when }`, and `${select1 }`.
 
 <!-- ## maint/check-keywords-documented conditions ## -->
 
-### `fvis`, `tvis`, `fdefvis` - test for public visibility
+### `fvis`, `tvis`, `fdefvis` -- test for public visibility
 
 True iff the field, or the whole toplevel type, is `pub`.
 
@@ -776,7 +776,7 @@ for the purposes of `fvis` and `tvis`
 And in each case, false for all others.
 (Refer to the [example structs](#structs-used-in-examples), below.)
 
-### `fmeta(NAME)`, `vmeta(NAME)`, `tmeta(NAME)` - `#[adhoc]` attributes
+### `fmeta(NAME)`, `vmeta(NAME)`, `tmeta(NAME)` -- `#[adhoc]` attributes
 
 Looks for `#[adhoc(NAME)]`.
 
