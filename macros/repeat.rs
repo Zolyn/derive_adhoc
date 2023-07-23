@@ -160,6 +160,12 @@ impl<O: SubstParseContext> Subst<O> {
             SD::define(..) => None,
             SD::defcond(..) => None,
             SD::UserDefined(..) => None,
+            SD::approx_equal(_, ab) => {
+                for x in ab {
+                    x.analyse_repeat(visitor)?;
+                }
+                None
+            }
             SD::not(cond, _) => {
                 cond.analyse_repeat(visitor)?;
                 None

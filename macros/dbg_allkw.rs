@@ -117,6 +117,8 @@ fn dump_whole(mut w: &mut Out, ctx: &Context) -> R {
         bool! { c, not }
         bool! { c, all }
         bool! { c, any }
+        // Requires input arguments to do anything
+        bool! { c, approx_equal }
         // Vacuous
         bool! { c, true }
         bool! { c, false }

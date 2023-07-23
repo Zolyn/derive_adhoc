@@ -70,6 +70,16 @@ impl Subst<BooleanContext> {
                 is_found(path.search_eval_bool(sm.pmetas(ctx)?))
             }
 
+            SD::approx_equal(_, [a, b]) => {
+                let s = |x: &Template<_>| {
+                    let mut out = TokenAccumulator::new();
+                    x.expand(ctx, &mut out);
+                    let out = out.tokens()?;
+                    Ok::<TokenStream, syn::Error>(out)
+                };
+                tokens_cmp(s(a)?, s(b)?) == Ordering::Equal
+            }
+
             SD::UserDefined(name) => name.lookup_eval_bool(ctx)?,
 
             SD::False(..) => false,
@@ -221,7 +231,6 @@ impl SubstMetaPath {
 //
 // Comparing for equality has to be done by steam.
 // And a lot of stringification.
-#[allow(dead_code)] // XXXX
 pub fn tokens_cmp(a: TokenStream, b: TokenStream) -> cmp::Ordering {
     use proc_macro2::Group;
 
