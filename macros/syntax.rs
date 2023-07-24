@@ -126,6 +126,7 @@ pub enum SubstDetails<O: SubstParseContext> {
     v_is_unit(O::BoolOnly),
     v_is_tuple(O::BoolOnly),
     v_is_named(O::BoolOnly),
+    approx_equal(O::BoolOnly, [Template<TokenAccumulator>; 2]),
 
     // Explicit iteration
     For(RepeatedTemplate<O>, O::NotInBool),
@@ -889,6 +890,19 @@ impl<O: SubstParseContext> Parse for Subst<O> {
             parse_def_body(input)?,
             not_in_paste()?, not_in_bool()?,
         ) }
+        keyword! { approx_equal(bool_only()?, {
+            let args = Punctuated::<_, Token![,]>::parse_separated_nonempty_with(
+                &in_parens(input)?,
+                Template::parse_single_or_braced,
+            )?;
+            if args.len() != 2 {
+                return Err(kw.error("approx_equal() requires two comma-separated arguments"))
+            }
+            let mut args = args.into_iter();
+            // std::array::from_fn needs MSRV 1.63
+            let mut arg = || args.next().unwrap();
+            [ arg(), arg() ]
+        }) }
 
         keyword! { paste(Template::parse(input)?, not_in_bool()?) }
         keyword! { when(input.parse()?, not_in_bool()?) }

@@ -40,3 +40,9 @@ error: unexpected arguments to expansion keyword
    |          ----- in this derive macro expansion
    |
    = note: this error originates in the macro `derive_adhoc_template_Broken` which comes from the expansion of the derive macro `Adhoc` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: approx_equal() requires two comma-separated arguments
+  --> ui/badargs.rs:40:10
+   |
+40 |     ${if approx_equal(1,2,3) {}}
+   |          ^^^^^^^^^^^^

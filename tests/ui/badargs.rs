@@ -34,4 +34,10 @@ define_derive_adhoc! {
 #[derive_adhoc(Broken)]
 struct ForBroken;
 
+derive_adhoc! {
+    DataType:
+
+    ${if approx_equal(1,2,3) {}}
+}
+
 fn main() {}
