@@ -165,9 +165,9 @@ value, field field:
         $fattrs      =>  
 ---------- derive-adhoc expansions dump for Struct (end) ----------
 ---------- derive-adhoc expansion of ReferenceVersion for Tuple (start) ----------
-struct TupleReference < 'reference, F = (), > (& 'reference F,) ; impl <
-'reference, F, > From < & 'reference Tuple :: < F > > for TupleReference <
-'reference, F, >
+#[derive(Adhoc)] struct TupleReference < 'reference, F = (), >
+(& 'reference F,) ; impl < 'reference, F, > From < & 'reference Tuple :: < F >
+> for TupleReference < 'reference, F, >
 {
     fn from(ref_to_owned : & 'reference Tuple :: < F >) -> Self
     {
@@ -184,9 +184,9 @@ struct TupleReference < 'reference, F = (), > (& 'reference F,) ; impl <
 }
 ---------- derive-adhoc expansion of ReferenceVersion for Tuple (end) ----------
 ---------- derive-adhoc expansion of ReferenceVersion for Struct (start) ----------
-struct StructReference < 'reference, F = (), > { field : & 'reference F, }
-impl < 'reference, F, > From < & 'reference Struct :: < F > > for
-StructReference < 'reference, F, >
+#[derive(Adhoc)] struct StructReference < 'reference, F = (), >
+{ field : & 'reference F, } impl < 'reference, F, > From < & 'reference Struct
+:: < F > > for StructReference < 'reference, F, >
 {
     fn from(ref_to_owned : & 'reference Struct :: < F >) -> Self
     {
@@ -209,7 +209,7 @@ StructReference < 'reference, F, >
 }
 ---------- derive-adhoc expansion of ReferenceVersion for Struct (end) ----------
 ---------- derive-adhoc expansion of ReferenceVersion for Enum (start) ----------
-enum EnumReference < 'reference, F = (), >
+#[derive(Adhoc)] enum EnumReference < 'reference, F = (), >
 { Unit, Tuple(& 'reference F,), Struct { field : & 'reference F, } } impl <
 'reference, F, > From < & 'reference Enum :: < F > > for EnumReference <
 'reference, F, >
@@ -239,3 +239,68 @@ enum EnumReference < 'reference, F = (), >
     }
 }
 ---------- derive-adhoc expansion of ReferenceVersion for Enum (end) ----------
+---------- derive-adhoc expansions dump for EnumReference (start) ----------
+top-level:
+        $tname       =>  EnumReference
+        $ttype       =>  EnumReference :: < 'reference, F, >
+        $tvis        =>  
+        $tgens       =>  'reference, F,
+        $tgnames     =>  'reference, F,
+        $twheres     =>  
+        $tdeftype    =>  EnumReference < 'reference, F = (), >
+        $tdefgens    =>  'reference, F = (),
+        $tdefkwd     =>  enum
+        ${ tdefvariants VARIANTS } => { VARIANTS }
+        is_struct    =   false
+        is_enum      =   true
+        is_union     =   false
+        tvis         =   false
+        $tattrs      =>  
+variant Unit:
+        $vname       =>  Unit
+        $vtype       =>  EnumReference :: Unit :: < 'reference, F, >
+        $vpat        =>  EnumReference :: Unit {}
+        ${ vdefbody VNAME FIELDS .. } => VNAME FIELDS ..,
+        v_is_unit    =   true
+        v_is_tuple   =   false
+        v_is_named   =   false
+        $vattrs      =>  
+variant Tuple:
+        $vname       =>  Tuple
+        $vtype       =>  EnumReference :: Tuple :: < 'reference, F, >
+        $vpat        =>  EnumReference :: Tuple { 0 : f_0, }
+        ${ vdefbody VNAME FIELDS .. } => VNAME(FIELDS ..),
+        v_is_unit    =   false
+        v_is_tuple   =   true
+        v_is_named   =   false
+        $vattrs      =>  
+variant Tuple, field 0:
+        $fname       =>  0
+        $ftype       =>  & 'reference F
+        $fvis        =>  
+        $fdefvis     =>  
+        $fpatname    =>  f_0
+        $fdefine     =>  
+        fvis         =   false
+        fdefvis      =   false
+        $fattrs      =>  
+variant Struct:
+        $vname       =>  Struct
+        $vtype       =>  EnumReference :: Struct :: < 'reference, F, >
+        $vpat        =>  EnumReference :: Struct { field : f_field, }
+        ${ vdefbody VNAME FIELDS .. } => VNAME { FIELDS .. }
+        v_is_unit    =   false
+        v_is_tuple   =   false
+        v_is_named   =   true
+        $vattrs      =>  
+variant Struct, field field:
+        $fname       =>  field
+        $ftype       =>  & 'reference F
+        $fvis        =>  
+        $fdefvis     =>  
+        $fpatname    =>  f_field
+        $fdefine     =>  field :
+        fvis         =   false
+        fdefvis      =   false
+        $fattrs      =>  
+---------- derive-adhoc expansions dump for EnumReference (end) ----------

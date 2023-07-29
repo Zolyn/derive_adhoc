@@ -19,6 +19,7 @@ define_derive_adhoc! {
     ${define IMPL { impl<'reference, $tgens> }}
     ${define REF_TYPE { $REFERENCE<'reference, $tgnames> }}
 
+    #[derive(Adhoc)]
     $tvis $tdefkwd $REFERENCE<'reference, $tdefgens>
     ${tdefvariants $(
         ${vdefbody $vname $(
